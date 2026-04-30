@@ -1,0 +1,10 @@
+# GDC-PM Workload Layer Variables
+# Prerequisites: Run bdau-basic-vpc/scenarios/gdc-pm first to provision
+# the project, VPC (gdc-pm-vpc), Cloud NAT, APIs, and Service Accounts.
+
+project_id      = "gdc-pm"
+region          = "us-central1"
+
+# These must match what was created by the vpc-foundation layer
+vpc_name        = "gdc-pm-vpc"
+gke_subnet_name = "subnet-gke"

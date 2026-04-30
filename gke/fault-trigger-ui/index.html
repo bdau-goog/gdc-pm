@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GDC-PM — Fault Injection Control Panel</title>
+  <style>
+    :root {
+      --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #7d8590;
+      --green: #3fb950; --red: #f85149; --orange: #d29922; --yellow: #e3b341;
+      --blue: #388bfd; --accent: #1f6feb;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+           background: var(--bg); color: var(--text); min-height: 100vh; }
+    header { background: var(--surface); border-bottom: 1px solid var(--border);
+             padding: 16px 32px; display: flex; align-items: center; gap: 16px; }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px;
+                    background: var(--accent); color: #fff; font-weight: 600; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%;
+                  background: var(--green); box-shadow: 0 0 6px var(--green); }
+    main { display: grid; grid-template-columns: 380px 1fr; gap: 24px;
+           padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+    .card { background: var(--surface); border: 1px solid var(--border);
+            border-radius: 8px; padding: 20px; }
+    .card h2 { font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
+               letter-spacing: 0.06em; color: var(--muted); margin-bottom: 16px; }
+    /* ── Asset Selector ── */
+    .asset-grid { display: grid; gap: 8px; }
+    .asset-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text);
+                 padding: 10px 14px; border-radius: 6px; cursor: pointer; text-align: left;
+                 font-size: 0.88rem; transition: all 0.15s; }
+    .asset-btn:hover { border-color: var(--blue); }
+    .asset-btn.selected { border-color: var(--blue); background: rgba(56,139,253,0.12); }
+    /* ── Fault Buttons ── */
+    .fault-grid { display: grid; gap: 12px; margin-top: 16px; }
+    .fault-btn { padding: 14px 16px; border-radius: 8px; border: none; cursor: pointer;
+                 color: #fff; font-size: 0.95rem; font-weight: 600; transition: opacity 0.2s;
+                 display: flex; align-items: center; gap: 10px; }
+    .fault-btn:hover { opacity: 0.85; }
+    .fault-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .fault-btn .desc { font-size: 0.75rem; font-weight: 400; opacity: 0.85; }
+    .prd    { background: #c62828; }
+    .therm  { background: #e65100; }
+    .bear   { background: #f57f17; }
+    .normal-btn { background: var(--bg); border: 1px solid var(--green); color: var(--green);
+                  padding: 10px; border-radius: 6px; cursor: pointer; width: 100%;
+                  font-size: 0.88rem; margin-top: 12px; }
+    /* ── Burst Control ── */
+    .burst { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+    .burst label { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+    .burst input { background: var(--bg); border: 1px solid var(--border); color: var(--text);
+                   border-radius: 6px; padding: 6px 10px; width: 60px; font-size: 0.9rem; }
+    /* ── Events Table ── */
+    .events-panel { overflow: hidden; }
+    .events-header { display: flex; justify-content: space-between; align-items: center;
+                     margin-bottom: 12px; }
+    .refresh-btn { background: none; border: 1px solid var(--border); color: var(--muted);
+                   padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+    .refresh-btn:hover { border-color: var(--blue); color: var(--blue); }
+    .events-table-wrapper { overflow-y: auto; max-height: 520px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { text-align: left; padding: 8px 10px; font-size: 0.75rem; font-weight: 600;
+         text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+         border-bottom: 1px solid var(--border); position: sticky; top: 0;
+         background: var(--surface); }
+    td { padding: 8px 10px; border-bottom: 1px solid rgba(48,54,61,0.5); }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .status-pill { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
+    .pill-normal        { background: rgba(63,185,80,0.15);  color: var(--green); }
+    .pill-prd_failure   { background: rgba(248,81,73,0.15);  color: var(--red); }
+    .pill-thermal_runaway { background: rgba(230,81,0,0.2); color: #ff7043; }
+    .pill-bearing_wear  { background: rgba(229,161,65,0.2); color: var(--yellow); }
+    .pill-unknown       { background: rgba(125,133,144,0.15); color: var(--muted); }
+    /* ── Toast ── */
+    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface);
+             border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px;
+             font-size: 0.88rem; transform: translateY(80px); opacity: 0;
+             transition: all 0.3s; pointer-events: none; z-index: 100; }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.ok   { border-color: var(--green); }
+    #toast.err  { border-color: var(--red); }
+    /* ── Summary Chips ── */
+    .summary-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+    .chip { padding: 4px 12px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
+            background: rgba(56,139,253,0.12); border: 1px solid rgba(56,139,253,0.25);
+            color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="status-dot" id="status-dot"></div>
+  <h1>GDC-PM Predictive Maintenance</h1>
+  <span class="badge">Fault Injection Control</span>
+  <span style="margin-left:auto; font-size:0.8rem; color:var(--muted)" id="last-refresh"></span>
+</header>
+
+<main>
+  <!-- ── Left Panel: Inject ── -->
+  <div>
+    <div class="card">
+      <h2>Select Asset</h2>
+      <div class="asset-grid" id="asset-grid"></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <h2>Inject Fault Scenario</h2>
+
+      <div class="burst">
+        <label>Burst Count:</label>
+        <input type="number" id="burst-count" min="1" max="10" value="3" />
+        <span style="font-size:0.78rem; color:var(--muted)">readings (1–10)</span>
+      </div>
+
+      <div class="fault-grid">
+        <button class="fault-btn prd" onclick="injectFault('prd_failure')">
+          <span>🔴</span>
+          <div>
+            <div>PRD Failure</div>
+            <div class="desc">Pressure drop · Temp spike · High vibration</div>
+          </div>
+        </button>
+        <button class="fault-btn therm" onclick="injectFault('thermal_runaway')">
+          <span>🟠</span>
+          <div>
+            <div>Thermal Runaway</div>
+            <div class="desc">Temperature > 178°F · Normal pressure</div>
+          </div>
+        </button>
+        <button class="fault-btn bear" onclick="injectFault('bearing_wear')">
+          <span>🟡</span>
+          <div>
+            <div>Bearing Wear</div>
+            <div class="desc">Elevated vibration · Slight temp rise</div>
+          </div>
+        </button>
+      </div>
+      <button class="normal-btn" onclick="injectFault('normal')">✅ Inject Normal Reading</button>
+    </div>
+  </div>
+
+  <!-- ── Right Panel: Events ── -->
+  <div class="card events-panel">
+    <div class="events-header">
+      <h2>Recent Detections</h2>
+      <button class="refresh-btn" onclick="loadEvents()">↻ Refresh</button>
+    </div>
+    <div class="summary-row" id="summary-row"></div>
+    <div class="events-table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Asset</th>
+            <th>PSI</th>
+            <th>Temp °F</th>
+            <th>Vib (mm)</th>
+            <th>ML Prediction</th>
+            <th>Confidence</th>
+            <th>Source</th>
+          </tr>
+        </thead>
+        <tbody id="events-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+let selectedAsset = 'COMP-TX-VALLEY-01';
+const ASSETS = [];
+
+async function init() {
+  const r = await fetch('/api/assets');
+  const data = await r.json();
+  data.assets.forEach(a => ASSETS.push(a));
+  renderAssets();
+  loadEvents();
+  setInterval(loadEvents, 5000); // Auto-refresh every 5s
+}
+
+function renderAssets() {
+  const grid = document.getElementById('asset-grid');
+  grid.innerHTML = '';
+  ASSETS.forEach(a => {
+    const btn = document.createElement('button');
+    btn.className = 'asset-btn' + (a === selectedAsset ? ' selected' : '');
+    btn.textContent = a;
+    btn.onclick = () => { selectedAsset = a; renderAssets(); };
+    grid.appendChild(btn);
+  });
+}
+
+async function injectFault(faultType) {
+  const count = parseInt(document.getElementById('burst-count').value) || 3;
+  const isNormal = faultType === 'normal';
+  const payload = isNormal
+    ? { fault_type: 'prd_failure', asset_id: selectedAsset, count: 0 }  // won't be used
+    : { fault_type: faultType, asset_id: selectedAsset, count };
+
+  // For normal we call a simple normal inject — reuse the telemetry simulator mechanism
+  const url = isNormal ? '/api/inject-normal' : '/api/inject-fault';
+  const actualUrl = '/api/inject-fault';
+  const actualPayload = isNormal
+    ? { fault_type: 'normal', asset_id: selectedAsset, count: 1 }
+    : payload;
+
+  try {
+    const r = await fetch(actualUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(actualPayload),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    const result = await r.json();
+    showToast(`✅ Injected ${result.count}x ${result.fault} on ${result.asset}`, 'ok');
+    setTimeout(loadEvents, 1500);
+  } catch (e) {
+    showToast(`❌ Injection failed: ${e}`, 'err');
+  }
+}
+
+async function loadEvents() {
+  try {
+    const r = await fetch('/api/recent-events?limit=100');
+    const data = await r.json();
+    renderEvents(data.events);
+    document.getElementById('last-refresh').textContent =
+      'Last refresh: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    console.error('Failed to load events', e);
+  }
+}
+
+function renderEvents(events) {
+  const tbody = document.getElementById('events-tbody');
+  tbody.innerHTML = '';
+  const counts = {};
+  events.forEach(ev => {
+    const label = ev.predicted_label || 'unknown';
+    counts[label] = (counts[label] || 0) + 1;
+    const tr = document.createElement('tr');
+    const time = new Date(ev.event_time).toLocaleTimeString();
+    const conf = ev.confidence ? (ev.confidence * 100).toFixed(1) + '%' : '—';
+    tr.innerHTML = `
+      <td>${time}</td>
+      <td>${ev.asset_id}</td>
+      <td>${ev.psi}</td>
+      <td>${ev.temp_f}</td>
+      <td>${ev.vibration}</td>
+      <td><span class="status-pill pill-${label}">${label.replace('_',' ')}</span></td>
+      <td>${conf}</td>
+      <td style="color:var(--muted);font-size:0.75rem">${ev.source || 'simulator'}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  renderSummary(counts);
+}
+
+function renderSummary(counts) {
+  const row = document.getElementById('summary-row');
+  row.innerHTML = '';
+  Object.entries(counts).sort((a,b) => b[1]-a[1]).forEach(([label, count]) => {
+    const chip = document.createElement('span');
+    chip.className = 'chip';
+    chip.textContent = `${label.replace('_',' ')}: ${count}`;
+    row.appendChild(chip);
+  });
+}
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show ' + type;
+  setTimeout(() => { t.className = ''; }, 3500);
+}
+
+init();
+</script>
+</body>
+</html>

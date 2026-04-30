@@ -1,0 +1,10 @@
+---
+# ============================================================================
+# RabbitMQ — Cluster Operator Deployment
+# Install the RabbitMQ Cluster Operator from the official manifests.
+# This is handled in the start script via kubectl apply -f URL,
+# but this file documents the version being used.
+# ============================================================================
+# Operator source: https://github.com/rabbitmq/cluster-operator
+# Version: latest stable
+# Applied via: start-rabbitmq.sh

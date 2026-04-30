@@ -1,0 +1,66 @@
+---
+# ============================================================================
+# AlloyDB Omni — Schema Init Job
+# Runs once after AlloyDB is ready to create the telemetry_events table
+# that is used by the event-processor and Grafana.
+# ============================================================================
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: alloydb-init-schema
+  namespace: gdc-pm
+spec:
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: init-schema
+          image: postgres:15-alpine
+          env:
+            - name: PGHOST
+              value: "alloydb-omni"
+            - name: PGPORT
+              value: "5432"
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: password
+            - name: PGDATABASE
+              value: "grid_reliability"
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for AlloyDB Omni to be ready..."
+              until pg_isready -h $PGHOST -U $PGUSER; do sleep 2; done
+              echo "Applying schema..."
+              psql -c "
+                CREATE TABLE IF NOT EXISTS telemetry_events (
+                  id            SERIAL PRIMARY KEY,
+                  event_time    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  asset_id      TEXT NOT NULL,
+                  psi           NUMERIC(8,2),
+                  temp_f        NUMERIC(8,2),
+                  vibration     NUMERIC(8,4),
+                  is_failure    INTEGER NOT NULL DEFAULT 0,
+                  failure_type  TEXT NOT NULL DEFAULT 'normal',
+                  predicted_class INTEGER,
+                  predicted_label TEXT,
+                  confidence    NUMERIC(6,4),
+                  source        TEXT DEFAULT 'simulator'
+                );
+                CREATE INDEX IF NOT EXISTS idx_events_time    ON telemetry_events(event_time DESC);
+                CREATE INDEX IF NOT EXISTS idx_events_asset   ON telemetry_events(asset_id);
+                CREATE INDEX IF NOT EXISTS idx_events_failure ON telemetry_events(predicted_class);
+              "
+              echo "Schema applied successfully."
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "64Mi"

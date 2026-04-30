@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-processor
+  namespace: gdc-pm
+  labels:
+    app: event-processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-processor
+  template:
+    metadata:
+      labels:
+        app: event-processor
+    spec:
+      containers:
+        - name: event-processor
+          image: GCR_IMAGE_PLACEHOLDER
+          env:
+            - name: RABBITMQ_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: host
+            - name: RABBITMQ_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: port
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: username
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: password
+            - name: RABBITMQ_VHOST
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: vhost
+            - name: ALLOYDB_HOST
+              value: "alloydb-omni.gdc-pm.svc.cluster.local"
+            - name: ALLOYDB_PORT
+              value: "5432"
+            - name: ALLOYDB_DB
+              value: "grid_reliability"
+            - name: ALLOYDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: username
+            - name: ALLOYDB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: password
+            - name: INFERENCE_API_URL
+              value: "http://inference-api.gdc-pm.svc.cluster.local:8080/predict"
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"

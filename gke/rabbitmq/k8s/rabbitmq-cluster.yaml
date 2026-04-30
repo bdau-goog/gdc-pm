@@ -1,0 +1,30 @@
+---
+# ============================================================================
+# RabbitMQ — Cluster (via RabbitMQ Cluster Operator)
+# ============================================================================
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: gdc-pm-rabbitmq
+  namespace: gdc-pm
+spec:
+  replicas: 1
+  image: rabbitmq:3.12-management
+  resources:
+    requests:
+      cpu: "200m"
+      memory: "256Mi"
+    limits:
+      cpu: "1000m"
+      memory: "1Gi"
+  persistence:
+    storageClassName: standard
+    storage: 5Gi
+  rabbitmq:
+    additionalConfig: |
+      default_user = gdc_user
+      default_pass = RABBITMQ_PASSWORD_PLACEHOLDER
+      default_vhost = gdc-pm
+      log.console.level = info
+  service:
+    type: ClusterIP

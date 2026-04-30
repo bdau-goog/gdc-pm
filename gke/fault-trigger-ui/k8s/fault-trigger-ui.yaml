@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fault-trigger-ui
+  namespace: gdc-pm
+  labels:
+    app: fault-trigger-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fault-trigger-ui
+  template:
+    metadata:
+      labels:
+        app: fault-trigger-ui
+    spec:
+      containers:
+        - name: fault-trigger-ui
+          image: GCR_IMAGE_PLACEHOLDER
+          ports:
+            - containerPort: 8080
+          env:
+            - name: RABBITMQ_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: host
+            - name: RABBITMQ_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: port
+            - name: RABBITMQ_USER
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: username
+            - name: RABBITMQ_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: password
+            - name: RABBITMQ_VHOST
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: vhost
+            - name: ALLOYDB_HOST
+              value: "alloydb-omni.gdc-pm.svc.cluster.local"
+            - name: ALLOYDB_PORT
+              value: "5432"
+            - name: ALLOYDB_DB
+              value: "grid_reliability"
+            - name: ALLOYDB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: username
+            - name: ALLOYDB_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: alloydb-secret
+                  key: password
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          readinessProbe:
+            httpGet:
+              path: /api/assets
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fault-trigger-ui
+  namespace: gdc-pm
+  labels:
+    app: fault-trigger-ui
+spec:
+  # LoadBalancer exposes the UI externally for demo access
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8080
+  selector:
+    app: fault-trigger-ui

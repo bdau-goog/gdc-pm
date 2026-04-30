@@ -1,0 +1,22 @@
+# Secrets — never commit these
+.secrets/
+*.key.json
+terraform/terraform.tfvars
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Model files
+*.bst
+gke/inference-api/.model-gcs-path
+
+# IDE
+.vscode/
+.idea/
