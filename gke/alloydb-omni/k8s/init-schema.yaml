@@ -1,8 +1,8 @@
 ---
 # ============================================================================
 # AlloyDB Omni — Schema Init Job
-# Runs once after AlloyDB is ready to create the telemetry_events table
-# that is used by the event-processor and Grafana.
+# Runs once after AlloyDB is ready to create the telemetry_events table,
+# asset_registry table, and all supporting indexes.
 # ============================================================================
 apiVersion: batch/v1
 kind: Job
@@ -41,23 +41,76 @@ spec:
               until pg_isready -h $PGHOST -U $PGUSER; do sleep 2; done
               echo "Applying schema..."
               psql -c "
+                -- ── Core telemetry events table ──────────────────────────────
                 CREATE TABLE IF NOT EXISTS telemetry_events (
-                  id            SERIAL PRIMARY KEY,
-                  event_time    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-                  asset_id      TEXT NOT NULL,
-                  psi           NUMERIC(8,2),
-                  temp_f        NUMERIC(8,2),
-                  vibration     NUMERIC(8,4),
-                  is_failure    INTEGER NOT NULL DEFAULT 0,
-                  failure_type  TEXT NOT NULL DEFAULT 'normal',
-                  predicted_class INTEGER,
-                  predicted_label TEXT,
-                  confidence    NUMERIC(6,4),
-                  source        TEXT DEFAULT 'simulator'
+                  id                   SERIAL PRIMARY KEY,
+                  event_time           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  asset_id             TEXT NOT NULL,
+                  asset_type           TEXT NOT NULL DEFAULT 'compressor',
+                  psi                  NUMERIC(10,2),
+                  temp_f               NUMERIC(8,2),
+                  vibration            NUMERIC(8,4),
+                  kv                   NUMERIC(8,2),
+                  acoustic_db          NUMERIC(8,2),
+                  is_failure           INTEGER NOT NULL DEFAULT 0,
+                  failure_type         TEXT NOT NULL DEFAULT 'normal',
+                  predicted_class      INTEGER,
+                  predicted_label      TEXT,
+                  confidence           NUMERIC(6,4),
+                  source               TEXT DEFAULT 'simulator',
+                  ai_narrative         TEXT,
+                  recommended_action   TEXT,
+                  similar_events_count INTEGER,
+                  acknowledged         BOOLEAN NOT NULL DEFAULT FALSE,
+                  ack_time             TIMESTAMPTZ,
+                  ack_operator         TEXT
                 );
-                CREATE INDEX IF NOT EXISTS idx_events_time    ON telemetry_events(event_time DESC);
-                CREATE INDEX IF NOT EXISTS idx_events_asset   ON telemetry_events(asset_id);
-                CREATE INDEX IF NOT EXISTS idx_events_failure ON telemetry_events(predicted_class);
+
+                -- ── Indexes ──────────────────────────────────────────────────
+                CREATE INDEX IF NOT EXISTS idx_events_time
+                  ON telemetry_events(event_time DESC);
+                CREATE INDEX IF NOT EXISTS idx_events_asset
+                  ON telemetry_events(asset_id);
+                CREATE INDEX IF NOT EXISTS idx_events_failure
+                  ON telemetry_events(predicted_class);
+                CREATE INDEX IF NOT EXISTS idx_events_time_asset
+                  ON telemetry_events(event_time DESC, asset_id);
+                CREATE INDEX IF NOT EXISTS idx_events_unacked
+                  ON telemetry_events(acknowledged, event_time DESC)
+                  WHERE acknowledged = FALSE AND predicted_class > 0;
+
+                -- ── Asset registry ────────────────────────────────────────────
+                CREATE TABLE IF NOT EXISTS asset_registry (
+                  asset_id        TEXT PRIMARY KEY,
+                  asset_type      TEXT NOT NULL,
+                  asset_subtype   TEXT,
+                  location        TEXT NOT NULL,
+                  criticality     INTEGER NOT NULL DEFAULT 3,
+                  nominal_psi     NUMERIC(10,2),
+                  nominal_temp_f  NUMERIC(8,2),
+                  nominal_vib     NUMERIC(8,4),
+                  nominal_kv      NUMERIC(8,2),
+                  online_since    TIMESTAMPTZ,
+                  notes           TEXT,
+                  model_name      TEXT NOT NULL DEFAULT 'stator_classifier'
+                );
+
+                -- ── Seed asset registry ───────────────────────────────────────
+                INSERT INTO asset_registry
+                  (asset_id, asset_type, asset_subtype, location, criticality,
+                   nominal_psi, nominal_temp_f, nominal_vib, online_since, model_name)
+                VALUES
+                  ('COMP-TX-VALLEY-01','compressor','reciprocating','Valley Transmission Substation',2, 855,  112, 0.02,'2023-06-15','stator_classifier'),
+                  ('COMP-TX-VALLEY-02','compressor','reciprocating','Valley Transmission Substation',3, 855,  112, 0.02,'2023-06-15','stator_classifier'),
+                  ('COMP-TX-RIDGE-01', 'compressor','centrifugal',  'Ridge Transmission Plant',      1, 855,  112, 0.02,'2022-11-01','stator_classifier'),
+                  ('COMP-TX-RIDGE-02', 'compressor','centrifugal',  'Ridge Transmission Plant',      2, 855,  112, 0.02,'2022-11-01','stator_classifier'),
+                  ('COMP-TX-BASIN-01', 'compressor','screw',        'Basin Distribution Station',    2, 855,  112, 0.02,'2024-01-10','stator_classifier'),
+                  ('GTG-VALLEY-01',    'turbine',   'gas',          'Valley Transmission Substation',1,2200, 1050, 0.05,'2024-03-01','turbine_classifier'),
+                  ('GTG-RIDGE-01',     'turbine',   'gas',          'Ridge Transmission Plant',      1,2200, 1050, 0.05,'2024-03-01','turbine_classifier'),
+                  ('XFR-VALLEY-01',    'transformer','hv',          'Valley Transmission Substation',1,NULL,  185, 0.01,'2021-05-10','transformer_classifier'),
+                  ('XFR-RIDGE-01',     'transformer','hv',          'Ridge Transmission Plant',      1,NULL,  185, 0.01,'2021-05-10','transformer_classifier'),
+                  ('XFR-BASIN-01',     'transformer','hv',          'Basin Distribution Station',    2,NULL,  185, 0.01,'2023-08-20','transformer_classifier')
+                ON CONFLICT (asset_id) DO NOTHING;
               "
               echo "Schema applied successfully."
           resources:

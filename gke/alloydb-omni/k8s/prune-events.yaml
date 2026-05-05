@@ -1,0 +1,62 @@
+---
+# ============================================================================
+# AlloyDB Omni — Telemetry Events Pruning CronJob
+#
+# At 5s telemetry intervals × 5 assets = ~86,400 rows/day.
+# Runs nightly at 03:00 UTC and purges events older than 7 days.
+# Keeps the table lean so Grafana queries stay fast.
+# ============================================================================
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: prune-telemetry-events
+  namespace: gdc-pm
+spec:
+  schedule: "0 3 * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: prune
+              image: postgres:15-alpine
+              env:
+                - name: PGHOST
+                  value: "alloydb-omni"
+                - name: PGPORT
+                  value: "5432"
+                - name: PGDATABASE
+                  value: "grid_reliability"
+                - name: PGUSER
+                  valueFrom:
+                    secretKeyRef:
+                      name: alloydb-secret
+                      key: username
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: alloydb-secret
+                      key: password
+              command:
+                - sh
+                - -c
+                - |
+                  until pg_isready -h $PGHOST -U $PGUSER; do sleep 2; done
+                  DELETED=$(psql -t -c "
+                    DELETE FROM telemetry_events
+                    WHERE event_time < NOW() - INTERVAL '7 days';
+                    SELECT 'Rows deleted: ' || ROW_COUNT FROM (
+                      SELECT COUNT(*) AS ROW_COUNT FROM telemetry_events
+                      WHERE event_time < NOW() - INTERVAL '7 days'
+                    ) x;
+                  " 2>&1 || true)
+                  psql -c "DELETE FROM telemetry_events WHERE event_time < NOW() - INTERVAL '7 days';"
+                  REMAINING=$(psql -t -c "SELECT COUNT(*) FROM telemetry_events;")
+                  echo "✅ Prune complete. Rows remaining: ${REMAINING}"
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "32Mi"

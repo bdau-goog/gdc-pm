@@ -6,150 +6,297 @@
   <title>GDC-PM — Fault Injection Control Panel</title>
   <style>
     :root {
-      --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
       --text: #e6edf3; --muted: #7d8590;
-      --green: #3fb950; --red: #f85149; --orange: #d29922; --yellow: #e3b341;
+      --green: #3fb950; --red: #f85149;
       --blue: #388bfd; --accent: #1f6feb;
+      --critical: #FF1744; --warning: #FF9100; --advisory: #FFD600; --ok: #00BFA5;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
            background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Header ── */
     header { background: var(--surface); border-bottom: 1px solid var(--border);
-             padding: 16px 32px; display: flex; align-items: center; gap: 16px; }
-    header h1 { font-size: 1.25rem; font-weight: 600; }
-    header .badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 12px;
-                    background: var(--accent); color: #fff; font-weight: 600; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%;
-                  background: var(--green); box-shadow: 0 0 6px var(--green); }
-    main { display: grid; grid-template-columns: 380px 1fr; gap: 24px;
-           padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+             padding: 12px 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; }
+    header h1 { font-size: 1.1rem; font-weight: 600; }
+    .badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 12px;
+             background: var(--accent); color: #fff; font-weight: 600; }
+    .status-dot { width: 9px; height: 9px; border-radius: 50%;
+                  background: var(--green); box-shadow: 0 0 5px var(--green); flex-shrink: 0; }
+
+    /* ── Alert strip in header ── */
+    .header-alerts { display: flex; align-items: center; gap: 8px; margin-left: 20px; }
+    .strip-pill { padding: 2px 9px; border-radius: 10px; font-size: 0.72rem;
+                  font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .strip-critical { background: rgba(255,23,68,0.15);  color: var(--critical); border: 1px solid rgba(255,23,68,0.3); }
+    .strip-warning  { background: rgba(255,145,0,0.15);  color: var(--warning);  border: 1px solid rgba(255,145,0,0.3); }
+    .strip-advisory { background: rgba(255,214,0,0.15);  color: var(--advisory); border: 1px solid rgba(255,214,0,0.3); }
+    .strip-ok       { background: rgba(0,191,165,0.12);  color: var(--ok);       border: 1px solid rgba(0,191,165,0.25); }
+    @keyframes critical-pulse { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 8px 2px rgba(255,23,68,0.5); } }
+    .strip-critical.pulsing { animation: critical-pulse 1.8s ease-in-out infinite; }
+    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    #last-refresh { font-size: 0.72rem; color: var(--muted); }
+
+    /* ── 3-Column Layout ── */
+    main {
+      display: grid;
+      grid-template-columns: 300px 1fr 240px;
+      grid-template-rows: 1fr;
+      gap: 16px;
+      padding: 16px 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+      min-height: calc(100vh - 50px);
+    }
+
     .card { background: var(--surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 20px; }
-    .card h2 { font-size: 0.85rem; font-weight: 600; text-transform: uppercase;
-               letter-spacing: 0.06em; color: var(--muted); margin-bottom: 16px; }
-    /* ── Asset Selector ── */
-    .asset-grid { display: grid; gap: 8px; }
-    .asset-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text);
-                 padding: 10px 14px; border-radius: 6px; cursor: pointer; text-align: left;
-                 font-size: 0.88rem; transition: all 0.15s; }
-    .asset-btn:hover { border-color: var(--blue); }
-    .asset-btn.selected { border-color: var(--blue); background: rgba(56,139,253,0.12); }
-    /* ── Fault Buttons ── */
-    .fault-grid { display: grid; gap: 12px; margin-top: 16px; }
-    .fault-btn { padding: 14px 16px; border-radius: 8px; border: none; cursor: pointer;
-                 color: #fff; font-size: 0.95rem; font-weight: 600; transition: opacity 0.2s;
-                 display: flex; align-items: center; gap: 10px; }
-    .fault-btn:hover { opacity: 0.85; }
-    .fault-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .fault-btn .desc { font-size: 0.75rem; font-weight: 400; opacity: 0.85; }
-    .prd    { background: #c62828; }
-    .therm  { background: #e65100; }
-    .bear   { background: #f57f17; }
+            border-radius: 8px; padding: 16px; }
+    .card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+                  letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px;
+                  display: flex; align-items: center; gap: 6px; }
+
+    /* ── LEFT: Fault Controls ── */
+    .left-panel { display: flex; flex-direction: column; gap: 14px; align-self: start; }
+
+    .fault-target { background: var(--surface2); border: 1px solid var(--border);
+                    border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;
+                    font-size: 0.78rem; color: var(--muted); }
+    .fault-target strong { color: var(--blue); font-size: 0.85rem; }
+
+    .fault-grid { display: grid; gap: 7px; }
+    .fault-btn { width: 100%; padding: 11px 14px; border-radius: 7px; border: none;
+                 cursor: pointer; color: #fff; font-size: 0.88rem; font-weight: 600;
+                 transition: opacity 0.2s; display: flex; align-items: center; gap: 9px; text-align: left; }
+    .fault-btn:hover { opacity: 0.88; }
+    .fault-btn .desc { font-size: 0.7rem; font-weight: 400; opacity: 0.85; }
+    .prd   { background: linear-gradient(135deg, #c62828, #b71c1c); }
+    .therm { background: linear-gradient(135deg, #e65100, #bf360c); }
+    .bear  { background: linear-gradient(135deg, #f57f17, #e65100); }
     .normal-btn { background: var(--bg); border: 1px solid var(--green); color: var(--green);
-                  padding: 10px; border-radius: 6px; cursor: pointer; width: 100%;
-                  font-size: 0.88rem; margin-top: 12px; }
-    /* ── Burst Control ── */
-    .burst { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
-    .burst label { font-size: 0.82rem; color: var(--muted); white-space: nowrap; }
+                  padding: 8px; border-radius: 6px; cursor: pointer; width: 100%;
+                  font-size: 0.84rem; margin-top: 6px; transition: background 0.15s; }
+    .normal-btn:hover { background: rgba(63,185,80,0.08); }
+
+    .burst { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+    .burst label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
     .burst input { background: var(--bg); border: 1px solid var(--border); color: var(--text);
-                   border-radius: 6px; padding: 6px 10px; width: 60px; font-size: 0.9rem; }
-    /* ── Events Table ── */
-    .events-panel { overflow: hidden; }
-    .events-header { display: flex; justify-content: space-between; align-items: center;
-                     margin-bottom: 12px; }
+                   border-radius: 5px; padding: 4px 9px; width: 52px; font-size: 0.86rem; }
+
+    .scenario-list { display: grid; gap: 6px; }
+    .scenario-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text);
+                    padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left;
+                    font-size: 0.82rem; transition: all 0.15s; width: 100%; }
+    .scenario-btn:hover { border-color: var(--blue); background: rgba(56,139,253,0.06); }
+    .scenario-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .s-name { font-weight: 600; display: flex; align-items: center; gap: 5px; }
+    .s-desc { font-size: 0.7rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+    .sp-wrap { margin-top: 8px; display: none; background: rgba(56,139,253,0.08);
+               border: 1px solid rgba(56,139,253,0.25); border-radius: 6px; padding: 9px 12px; font-size: 0.78rem; }
+    .sp-wrap.visible { display: block; }
+    .sp-bar-bg { background: var(--border); border-radius: 3px; height: 4px; margin: 6px 0; }
+    .sp-bar { height: 4px; border-radius: 3px; background: var(--blue); transition: width 0.5s; }
+    .sp-note { color: var(--muted); font-size: 0.72rem; margin-top: 3px; }
+
+    /* ── CENTER: Events ── */
+    .center-panel { min-height: 0; display: flex; flex-direction: column; }
+    .events-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
     .refresh-btn { background: none; border: 1px solid var(--border); color: var(--muted);
-                   padding: 4px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+                   padding: 3px 10px; border-radius: 5px; cursor: pointer; font-size: 0.76rem; }
     .refresh-btn:hover { border-color: var(--blue); color: var(--blue); }
-    .events-table-wrapper { overflow-y: auto; max-height: 520px; }
-    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-    th { text-align: left; padding: 8px 10px; font-size: 0.75rem; font-weight: 600;
+    .table-wrap { overflow-y: auto; flex: 1; max-height: calc(100vh - 130px); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.79rem; }
+    th { text-align: left; padding: 6px 9px; font-size: 0.69rem; font-weight: 600;
          text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
          border-bottom: 1px solid var(--border); position: sticky; top: 0;
-         background: var(--surface); }
-    td { padding: 8px 10px; border-bottom: 1px solid rgba(48,54,61,0.5); }
-    tr:hover td { background: rgba(255,255,255,0.03); }
-    .status-pill { padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; font-weight: 600; }
-    .pill-normal        { background: rgba(63,185,80,0.15);  color: var(--green); }
-    .pill-prd_failure   { background: rgba(248,81,73,0.15);  color: var(--red); }
-    .pill-thermal_runaway { background: rgba(230,81,0,0.2); color: #ff7043; }
-    .pill-bearing_wear  { background: rgba(229,161,65,0.2); color: var(--yellow); }
-    .pill-unknown       { background: rgba(125,133,144,0.15); color: var(--muted); }
+         background: var(--surface); z-index: 1; }
+    td { padding: 6px 9px; border-bottom: 1px solid rgba(48,54,61,0.5); vertical-align: middle; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    @keyframes row-flash { 0%,100% { background: rgba(255,23,68,0.05); } 50% { background: rgba(255,23,68,0.16); } }
+    .row-critical-fresh td { animation: row-flash 1.8s ease-in-out infinite; border-left: 3px solid var(--critical) !important; }
+    .row-critical td { border-left: 3px solid rgba(255,23,68,0.55) !important; }
+    .row-warning  td { border-left: 3px solid rgba(255,145,0,0.55) !important; }
+    .row-advisory td { border-left: 3px solid rgba(255,214,0,0.45) !important; }
+
+    .status-pill { padding: 1px 7px; border-radius: 9px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
+    .pill-normal                { background: rgba(0,191,165,0.13);  color: var(--ok); }
+    .pill-prd_failure           { background: rgba(255,23,68,0.13);  color: var(--critical); }
+    .pill-thermal_runaway       { background: rgba(255,145,0,0.13);  color: var(--warning); }
+    .pill-bearing_wear          { background: rgba(255,214,0,0.13);  color: var(--advisory); }
+    .pill-rotor_imbalance       { background: rgba(255,214,0,0.13);  color: var(--advisory); }
+    .pill-blade_fouling         { background: rgba(255,145,0,0.13);  color: var(--warning); }
+    .pill-combustion_instability{ background: rgba(255,23,68,0.13);  color: var(--critical); }
+    .pill-core_loosening        { background: rgba(255,214,0,0.13);  color: var(--advisory); }
+    .pill-winding_overheat      { background: rgba(255,145,0,0.13);  color: var(--warning); }
+    .pill-dielectric_breakdown  { background: rgba(255,23,68,0.13);  color: var(--critical); }
+    .pill-unknown               { background: rgba(125,133,144,0.13);color: var(--muted); }
+
+    .conf-bar-wrap { display: flex; align-items: center; gap: 5px; }
+    .conf-bar  { height: 4px; border-radius: 2px; background: var(--border); width: 38px; }
+    .conf-fill { height: 4px; border-radius: 2px; }
+
+    .narrative-row td { padding: 0 9px 8px 9px !important; border-bottom: 1px solid rgba(48,54,61,0.6) !important; }
+    .narrative-panel { background: var(--surface2); border-radius: 5px; padding: 10px 12px; display: grid; gap: 6px; }
+    .narrative-label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .narrative-text   { font-size: 0.76rem; color: #c9d1d9; line-height: 1.5; }
+    .narrative-action { font-size: 0.76rem; color: var(--warning); line-height: 1.5; }
+    .expand-link { cursor: pointer; color: var(--muted); font-size: 0.68rem; margin-left: 4px; user-select: none; }
+    .expand-link:hover { color: var(--blue); }
+    .ack-btn { background: none; border: 1px solid var(--border); color: var(--muted);
+               padding: 1px 7px; border-radius: 4px; cursor: pointer; font-size: 0.68rem; transition: all 0.15s; }
+    .ack-btn:hover { border-color: var(--ok); color: var(--ok); }
+    .acked-tag { font-size: 0.68rem; color: var(--muted); font-style: italic; }
+
+    /* ── RIGHT: Asset Selector ── */
+    .right-panel { display: flex; flex-direction: column; gap: 0; align-self: start; position: sticky; top: 66px; }
+
+    /* Filter tabs */
+    .class-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+    .class-tab { background: var(--bg); border: 1px solid var(--border); color: var(--muted);
+                 padding: 6px 4px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
+                 transition: all 0.15s; font-weight: 600; text-align: center; }
+    .class-tab:hover { color: var(--text); border-color: var(--blue); }
+    .class-tab.active { background: rgba(56,139,253,0.15); color: var(--blue); border-color: rgba(56,139,253,0.35); }
+    .class-tab.all-tab { grid-column: span 2; }
+
+    /* Asset list */
+    .asset-list { display: grid; gap: 5px; max-height: calc(100vh - 200px); overflow-y: auto; }
+    .asset-list::-webkit-scrollbar { width: 4px; }
+    .asset-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* Each asset row — hover shows card to the LEFT */
+    .asset-row { position: relative; }
+    .asset-btn { width: 100%; background: var(--bg); border: 1px solid var(--border);
+                 color: var(--text); padding: 8px 10px; border-radius: 6px; cursor: pointer;
+                 text-align: left; font-size: 0.8rem; transition: all 0.14s;
+                 display: flex; align-items: center; gap: 6px; }
+    .asset-btn:hover { border-color: var(--blue); background: rgba(56,139,253,0.06); }
+    .asset-btn.selected { border-color: var(--blue); background: rgba(56,139,253,0.14); }
+    .asset-name { font-weight: 500; flex: 1; font-size: 0.77rem; }
+
+    .asset-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dot-ok       { background: var(--ok);      box-shadow: 0 0 4px var(--ok); }
+    .dot-advisory { background: var(--advisory); box-shadow: 0 0 4px var(--advisory); }
+    .dot-warning  { background: var(--warning);  box-shadow: 0 0 4px var(--warning); }
+    .dot-critical { background: var(--critical); box-shadow: 0 0 4px var(--critical);
+                    animation: critical-pulse 1.5s ease-in-out infinite; }
+    .dot-stale    { background: var(--muted); }
+
+    /* Hover card opens to the LEFT */
+    .asset-hover-card {
+      position: absolute; right: calc(100% + 10px); top: 0; z-index: 300;
+      width: 290px; background: #1c2128; border: 1px solid var(--border);
+      border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.16s ease, transform 0.16s ease;
+      transform: translateX(6px);
+      font-size: 0.78rem;
+    }
+    .asset-row:hover .asset-hover-card {
+      opacity: 1; pointer-events: auto; transform: translateX(0);
+    }
+    .ahc-header { padding: 9px 13px; border-bottom: 1px solid var(--border);
+                  display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ahc-title  { font-weight: 700; font-size: 0.82rem; }
+    .ahc-crit   { font-size: 0.66rem; font-weight: 700; padding: 1px 6px; border-radius: 7px; }
+    .ahc-body   { padding: 9px 13px; display: grid; gap: 5px; }
+    .ahc-row    { display: grid; grid-template-columns: 90px 1fr; gap: 3px; font-size: 0.74rem; }
+    .ahc-key    { color: var(--muted); }
+    .ahc-val    { color: var(--text); }
+    .ahc-section{ font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-top: 3px; }
+    .ahc-divider{ border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+    .ahc-note   { font-size: 0.72rem; color: #c9d1d9; line-height: 1.45; }
+
     /* ── Toast ── */
-    #toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface);
-             border: 1px solid var(--border); border-radius: 8px; padding: 14px 20px;
-             font-size: 0.88rem; transform: translateY(80px); opacity: 0;
-             transition: all 0.3s; pointer-events: none; z-index: 100; }
+    #toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface);
+             border: 1px solid var(--border); border-radius: 8px; padding: 11px 16px;
+             font-size: 0.84rem; transform: translateY(80px); opacity: 0;
+             transition: all 0.3s; pointer-events: none; z-index: 400; max-width: 300px; }
     #toast.show { transform: translateY(0); opacity: 1; }
-    #toast.ok   { border-color: var(--green); }
-    #toast.err  { border-color: var(--red); }
-    /* ── Summary Chips ── */
-    .summary-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
-    .chip { padding: 4px 12px; border-radius: 12px; font-size: 0.78rem; font-weight: 600;
-            background: rgba(56,139,253,0.12); border: 1px solid rgba(56,139,253,0.25);
-            color: var(--blue); }
+    #toast.ok   { border-color: var(--ok); }
+    #toast.err  { border-color: var(--critical); }
   </style>
 </head>
 <body>
 
 <header>
-  <div class="status-dot" id="status-dot"></div>
+  <div class="status-dot"></div>
   <h1>GDC-PM Predictive Maintenance</h1>
-  <span class="badge">Fault Injection Control</span>
-  <span style="margin-left:auto; font-size:0.8rem; color:var(--muted)" id="last-refresh"></span>
+  <span class="badge">Operations Control Panel</span>
+
+  <!-- Alert pills always visible in header -->
+  <div class="header-alerts" id="header-alerts"></div>
+
+  <div class="header-right">
+    <span id="last-refresh"></span>
+  </div>
 </header>
 
 <main>
-  <!-- ── Left Panel: Inject ── -->
-  <div>
-    <div class="card">
-      <h2>Select Asset</h2>
-      <div class="asset-grid" id="asset-grid"></div>
-    </div>
 
-    <div class="card" style="margin-top:16px;">
-      <h2>Inject Fault Scenario</h2>
+  <!-- ══════════════════════════════════════════════════
+       LEFT — Fault injection + Demo scenarios
+  ══════════════════════════════════════════════════ -->
+  <div class="left-panel">
+
+    <div class="card">
+      <div class="card-title">Inject Fault</div>
+
+      <div class="fault-target">
+        Targeting: <strong id="selected-asset-label">COMP-TX-VALLEY-01</strong>
+        <span style="color:var(--muted);font-size:0.7rem;display:block;margin-top:2px">
+          Select asset in panel →
+        </span>
+      </div>
 
       <div class="burst">
-        <label>Burst Count:</label>
+        <label>Burst:</label>
         <input type="number" id="burst-count" min="1" max="10" value="3" />
-        <span style="font-size:0.78rem; color:var(--muted)">readings (1–10)</span>
+        <span style="font-size:0.73rem;color:var(--muted)">readings</span>
       </div>
 
       <div class="fault-grid">
         <button class="fault-btn prd" onclick="injectFault('prd_failure')">
           <span>🔴</span>
-          <div>
-            <div>PRD Failure</div>
-            <div class="desc">Pressure drop · Temp spike · High vibration</div>
-          </div>
+          <div><div>PRD Failure</div><div class="desc">Pressure drop · Temp spike · Vibration</div></div>
         </button>
         <button class="fault-btn therm" onclick="injectFault('thermal_runaway')">
           <span>🟠</span>
-          <div>
-            <div>Thermal Runaway</div>
-            <div class="desc">Temperature > 178°F · Normal pressure</div>
-          </div>
+          <div><div>Thermal Runaway</div><div class="desc">&gt;178°F · Pressure normal (deceptive)</div></div>
         </button>
         <button class="fault-btn bear" onclick="injectFault('bearing_wear')">
           <span>🟡</span>
-          <div>
-            <div>Bearing Wear</div>
-            <div class="desc">Elevated vibration · Slight temp rise</div>
-          </div>
+          <div><div>Bearing Wear</div><div class="desc">Elevated vibration · Gradual onset</div></div>
         </button>
       </div>
       <button class="normal-btn" onclick="injectFault('normal')">✅ Inject Normal Reading</button>
     </div>
+
+    <div class="card">
+      <div class="card-title">Demo Scenarios</div>
+      <div class="scenario-list" id="scenario-list"></div>
+      <div class="sp-wrap" id="sp-wrap">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong id="sp-name" style="font-size:0.78rem">—</strong>
+          <span id="sp-steps" style="font-size:0.7rem;color:var(--muted)">0 / 0</span>
+        </div>
+        <div class="sp-bar-bg"><div class="sp-bar" id="sp-bar" style="width:0%"></div></div>
+        <div class="sp-note" id="sp-note"></div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- ── Right Panel: Events ── -->
-  <div class="card events-panel">
+  <!-- ══════════════════════════════════════════════════
+       CENTER — Events table
+  ══════════════════════════════════════════════════ -->
+  <div class="card center-panel">
     <div class="events-header">
-      <h2>Recent Detections</h2>
+      <div class="card-title" style="margin-bottom:0">Live Detections — Last 100 Events</div>
       <button class="refresh-btn" onclick="loadEvents()">↻ Refresh</button>
     </div>
-    <div class="summary-row" id="summary-row"></div>
-    <div class="events-table-wrapper">
+    <div class="table-wrap">
       <table>
         <thead>
           <tr>
@@ -159,118 +306,348 @@
             <th>Temp °F</th>
             <th>Vib (mm)</th>
             <th>ML Prediction</th>
-            <th>Confidence</th>
-            <th>Source</th>
+            <th>Conf</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody id="events-tbody"></tbody>
       </table>
     </div>
   </div>
+
+  <!-- ══════════════════════════════════════════════════
+       RIGHT — Asset selector
+  ══════════════════════════════════════════════════ -->
+  <div class="card right-panel">
+    <div class="card-title">Asset Selector</div>
+
+    <!-- Class filter tabs -->
+    <div class="class-tabs">
+      <button class="class-tab all-tab active" onclick="setFilter('all')">All (10)</button>
+      <button class="class-tab" onclick="setFilter('compressor')">Compressors</button>
+      <button class="class-tab" onclick="setFilter('turbine')">Turbines</button>
+      <button class="class-tab" onclick="setFilter('transformer')">Transformers</button>
+    </div>
+
+    <div class="asset-list" id="asset-list"></div>
+  </div>
+
 </main>
 
 <div id="toast"></div>
 
 <script>
-let selectedAsset = 'COMP-TX-VALLEY-01';
-const ASSETS = [];
+// ─── Asset metadata ───────────────────────────────────────────────────────────
+const ASSET_META = {
+  "COMP-TX-VALLEY-01":{ cls:"compressor", type:"Gas Compressor — Reciprocating", loc:"Valley Substation",    crit:"HIGH",    critColor:"var(--warning)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"PRD valve last replaced Q3 2024. Lube interval 1,200 hrs." },
+  "COMP-TX-VALLEY-02":{ cls:"compressor", type:"Gas Compressor — Reciprocating", loc:"Valley Substation",    crit:"MEDIUM",  critColor:"var(--advisory)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"Standby unit — cold-start bearing risk. Run-test monthly." },
+  "COMP-TX-RIDGE-01": { cls:"compressor", type:"Gas Compressor — Centrifugal",   loc:"Ridge Plant",          crit:"CRITICAL", critColor:"var(--critical)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"Thermal runaway risk under peak summer demand." },
+  "COMP-TX-RIDGE-02": { cls:"compressor", type:"Gas Compressor — Centrifugal",   loc:"Ridge Plant",          crit:"HIGH",    critColor:"var(--warning)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"New bearing (2025-03). Monitor vib for 90-day run-in." },
+  "COMP-TX-BASIN-01": { cls:"compressor", type:"Gas Compressor — Screw",          loc:"Basin Station",        crit:"HIGH",    critColor:"var(--warning)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"Screw design sensitive to oil contamination." },
+  "GTG-VALLEY-01":    { cls:"turbine",    type:"Gas Turbine Generator",            loc:"Valley Substation",    crit:"CRITICAL", critColor:"var(--critical)", nominal:"PSI 2,200 · 1,050°F · 0.05mm vib", note:"Blade fouling risk in summer. Combustion instability precedes surge." },
+  "GTG-RIDGE-01":     { cls:"turbine",    type:"Gas Turbine Generator",            loc:"Ridge Plant",          crit:"CRITICAL", critColor:"var(--critical)", nominal:"PSI 2,200 · 1,050°F · 0.05mm vib", note:"Rotor imbalance detectable weeks before mechanical event." },
+  "XFR-VALLEY-01":    { cls:"transformer",type:"HV Transformer (115kV)",           loc:"Valley Substation",    crit:"CRITICAL", critColor:"var(--critical)", nominal:"115kV · 185°F oil · 0.01mm vib", note:"Dielectric breakdown irreversible. Oil temp >195°F = immediate action." },
+  "XFR-RIDGE-01":     { cls:"transformer",type:"HV Transformer (115kV)",           loc:"Ridge Plant",          crit:"CRITICAL", critColor:"var(--critical)", nominal:"115kV · 185°F oil · 0.01mm vib", note:"Core loosening shows distinctive vib signature at 0.06mm+." },
+  "XFR-BASIN-01":     { cls:"transformer",type:"HV Transformer (115kV)",           loc:"Basin Station",        crit:"HIGH",    critColor:"var(--warning)", nominal:"115kV · 185°F oil · 0.01mm vib", note:"Winding overheat follows sustained overload. Monitor load factor." },
+};
 
+// ─── State ────────────────────────────────────────────────────────────────────
+let selectedAsset = 'COMP-TX-VALLEY-01';
+let currentFilter = 'all';
+const ASSETS = [];
+let assetStatus = {};
+
+const SEVERITY = {
+  prd_failure:3, combustion_instability:3, dielectric_breakdown:3,
+  thermal_runaway:2, blade_fouling:2, winding_overheat:2,
+  bearing_wear:1, rotor_imbalance:1, core_loosening:1,
+  normal:0, unknown:0
+};
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
 async function init() {
   const r = await fetch('/api/assets');
   const data = await r.json();
   data.assets.forEach(a => ASSETS.push(a));
   renderAssets();
-  loadEvents();
-  setInterval(loadEvents, 5000); // Auto-refresh every 5s
+  await loadEvents();
+  await loadScenarios();
+  await loadAssetStatus();
+  setInterval(async () => { await loadEvents(); await loadAssetStatus(); }, 5000);
+}
+
+// ─── Asset status ─────────────────────────────────────────────────────────────
+async function loadAssetStatus() {
+  try {
+    const r = await fetch('/api/asset-status');
+    const data = await r.json();
+    assetStatus = {};
+    data.statuses.forEach(s => { assetStatus[s.asset_id] = s; });
+    renderAssets();
+  } catch(e) {}
+}
+
+function predToDot(p) {
+  const m = { normal:'dot-ok', bearing_wear:'dot-advisory', rotor_imbalance:'dot-advisory',
+    core_loosening:'dot-advisory', thermal_runaway:'dot-warning', blade_fouling:'dot-warning',
+    winding_overheat:'dot-warning', prd_failure:'dot-critical', combustion_instability:'dot-critical',
+    dielectric_breakdown:'dot-critical', stale:'dot-stale' };
+  return m[p] || 'dot-stale';
+}
+
+// ─── Asset list rendering ─────────────────────────────────────────────────────
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.class-tab').forEach(b => {
+    const txt = b.textContent.toLowerCase();
+    const match = f === 'all' ? b.classList.contains('all-tab') : txt.includes(f);
+    b.classList.toggle('active', match);
+  });
+  renderAssets();
 }
 
 function renderAssets() {
-  const grid = document.getElementById('asset-grid');
-  grid.innerHTML = '';
-  ASSETS.forEach(a => {
+  const list = document.getElementById('asset-list');
+  list.innerHTML = '';
+  document.getElementById('selected-asset-label').textContent = selectedAsset;
+
+  const filtered = ASSETS.filter(a => {
+    const meta = ASSET_META[a];
+    if (currentFilter === 'all') return true;
+    return meta && meta.cls === currentFilter;
+  });
+
+  filtered.forEach(a => {
+    const st  = assetStatus[a];
+    const dot = st ? predToDot(st.last_prediction) : 'dot-stale';
+    const meta = ASSET_META[a] || {};
+
+    const row = document.createElement('div');
+    row.className = 'asset-row';
+
     const btn = document.createElement('button');
     btn.className = 'asset-btn' + (a === selectedAsset ? ' selected' : '');
-    btn.textContent = a;
+    btn.innerHTML = `<span class="asset-name">${a}</span><span class="asset-status-dot ${dot}"></span>`;
     btn.onclick = () => { selectedAsset = a; renderAssets(); };
-    grid.appendChild(btn);
+
+    const card = document.createElement('div');
+    card.className = 'asset-hover-card';
+    const lastSeen = st ? new Date(st.last_seen).toLocaleTimeString() : '—';
+    const lastPred = st ? `<span class="status-pill pill-${st.last_prediction}">${(st.last_prediction||'').replace(/_/g,' ')}</span>` : '—';
+    card.innerHTML = `
+      <div class="ahc-header">
+        <span class="ahc-title">${a}</span>
+        <span class="ahc-crit" style="background:rgba(0,0,0,0.3);color:${meta.critColor||'var(--muted)'}">${meta.crit||''}</span>
+      </div>
+      <div class="ahc-body">
+        <div class="ahc-row"><span class="ahc-key">Type:</span><span class="ahc-val">${meta.type||'—'}</span></div>
+        <div class="ahc-row"><span class="ahc-key">Location:</span><span class="ahc-val">${meta.loc||'—'}</span></div>
+        <div class="ahc-row"><span class="ahc-key">Nominal:</span><span class="ahc-val">${meta.nominal||'—'}</span></div>
+        <hr class="ahc-divider"/>
+        <div class="ahc-section">Operations Note</div>
+        <p class="ahc-note">${meta.note||'—'}</p>
+        ${st ? `<hr class="ahc-divider"/>
+        <div class="ahc-row"><span class="ahc-key">Last seen:</span><span class="ahc-val">${lastSeen}</span></div>
+        <div class="ahc-row"><span class="ahc-key">ML result:</span><span class="ahc-val">${lastPred}</span></div>` : ''}
+      </div>`;
+
+    row.appendChild(btn);
+    row.appendChild(card);
+    list.appendChild(row);
   });
 }
 
+// ─── Fault injection ──────────────────────────────────────────────────────────
 async function injectFault(faultType) {
-  const count = parseInt(document.getElementById('burst-count').value) || 3;
-  const isNormal = faultType === 'normal';
-  const payload = isNormal
-    ? { fault_type: 'prd_failure', asset_id: selectedAsset, count: 0 }  // won't be used
-    : { fault_type: faultType, asset_id: selectedAsset, count };
-
-  // For normal we call a simple normal inject — reuse the telemetry simulator mechanism
-  const url = isNormal ? '/api/inject-normal' : '/api/inject-fault';
-  const actualUrl = '/api/inject-fault';
-  const actualPayload = isNormal
-    ? { fault_type: 'normal', asset_id: selectedAsset, count: 1 }
-    : payload;
-
+  const count = Math.max(1, Math.min(parseInt(document.getElementById('burst-count').value)||3, 10));
+  const payload = { fault_type: faultType, asset_id: selectedAsset,
+                    count: faultType === 'normal' ? 1 : count };
   try {
-    const r = await fetch(actualUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(actualPayload),
+    const r = await fetch('/api/inject-fault', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
     if (!r.ok) throw new Error(await r.text());
     const result = await r.json();
-    showToast(`✅ Injected ${result.count}x ${result.fault} on ${result.asset}`, 'ok');
+    showToast(`✅ Injected ${result.count}× ${result.fault} on ${result.asset}`, 'ok');
     setTimeout(loadEvents, 1500);
-  } catch (e) {
-    showToast(`❌ Injection failed: ${e}`, 'err');
-  }
+  } catch(e) { showToast(`❌ ${e}`, 'err'); }
 }
 
+// ─── Scenarios ────────────────────────────────────────────────────────────────
+async function loadScenarios() {
+  try {
+    const r = await fetch('/api/scenarios');
+    const data = await r.json();
+    const list = document.getElementById('scenario-list');
+    list.innerHTML = '';
+    Object.entries(data.scenarios).forEach(([id, sc]) => {
+      const btn = document.createElement('button');
+      btn.className = 'scenario-btn';
+      btn.innerHTML = `<div class="s-name">▶ ${sc.name}</div>
+                       <div class="s-desc">${sc.description} (${sc.step_count} steps)</div>`;
+      btn.onclick = () => runScenario(id, sc.name, sc.step_count);
+      list.appendChild(btn);
+    });
+  } catch(e) {}
+}
+
+async function runScenario(id, name, stepCount) {
+  try {
+    const r = await fetch('/api/run-scenario', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ scenario_id: id }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    showToast(`▶ Running: ${name}`, 'ok');
+    document.querySelectorAll('.scenario-btn').forEach(b => b.disabled = true);
+    pollScenario();
+  } catch(e) { showToast(`❌ ${e}`, 'err'); }
+}
+
+function pollScenario() {
+  const iv = setInterval(async () => {
+    try {
+      const r = await fetch('/api/scenario-status');
+      const st = await r.json();
+      const el = document.getElementById('sp-wrap');
+      if (st.running || st.step > 0) {
+        el.classList.add('visible');
+        document.getElementById('sp-name').textContent = st.name || '—';
+        document.getElementById('sp-steps').textContent = `${st.step} / ${st.total}`;
+        document.getElementById('sp-bar').style.width = `${st.total>0?(st.step/st.total)*100:0}%`;
+        document.getElementById('sp-note').textContent = st.note || '';
+      }
+      if (!st.running) {
+        clearInterval(iv);
+        document.querySelectorAll('.scenario-btn').forEach(b => b.disabled = false);
+        if (st.step > 0) setTimeout(() => { el.classList.remove('visible'); document.getElementById('sp-bar').style.width='0%'; }, 5000);
+      }
+    } catch(e) { clearInterval(iv); }
+  }, 1000);
+}
+
+// ─── Events ───────────────────────────────────────────────────────────────────
 async function loadEvents() {
   try {
     const r = await fetch('/api/recent-events?limit=100');
     const data = await r.json();
     renderEvents(data.events);
-    document.getElementById('last-refresh').textContent =
-      'Last refresh: ' + new Date().toLocaleTimeString();
-  } catch(e) {
-    console.error('Failed to load events', e);
-  }
+    document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
+  } catch(e) {}
+}
+
+async function acknowledgeEvent(id) {
+  try {
+    const r = await fetch(`/api/acknowledge/${id}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ operator: 'ops' }),
+    });
+    if (!r.ok) throw new Error(await r.text());
+    showToast(`✅ Event ${id} acknowledged`, 'ok');
+    setTimeout(loadEvents, 400);
+  } catch(e) { showToast(`❌ ${e}`, 'err'); }
+}
+
+function toggleNarrative(id) {
+  const nr = document.getElementById(id);
+  if (nr) nr.style.display = nr.style.display === 'none' ? 'table-row' : 'none';
 }
 
 function renderEvents(events) {
   const tbody = document.getElementById('events-tbody');
   tbody.innerHTML = '';
-  const counts = {};
+  const now = Date.now();
+  const cutoff = now - 30 * 60 * 1000;
+  let crit = 0, warn = 0, adv = 0;
+
   events.forEach(ev => {
-    const label = ev.predicted_label || 'unknown';
-    counts[label] = (counts[label] || 0) + 1;
+    const label  = ev.predicted_label || 'unknown';
+    const evTime = new Date(ev.event_time).getTime();
+    const ageSec = (now - evTime) / 1000;
+    const conf   = ev.confidence || 0;
+    const sev    = SEVERITY[label] || 0;
+    const nrId   = `nr-${ev.id}`;
+
+    if (evTime > cutoff) {
+      if (sev===3) crit++; else if (sev===2) warn++; else if (sev===1) adv++;
+    }
+
+    let rowClass = '';
+    if (!ev.acknowledged) {
+      if (sev===3) rowClass = (ageSec < 60 && conf > 0.7) ? 'row-critical-fresh' : 'row-critical';
+      else if (sev===2) rowClass = 'row-warning';
+      else if (sev===1) rowClass = 'row-advisory';
+    }
+
+    const confPct   = (conf*100).toFixed(1);
+    const confColor = conf>0.85?'#FF1744':conf>0.6?'#FF9100':'var(--muted)';
+    const confHtml  = conf
+      ? `<div class="conf-bar-wrap"><span style="min-width:30px">${confPct}%</span><div class="conf-bar"><div class="conf-fill" style="width:${Math.round(conf*38)}px;background:${confColor}"></div></div></div>` : '—';
+
+    const hasNar = ev.ai_narrative || ev.recommended_action;
+    const expHtml = hasNar ? `<span class="expand-link" onclick="toggleNarrative('${nrId}')">▸</span>` : '';
+    const actHtml = ev.acknowledged
+      ? `<span class="acked-tag">✓</span>`
+      : (sev>0 ? `<button class="ack-btn" onclick="acknowledgeEvent(${ev.id})">Ack</button>` : '');
+
     const tr = document.createElement('tr');
-    const time = new Date(ev.event_time).toLocaleTimeString();
-    const conf = ev.confidence ? (ev.confidence * 100).toFixed(1) + '%' : '—';
+    if (rowClass) tr.className = rowClass;
+    if (ev.acknowledged) tr.style.opacity = '0.35';
     tr.innerHTML = `
-      <td>${time}</td>
-      <td>${ev.asset_id}</td>
-      <td>${ev.psi}</td>
-      <td>${ev.temp_f}</td>
-      <td>${ev.vibration}</td>
-      <td><span class="status-pill pill-${label}">${label.replace('_',' ')}</span></td>
-      <td>${conf}</td>
-      <td style="color:var(--muted);font-size:0.75rem">${ev.source || 'simulator'}</td>
+      <td style="white-space:nowrap;color:var(--muted);font-size:0.72rem">${new Date(ev.event_time).toLocaleTimeString()}</td>
+      <td style="font-size:0.75rem;font-weight:500">${ev.asset_id}</td>
+      <td>${ev.psi}</td><td>${ev.temp_f}</td><td>${ev.vibration}</td>
+      <td><span class="status-pill pill-${label}">${label.replace(/_/g,' ')}</span>${expHtml}</td>
+      <td>${confHtml}</td>
+      <td>${actHtml}</td>
     `;
     tbody.appendChild(tr);
-  });
-  renderSummary(counts);
-}
 
-function renderSummary(counts) {
-  const row = document.getElementById('summary-row');
-  row.innerHTML = '';
-  Object.entries(counts).sort((a,b) => b[1]-a[1]).forEach(([label, count]) => {
-    const chip = document.createElement('span');
-    chip.className = 'chip';
-    chip.textContent = `${label.replace('_',' ')}: ${count}`;
-    row.appendChild(chip);
+    if (hasNar) {
+      const simTxt = ev.similar_events_count > 0
+        ? ` <span style="color:var(--advisory);font-size:0.7rem">⚠ ${ev.similar_events_count} similar</span>` : '';
+      const nr = document.createElement('tr');
+      nr.className = 'narrative-row'; nr.id = nrId; nr.style.display = 'none';
+      nr.innerHTML = `<td colspan="8"><div class="narrative-panel">
+        ${ev.ai_narrative ? `<div><div class="narrative-label">AI Assessment${simTxt}</div><div class="narrative-text">${ev.ai_narrative}</div></div>` : ''}
+        ${ev.recommended_action ? `<div><div class="narrative-label">Recommended Action</div><div class="narrative-action">▶ ${ev.recommended_action}</div></div>` : ''}
+      </div></td>`;
+      tbody.appendChild(nr);
+    }
   });
+
+  // Update header alert pills
+  const ha = document.getElementById('header-alerts');
+  ha.innerHTML = '';
+  if (crit > 0) {
+    const p = document.createElement('span');
+    p.className = 'strip-pill strip-critical pulsing';
+    p.textContent = `🔴 ${crit} Critical`;
+    ha.appendChild(p);
+  }
+  if (warn > 0) {
+    const p = document.createElement('span');
+    p.className = 'strip-pill strip-warning';
+    p.textContent = `🟠 ${warn} Warning`;
+    ha.appendChild(p);
+  }
+  if (adv > 0) {
+    const p = document.createElement('span');
+    p.className = 'strip-pill strip-advisory';
+    p.textContent = `🟡 ${adv} Advisory`;
+    ha.appendChild(p);
+  }
+  if (crit + warn + adv === 0) {
+    const p = document.createElement('span');
+    p.className = 'strip-pill strip-ok';
+    p.textContent = '✓ All Clear';
+    ha.appendChild(p);
+  }
+
+  if (crit > 0)      document.title = `🔴 [${crit} CRITICAL] GDC-PM`;
+  else if (warn > 0) document.title = `🟠 [${warn} WARNING] GDC-PM`;
+  else               document.title = 'GDC-PM — Operations';
 }
 
 function showToast(msg, type) {

@@ -63,6 +63,13 @@ spec:
                   key: password
             - name: INFERENCE_API_URL
               value: "http://inference-api.gdc-pm.svc.cluster.local:8080/predict"
+            # AI Narrative mode: "false" | "rule_based" | "gemini"
+            # "rule_based" generates plain-English failure explanations without GPU/API.
+            # Switch to "gemini" when Vertex AI API access is available.
+            - name: AI_NARRATIVE_ENABLED
+              value: "rule_based"
+            - name: GCP_PROJECT
+              value: "gdc-pm"
           resources:
             requests:
               cpu: "100m"

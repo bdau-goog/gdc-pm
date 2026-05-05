@@ -25,7 +25,10 @@ REGION="${REGION:-$(grep 'region' "${TF_DIR}/terraform.tfvars" 2>/dev/null | awk
 CLUSTER_NAME="${CLUSTER_NAME:-gdc-edge-simulation}"
 NAMESPACE="gdc-pm"
 IMAGE_NAME="${REGION}-docker.pkg.dev/${PROJECT_ID}/gdc-models/inference-api:latest"
-GCS_MODEL_PATH="gs://${PROJECT_ID}-models/stator_classifier/latest/"
+# The inference API now uses GCS_MODEL_BUCKET (bucket name only).
+# It constructs per-model paths as: gs://{bucket}/{model_name}/latest/
+# This supports loading all three classifiers (stator, turbine, transformer).
+GCS_MODEL_BUCKET="${PROJECT_ID}-models"
 
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -75,7 +78,7 @@ echo ""
 echo -e "${BOLD}🚀 Step 5: Deploying inference-api to GKE...${RESET}"
 sed \
   -e "s|GCR_IMAGE_PLACEHOLDER|${IMAGE_NAME}|g" \
-  -e "s|GCS_MODEL_PATH_PLACEHOLDER|${GCS_MODEL_PATH}|g" \
+  -e "s|GCS_MODEL_BUCKET_PLACEHOLDER|${GCS_MODEL_BUCKET}|g" \
   -e "s|PROJECT_ID_PLACEHOLDER|${PROJECT_ID}|g" \
   "${K8S_DIR}/inference-api.yaml" | kubectl apply -f -
 echo ""

@@ -1,4 +1,9 @@
 ---
+# ============================================================================
+# Inference API — Multi-Asset-Type Failure Classifier
+# Loads XGBoost models for compressors, turbines, and transformers from GCS.
+# Routes predictions to the correct model based on asset_type in the request.
+# ============================================================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -23,26 +28,36 @@ spec:
           ports:
             - containerPort: 8080
           env:
+            # GCS_MODEL_BUCKET: the bucket that holds all model artifacts.
+            # Models are loaded from: gs://{bucket}/{model_name}/latest/
+            # e.g. gs://gdc-pm-models/stator_classifier/latest/
+            #      gs://gdc-pm-models/turbine_classifier/latest/
+            #      gs://gdc-pm-models/transformer_classifier/latest/
+            - name: GCS_MODEL_BUCKET
+              value: "GCS_MODEL_BUCKET_PLACEHOLDER"
+
+            # Legacy single-model path (kept for backward compatibility).
+            # Set GCS_MODEL_BUCKET above instead for multi-model support.
             - name: GCS_MODEL_PATH
-              value: "GCS_MODEL_PATH_PLACEHOLDER"
+              value: ""
           resources:
             requests:
               cpu: "250m"
-              memory: "512Mi"
+              memory: "768Mi"    # increased for 3 models in memory
             limits:
               cpu: "1000m"
-              memory: "1Gi"
+              memory: "2Gi"
           readinessProbe:
             httpGet:
               path: /health
               port: 8080
-            initialDelaySeconds: 30
+            initialDelaySeconds: 45
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /health
               port: 8080
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90
             periodSeconds: 20
 
 ---
@@ -63,7 +78,8 @@ spec:
 
 ---
 # Kubernetes Service Account bound to the ml-pipeline-sa GCP Service Account
-# for Workload Identity (access to GCS without JSON keys in GKE)
+# for Workload Identity — grants GCS access to download model artifacts
+# without embedding JSON credentials in the container.
 apiVersion: v1
 kind: ServiceAccount
 metadata:

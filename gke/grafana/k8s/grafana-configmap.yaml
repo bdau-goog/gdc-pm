@@ -62,169 +62,324 @@ metadata:
 data:
   gdc-pm-dashboard.json: |
     {
-      "title": "GDC-PM — Stator Failure Detection",
+      "title": "GDC-PM — Grid Reliability Monitoring",
       "uid": "gdc-pm-main",
-      "tags": ["gdc", "predictive-maintenance", "ml"],
+      "tags": ["gdc", "predictive-maintenance", "ml", "grid"],
       "timezone": "browser",
       "refresh": "5s",
       "time": { "from": "now-30m", "to": "now" },
       "panels": [
+
         {
-          "id": 1,
-          "type": "stat",
-          "title": "Total Alerts (Last 30m)",
-          "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+          "id": 20,
+          "type": "table",
+          "title": "🚨  Active Alerts — Unacknowledged Faults (Last Hour)",
+          "description": "Faults detected by ML that have NOT been acknowledged by an operator. These require action.",
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 7 },
           "options": {
-            "colorMode": "background",
-            "graphMode": "none",
-            "textMode": "auto"
+            "sortBy": [{ "desc": true, "displayName": "event_time" }],
+            "cellHeight": "sm",
+            "footer": { "show": false }
           },
           "fieldConfig": {
+            "defaults": { "custom": { "displayMode": "auto", "inspect": false } },
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "event_time" },
+                "properties": [{ "id": "displayName", "value": "Time" }, { "id": "custom.width", "value": 120 }] },
+              { "matcher": { "id": "byName", "options": "asset_id" },
+                "properties": [{ "id": "displayName", "value": "Asset" }, { "id": "custom.width", "value": 160 }] },
+              { "matcher": { "id": "byName", "options": "predicted_label" },
+                "properties": [
+                  { "id": "displayName", "value": "ML Fault Type" },
+                  { "id": "custom.width", "value": 160 },
+                  { "id": "custom.displayMode", "value": "color-background" },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } }
+                ]},
+              { "matcher": { "id": "byName", "options": "confidence" },
+                "properties": [{ "id": "displayName", "value": "Confidence" }, { "id": "unit", "value": "percentunit" }, { "id": "custom.width", "value": 100 }] },
+              { "matcher": { "id": "byName", "options": "recommended_action" },
+                "properties": [{ "id": "displayName", "value": "Recommended Action" }] },
+              { "matcher": { "id": "byName", "options": "psi" },
+                "properties": [{ "id": "custom.width", "value": 80 }] },
+              { "matcher": { "id": "byName", "options": "temp_f" },
+                "properties": [{ "id": "displayName", "value": "Temp °F" }, { "id": "custom.width", "value": 80 }] },
+              { "matcher": { "id": "byName", "options": "vibration" },
+                "properties": [{ "id": "displayName", "value": "Vib (mm)" }, { "id": "custom.width", "value": 80 }] }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time, asset_id, predicted_label, ROUND(confidence::numeric, 3) AS confidence, psi, temp_f, vibration, recommended_action FROM telemetry_events WHERE acknowledged = FALSE AND predicted_label != 'normal' AND event_time > NOW() - INTERVAL '1 hour' ORDER BY event_time DESC LIMIT 40",
+              "format": "table"
+            }
+          ]
+        },
+
+        {
+          "id": 21,
+          "type": "stat",
+          "title": "🔴  Critical Faults (30m)",
+          "gridPos": { "x": 0, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": {
             "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "yellow", "value": 1 },
-                  { "color": "red", "value": 5 }
-                ]
-              },
+              "unit": "short",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "red", "value": 1 }
+              ]},
               "mappings": []
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_class > 0 AND event_time > NOW() - INTERVAL '30 minutes'",
+              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('prd_failure','combustion_instability','dielectric_breakdown') AND event_time > NOW() - INTERVAL '30 minutes'",
               "format": "table"
             }
           ]
         },
+
         {
-          "id": 2,
+          "id": 22,
           "type": "stat",
-          "title": "PRD Failures",
-          "gridPos": { "x": 4, "y": 0, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "none" },
+          "title": "🟠  Warnings (30m)",
+          "gridPos": { "x": 4, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
             "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "red", "value": 1 }
-                ]
-              }
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "orange", "value": 1 }
+              ]}
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label = 'prd_failure' AND event_time > NOW() - INTERVAL '30 minutes'",
+              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('thermal_runaway','blade_fouling','winding_overheat') AND event_time > NOW() - INTERVAL '30 minutes'",
               "format": "table"
             }
           ]
         },
+
         {
-          "id": 3,
+          "id": 23,
           "type": "stat",
-          "title": "Thermal Runaway",
-          "gridPos": { "x": 8, "y": 0, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "none" },
+          "title": "🟡  Advisories (30m)",
+          "gridPos": { "x": 8, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
             "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "orange", "value": 1 }
-                ]
-              }
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 1 }
+              ]}
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label = 'thermal_runaway' AND event_time > NOW() - INTERVAL '30 minutes'",
+              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('bearing_wear','rotor_imbalance','core_loosening') AND event_time > NOW() - INTERVAL '30 minutes'",
               "format": "table"
             }
           ]
         },
+
         {
-          "id": 4,
+          "id": 24,
           "type": "stat",
-          "title": "Bearing Wear",
-          "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "none" },
+          "title": "⏱  Mins Since Last Critical",
+          "description": "Time elapsed since last critical event. Goes red at <15 min, orange at <60 min.",
+          "gridPos": { "x": 12, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
             "defaults": {
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "yellow", "value": 1 }
-                ]
-              }
+              "unit": "m",
+              "decimals": 0,
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red",    "value": null },
+                { "color": "orange", "value": 15 },
+                { "color": "yellow", "value": 60 },
+                { "color": "green",  "value": 180 }
+              ]}
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label = 'bearing_wear' AND event_time > NOW() - INTERVAL '30 minutes'",
+              "rawSql": "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(event_time)))/60 AS value FROM telemetry_events WHERE predicted_label IN ('prd_failure','combustion_instability','dielectric_breakdown')",
               "format": "table"
             }
           ]
         },
+
         {
-          "id": 5,
-          "type": "timeseries",
-          "title": "PSI — Pressure (All Assets)",
-          "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+          "id": 25,
+          "type": "stat",
+          "title": "Unacknowledged Alerts",
+          "gridPos": { "x": 16, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null },
+                { "color": "yellow", "value": 1 },
+                { "color": "red", "value": 5 }
+              ]}
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE acknowledged = FALSE AND predicted_label != 'normal' AND event_time > NOW() - INTERVAL '1 hour'",
+              "format": "table"
+            }
+          ]
+        },
+
+        {
+          "id": 26,
+          "type": "stat",
+          "title": "Anomaly Rate (30m)",
+          "gridPos": { "x": 20, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "decimals": 1,
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 15 },
+                { "color": "red",    "value": 30 }
+              ]}
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN predicted_label != 'normal' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '30 minutes'",
+              "format": "table"
+            }
+          ]
+        },
+
+        {
+          "id": 9,
+          "type": "state-timeline",
+          "title": "Fleet Health Timeline — All 10 Assets",
+          "description": "Green = Normal · Yellow = Advisory (bearing/rotor/core) · Orange = Warning (thermal/blade/winding) · Red = Critical (PRD/combustion/dielectric). An operator reads the entire fleet in 3 seconds.",
+          "gridPos": { "x": 0, "y": 11, "w": 24, "h": 7 },
           "options": {
-            "tooltip": { "mode": "multi" },
+            "mergeValues": true,
+            "showValue": "never",
+            "alignValue": "left",
+            "rowHeight": 0.9,
             "legend": { "displayMode": "list", "placement": "bottom" }
           },
           "fieldConfig": {
             "defaults": {
-              "unit": "pressurebar",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "red", "value": null },
-                  { "color": "green", "value": 700 },
-                  { "color": "red", "value": 900 }
-                ]
-              }
+              "custom": { "lineWidth": 0, "fillOpacity": 85 },
+              "mappings": [
+                { "type": "value", "options": { "0": { "text": "Normal",   "color": "#00BFA5", "index": 0 } } },
+                { "type": "value", "options": { "1": { "text": "Advisory", "color": "#FFD600", "index": 1 } } },
+                { "type": "value", "options": { "2": { "text": "Warning",  "color": "#FF9100", "index": 2 } } },
+                { "type": "value", "options": { "3": { "text": "Critical", "color": "#FF1744", "index": 3 } } }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [ { "color": "#00BFA5", "value": null } ] }
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) GROUP BY event_time, asset_id ORDER BY event_time",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, CASE predicted_label WHEN 'bearing_wear' THEN 1 WHEN 'rotor_imbalance' THEN 1 WHEN 'core_loosening' THEN 1 WHEN 'thermal_runaway' THEN 2 WHEN 'blade_fouling' THEN 2 WHEN 'winding_overheat' THEN 2 WHEN 'prd_failure' THEN 3 WHEN 'combustion_instability' THEN 3 WHEN 'dielectric_breakdown' THEN 3 ELSE NULL END AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND predicted_label != 'normal' ORDER BY event_time",
               "format": "time_series"
             }
           ]
         },
+
+        {
+          "id": 5,
+          "type": "timeseries",
+          "title": "Pressure — Compressors (PSI)",
+          "gridPos": { "x": 0, "y": 18, "w": 8, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pressurepsi",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red", "value": null }, { "color": "green", "value": 700 }, { "color": "red", "value": 900 }
+              ]}
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'COMP%' GROUP BY event_time, asset_id ORDER BY event_time",
+              "format": "time_series"
+            }
+          ]
+        },
+
+        {
+          "id": 27,
+          "type": "timeseries",
+          "title": "Pressure — Turbines (PSI)",
+          "gridPos": { "x": 8, "y": 18, "w": 8, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pressurepsi",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red", "value": null }, { "color": "green", "value": 1800 }, { "color": "red", "value": 2400 }
+              ]}
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GTG%' GROUP BY event_time, asset_id ORDER BY event_time",
+              "format": "time_series"
+            }
+          ]
+        },
+
+        {
+          "id": 28,
+          "type": "timeseries",
+          "title": "Voltage — Transformers (kV proxy)",
+          "gridPos": { "x": 16, "y": 18, "w": 8, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "kvolt",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red", "value": null }, { "color": "green", "value": 110 }, { "color": "red", "value": 120 }
+              ]}
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'XFR%' GROUP BY event_time, asset_id ORDER BY event_time",
+              "format": "time_series"
+            }
+          ]
+        },
+
         {
           "id": 6,
           "type": "timeseries",
-          "title": "Temperature °F (All Assets)",
-          "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
-          "options": {
-            "tooltip": { "mode": "multi" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
+          "title": "Temperature °F — All Assets",
+          "gridPos": { "x": 0, "y": 26, "w": 12, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
               "unit": "fahrenheit",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "yellow", "value": 140 },
-                  { "color": "red", "value": 170 }
-                ]
-              }
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null }, { "color": "yellow", "value": 140 }, { "color": "red", "value": 175 }
+              ]}
             }
           },
           "targets": [
@@ -235,26 +390,19 @@ data:
             }
           ]
         },
+
         {
           "id": 7,
           "type": "timeseries",
-          "title": "Vibration mm (All Assets)",
-          "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
-          "options": {
-            "tooltip": { "mode": "multi" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
+          "title": "Vibration mm — All Assets",
+          "gridPos": { "x": 12, "y": 26, "w": 12, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
               "unit": "lengthmm",
-              "thresholds": {
-                "mode": "absolute",
-                "steps": [
-                  { "color": "green", "value": null },
-                  { "color": "yellow", "value": 0.3 },
-                  { "color": "red", "value": 0.7 }
-                ]
-              }
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "red", "value": 0.7 }
+              ]}
             }
           },
           "targets": [
@@ -265,20 +413,74 @@ data:
             }
           ]
         },
+
         {
-          "id": 8,
-          "type": "table",
-          "title": "Recent ML Detections",
-          "gridPos": { "x": 12, "y": 12, "w": 12, "h": 8 },
-          "options": { "sortBy": [{ "desc": true, "displayName": "event_time" }] },
+          "id": 10,
+          "type": "timeseries",
+          "title": "ML Confidence — Failure Predictions Only",
+          "description": "Model confidence when a failure is predicted. Rising confidence = escalating certainty. This is information threshold alarms cannot provide.",
+          "gridPos": { "x": 0, "y": 34, "w": 12, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percentunit",
+              "min": 0, "max": 1,
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "#FFD600", "value": null }, { "color": "#FF9100", "value": 0.7 }, { "color": "#FF1744", "value": 0.9 }
+              ]},
+              "custom": { "lineWidth": 2, "fillOpacity": 15, "thresholdsStyle": { "mode": "line+area" } }
+            }
+          },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time, asset_id, psi, temp_f, vibration, predicted_label, ROUND(confidence::numeric, 3) AS confidence, source FROM telemetry_events WHERE $__timeFilter(event_time) ORDER BY event_time DESC LIMIT 50",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, confidence AS value FROM telemetry_events WHERE predicted_label != 'normal' AND $__timeFilter(event_time) ORDER BY event_time",
+              "format": "time_series"
+            }
+          ]
+        },
+
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Anomaly Rate % — Hourly Trend (24h)",
+          "description": "% of all readings scored as failures per hour. Stable at ~0% under normal conditions. Spikes indicate injected scenarios or real degradation.",
+          "gridPos": { "x": 12, "y": 34, "w": 12, "h": 8 },
+          "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "percent",
+              "min": 0,
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green", "value": null }, { "color": "yellow", "value": 15 }, { "color": "red", "value": 30 }
+              ]},
+              "custom": { "lineWidth": 2, "fillOpacity": 20, "thresholdsStyle": { "mode": "line" } }
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT date_trunc('hour', event_time) AS time, 'Anomaly Rate' AS metric, ROUND(100.0 * SUM(CASE WHEN predicted_label != 'normal' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 2) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '24 hours' GROUP BY 1 ORDER BY 1",
+              "format": "time_series"
+            }
+          ]
+        },
+
+        {
+          "id": 8,
+          "type": "table",
+          "title": "Recent ML Detections — Full Log",
+          "gridPos": { "x": 0, "y": 42, "w": 24, "h": 8 },
+          "options": { "sortBy": [{ "desc": true, "displayName": "event_time" }], "cellHeight": "sm" },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time, asset_id, psi, temp_f, vibration, predicted_label, ROUND(confidence::numeric, 3) AS confidence, acknowledged, ai_narrative FROM telemetry_events WHERE $__timeFilter(event_time) ORDER BY event_time DESC LIMIT 75",
               "format": "table"
             }
           ]
         }
+
       ],
       "schemaVersion": 38
     }
