@@ -3,411 +3,303 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GDC-PM — Operations Command Center</title>
+  <title>GDC-PM — O&G Operations Command</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
-    /* ── Design Tokens ────────────────────────────────────────────────────── */
     :root {
-      --bg:       #0b0c10;
-      --surf:     #0f1318;
-      --surf2:    #141b22;
-      --surf3:    #1a2330;
-      --border:   #1e2a38;
-      --border2:  #2a3a50;
-      --text:     #e0e0e0;
-      --text2:    #a0b0c0;
-      --muted:    #5a6a7a;
-      --green:    #00e676;
-      --yellow:   #ffb300;
-      --orange:   #ff6d00;
-      --red:      #f44336;
-      --blue:     #1e90ff;
-      --blue-dim: rgba(30,144,255,0.15);
-      --font:     'Inter', system-ui, sans-serif;
-      --mono:     'JetBrains Mono', monospace;
+      --bg: #0b0c10; --surf: #0f1318; --surf2: #141b22; --surf3: #1a2330;
+      --border: #1e2a38; --border2: #2a3a50;
+      --text: #e0e0e0; --text2: #a0b0c0; --muted: #5a6a7a;
+      --green: #00e676; --yellow: #ffb300; --orange: #ff6d00; --red: #f44336;
+      --blue: #1e90ff;
+      --font: 'Inter', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; overflow: hidden; }
-    body { font-family: var(--font); background: var(--bg); color: var(--text);
-           font-size: 13px; line-height: 1.5; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; }
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-    /* ── Scrollbars ───────────────────────────────────────────────────────── */
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-
-    /* ── Header ──────────────────────────────────────────────────────────── */
+    /* ── Header ── */
     header {
       display: flex; align-items: center; gap: 12px;
-      padding: 0 20px; height: 52px; flex-shrink: 0;
-      background: var(--surf);
-      border-bottom: 1px solid var(--border);
-      transition: border-color 0.4s, background 0.4s;
+      padding: 0 20px; height: 50px; flex-shrink: 0;
+      background: var(--surf); border-bottom: 1px solid var(--border);
+      transition: background 0.4s, border-color 0.4s;
     }
-    header.airgap-on { border-bottom-color: #8b3a3a; background: #12080a; }
+    header.airgap-on { background: #12080a; border-bottom-color: #8b3a3a; }
     .hdr-logo { font-size: 18px; }
-    .hdr-title { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.3px; }
-    .hdr-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
-                 border-radius: 10px; background: rgba(30,144,255,0.2);
-                 color: var(--blue); border: 1px solid rgba(30,144,255,0.3);
-                 letter-spacing: 0.5px; }
-    .hdr-divider { width: 1px; height: 22px; background: var(--border); }
-
-    /* Alert pills in header */
-    .alert-pills { display: flex; gap: 6px; align-items: center; }
-    .a-pill { font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
-              border-radius: 10px; display: flex; align-items: center; gap: 3px; }
-    .a-critical { background: rgba(244,67,54,0.15);  color: var(--red);    border: 1px solid rgba(244,67,54,0.3); }
-    .a-warning  { background: rgba(255,109,0,0.15);  color: var(--orange); border: 1px solid rgba(255,109,0,0.3); }
-    .a-advisory { background: rgba(255,179,0,0.15);  color: var(--yellow); border: 1px solid rgba(255,179,0,0.3); }
-    .a-ok       { background: rgba(0,230,118,0.10);  color: var(--green);  border: 1px solid rgba(0,230,118,0.2); }
-    @keyframes hdr-pulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 8px 2px rgba(244,67,54,0.4)} }
-    .a-critical.pulsing { animation: hdr-pulse 1.8s ease-in-out infinite; }
-
-    /* Airgap toggle */
+    .hdr-title { font-size: 0.92rem; font-weight: 700; }
+    .hdr-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+                 background: rgba(30,144,255,0.2); color: var(--blue); border: 1px solid rgba(30,144,255,0.3); }
     .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
     #airgap-btn {
       font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 20px;
       border: 1px solid var(--border2); background: var(--surf2); color: var(--text2);
-      cursor: pointer; transition: all 0.25s; white-space: nowrap;
+      cursor: pointer; transition: all 0.25s;
     }
-    #airgap-btn:hover { border-color: var(--blue); color: var(--blue); }
     #airgap-btn.airgap-on { border-color: #8b3a3a; background: rgba(139,58,58,0.2); color: #ff6b6b; }
     #last-refresh { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); }
 
-    /* GDC edge badge shown in airgap mode */
-    #gdc-edge-badge {
-      display: none; font-size: 0.65rem; font-weight: 700; padding: 3px 9px;
-      border-radius: 10px; background: rgba(0,230,118,0.15); color: var(--green);
-      border: 1px solid rgba(0,230,118,0.3);
-    }
-    .airgap-on #gdc-edge-badge { display: inline-block; }
-
-    /* ── Airgap banner ────────────────────────────────────────────────────── */
+    /* ── Airgap Banner ── */
     #airgap-banner {
       display: none; align-items: center; justify-content: center; gap: 10px;
-      background: linear-gradient(90deg, #1a0a0a, #2a1010, #1a0a0a);
+      background: linear-gradient(90deg,#1a0a0a,#2a1010,#1a0a0a);
       border-bottom: 1px solid #5a2020; color: #ff8080;
       font-size: 0.72rem; font-weight: 600; padding: 5px 20px;
-      letter-spacing: 0.3px;
     }
     #airgap-banner.visible { display: flex; }
 
-    /* ── Dispatch banner (top of events) ─────────────────────────────────── */
-    #dispatch-banner {
-      display: none; align-items: center; gap: 8px; padding: 7px 12px;
-      background: rgba(244,67,54,0.12); border: 1px solid rgba(244,67,54,0.3);
-      border-radius: 6px; cursor: pointer; margin-bottom: 8px;
-      transition: background 0.15s;
-    }
-    #dispatch-banner:hover { background: rgba(244,67,54,0.2); }
-    #dispatch-banner.visible { display: flex; }
-    #dispatch-banner-text { font-size: 0.72rem; font-weight: 600; color: #ff8080; flex: 1; }
-    @keyframes banner-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
-    #dispatch-banner.visible { animation: banner-pulse 2s ease-in-out infinite; }
-
-    /* ── Layout ───────────────────────────────────────────────────────────── */
+    /* ── App Body ── */
     .app-body {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      height: calc(100vh - 52px);
+      display: flex; flex-direction: column;
+      height: calc(100vh - 50px); overflow: hidden;
+    }
+
+    /* ── Fleet Overview Bar ── */
+    #fleet-bar {
+      flex-shrink: 0; padding: 8px 16px;
+      background: var(--surf); border-bottom: 1px solid var(--border);
+    }
+    .fleet-bar-inner { display: flex; gap: 8px; align-items: stretch; }
+    .site-card {
+      flex: 1; border: 1px solid var(--border); border-radius: 8px;
+      background: var(--surf2); cursor: pointer; transition: all 0.2s;
       overflow: hidden;
     }
+    .site-card:hover { border-color: var(--border2); }
+    .site-card.has-warning { border-color: rgba(255,109,0,0.5); }
+    .site-card.has-critical { border-color: rgba(244,67,54,0.6); box-shadow: 0 0 12px rgba(244,67,54,0.15); }
+    .site-card.expanded { border-color: var(--blue); }
+    .site-hdr {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 10px; border-bottom: 1px solid transparent;
+    }
+    .site-card.expanded .site-hdr { border-bottom-color: var(--border); }
+    .site-icon { font-size: 16px; }
+    .site-info .site-name { font-size: 0.72rem; font-weight: 700; color: var(--text2); }
+    .site-info .site-sub  { font-size: 0.6rem; color: var(--muted); }
+    .site-dot { margin-left: auto; width: 9px; height: 9px; border-radius: 50%;
+                background: var(--green); transition: background 0.4s; }
+    .site-dot.warning  { background: var(--orange); }
+    .site-dot.critical { background: var(--red); box-shadow: 0 0 6px var(--red); }
+    @keyframes crit-pulse { 0%,100%{box-shadow:0 0 4px rgba(244,67,54,0.3)} 50%{box-shadow:0 0 10px rgba(244,67,54,0.7)} }
+    .site-dot.critical { animation: crit-pulse 1.2s ease-in-out infinite; }
 
-    /* ── LEFT PANEL ───────────────────────────────────────────────────────── */
+    /* Asset chips inside expanded site */
+    .site-assets {
+      display: none; padding: 6px 8px; flex-wrap: wrap; gap: 5px;
+    }
+    .site-card.expanded .site-assets { display: flex; }
+    .asset-chip {
+      font-family: var(--mono); font-size: 0.6rem; padding: 3px 8px;
+      border-radius: 12px; cursor: pointer; border: 1px solid var(--border);
+      background: var(--bg); color: var(--text2); transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .asset-chip:hover { border-color: var(--blue); color: var(--blue); }
+    .asset-chip.selected { border-color: var(--blue); background: rgba(30,144,255,0.1); color: var(--blue); }
+    .asset-chip.s-warning  { border-color: rgba(255,109,0,0.6); color: var(--orange); }
+    .asset-chip.s-critical { border-color: var(--red); color: var(--red); }
+
+    /* ── Active Incidents Panel ── */
+    #incidents-panel {
+      display: none; flex-shrink: 0;
+      background: rgba(244,67,54,0.04); border-bottom: 1px solid rgba(244,67,54,0.2);
+      padding: 6px 16px; max-height: 140px; overflow-y: auto;
+    }
+    #incidents-panel.visible { display: block; }
+    .incidents-hdr {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+      color: var(--red); text-transform: uppercase;
+    }
+    .incidents-hdr .clear-btn {
+      margin-left: auto; font-size: 0.62rem; padding: 2px 9px; border-radius: 8px;
+      border: 1px solid rgba(0,230,118,0.35); background: rgba(0,230,118,0.07);
+      color: var(--green); cursor: pointer; transition: all 0.15s;
+    }
+    .incidents-hdr .clear-btn:hover { background: rgba(0,230,118,0.15); }
+    .incident-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 4px 8px; border-radius: 5px; margin-bottom: 3px;
+      border: 1px solid var(--border); background: var(--surf);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .incident-row:hover { background: var(--surf2); }
+    .inc-sev { font-size: 12px; }
+    .inc-asset { font-family: var(--mono); font-size: 0.7rem; font-weight: 700; color: var(--blue); min-width: 120px; }
+    .inc-fault { font-size: 0.68rem; color: var(--text2); flex: 1; }
+    .inc-rul {
+      font-size: 0.65rem; font-weight: 700; min-width: 65px; text-align: right;
+      font-family: var(--mono);
+    }
+    .inc-rul.urgent  { color: var(--red); }
+    .inc-rul.warning { color: var(--orange); }
+    .inc-rul.ok      { color: var(--yellow); }
+    .rul-bar-wrap { width: 70px; }
+    .rul-bar-bg { height: 4px; border-radius: 2px; background: var(--border2); }
+    .rul-bar-fill { height: 4px; border-radius: 2px; background: var(--orange); transition: width 0.5s; }
+    .inc-diagnose {
+      font-size: 0.62rem; padding: 2px 8px; border-radius: 8px;
+      border: 1px solid rgba(30,144,255,0.4); background: rgba(30,144,255,0.08);
+      color: var(--blue); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .inc-diagnose:hover { background: rgba(30,144,255,0.2); }
+
+    /* ── Main Content Row ── */
+    .main-row {
+      display: grid; grid-template-columns: 360px 1fr;
+      flex: 1; min-height: 0; overflow: hidden;
+    }
+
+    /* ── Left Panel ── */
     .left-panel {
       display: flex; flex-direction: column;
-      border-right: 1px solid var(--border);
-      overflow: hidden;
+      border-right: 1px solid var(--border); overflow: hidden;
     }
-
-    /* Event Log */
     .section-hdr {
       font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
       color: var(--muted); text-transform: uppercase;
-      padding: 10px 14px 6px; border-bottom: 1px solid var(--border);
+      padding: 9px 14px 6px; border-bottom: 1px solid var(--border);
       display: flex; align-items: center; gap: 6px; flex-shrink: 0;
     }
-    .section-hdr .live-dot {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
-      box-shadow: 0 0 4px var(--green);
-      animation: blink 2s ease-in-out infinite;
-    }
+    .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+                box-shadow: 0 0 4px var(--green); animation: blink 2s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    #event-log {
-      flex: 1; overflow-y: auto; padding: 8px 10px;
-      min-height: 0;
-    }
+    /* Event Log */
+    #event-log { flex: 1; overflow-y: auto; padding: 6px 10px; min-height: 0; }
     .ev-row {
       display: grid; grid-template-columns: 58px 1fr auto auto;
-      gap: 6px; align-items: center;
-      padding: 5px 8px; border-radius: 5px; margin-bottom: 2px;
-      border: 1px solid transparent;
-      transition: background 0.15s;
-      cursor: default;
+      gap: 5px; align-items: center; padding: 4px 7px; border-radius: 5px;
+      margin-bottom: 2px; border: 1px solid transparent; cursor: default;
     }
     .ev-row:hover { background: var(--surf2); }
-    .ev-row.fault  { border-color: var(--border); }
-    .ev-time { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
-    .ev-asset {
-      font-family: var(--mono); font-size: 0.72rem; color: var(--blue);
-      cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
+    .ev-row.fault { border-color: var(--border); }
+    .ev-time { font-family: var(--mono); font-size: 0.66rem; color: var(--muted); }
+    .ev-asset { font-family: var(--mono); font-size: 0.68rem; color: var(--blue);
+                cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .ev-asset:hover { text-decoration: underline; }
-    .ev-label { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
-    .ev-action button, .dispatch-btn {
-      font-size: 0.62rem; padding: 2px 7px; border-radius: 10px;
+    .ev-label { font-size: 0.66rem; font-weight: 700; white-space: nowrap; }
+    .ev-action button {
+      font-size: 0.6rem; padding: 2px 6px; border-radius: 8px;
       border: 1px solid rgba(244,67,54,0.4); background: rgba(244,67,54,0.1);
-      color: #ff8080; cursor: pointer; white-space: nowrap;
-      transition: all 0.15s;
+      color: #ff8080; cursor: pointer;
     }
-    .ev-action button:hover, .dispatch-btn:hover { background: rgba(244,67,54,0.25); }
-    .ack-badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px;
+    .ev-action button:hover { background: rgba(244,67,54,0.25); }
+    .ack-badge { font-size: 0.58rem; padding: 1px 5px; border-radius: 6px;
                  background: rgba(0,230,118,0.1); color: var(--green);
                  border: 1px solid rgba(0,230,118,0.2); }
 
-    /* ── FAULT INJECTION PANEL ────────────────────────────────────────────── */
+    /* Fault Injection Panel */
     #inject-panel {
       flex-shrink: 0; border-top: 1px solid var(--border);
-      background: var(--surf); padding: 12px 14px;
-      max-height: 320px; overflow-y: auto;
+      background: var(--surf); padding: 10px 14px;
+      max-height: 300px; overflow-y: auto;
     }
     .inject-target {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
-      padding: 7px 10px; border-radius: 6px; background: var(--surf2);
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+      padding: 6px 10px; border-radius: 6px; background: var(--surf2);
       border: 1px solid var(--border);
     }
-    .inject-target .target-icon { font-size: 16px; }
-    .inject-target .target-name {
-      font-family: var(--mono); font-size: 0.8rem; font-weight: 700; color: var(--blue);
-    }
-    .inject-target .target-sub { font-size: 0.65rem; color: var(--muted); }
-    .inject-placeholder { color: var(--muted); font-size: 0.75rem; font-style: italic;
-                          text-align: center; padding: 10px 0; }
-
-    /* Fault type radio pills */
-    .fault-options { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+    .inject-target .t-icon { font-size: 15px; }
+    .inject-target .t-name { font-family: var(--mono); font-size: 0.78rem; font-weight: 700; color: var(--blue); }
+    .inject-target .t-sub  { font-size: 0.6rem; color: var(--muted); }
+    .inject-placeholder { color: var(--muted); font-size: 0.72rem; font-style: italic;
+                          text-align: center; padding: 8px 0; }
+    .fault-opts { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
     .fault-opt {
-      display: flex; align-items: center; gap: 8px; padding: 6px 10px;
-      border-radius: 6px; border: 1px solid var(--border); cursor: pointer;
-      transition: all 0.15s; background: var(--bg);
+      display: flex; align-items: center; gap: 7px; padding: 5px 9px;
+      border-radius: 5px; border: 1px solid var(--border); cursor: pointer;
+      background: var(--bg); transition: all 0.15s;
     }
-    .fault-opt:hover { border-color: var(--border2); background: var(--surf2); }
-    .fault-opt.selected { border-color: rgba(30,144,255,0.5); background: rgba(30,144,255,0.08); }
+    .fault-opt:hover  { border-color: var(--border2); background: var(--surf2); }
+    .fault-opt.sel    { border-color: rgba(30,144,255,0.5); background: rgba(30,144,255,0.08); }
     .fault-opt input[type=radio] { display: none; }
-    .fault-color-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .fault-info .fault-name { font-size: 0.75rem; font-weight: 600; }
-    .fault-info .fault-mode { font-size: 0.62rem; color: var(--muted); }
-
-    /* Inject controls row */
-    .inject-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .inject-opt-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.72rem; }
-    .inject-opt-row label { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text2); }
-    .inject-opt-row input[type=radio] { accent-color: var(--blue); }
+    .f-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .f-name { font-size: 0.72rem; font-weight: 600; }
+    .f-mode { font-size: 0.6rem; color: var(--muted); }
+    .inject-mode-row { display: flex; gap: 10px; margin-bottom: 7px; font-size: 0.7rem; }
+    .inject-mode-row label { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text2); }
+    .inject-mode-row input { accent-color: var(--blue); }
     .num-input {
       width: 55px; background: var(--bg); border: 1px solid var(--border);
-      color: var(--text); border-radius: 5px; padding: 3px 7px;
-      font-size: 0.78rem; font-family: var(--mono);
+      color: var(--text); border-radius: 4px; padding: 3px 7px;
+      font-size: 0.76rem; font-family: var(--mono);
     }
-    .duration-row { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text2); }
-
-    /* Inject buttons */
+    .inject-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .dur-row { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; color: var(--text2); margin-bottom: 7px; }
     .btn-inject {
-      flex: 1; padding: 8px 12px; border-radius: 6px; border: none;
-      font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
-      background: linear-gradient(135deg, #1565c0, #0d47a1); color: #fff;
+      flex: 1; padding: 7px 10px; border-radius: 6px; border: none;
+      background: linear-gradient(135deg,#1565c0,#0d47a1); color: #fff;
+      font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: filter 0.15s;
     }
     .btn-inject:hover { filter: brightness(1.15); }
-    .btn-inject:disabled { opacity: 0.4; cursor: not-allowed; }
     .btn-reset {
-      padding: 8px 10px; border-radius: 6px;
+      padding: 7px 10px; border-radius: 6px;
       border: 1px solid rgba(0,230,118,0.35); background: rgba(0,230,118,0.07);
-      color: var(--green); cursor: pointer; font-size: 0.78rem; font-weight: 600;
-      transition: all 0.15s; white-space: nowrap;
+      color: var(--green); cursor: pointer; font-size: 0.76rem; font-weight: 600;
     }
     .btn-reset:hover { background: rgba(0,230,118,0.15); }
-
-    /* Degrade progress */
-    #degrade-progress { display: none; margin-top: 8px; }
+    #degrade-progress { display: none; margin-top: 7px; }
     #degrade-progress.visible { display: block; }
-    .dprog-bar-bg { background: var(--border); border-radius: 3px; height: 4px; margin: 4px 0 2px; }
-    .dprog-bar { height: 4px; border-radius: 3px; background: var(--orange);
-                 transition: width 0.5s; }
-    .dprog-label { font-size: 0.65rem; color: var(--muted); display: flex; justify-content: space-between; }
-    #btn-cancel-degrade {
-      font-size: 0.65rem; padding: 2px 8px; border-radius: 8px; margin-top: 4px;
+    .dprog-lbl { font-size: 0.63rem; color: var(--muted); display: flex; justify-content: space-between; }
+    .dprog-bg { background: var(--border); border-radius: 2px; height: 4px; margin: 3px 0 2px; }
+    .dprog-fill { height: 4px; border-radius: 2px; background: var(--orange); transition: width 0.5s; }
+    #btn-cancel-deg {
+      font-size: 0.6rem; padding: 2px 7px; border-radius: 7px; margin-top: 3px;
       border: 1px solid rgba(255,109,0,0.4); background: rgba(255,109,0,0.1);
       color: var(--orange); cursor: pointer;
     }
 
-    /* Scenario buttons */
-    .scenarios-toggle {
-      font-size: 0.65rem; color: var(--muted); cursor: pointer; margin-top: 8px;
-      display: flex; align-items: center; gap: 4px;
+    /* ── Right Panel ── */
+    .right-panel { display: flex; flex-direction: column; overflow: hidden; }
+
+    /* Sensor tabs + plot */
+    #plot-section { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+    .plot-hdr {
+      display: flex; align-items: center; gap: 0; flex-shrink: 0;
+      border-bottom: 1px solid var(--border); background: var(--surf);
     }
-    .scenarios-toggle:hover { color: var(--text2); }
-    #scenario-list { display: none; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .plot-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+                  color: var(--muted); text-transform: uppercase; padding: 0 14px; white-space: nowrap; }
+    .sensor-tabs { display: flex; gap: 0; flex: 1; }
+    .sensor-tab {
+      padding: 9px 14px; font-size: 0.68rem; font-weight: 600; cursor: pointer;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .sensor-tab:hover { color: var(--text2); }
+    .sensor-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(30,144,255,0.05); }
+    .plot-asset-lbl { font-family: var(--mono); font-size: 0.68rem; color: var(--blue); padding: 0 12px; }
+    #btn-expand {
+      margin: 0 10px; font-size: 0.62rem; padding: 2px 8px; border-radius: 4px;
+      border: 1px solid var(--border); background: var(--surf2); color: var(--muted);
+      cursor: pointer; display: none;
+    }
+    #btn-expand:hover { color: var(--text2); }
+    #plot-iframe-wrap { flex: 1; min-height: 0; position: relative; background: var(--bg); }
+    #plot-iframe { width: 100%; height: 100%; border: none; display: none; }
+    #plot-placeholder {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px; color: var(--muted);
+    }
+    #plot-placeholder .ph-icon { font-size: 38px; opacity: 0.35; }
+    #plot-placeholder .ph-text { font-size: 0.74rem; text-align: center; line-height: 1.6; }
+
+    /* Scenario shortcuts at bottom of inject panel */
+    details summary { font-size: 0.63rem; color: var(--muted); cursor: pointer; list-style: none; margin-top: 8px; }
     .sc-btn {
-      padding: 6px 10px; border-radius: 5px; background: var(--bg);
-      border: 1px solid var(--border); color: var(--text); cursor: pointer;
-      text-align: left; font-size: 0.75rem; transition: all 0.15s;
+      width: 100%; text-align: left; padding: 5px 9px; border-radius: 5px;
+      background: var(--bg); border: 1px solid var(--border); color: var(--text);
+      cursor: pointer; font-size: 0.72rem; margin-top: 4px; transition: all 0.15s;
     }
     .sc-btn:hover { border-color: var(--border2); background: var(--surf2); }
     .sc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .sc-name { font-weight: 600; display: flex; align-items: center; gap: 4px; }
-    .sc-desc { font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+    .sc-name { font-weight: 600; }
+    .sc-desc { font-size: 0.62rem; color: var(--muted); margin-top: 1px; }
 
-    /* ── RIGHT PANEL ──────────────────────────────────────────────────────── */
-    .right-panel {
-      display: flex; flex-direction: column; overflow: hidden;
-    }
-
-    /* Plant Map */
-    #plant-map-section {
-      flex: 0 0 auto; border-bottom: 1px solid var(--border);
-      position: relative; padding: 0;
-    }
-    .map-header {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 14px 6px; border-bottom: 1px solid var(--border);
-      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
-      color: var(--muted); text-transform: uppercase;
-    }
-    .map-body {
-      padding: 12px 16px 14px;
-      position: relative; overflow: hidden;
-    }
-
-    /* Sites row */
-    .sites-row {
-      display: flex; align-items: stretch; gap: 0; position: relative; z-index: 2;
-    }
-
-    /* Transmission line connectors */
-    .tx-connector {
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      padding: 0 8px; gap: 2px; min-width: 50px; flex-shrink: 0; margin-top: 28px;
-    }
-    .tx-wire { width: 100%; height: 2px; background: repeating-linear-gradient(
-      90deg, var(--border2) 0, var(--border2) 6px, transparent 6px, transparent 12px); }
-    .tx-tower { font-size: 14px; color: var(--border2); }
-
-    /* Site zone */
-    .site-zone {
-      flex: 1; border: 1px solid var(--border);
-      border-radius: 8px; overflow: hidden;
-      background: var(--surf); transition: border-color 0.3s;
-    }
-    .site-zone.has-critical { border-color: rgba(244,67,54,0.5); }
-    .site-zone.has-warning  { border-color: rgba(255,109,0,0.4); }
-
-    .site-hdr {
-      padding: 6px 10px; border-bottom: 1px solid var(--border);
-      display: flex; align-items: center; gap: 6px;
-      background: var(--surf2);
-    }
-    .site-icon { font-size: 14px; }
-    .site-name { font-size: 0.68rem; font-weight: 700; color: var(--text2); }
-    .site-health { margin-left: auto; width: 8px; height: 8px; border-radius: 50%;
-                   background: var(--green); transition: background 0.4s; }
-    .site-health.warning  { background: var(--orange); }
-    .site-health.critical { background: var(--red); box-shadow: 0 0 6px var(--red); }
-
-    .site-assets { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; }
-
-    /* Asset node */
-    .asset-node {
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
-      padding: 7px 8px; border-radius: 7px;
-      border: 2px solid var(--border);
-      cursor: pointer; transition: all 0.2s;
-      background: var(--bg); min-width: 72px;
-      position: relative;
-    }
-    .asset-node:hover { background: var(--surf2); transform: translateY(-1px); }
-    .asset-node.selected { border-color: var(--blue) !important; background: rgba(30,144,255,0.08) !important; }
-
-    /* Status-based node styling */
-    .asset-node.s-normal   { border-color: rgba(0,230,118,0.4); }
-    .asset-node.s-advisory { border-color: rgba(255,179,0,0.6); }
-    .asset-node.s-warning  { border-color: rgba(255,109,0,0.7); }
-    .asset-node.s-critical { border-color: var(--red); box-shadow: 0 0 10px rgba(244,67,54,0.3); }
-    .asset-node.s-stale    { border-color: var(--border); opacity: 0.5; }
-
-    @keyframes node-pulse-warn { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 10px rgba(255,109,0,0.4)} }
-    @keyframes node-pulse-crit { 0%,100%{box-shadow:0 0 8px rgba(244,67,54,0.2)} 50%{box-shadow:0 0 16px rgba(244,67,54,0.6)} }
-    .asset-node.s-warning  { animation: node-pulse-warn 2s ease-in-out infinite; }
-    .asset-node.s-critical { animation: node-pulse-crit 1.2s ease-in-out infinite; }
-
-    .node-icon { font-size: 18px; line-height: 1; }
-    .node-name { font-family: var(--mono); font-size: 0.58rem; color: var(--text2);
-                 text-align: center; line-height: 1.3; }
-    .node-status-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--border2); transition: background 0.3s;
-    }
-    .asset-node.s-normal   .node-status-dot { background: var(--green); }
-    .asset-node.s-advisory .node-status-dot { background: var(--yellow); }
-    .asset-node.s-warning  .node-status-dot { background: var(--orange); }
-    .asset-node.s-critical .node-status-dot { background: var(--red); }
-
-    /* Dispatch badge on node */
-    .node-dispatch-badge {
-      display: none; position: absolute; top: -5px; right: -5px;
-      width: 14px; height: 14px; border-radius: 50%;
-      background: var(--red); color: #fff;
-      font-size: 8px; font-weight: 700; align-items: center; justify-content: center;
-      border: 1px solid var(--bg);
-    }
-    .asset-node.needs-dispatch .node-dispatch-badge { display: flex; }
-
-    /* Degrade progress ring on node */
-    .node-degrade-ring {
-      display: none; position: absolute; top: -4px; left: -4px;
-      width: calc(100% + 8px); height: calc(100% + 8px);
-      border: 2px dashed var(--orange); border-radius: 9px;
-      animation: spin-slow 3s linear infinite;
-    }
-    @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-    .asset-node.degrading .node-degrade-ring { display: block; }
-
-    /* ── 3D PLOT SECTION ──────────────────────────────────────────────────── */
-    #plot-section {
-      flex: 1; min-height: 0; display: flex; flex-direction: column;
-    }
-    .plot-header {
-      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-      padding: 8px 14px; border-bottom: 1px solid var(--border);
-      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
-      color: var(--muted); text-transform: uppercase;
-    }
-    .plot-header .plot-asset-label { color: var(--blue); font-family: var(--mono);
-                                      font-size: 0.72rem; font-weight: 400; }
-    #btn-expand-plot {
-      margin-left: auto; font-size: 0.65rem; padding: 3px 8px; border-radius: 5px;
-      border: 1px solid var(--border); background: var(--surf2); color: var(--muted);
-      cursor: pointer; transition: all 0.15s;
-    }
-    #btn-expand-plot:hover { border-color: var(--border2); color: var(--text2); }
-
-    #plot-iframe-wrap {
-      flex: 1; min-height: 0; position: relative;
-      background: var(--bg);
-    }
-    #plot-iframe {
-      width: 100%; height: 100%; border: none;
-      display: block;
-    }
-    #plot-placeholder {
-      position: absolute; inset: 0; display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 8px;
-      color: var(--muted); font-size: 0.8rem;
-    }
-    #plot-placeholder .ph-icon { font-size: 36px; opacity: 0.4; }
-    #plot-placeholder .ph-text { font-size: 0.75rem; text-align: center; line-height: 1.6; }
-
-    /* ── DISPATCH MODAL ───────────────────────────────────────────────────── */
+    /* ── Dispatch Modal ── */
     #dispatch-modal {
       display: none; position: fixed; inset: 0; z-index: 200;
       background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
@@ -415,458 +307,300 @@
     }
     #dispatch-modal.open { display: flex; }
     .modal-card {
-      background: var(--surf); border: 1px solid var(--border2);
-      border-radius: 12px; padding: 24px; width: 480px; max-width: 95vw;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      background: var(--surf); border: 1px solid var(--border2); border-radius: 12px;
+      padding: 22px; width: 460px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
-    .modal-title {
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px;
-      display: flex; align-items: center; gap: 8px;
-    }
-    .modal-title::before { content: '⚠'; font-size: 14px; color: var(--red); }
-    .wo-grid { display: grid; grid-template-columns: 120px 1fr; gap: 4px 10px; }
-    .wo-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; padding: 3px 0; }
-    .wo-value { font-size: 0.72rem; color: var(--text); padding: 3px 0; }
-    .wo-value.critical { color: var(--red); font-weight: 700; }
-    .wo-value.saved    { color: var(--green); font-weight: 700; }
-    .wo-divider { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); margin: 8px 0; }
-    .wo-narrative {
-      grid-column: 1/-1; background: var(--surf2); border: 1px solid var(--border);
-      border-radius: 6px; padding: 8px 10px; font-size: 0.7rem;
-      color: var(--text2); line-height: 1.6; margin-top: 4px;
-      max-height: 80px; overflow-y: auto;
-    }
-    .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
-    .btn-ack {
-      flex: 1; padding: 10px; border-radius: 7px; border: none;
-      background: linear-gradient(135deg, #c62828, #b71c1c); color: #fff;
-      font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: filter 0.15s;
-    }
-    .btn-ack:hover { filter: brightness(1.15); }
-    .btn-modal-close {
-      padding: 10px 16px; border-radius: 7px;
-      border: 1px solid var(--border); background: var(--surf2);
-      color: var(--text2); cursor: pointer; font-size: 0.78rem; transition: all 0.15s;
-    }
-    .btn-modal-close:hover { border-color: var(--border2); color: var(--text); }
+    .modal-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+                   letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px;
+                   display: flex; align-items: center; gap: 8px; }
+    .modal-title::before { content: '⚠'; font-size: 13px; color: var(--red); }
+    .wo-grid { display: grid; grid-template-columns: 120px 1fr; gap: 3px 10px; }
+    .wo-lbl { font-size: 0.7rem; color: var(--muted); font-weight: 600; padding: 2px 0; }
+    .wo-val { font-size: 0.7rem; color: var(--text); padding: 2px 0; }
+    .wo-val.crit { color: var(--red); font-weight: 700; }
+    .wo-val.saved { color: var(--green); font-weight: 700; }
+    .wo-div { grid-column: 1/-1; border-top: 1px solid var(--border); margin: 6px 0; }
+    .wo-narr { grid-column: 1/-1; background: var(--surf2); border: 1px solid var(--border);
+               border-radius: 5px; padding: 7px 9px; font-size: 0.68rem; color: var(--text2);
+               line-height: 1.6; margin-top: 3px; max-height: 70px; overflow-y: auto; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+    .btn-ack { flex: 1; padding: 9px; border-radius: 6px; border: none;
+               background: linear-gradient(135deg,#c62828,#b71c1c); color: #fff;
+               font-weight: 700; font-size: 0.8rem; cursor: pointer; }
+    .btn-ack:hover { filter: brightness(1.12); }
+    .btn-close-modal { padding: 9px 14px; border-radius: 6px; border: 1px solid var(--border);
+                       background: var(--surf2); color: var(--text2); cursor: pointer; font-size: 0.76rem; }
 
-    /* ── Fullscreen 3D overlay ────────────────────────────────────────────── */
-    #fs-plot {
-      display: none; position: fixed; inset: 0; z-index: 300;
-      background: var(--bg);
-    }
+    /* ── Fullscreen plot ── */
+    #fs-plot { display: none; position: fixed; inset: 0; z-index: 300; background: var(--bg); }
     #fs-plot.open { display: block; }
     #fs-plot iframe { width: 100%; height: 100%; border: none; }
-    #fs-close-btn {
-      position: absolute; top: 14px; right: 14px; z-index: 310;
-      padding: 6px 14px; border-radius: 6px; font-size: 0.75rem;
-      background: var(--surf); border: 1px solid var(--border);
-      color: var(--text); cursor: pointer;
-    }
+    #fs-close { position: absolute; top: 14px; right: 14px; z-index: 310;
+                padding: 5px 12px; border-radius: 5px; font-size: 0.73rem;
+                background: var(--surf); border: 1px solid var(--border); color: var(--text); cursor: pointer; }
 
-    /* ── Toast ────────────────────────────────────────────────────────────── */
-    #toast {
-      display: none; position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
-      z-index: 500; padding: 9px 18px; border-radius: 8px; font-size: 0.78rem;
-      max-width: 440px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-    }
-    #toast.info  { background: #1a2a40; border: 1px solid var(--border2); color: var(--text); }
-    #toast.ok    { background: rgba(0,230,118,0.15); border: 1px solid rgba(0,230,118,0.4); color: var(--green); }
-    #toast.error { background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.4); color: var(--red); }
+    /* ── Toast ── */
+    #toast { display: none; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+             z-index: 500; padding: 8px 18px; border-radius: 7px; font-size: 0.76rem;
+             max-width: 440px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
   </style>
 </head>
 <body>
 
-<!-- ── AIRGAP BANNER ──────────────────────────────────────────────────────── -->
+<!-- Airgap Banner -->
 <div id="airgap-banner">
-  <span>✈</span>
-  <span>CLOUD NETWORK DISCONNECTED — GDC Edge Running Autonomously</span>
-  <span>|</span>
-  <span style="color:var(--green)">✅ Local ML Inference Active &nbsp;·&nbsp; ✅ AlloyDB Omni Operational &nbsp;·&nbsp; ✅ RabbitMQ Local</span>
+  ✈ CLOUD NETWORK DISCONNECTED — GDC Edge Running Autonomously &nbsp;|&nbsp;
+  <span style="color:var(--green)">✅ ML Inference Active · ✅ AlloyDB Omni Operational</span>
 </div>
 
-<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
+<!-- Header -->
 <header id="main-header">
-  <span class="hdr-logo">⚡</span>
+  <span class="hdr-logo">⛽</span>
   <span class="hdr-title">GDC Predictive Maintenance</span>
-  <span class="hdr-badge">LIVE</span>
-  <div class="hdr-divider"></div>
-  <div class="alert-pills">
-    <span class="a-pill a-critical" id="pill-critical">🔴 0 Critical</span>
-    <span class="a-pill a-warning"  id="pill-warning">⚠ 0 Warning/Advisory</span>
-    <span class="a-pill a-ok"       id="pill-ok">✓ All Clear</span>
-  </div>
+  <span class="hdr-badge">O&amp;G LIVE</span>
   <div class="hdr-right">
-    <span id="gdc-edge-badge">GDC Edge ✅</span>
     <button id="airgap-btn" onclick="toggleAirgap()">🌐 Cloud Connected</button>
     <span id="last-refresh">--:--:--</span>
   </div>
 </header>
 
-<!-- ── MAIN LAYOUT ─────────────────────────────────────────────────────────── -->
 <div class="app-body">
 
-  <!-- LEFT: Event log + Fault injection -->
-  <div class="left-panel">
-
-    <!-- Dispatch banner -->
-    <div id="dispatch-banner" onclick="openTopDispatch()">
-      <span style="font-size:14px;color:var(--red)">⚠</span>
-      <span id="dispatch-banner-text"></span>
-      <span style="font-size:0.65rem;color:var(--muted);white-space:nowrap">Click to dispatch →</span>
-    </div>
-
-    <!-- Event log section header -->
-    <div class="section-hdr">
-      <span class="live-dot"></span>
-      Live Detection Feed
-    </div>
-
-    <!-- Event rows -->
-    <div id="event-log">
-      <div style="color:var(--muted);font-size:0.75rem;padding:20px;text-align:center">Loading events…</div>
-    </div>
-
-    <!-- Fault injection panel -->
-    <div id="inject-panel">
-      <div class="section-hdr" style="padding:0 0 8px;border:none;font-size:0.62rem">
-        ⚙ FAULT INJECTION
-      </div>
-
-      <!-- Selected asset target -->
-      <div id="inject-target" class="inject-placeholder">
-        ← Click an asset on the plant map to select it
-      </div>
-
-      <!-- Fault options (populated by JS) -->
-      <div id="fault-options" class="fault-options" style="display:none"></div>
-
-      <!-- Injection mode: instant vs gradual -->
-      <div id="inject-mode-row" class="inject-opt-row" style="display:none">
-        <label><input type="radio" name="inject-mode" value="instant" checked onchange="onModeChange()"> Instant burst</label>
-        <label><input type="radio" name="inject-mode" value="gradual" onchange="onModeChange()"> Gradual ramp</label>
-      </div>
-
-      <!-- Burst count (instant mode) -->
-      <div id="burst-row" class="inject-controls" style="display:none">
-        <span style="color:var(--muted);font-size:0.72rem">Burst count:</span>
-        <input type="number" id="burst-count" class="num-input" value="3" min="1" max="10">
-      </div>
-
-      <!-- Duration (gradual mode) -->
-      <div id="duration-row" class="duration-row" style="display:none;margin-bottom:8px">
-        <span style="color:var(--muted)">Ramp duration:</span>
-        <input type="number" id="degrade-duration" class="num-input" value="60" min="15" max="300">
-        <span style="color:var(--muted)">seconds</span>
-      </div>
-
-      <!-- Degrade progress bar -->
-      <div id="degrade-progress">
-        <div class="dprog-label">
-          <span id="dprog-fault">Degrading…</span>
-          <span id="dprog-pct">0%</span>
-        </div>
-        <div class="dprog-bar-bg"><div id="dprog-bar" class="dprog-bar" style="width:0%"></div></div>
-        <button id="btn-cancel-degrade" onclick="cancelDegrade()">✕ Cancel</button>
-      </div>
-
-      <!-- Inject / Reset buttons -->
-      <div id="inject-btns" class="inject-controls" style="display:none;margin-top:8px">
-        <button class="btn-inject" id="btn-inject" onclick="injectFault()">⚡ Inject Fault</button>
-        <button class="btn-reset" onclick="resetNormal()">↺ Reset</button>
-      </div>
-
-      <!-- Scenario shortcuts -->
-      <details style="margin-top:10px">
-        <summary style="font-size:0.65rem;color:var(--muted);cursor:pointer;list-style:none">
-          ▸ Demo Scenarios
-        </summary>
-        <div id="scenario-list" style="margin-top:6px;display:flex;flex-direction:column;gap:4px"></div>
-      </details>
+  <!-- ── Fleet Overview Bar ── -->
+  <div id="fleet-bar">
+    <div class="fleet-bar-inner" id="fleet-cards">
+      <!-- Dynamically built by JS -->
     </div>
   </div>
 
-  <!-- RIGHT: Plant map + 3D plot -->
-  <div class="right-panel">
+  <!-- ── Active Incidents Panel ── -->
+  <div id="incidents-panel">
+    <div class="incidents-hdr">
+      🔴 ACTIVE INCIDENTS — Dispatch Required
+      <button class="clear-btn" onclick="clearDispatch()">✕ Clear All Work Orders</button>
+    </div>
+    <div id="incidents-list"></div>
+  </div>
 
-    <!-- Plant Map -->
-    <div id="plant-map-section">
-      <div class="map-header">
-        🗺 Plant Asset Monitor
-        <span style="margin-left:6px;color:var(--muted);font-weight:400;font-size:0.62rem;font-style:italic">
-          — click any asset to select
-        </span>
+  <!-- ── Main Row ── -->
+  <div class="main-row">
+
+    <!-- Left: Event Feed + Fault Injection -->
+    <div class="left-panel">
+
+      <div class="section-hdr">
+        <span class="live-dot"></span>
+        Live Detection Feed
       </div>
-      <div class="map-body">
-        <div class="sites-row">
 
-          <!-- VALLEY SUBSTATION -->
-          <div class="site-zone" id="zone-valley">
-            <div class="site-hdr">
-              <span class="site-icon">🏭</span>
-              <span class="site-name">Valley Substation</span>
-              <span class="site-health" id="health-valley"></span>
-            </div>
-            <div class="site-assets">
-              <div class="asset-node" id="node-COMP-TX-VALLEY-01" data-id="COMP-TX-VALLEY-01" data-class="compressor" onclick="selectAsset('COMP-TX-VALLEY-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">⚙</div>
-                <div class="node-name">COMP-V01<br>Compressor</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-COMP-TX-VALLEY-02" data-id="COMP-TX-VALLEY-02" data-class="compressor" onclick="selectAsset('COMP-TX-VALLEY-02')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">⚙</div>
-                <div class="node-name">COMP-V02<br>Compressor</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-GTG-VALLEY-01" data-id="GTG-VALLEY-01" data-class="turbine" onclick="selectAsset('GTG-VALLEY-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">🌀</div>
-                <div class="node-name">GTG-V01<br>Turbine</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-XFR-VALLEY-01" data-id="XFR-VALLEY-01" data-class="transformer" onclick="selectAsset('XFR-VALLEY-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">🔌</div>
-                <div class="node-name">XFR-V01<br>115kV XFMR</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Transmission connector -->
-          <div class="tx-connector">
-            <div class="tx-wire"></div>
-            <div class="tx-tower">🗼</div>
-            <div class="tx-wire"></div>
-          </div>
-
-          <!-- RIDGE PLANT -->
-          <div class="site-zone" id="zone-ridge">
-            <div class="site-hdr">
-              <span class="site-icon">🏗</span>
-              <span class="site-name">Ridge Plant</span>
-              <span class="site-health" id="health-ridge"></span>
-            </div>
-            <div class="site-assets">
-              <div class="asset-node" id="node-COMP-TX-RIDGE-01" data-id="COMP-TX-RIDGE-01" data-class="compressor" onclick="selectAsset('COMP-TX-RIDGE-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">⚙</div>
-                <div class="node-name">COMP-R01<br>Compressor</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-COMP-TX-RIDGE-02" data-id="COMP-TX-RIDGE-02" data-class="compressor" onclick="selectAsset('COMP-TX-RIDGE-02')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">⚙</div>
-                <div class="node-name">COMP-R02<br>Compressor</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-GTG-RIDGE-01" data-id="GTG-RIDGE-01" data-class="turbine" onclick="selectAsset('GTG-RIDGE-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">🌀</div>
-                <div class="node-name">GTG-R01<br>Turbine</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-XFR-RIDGE-01" data-id="XFR-RIDGE-01" data-class="transformer" onclick="selectAsset('XFR-RIDGE-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">🔌</div>
-                <div class="node-name">XFR-R01<br>115kV XFMR</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Transmission connector -->
-          <div class="tx-connector">
-            <div class="tx-wire"></div>
-            <div class="tx-tower">🗼</div>
-            <div class="tx-wire"></div>
-          </div>
-
-          <!-- BASIN STATION -->
-          <div class="site-zone" id="zone-basin" style="max-width:180px">
-            <div class="site-hdr">
-              <span class="site-icon">⛽</span>
-              <span class="site-name">Basin Station</span>
-              <span class="site-health" id="health-basin"></span>
-            </div>
-            <div class="site-assets">
-              <div class="asset-node" id="node-COMP-TX-BASIN-01" data-id="COMP-TX-BASIN-01" data-class="compressor" onclick="selectAsset('COMP-TX-BASIN-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">⚙</div>
-                <div class="node-name">COMP-B01<br>Compressor</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-              <div class="asset-node" id="node-XFR-BASIN-01" data-id="XFR-BASIN-01" data-class="transformer" onclick="selectAsset('XFR-BASIN-01')">
-                <div class="node-degrade-ring"></div>
-                <div class="node-icon">🔌</div>
-                <div class="node-name">XFR-B01<br>115kV XFMR</div>
-                <div class="node-status-dot"></div>
-                <div class="node-dispatch-badge">!</div>
-              </div>
-            </div>
-          </div>
-
-        </div><!-- .sites-row -->
-      </div><!-- .map-body -->
-    </div><!-- #plant-map-section -->
-
-    <!-- 3D Sensor Cluster Plot -->
-    <div id="plot-section">
-      <div class="plot-header">
-        📈 ML Predictive Forecast
-        <span class="plot-asset-label" id="plot-asset-label">— select an asset</span>
-        <button id="btn-expand-plot" onclick="expandPlot()" style="display:none">⤢ Fullscreen</button>
+      <div id="event-log">
+        <div style="color:var(--muted);padding:18px;text-align:center;font-size:0.74rem">Loading events…</div>
       </div>
-      <div id="plot-iframe-wrap">
-        <div id="plot-placeholder">
-          <div class="ph-icon">📡</div>
-          <div class="ph-text">
-            Select an asset on the plant map above<br>
-            to view its live telemetry and ML predictive forecast<br>
-            <span style="color:var(--muted);font-size:0.65rem">(Time-to-Failure projection based on multivariate degradation patterns)</span>
-          </div>
+
+      <div id="inject-panel">
+        <div class="section-hdr" style="padding:0 0 7px;border:none;font-size:0.6rem">⚙ FAULT INJECTION</div>
+
+        <div id="inject-target" class="inject-placeholder">← Select an asset from the Fleet Bar or Event Log</div>
+
+        <div id="fault-opts" class="fault-opts" style="display:none"></div>
+        <div id="mode-row" class="inject-mode-row" style="display:none">
+          <label><input type="radio" name="imode" value="instant" checked onchange="onModeChange()"> Instant burst</label>
+          <label><input type="radio" name="imode" value="gradual" onchange="onModeChange()"> Gradual ramp</label>
         </div>
-        <iframe id="plot-iframe" src="" style="display:none"></iframe>
+        <div id="burst-row" class="inject-row" style="display:none;margin-bottom:7px">
+          <span style="color:var(--muted);font-size:0.7rem">Burst:</span>
+          <input type="number" id="burst-count" class="num-input" value="3" min="1" max="10">
+        </div>
+        <div id="dur-row" class="dur-row" style="display:none">
+          <span style="color:var(--muted)">Duration:</span>
+          <input type="number" id="degrade-dur" class="num-input" value="60" min="15" max="300">
+          <span style="color:var(--muted)">sec</span>
+        </div>
+
+        <div id="degrade-progress">
+          <div class="dprog-lbl"><span id="dprog-label">Degrading…</span><span id="dprog-pct">0%</span></div>
+          <div class="dprog-bg"><div id="dprog-fill" class="dprog-fill" style="width:0%"></div></div>
+          <button id="btn-cancel-deg" onclick="cancelDegrade()">✕ Cancel</button>
+        </div>
+
+        <div id="inject-btns" class="inject-row" style="display:none;margin-top:8px">
+          <button class="btn-inject" onclick="injectFault()">⚡ Inject Fault</button>
+          <button class="btn-reset"  onclick="resetNormal()">↺ Reset</button>
+        </div>
+
+        <details>
+          <summary>▸ Demo Scenarios</summary>
+          <div id="scenario-list"></div>
+        </details>
+      </div>
+
+    </div>
+
+    <!-- Right: Plotly Forecast with Sensor Tabs -->
+    <div class="right-panel">
+      <div id="plot-section">
+        <div class="plot-hdr">
+          <span class="plot-title">📈 ML Forecast</span>
+          <div class="sensor-tabs">
+            <div class="sensor-tab active" id="tab-psi" onclick="selectTab('psi')">Pressure</div>
+            <div class="sensor-tab" id="tab-temp" onclick="selectTab('temp')">Temperature</div>
+            <div class="sensor-tab" id="tab-vib" onclick="selectTab('vib')">Vibration</div>
+          </div>
+          <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
+          <button id="btn-expand" onclick="expandPlot()">⤢</button>
+        </div>
+        <div id="plot-iframe-wrap">
+          <div id="plot-placeholder">
+            <div class="ph-icon">🛢</div>
+            <div class="ph-text">
+              Select an asset from the Fleet Bar above<br>to view its ML Predictive Forecast<br>
+              <span style="color:var(--muted);font-size:0.62rem">XGBoost RUL Regressor · Time-to-Failure Projection</span>
+            </div>
+          </div>
+          <iframe id="plot-iframe" src=""></iframe>
+        </div>
       </div>
     </div>
 
-  </div><!-- .right-panel -->
+  </div><!-- .main-row -->
 </div><!-- .app-body -->
 
-<!-- ── DISPATCH MODAL ──────────────────────────────────────────────────────── -->
+<!-- Dispatch Modal -->
 <div id="dispatch-modal">
   <div class="modal-card">
     <div class="modal-title">Local Work Order — Operator Dispatch Required</div>
-    <div class="wo-grid" id="dispatch-wo-grid">
-      <!-- Populated by JS -->
-    </div>
+    <div class="wo-grid" id="wo-grid"></div>
     <div class="modal-actions">
-      <input type="hidden" id="dispatch-event-id" value="">
-      <button class="btn-ack" onclick="acknowledgeDispatch()">✔ Acknowledge & Dispatch Crew</button>
-      <button class="btn-modal-close" onclick="closeDispatch()">Close</button>
+      <input type="hidden" id="wo-event-id">
+      <button class="btn-ack" onclick="acknowledgeDispatch()">✔ Acknowledge &amp; Dispatch Crew</button>
+      <button class="btn-close-modal" onclick="closeModal()">Close</button>
     </div>
   </div>
 </div>
 
-<!-- ── FULLSCREEN PLOT ─────────────────────────────────────────────────────── -->
+<!-- Fullscreen plot -->
 <div id="fs-plot">
-  <button id="fs-close-btn" onclick="closeFsPlot()">✕ Close</button>
+  <button id="fs-close" onclick="closeFsPlot()">✕ Close</button>
   <iframe id="fs-iframe" src=""></iframe>
 </div>
 
-<!-- ── TOAST ──────────────────────────────────────────────────────────────── -->
 <div id="toast"></div>
 
-<!-- ── JAVASCRIPT ─────────────────────────────────────────────────────────── -->
 <script>
-// ────────────────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ────────────────────────────────────────────────────────────────────────────
-const FAULT_TYPES_BY_CLASS = {
-  compressor:  ['prd_failure', 'thermal_runaway', 'bearing_wear'],
-  turbine:     ['combustion_instability', 'blade_fouling', 'rotor_imbalance'],
-  transformer: ['winding_overheat', 'dielectric_breakdown', 'core_loosening'],
+// ────────── CONSTANTS ──────────────────────────────────────────────────────────
+const SITES = {
+  pad_alpha:   { name: 'Pad Alpha',   icon: '🛢', type: 'Production', assets: ['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','GLIFT-ALPHA-1','GLIFT-ALPHA-2'] },
+  pad_bravo:   { name: 'Pad Bravo',   icon: '🛢', type: 'Production', assets: ['ESP-BRAVO-1','ESP-BRAVO-2','ESP-BRAVO-3','ESP-BRAVO-4','GLIFT-BRAVO-1','GLIFT-BRAVO-2'] },
+  pad_charlie: { name: 'Pad Charlie', icon: '🛢', type: 'Production', assets: ['ESP-CHARLIE-1','ESP-CHARLIE-2','ESP-CHARLIE-3','GLIFT-CHARLIE-1'] },
+  rig_42:      { name: 'Rig 42',      icon: '🏗', type: 'Drilling',   assets: ['MUD-RIG42-1','MUD-RIG42-2','MUD-RIG42-3','TOPDRIVE-RIG42-1'] },
 }
-const GRADUAL_FAULTS = new Set([
-  'bearing_wear', 'thermal_runaway', 'blade_fouling',
-  'winding_overheat', 'core_loosening', 'rotor_imbalance',
-])
-const FAULT_META = {
-  prd_failure:            { label:'PRD Failure',             color:'#e53935', gradual:false },
-  thermal_runaway:        { label:'Thermal Runaway',          color:'#ff6f00', gradual:true  },
-  bearing_wear:           { label:'Bearing Wear',             color:'#f9a825', gradual:true  },
-  combustion_instability: { label:'Combustion Instability',   color:'#b71c1c', gradual:false },
-  blade_fouling:          { label:'Blade Fouling',            color:'#e65100', gradual:true  },
-  rotor_imbalance:        { label:'Rotor Imbalance',          color:'#f57f17', gradual:true  },
-  winding_overheat:       { label:'Winding Overheat',         color:'#880e4f', gradual:true  },
-  dielectric_breakdown:   { label:'Dielectric Breakdown',     color:'#6a1aaf', gradual:false },
-  core_loosening:         { label:'Core Loosening',           color:'#1a237e', gradual:true  },
-}
+
 const ASSET_META = {
-  'COMP-TX-VALLEY-01': { label:'COMP-V01', location:'Valley Transmission Substation', type:'Gas Compressor',    site:'valley',  contact:'Valley Station (Ext. 412)' },
-  'COMP-TX-VALLEY-02': { label:'COMP-V02', location:'Valley Transmission Substation', type:'Gas Compressor',    site:'valley',  contact:'Valley Station (Ext. 412)' },
-  'GTG-VALLEY-01':     { label:'GTG-V01',  location:'Valley Transmission Substation', type:'Gas Turbine Gen.',  site:'valley',  contact:'Valley Station (Ext. 413)' },
-  'XFR-VALLEY-01':     { label:'XFR-V01',  location:'Valley Transmission Substation', type:'HV Transformer',   site:'valley',  contact:'Valley Station (Ext. 414)' },
-  'COMP-TX-RIDGE-01':  { label:'COMP-R01', location:'Ridge Transmission Plant',       type:'Gas Compressor',    site:'ridge',   contact:'Ridge Plant (Ext. 520)'    },
-  'COMP-TX-RIDGE-02':  { label:'COMP-R02', location:'Ridge Transmission Plant',       type:'Gas Compressor',    site:'ridge',   contact:'Ridge Plant (Ext. 520)'    },
-  'GTG-RIDGE-01':      { label:'GTG-R01',  location:'Ridge Transmission Plant',       type:'Gas Turbine Gen.',  site:'ridge',   contact:'Ridge Plant (Ext. 521)'    },
-  'XFR-RIDGE-01':      { label:'XFR-R01',  location:'Ridge Transmission Plant',       type:'HV Transformer',   site:'ridge',   contact:'Ridge Plant (Ext. 522)'    },
-  'COMP-TX-BASIN-01':  { label:'COMP-B01', location:'Basin Distribution Station',     type:'Gas Compressor',    site:'basin',   contact:'Basin Station (Ext. 600)'  },
-  'XFR-BASIN-01':      { label:'XFR-B01',  location:'Basin Distribution Station',     type:'HV Transformer',   site:'basin',   contact:'Basin Station (Ext. 601)'  },
+  'ESP-ALPHA-1':    {label:'ESP-A1',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-1',      contact:'Pad Alpha Ops (Ext. 210)'},
+  'ESP-ALPHA-2':    {label:'ESP-A2',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-2',      contact:'Pad Alpha Ops (Ext. 210)'},
+  'ESP-ALPHA-3':    {label:'ESP-A3',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-3',      contact:'Pad Alpha Ops (Ext. 211)'},
+  'ESP-ALPHA-4':    {label:'ESP-A4',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-4',      contact:'Pad Alpha Ops (Ext. 211)'},
+  'GLIFT-ALPHA-1':  {label:'GL-A1',   site:'pad_alpha',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Alpha — Injection Stn', contact:'Pad Alpha Ops (Ext. 212)'},
+  'GLIFT-ALPHA-2':  {label:'GL-A2',   site:'pad_alpha',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Alpha — Injection Stn', contact:'Pad Alpha Ops (Ext. 212)'},
+  'ESP-BRAVO-1':    {label:'ESP-B1',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-1',      contact:'Pad Bravo Ops (Ext. 320)'},
+  'ESP-BRAVO-2':    {label:'ESP-B2',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-2',      contact:'Pad Bravo Ops (Ext. 320)'},
+  'ESP-BRAVO-3':    {label:'ESP-B3',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-3',      contact:'Pad Bravo Ops (Ext. 321)'},
+  'ESP-BRAVO-4':    {label:'ESP-B4',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-4',      contact:'Pad Bravo Ops (Ext. 321)'},
+  'GLIFT-BRAVO-1':  {label:'GL-B1',   site:'pad_bravo',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 322)'},
+  'GLIFT-BRAVO-2':  {label:'GL-B2',   site:'pad_bravo',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 322)'},
+  'ESP-CHARLIE-1':  {label:'ESP-C1',   site:'pad_charlie', type:'ESP',          aclass:'esp',      loc:'Pad Charlie — Well C-1',    contact:'Pad Charlie Ops (Ext. 410)'},
+  'ESP-CHARLIE-2':  {label:'ESP-C2',   site:'pad_charlie', type:'ESP',          aclass:'esp',      loc:'Pad Charlie — Well C-2',    contact:'Pad Charlie Ops (Ext. 410)'},
+  'ESP-CHARLIE-3':  {label:'ESP-C3',   site:'pad_charlie', type:'ESP',          aclass:'esp',      loc:'Pad Charlie — Well C-3',    contact:'Pad Charlie Ops (Ext. 411)'},
+  'GLIFT-CHARLIE-1':{label:'GL-C1',   site:'pad_charlie', type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Charlie — Injection Stn',contact:'Pad Charlie Ops (Ext. 412)'},
+  'MUD-RIG42-1':    {label:'MUD-1',    site:'rig_42',      type:'Mud Pump',     aclass:'mud_pump', loc:'Rig 42 — Pump Room #1',     contact:'Rig 42 Driller (Ext. 500)'},
+  'MUD-RIG42-2':    {label:'MUD-2',    site:'rig_42',      type:'Mud Pump',     aclass:'mud_pump', loc:'Rig 42 — Pump Room #2',     contact:'Rig 42 Driller (Ext. 500)'},
+  'MUD-RIG42-3':    {label:'MUD-3',    site:'rig_42',      type:'Mud Pump',     aclass:'mud_pump', loc:'Rig 42 — Pump Room #3',     contact:'Rig 42 Driller (Ext. 501)'},
+  'TOPDRIVE-RIG42-1':{label:'TDRIVE',  site:'rig_42',      type:'Top Drive',    aclass:'top_drive',loc:'Rig 42 — Derrick Floor',    contact:'Rig 42 Tool Pusher (Ext. 502)'},
 }
+
+const FAULT_META = {
+  gas_lock:                    {label:'Gas Lock',                    color:'#f44336', gradual:false},
+  sand_ingress:                {label:'Sand Ingress',                color:'#f9a825', gradual:true},
+  motor_overheat:              {label:'Motor Overheat',              color:'#ff6d00', gradual:true},
+  valve_failure:               {label:'Valve Failure',               color:'#e53935', gradual:false},
+  thermal_runaway:             {label:'Thermal Runaway',             color:'#ff6f00', gradual:true},
+  bearing_wear:                {label:'Bearing Wear',                color:'#f9a825', gradual:true},
+  pulsation_dampener_failure:  {label:'Dampener Failure',            color:'#b71c1c', gradual:false},
+  valve_washout:               {label:'Valve Seat Washout',          color:'#e65100', gradual:true},
+  piston_seal_wear:            {label:'Piston Seal Wear',            color:'#f57f17', gradual:true},
+  gearbox_bearing_spalling:    {label:'Gearbox Bearing Spalling',    color:'#880e4f', gradual:true},
+  hydraulic_leak:              {label:'Hydraulic Leak',              color:'#4a148c', gradual:true},
+}
+
+const FAULTS_BY_CLASS = {
+  esp:       ['gas_lock','sand_ingress','motor_overheat'],
+  gas_lift:  ['valve_failure','thermal_runaway','bearing_wear'],
+  mud_pump:  ['pulsation_dampener_failure','valve_washout','piston_seal_wear'],
+  top_drive: ['gearbox_bearing_spalling','hydraulic_leak'],
+}
+
+const SENSOR_LABELS = {
+  esp:       {psi:'Intake Pressure (PSI)', temp:'Motor Winding Temp (°F)', vib:'Motor Vibration (mm/s)'},
+  gas_lift:  {psi:'Discharge Pressure (PSI)', temp:'Discharge Temp (°F)', vib:'Frame Vibration (mm/s)'},
+  mud_pump:  {psi:'Discharge Pressure (PSI)', temp:'Fluid End Temp (°F)', vib:'Module Vibration (mm/s)'},
+  top_drive: {psi:'Hydraulic Pressure (PSI)', temp:'Gearbox Oil Temp (°F)', vib:'Gearbox Vibration (mm/s)'},
+}
+
+const CLASS_ICONS = {esp:'⚡', gas_lift:'⚙', mud_pump:'🔩', top_drive:'🔄'}
+
 const REMEDIATION = {
-  thermal_runaway:        { risk:'Compressor failure in ~2-4 hours',      action:'Coolant system inspection + flush',       cost:'$150,000+' },
-  bearing_wear:           { risk:'Mechanical failure in ~8-24 hours',      action:'Bearing inspection + replacement',        cost:'$85,000+'  },
-  prd_failure:            { risk:'Uncontrolled pressure release — immediate', action:'Shutdown + PRD valve inspection',       cost:'$220,000+' },
-  combustion_instability: { risk:'Turbine damage in ~1-2 hours',           action:'Fuel system + combustor inspection',      cost:'$300,000+' },
-  blade_fouling:          { risk:'Efficiency loss + risk in ~12 hours',     action:'Compressor wash + blading inspection',    cost:'$95,000+'  },
-  rotor_imbalance:        { risk:'Vibration failure in ~6-12 hours',        action:'Rotor dynamic balancing procedure',       cost:'$120,000+' },
-  winding_overheat:       { risk:'Transformer failure in ~1-3 hours',       action:'Load reduction + cooling inspection',     cost:'$400,000+' },
-  dielectric_breakdown:   { risk:'Arc fault — immediate shutdown required', action:'De-energize + insulation resistance test', cost:'$500,000+' },
-  core_loosening:         { risk:'Mechanical failure in ~24-72 hours',      action:'Core bolt inspection + re-torque',        cost:'$75,000+'  },
+  gas_lock:                   {risk:'Gas lock — production stopped immediately', action:'Shut down pump, wait 4h, restart at reduced rate', cost:'$45,000–$120,000/day deferred'},
+  sand_ingress:               {risk:'Pump impeller failure in ~8–24 hours', action:'Inspect fluid samples; plan workover if sand rate high', cost:'$85,000+ workover cost'},
+  motor_overheat:             {risk:'Motor burnout in ~2–4 hours', action:'Reduce pump frequency 15%, check cooling circulation', cost:'$200,000+ motor replacement'},
+  valve_failure:              {risk:'Lift gas injection loss — production decline', action:'Shutdown compressor, inspect check valve, replace valve disk', cost:'$25,000–$60,000 repair'},
+  thermal_runaway:            {risk:'Compressor failure in ~2–4 hours', action:'Reduce speed 20%, check cooling water flow', cost:'$150,000+ rebuild cost'},
+  bearing_wear:               {risk:'Bearing seizure in ~8–24 hours', action:'Schedule planned shutdown for bearing replacement', cost:'$85,000+ parts + rig-down'},
+  pulsation_dampener_failure: {risk:'Pipe rupture risk — immediate hazard', action:'EMERGENCY SHUTDOWN — evacuate area, inspect system', cost:'$500,000+ pipeline damage'},
+  valve_washout:              {risk:'Mud circulation loss in ~3–8 hours', action:'Monitor differential pressure, plan fluid end rebuild', cost:'$25,000–$80,000 downtime'},
+  piston_seal_wear:           {risk:'Progressive efficiency loss, ~24–48h to failure', action:'Schedule planned pump maintenance window', cost:'$15,000 seal kit + 8h downtime'},
+  gearbox_bearing_spalling:   {risk:'Gearbox failure in ~4–12 hours', action:'Monitor vibration, reduce RPM 10%, schedule inspection', cost:'$120,000+ gearbox repair'},
+  hydraulic_leak:             {risk:'Top drive offline in ~2–6 hours', action:'Check hydraulic lines, top up fluid, locate leak source', cost:'$8,000 repair + drilling delay'},
 }
+
 const LABEL_COLOR = {
   normal:'#00e676', advisory:'#ffb300', warning:'#ff6d00', critical:'#f44336', stale:'#3a4a5a',
-  // Add mapping for raw fault names from the ML model
-  prd_failure: '#e53935',
-  thermal_runaway: '#ff6f00',
-  bearing_wear: '#f9a825',
-  combustion_instability: '#b71c1c',
-  blade_fouling: '#e65100',
-  rotor_imbalance: '#f57f17',
-  winding_overheat: '#880e4f',
-  dielectric_breakdown: '#6a1aaf',
-  core_loosening: '#1a237e'
+  gas_lock:'#f44336', sand_ingress:'#f9a825', motor_overheat:'#ff6d00',
+  valve_failure:'#e53935', thermal_runaway:'#ff6f00', bearing_wear:'#f9a825',
+  pulsation_dampener_failure:'#b71c1c', valve_washout:'#e65100', piston_seal_wear:'#f57f17',
+  gearbox_bearing_spalling:'#880e4f', hydraulic_leak:'#6a1aaf',
 }
-const LABEL_ICON  = {
+const LABEL_ICON = {
   normal:'✓', advisory:'⚡', warning:'⚠', critical:'🔴', stale:'○',
-  prd_failure: '🔴',
-  thermal_runaway: '⚠',
-  bearing_wear: '⚠',
-  combustion_instability: '🔴',
-  blade_fouling: '⚠',
-  rotor_imbalance: '⚠',
-  winding_overheat: '⚠',
-  dielectric_breakdown: '🔴',
-  core_loosening: '⚠'
+  gas_lock:'🔴', sand_ingress:'⚠', motor_overheat:'⚠',
+  valve_failure:'🔴', thermal_runaway:'⚠', bearing_wear:'⚠',
+  pulsation_dampener_failure:'🔴', valve_washout:'⚠', piston_seal_wear:'⚠',
+  gearbox_bearing_spalling:'⚠', hydraulic_leak:'⚠',
 }
 
-// Function to normalize any fault type or label into a simple severity class
-function getSeverityClass(lbl) {
-  lbl = lbl || 'normal';
-  if (['critical', 'prd_failure', 'combustion_instability', 'dielectric_breakdown'].includes(lbl)) return 'critical';
-  if (['warning', 'advisory', 'thermal_runaway', 'bearing_wear', 'blade_fouling', 'rotor_imbalance', 'winding_overheat', 'core_loosening'].includes(lbl)) return 'warning';
-  if (lbl === 'stale') return 'stale';
-  return 'normal';
+function getSeverity(lbl) {
+  if (!lbl) return 'normal'
+  if (['critical','gas_lock','valve_failure','pulsation_dampener_failure'].includes(lbl)) return 'critical'
+  if (['warning','advisory','sand_ingress','motor_overheat','thermal_runaway','bearing_wear',
+       'valve_washout','piston_seal_wear','gearbox_bearing_spalling','hydraulic_leak'].includes(lbl)) return 'warning'
+  if (lbl === 'stale') return 'stale'
+  return 'normal'
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// STATE
-// ────────────────────────────────────────────────────────────────────────────
-let selectedAsset   = null
-let assetStatuses   = {}   // {asset_id: {last_prediction, last_seen}}
-let recentEvents    = []
-let airgapMode      = false
-let activeDegrades  = {}   // {asset_id: {running, fault_type, step, steps}}
-let selectedFault   = null
-let dispatchQueue   = []   // unacknowledged critical/warning events
+// ────────── STATE ──────────────────────────────────────────────────────────────
+let selectedAsset = null
+let selectedFault = null
+let selectedMetric = 'psi'
+let assetStatuses = {}    // {asset_id: {last_prediction, last_seen}}
+let recentEvents  = []
+let activeDegrades = {}
+let dispatchQueue = []
+let airgapMode = false
+let scenariosData = {}
+let expandedSite = null
 
-// ────────────────────────────────────────────────────────────────────────────
-// INIT
-// ────────────────────────────────────────────────────────────────────────────
+// ────────── INIT ───────────────────────────────────────────────────────────────
 async function init() {
+  buildFleetBar()
   buildScenarioButtons()
   await Promise.all([refreshStatus(), refreshEvents()])
   startPolling()
@@ -874,312 +608,270 @@ async function init() {
 
 function startPolling() {
   setInterval(async () => {
-    await Promise.all([refreshStatus(), refreshEvents(), refreshDegradeStatus()])
+    await Promise.all([refreshStatus(), refreshEvents(), refreshDegrades()])
     if (selectedAsset) refreshPlot()
-    updateLastRefresh()
+    document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('en-US',{hour12:false})
   }, 10000)
-  updateLastRefresh()
+  document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('en-US',{hour12:false})
 }
 
-function updateLastRefresh() {
-  const now = new Date()
-  document.getElementById('last-refresh').textContent =
-    now.toLocaleTimeString('en-US', {hour12:false})
+// ────────── FLEET BAR ─────────────────────────────────────────────────────────
+function buildFleetBar() {
+  const container = document.getElementById('fleet-cards')
+  container.innerHTML = Object.entries(SITES).map(([siteId, site]) => `
+    <div class="site-card" id="card-${siteId}" onclick="toggleSite('${siteId}')">
+      <div class="site-hdr">
+        <span class="site-icon">${site.icon}</span>
+        <div class="site-info">
+          <div class="site-name">${site.name}</div>
+          <div class="site-sub">${site.type} · ${site.assets.length} assets</div>
+        </div>
+        <div class="site-dot" id="dot-${siteId}"></div>
+      </div>
+      <div class="site-assets" id="chips-${siteId}">
+        ${site.assets.map(aid => `
+          <div class="asset-chip" id="chip-${aid}" onclick="event.stopPropagation(); selectAsset('${aid}')">${ASSET_META[aid].label}</div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('')
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// ASSET STATUS + MAP HEALTH
-// ────────────────────────────────────────────────────────────────────────────
+function toggleSite(siteId) {
+  if (expandedSite === siteId) {
+    document.getElementById(`card-${siteId}`).classList.remove('expanded')
+    expandedSite = null
+  } else {
+    if (expandedSite) document.getElementById(`card-${expandedSite}`)?.classList.remove('expanded')
+    document.getElementById(`card-${siteId}`).classList.add('expanded')
+    expandedSite = siteId
+  }
+}
+
+function updateFleetBar() {
+  for (const [siteId, site] of Object.entries(SITES)) {
+    let worstSev = 'normal'
+    const sevRank = {normal:0, stale:0, warning:2, critical:3}
+    for (const aid of site.assets) {
+      const sev = getSeverity(assetStatuses[aid]?.last_prediction)
+      if ((sevRank[sev]||0) > (sevRank[worstSev]||0)) worstSev = sev
+    }
+    const dot = document.getElementById(`dot-${siteId}`)
+    const card = document.getElementById(`card-${siteId}`)
+    if (dot) dot.className = `site-dot${worstSev==='critical'?' critical':worstSev==='warning'?' warning':''}`
+    if (card) {
+      card.classList.toggle('has-critical', worstSev==='critical')
+      card.classList.toggle('has-warning',  worstSev==='warning' && worstSev!=='critical')
+    }
+    // Update chips
+    for (const aid of site.assets) {
+      const chip = document.getElementById(`chip-${aid}`)
+      if (!chip) continue
+      const sev = getSeverity(assetStatuses[aid]?.last_prediction)
+      chip.className = `asset-chip${sev!=='normal'&&sev!=='stale'?' s-'+sev:''}${selectedAsset===aid?' selected':''}`
+    }
+  }
+}
+
+// ────────── STATUS & EVENTS ────────────────────────────────────────────────────
 async function refreshStatus() {
   try {
-    const data = await fetch('/api/asset-status').then(r => r.json())
+    const d = await fetch('/api/asset-status').then(r=>r.json())
     assetStatuses = {}
-    for (const s of (data.statuses || [])) {
-      assetStatuses[s.asset_id] = s
-    }
-    updateMapNodes()
-    updateSiteHealth()
-    updateAlertPills()
-  } catch(e) { console.warn('Status fetch error:', e) }
+    for (const s of (d.statuses||[])) assetStatuses[s.asset_id] = s
+    updateFleetBar()
+  } catch(e) { console.warn('status err', e) }
 }
 
-function updateMapNodes() {
-  document.querySelectorAll('.asset-node').forEach(node => {
-    const id = node.dataset.id
-    const rawLbl = assetStatuses[id]?.last_prediction || 'stale'
-    const sevCls = getSeverityClass(rawLbl)
-    // Update status class
-    node.className = node.className.replace(/\bs-\w+/g, '')
-    node.classList.add('s-' + sevCls)
-    // Dispatch badge
-    const needsDispatch = dispatchQueue.some(e => e.asset_id === id)
-    node.classList.toggle('needs-dispatch', needsDispatch)
-    // Degrade ring
-    node.classList.toggle('degrading', id in activeDegrades)
-  })
-}
-
-function updateSiteHealth() {
-  const sites = { valley: 'normal', ridge: 'normal', basin: 'normal' }
-  for (const [aid, s] of Object.entries(assetStatuses)) {
-    const meta = ASSET_META[aid]
-    if (!meta) continue
-    const site = meta.site
-    const sevCls = getSeverityClass(s.last_prediction || 'normal')
-    const rank  = {normal:0, warning:2, critical:3, stale:-1}
-    if ((rank[sevCls]||0) > (rank[sites[site]]||0)) sites[site] = sevCls
-  }
-  for (const [site, lbl] of Object.entries(sites)) {
-    const dot  = document.getElementById('health-' + site)
-    const zone = document.getElementById('zone-' + site)
-    if (!dot || !zone) continue
-    dot.className  = 'site-health' + (lbl==='critical'?' critical':lbl==='warning'?' warning':'')
-    zone.className = 'site-zone' + (lbl==='critical'?' has-critical':lbl==='warning'?' has-warning':'')
-  }
-}
-
-function updateAlertPills() {
-  const counts = {critical:0, warning:0, advisory:0, normal:0}
-  for (const s of Object.values(assetStatuses)) {
-    const sev = getSeverityClass(s.last_prediction || 'normal')
-    if (sev in counts) counts[sev]++
-  }
-  const pc = document.getElementById('pill-critical')
-  const pw = document.getElementById('pill-warning')
-  const po = document.getElementById('pill-ok')
-  pc.textContent = `🔴 ${counts.critical} Critical`
-  pw.textContent = `⚠ ${counts.warning} Warning/Advisory`
-  po.textContent = counts.critical===0 && counts.warning===0
-                   ? '✓ All Clear' : `✓ ${counts.normal} Normal`
-  pc.classList.toggle('pulsing', counts.critical > 0)
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// EVENTS
-// ────────────────────────────────────────────────────────────────────────────
 async function refreshEvents() {
   try {
-    const data = await fetch('/api/recent-events?limit=40').then(r => r.json())
-    recentEvents = data.events || []
+    const d = await fetch('/api/recent-events?limit=40').then(r=>r.json())
+    recentEvents = d.events || []
     renderEventLog()
-    updateDispatchQueue()
-  } catch(e) { console.warn('Events fetch error:', e) }
+    updateIncidents()
+  } catch(e) { console.warn('events err', e) }
 }
 
 function renderEventLog() {
   const el = document.getElementById('event-log')
-  if (!recentEvents.length) {
-    el.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;padding:20px;text-align:center">No events yet…</div>'
-    return
-  }
+  if (!recentEvents.length) { el.innerHTML = '<div style="color:var(--muted);padding:18px;text-align:center;font-size:0.74rem">No events yet…</div>'; return }
   el.innerHTML = recentEvents.map(ev => {
     const t   = new Date(ev.event_time)
     const ts  = t.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})
     const lbl = ev.predicted_label || 'unknown'
     const col = LABEL_COLOR[lbl] || '#888'
-    const ico = LABEL_ICON[lbl]  || '?'
-    const sev = getSeverityClass(lbl)
-    const assetShort = (ASSET_META[ev.asset_id]?.label || ev.asset_id)
-    const isActionable = !ev.acknowledged && (sev === 'critical' || sev === 'warning')
-    const isFault = sev !== 'normal'
-    return `<div class="ev-row${isFault?' fault':''}" title="${ev.ai_narrative || ''}">
+    const ico = LABEL_ICON[lbl] || '?'
+    const sev = getSeverity(lbl)
+    const short = ASSET_META[ev.asset_id]?.label || ev.asset_id
+    const actionable = !ev.acknowledged && (sev==='critical'||sev==='warning')
+    return `<div class="ev-row${sev!=='normal'?' fault':''}" title="${ev.ai_narrative||''}">
       <span class="ev-time">${ts}</span>
-      <span class="ev-asset" onclick="selectAsset('${ev.asset_id}')">${assetShort}</span>
+      <span class="ev-asset" onclick="selectAsset('${ev.asset_id}')">${short}</span>
       <span class="ev-label" style="color:${col}">${ico} ${lbl}</span>
-      <span class="ev-action">${
-        isActionable
-          ? `<button onclick="openDispatch(${ev.id})">Dispatch</button>`
-          : ev.acknowledged
-          ? '<span class="ack-badge">ACK</span>'
-          : ''
-      }</span>
+      <span class="ev-action">${actionable?`<button onclick="openDispatch(${ev.id})">Dispatch</button>`:ev.acknowledged?'<span class="ack-badge">ACK</span>':''}</span>
     </div>`
   }).join('')
 }
 
-function updateDispatchQueue() {
+function updateIncidents() {
   dispatchQueue = recentEvents.filter(ev => {
-    const sev = getSeverityClass(ev.predicted_label)
-    return !ev.acknowledged && (sev === 'critical' || sev === 'warning')
+    const sev = getSeverity(ev.predicted_label)
+    return !ev.acknowledged && (sev==='critical'||sev==='warning')
   })
-  const banner = document.getElementById('dispatch-banner')
-  if (dispatchQueue.length > 0) {
-    banner.classList.add('visible')
-    const top = dispatchQueue[0]
-    document.getElementById('dispatch-banner-text').textContent =
-      `⚠ DISPATCH REQUIRED: ${(top.predicted_label||'').toUpperCase()} — ${ASSET_META[top.asset_id]?.label || top.asset_id} — ${ASSET_META[top.asset_id]?.location || ''}`
-  } else {
-    banner.classList.remove('visible')
-  }
-  updateMapNodes()
+  const panel = document.getElementById('incidents-panel')
+  const list  = document.getElementById('incidents-list')
+  if (dispatchQueue.length === 0) { panel.classList.remove('visible'); return }
+  panel.classList.add('visible')
+  list.innerHTML = dispatchQueue.slice(0,8).map(ev => {
+    const lbl = ev.predicted_label || 'unknown'
+    const sev = getSeverity(lbl)
+    const short = ASSET_META[ev.asset_id]?.label || ev.asset_id
+    const faultLabel = FAULT_META[lbl]?.label || lbl
+    return `<div class="incident-row" onclick="selectAsset('${ev.asset_id}'); openDispatch(${ev.id})">
+      <span class="inc-sev">${sev==='critical'?'🔴':'⚠'}</span>
+      <span class="inc-asset">${ev.asset_id}</span>
+      <span class="inc-fault">${faultLabel}</span>
+      <button class="inc-diagnose" onclick="event.stopPropagation(); selectAsset('${ev.asset_id}'); openDispatch(${ev.id})">Diagnose ▶</button>
+    </div>`
+  }).join('')
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// ASSET SELECTION
-// ────────────────────────────────────────────────────────────────────────────
+// ────────── ASSET SELECTION ───────────────────────────────────────────────────
 function selectAsset(assetId) {
   selectedAsset = assetId
-  // Update node selection
-  document.querySelectorAll('.asset-node').forEach(n => n.classList.remove('selected'))
-  const node = document.getElementById('node-' + assetId)
-  if (node) node.classList.add('selected')
+  const meta = ASSET_META[assetId]
+  // Update chips
+  document.querySelectorAll('.asset-chip').forEach(c => {
+    const id = c.id.replace('chip-','')
+    const sev = getSeverity(assetStatuses[id]?.last_prediction)
+    c.className = `asset-chip${sev!=='normal'&&sev!=='stale'?' s-'+sev:''}${id===assetId?' selected':''}`
+  })
+  // Auto-expand the site
+  const site = meta?.site
+  if (site && expandedSite !== site) {
+    if (expandedSite) document.getElementById(`card-${expandedSite}`)?.classList.remove('expanded')
+    document.getElementById(`card-${site}`)?.classList.add('expanded')
+    expandedSite = site
+  }
   // Update inject panel
   updateInjectPanel(assetId)
-  // Update 3D plot
+  // Update sensor tabs labels
+  const sensorLbls = SENSOR_LABELS[meta?.aclass] || SENSOR_LABELS.esp
+  document.getElementById('tab-psi').textContent  = sensorLbls.psi.split(' ')[0]
+  document.getElementById('tab-temp').textContent = sensorLbls.temp.split(' ')[0]
+  document.getElementById('tab-vib').textContent  = sensorLbls.vib.split(' ')[0]
+  document.getElementById('plot-asset-lbl').textContent = '— ' + assetId
+  document.getElementById('btn-expand').style.display = 'inline-block'
   refreshPlot()
 }
 
 function updateInjectPanel(assetId) {
-  const meta  = ASSET_META[assetId]
-  const aClass = document.getElementById('node-' + assetId)?.dataset.class || 'compressor'
+  const meta = ASSET_META[assetId]
+  const aclass = meta?.aclass || 'esp'
+  const icon = CLASS_ICONS[aclass] || '⚙'
 
-  // Update target display
   const tgt = document.getElementById('inject-target')
   tgt.className = 'inject-target'
-  tgt.innerHTML = `
-    <span class="target-icon">${aClass==='compressor'?'⚙':aClass==='turbine'?'🌀':'🔌'}</span>
-    <div>
-      <div class="target-name">${ASSET_META[assetId]?.label || assetId}</div>
-      <div class="target-sub">${meta?.type || ''} — ${meta?.location || ''}</div>
-    </div>
-  `
+  tgt.innerHTML = `<span class="t-icon">${icon}</span><div><div class="t-name">${assetId}</div><div class="t-sub">${meta.type} — ${meta.loc}</div></div>`
 
-  // Populate fault type options
-  const faultTypes = FAULT_TYPES_BY_CLASS[aClass] || FAULT_TYPES_BY_CLASS.compressor
-  const optsCont = document.getElementById('fault-options')
-  optsCont.style.display = 'flex'
+  const faults = FAULTS_BY_CLASS[aclass] || []
+  const optsEl = document.getElementById('fault-opts')
+  optsEl.style.display = 'flex'
   selectedFault = null
 
-  optsCont.innerHTML = faultTypes.map(ft => {
+  optsEl.innerHTML = faults.map(ft => {
     const fm = FAULT_META[ft]
     return `<label class="fault-opt" id="fopt-${ft}" onclick="selectFault('${ft}')">
       <input type="radio" name="fault-type" value="${ft}">
-      <span class="fault-color-dot" style="background:${fm.color}"></span>
-      <span class="fault-info">
-        <span class="fault-name">${fm.label}</span>
-        <span class="fault-mode">${fm.gradual ? '⏱ Gradual ramp' : '⚡ Instant burst'}</span>
-      </span>
+      <span class="f-dot" style="background:${fm.color}"></span>
+      <span><span class="f-name">${fm.label}</span><br><span class="f-mode">${fm.gradual?'⏱ Gradual ramp':'⚡ Instant burst'}</span></span>
     </label>`
   }).join('')
 
-  // Show mode row and buttons
-  document.getElementById('inject-mode-row').style.display = 'none'
-  document.getElementById('burst-row').style.display       = 'none'
-  document.getElementById('duration-row').style.display    = 'none'
-  document.getElementById('inject-btns').style.display     = 'flex'
-
-  // Check if this asset has an active degrade
+  // Show inject buttons, hide sub-controls until fault selected
+  document.getElementById('mode-row').style.display   = 'none'
+  document.getElementById('burst-row').style.display  = 'none'
+  document.getElementById('dur-row').style.display    = 'none'
+  document.getElementById('inject-btns').style.display = 'flex'
   updateDegradeProgress()
 }
 
 function selectFault(ft) {
   selectedFault = ft
-  // Update visual selection
-  document.querySelectorAll('.fault-opt').forEach(el => el.classList.remove('selected'))
-  const opt = document.getElementById('fopt-' + ft)
-  if (opt) opt.classList.add('selected')
-
+  document.querySelectorAll('.fault-opt').forEach(e=>e.classList.remove('sel'))
+  document.getElementById(`fopt-${ft}`)?.classList.add('sel')
   const fm = FAULT_META[ft]
-  const modeRow    = document.getElementById('inject-mode-row')
-  const burstRow   = document.getElementById('burst-row')
-  const durRow     = document.getElementById('duration-row')
-
   if (fm.gradual) {
-    // Gradual faults: show mode choice
-    modeRow.style.display = 'flex'
-    // Default to gradual mode
-    const gradualRadio = document.querySelector('input[name="inject-mode"][value="gradual"]')
-    if (gradualRadio) { gradualRadio.checked = true; onModeChange() }
+    document.getElementById('mode-row').style.display  = 'flex'
+    const gr = document.querySelector('input[name="imode"][value="gradual"]')
+    if (gr) { gr.checked=true; onModeChange() }
   } else {
-    // Instant only
-    modeRow.style.display = 'none'
-    burstRow.style.display  = 'flex'
-    durRow.style.display    = 'none'
-    const instantRadio = document.querySelector('input[name="inject-mode"][value="instant"]')
-    if (instantRadio) instantRadio.checked = true
+    document.getElementById('mode-row').style.display  = 'none'
+    document.getElementById('burst-row').style.display = 'flex'
+    document.getElementById('dur-row').style.display   = 'none'
+    const ins = document.querySelector('input[name="imode"][value="instant"]')
+    if (ins) ins.checked = true
   }
 }
 
 function onModeChange() {
-  const mode = document.querySelector('input[name="inject-mode"]:checked')?.value || 'instant'
-  document.getElementById('burst-row').style.display    = mode === 'instant' ? 'flex' : 'none'
-  document.getElementById('duration-row').style.display = mode === 'gradual'  ? 'flex' : 'none'
+  const mode = document.querySelector('input[name="imode"]:checked')?.value || 'instant'
+  document.getElementById('burst-row').style.display = mode==='instant'?'flex':'none'
+  document.getElementById('dur-row').style.display   = mode==='gradual' ?'flex':'none'
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// FAULT INJECTION
-// ────────────────────────────────────────────────────────────────────────────
+// ────────── INJECT / DEGRADE ──────────────────────────────────────────────────
 async function injectFault() {
-  if (!selectedAsset) { showToast('Select an asset on the plant map first', 'error'); return }
-  if (!selectedFault) { showToast('Select a fault type', 'error'); return }
-
-  const mode = document.querySelector('input[name="inject-mode"]:checked')?.value || 'instant'
-  const fm   = FAULT_META[selectedFault]
-
-  if (mode === 'gradual' && fm.gradual) {
-    const dur = parseInt(document.getElementById('degrade-duration')?.value || '60')
+  if (!selectedAsset) { showToast('Select an asset first','error'); return }
+  if (!selectedFault)  { showToast('Select a fault type','error');  return }
+  const mode = document.querySelector('input[name="imode"]:checked')?.value || 'instant'
+  const fm = FAULT_META[selectedFault]
+  if (mode==='gradual' && fm.gradual) {
+    const dur = parseInt(document.getElementById('degrade-dur').value || '60')
     try {
-      const r = await fetch('/api/inject/degrade', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({asset_id: selectedAsset, fault_type: selectedFault, duration_seconds: dur}),
-      })
-      if (!r.ok) { const e = await r.json(); showToast(`Error: ${e.detail}`, 'error'); return }
-      showToast(`Gradual ${fm.label} started on ${ASSET_META[selectedAsset]?.label} — ${dur}s ramp`, 'ok')
-      activeDegrades[selectedAsset] = {running:true, fault_type:selectedFault, step:0, steps:Math.floor(dur/5)}
-      updateDegradeProgress()
-      updateMapNodes()
-    } catch(e) { showToast('Injection error: ' + e.message, 'error') }
+      const r = await fetch('/api/inject/degrade',{method:'POST',headers:{'Content-Type':'application/json'},
+                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,duration_seconds:dur})})
+      if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
+      showToast(`▶ ${fm.label} ramp started — ${dur}s`,'ok')
+      activeDegrades[selectedAsset]={running:true,fault_type:selectedFault,step:0,steps:Math.floor(dur/5)}
+      updateDegradeProgress(); updateFleetBar()
+    } catch(e) { showToast('Error: '+e.message,'error') }
   } else {
-    const burst = parseInt(document.getElementById('burst-count')?.value || '3')
+    const burst = parseInt(document.getElementById('burst-count').value || '3')
     try {
-      const r = await fetch('/api/inject-fault', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({asset_id: selectedAsset, fault_type: selectedFault, count: burst}),
-      })
-      if (!r.ok) { const e = await r.json(); showToast(`Error: ${e.detail}`, 'error'); return }
-      showToast(`Injected ${burst}× ${fm.label} on ${ASSET_META[selectedAsset]?.label}`, 'ok')
-      // Refresh plot & events shortly after
-      setTimeout(() => { refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
-    } catch(e) { showToast('Injection error: ' + e.message, 'error') }
+      const r = await fetch('/api/inject-fault',{method:'POST',headers:{'Content-Type':'application/json'},
+                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,count:burst})})
+      if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
+      showToast(`✅ Injected ${burst}× ${fm.label}`,'ok')
+      setTimeout(()=>{ refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
+    } catch(e) { showToast('Error: '+e.message,'error') }
   }
 }
 
 async function resetNormal() {
   if (!selectedAsset) return
-  try {
-    await fetch('/api/inject-fault', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({asset_id: selectedAsset, fault_type: 'normal', count: 5}),
-    })
-    await fetch('/api/cancel-degrade/' + selectedAsset, {method:'POST'}).catch(()=>{})
-    delete activeDegrades[selectedAsset]
-    showToast(`Reset ${ASSET_META[selectedAsset]?.label} to normal`, 'ok')
-    updateDegradeProgress()
-    updateMapNodes()
-    setTimeout(() => { refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
-  } catch(e) { showToast('Reset error: ' + e.message, 'error') }
+  await fetch('/api/inject-fault',{method:'POST',headers:{'Content-Type':'application/json'},
+               body:JSON.stringify({asset_id:selectedAsset,fault_type:'normal',count:5})}).catch(()=>{})
+  await fetch(`/api/cancel-degrade/${selectedAsset}`,{method:'POST'}).catch(()=>{})
+  delete activeDegrades[selectedAsset]
+  showToast(`↺ Reset ${selectedAsset} to normal`,'ok')
+  updateDegradeProgress(); updateFleetBar()
+  setTimeout(()=>{ refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
 }
 
 async function cancelDegrade() {
   if (!selectedAsset) return
-  try {
-    await fetch('/api/cancel-degrade/' + selectedAsset, {method:'POST'})
-    delete activeDegrades[selectedAsset]
-    updateDegradeProgress()
-    updateMapNodes()
-    showToast('Degradation cancelled', 'info')
-  } catch(e) { showToast('Cancel error: ' + e, 'error') }
+  await fetch(`/api/cancel-degrade/${selectedAsset}`,{method:'POST'}).catch(()=>{})
+  delete activeDegrades[selectedAsset]
+  updateDegradeProgress(); updateFleetBar()
+  showToast('Degradation cancelled','ok')
 }
 
-async function refreshDegradeStatus() {
+async function refreshDegrades() {
   try {
-    const data = await fetch('/api/degrade-status').then(r => r.json())
-    activeDegrades = data.active || {}
-    updateDegradeProgress()
-    updateMapNodes()
+    const d = await fetch('/api/degrade-status').then(r=>r.json())
+    activeDegrades = d.active || {}
+    updateDegradeProgress(); updateFleetBar()
   } catch(e) {}
 }
 
@@ -1187,213 +879,144 @@ function updateDegradeProgress() {
   const el = document.getElementById('degrade-progress')
   if (selectedAsset && activeDegrades[selectedAsset]) {
     const d = activeDegrades[selectedAsset]
-    const pct = d.steps > 0 ? Math.round((d.step / d.steps) * 100) : 0
-    document.getElementById('dprog-fault').textContent = `Degrading: ${FAULT_META[d.fault_type]?.label || d.fault_type}`
-    document.getElementById('dprog-pct').textContent   = pct + '%'
-    document.getElementById('dprog-bar').style.width   = pct + '%'
+    const pct = d.steps>0 ? Math.round(d.step/d.steps*100) : 0
+    document.getElementById('dprog-label').textContent = `Degrading: ${FAULT_META[d.fault_type]?.label||d.fault_type}`
+    document.getElementById('dprog-pct').textContent   = pct+'%'
+    document.getElementById('dprog-fill').style.width  = pct+'%'
     el.classList.add('visible')
-  } else {
-    el.classList.remove('visible')
-  }
+  } else { el.classList.remove('visible') }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// SCENARIOS
-// ────────────────────────────────────────────────────────────────────────────
-let scenariosData = {}
-async function buildScenarioButtons() {
-  try {
-    const data = await fetch('/api/scenarios').then(r => r.json())
-    scenariosData = data.scenarios || {}
-    const el = document.getElementById('scenario-list')
-    el.innerHTML = Object.entries(scenariosData).map(([id, sc]) =>
-      `<button class="sc-btn" id="sc-${id}" onclick="runScenario('${id}')">
-        <div class="sc-name">▶ ${sc.name}</div>
-        <div class="sc-desc">${sc.description}</div>
-      </button>`
-    ).join('')
-    pollScenarioStatus()
-  } catch(e) {}
+// ────────── SENSOR TABS ───────────────────────────────────────────────────────
+function selectTab(metric) {
+  selectedMetric = metric
+  document.querySelectorAll('.sensor-tab').forEach(t=>t.classList.remove('active'))
+  document.getElementById(`tab-${metric}`).classList.add('active')
+  if (selectedAsset) refreshPlot()
 }
 
-async function runScenario(id) {
-  const sc = scenariosData[id]
-  if (!sc) return
-  try {
-    const r = await fetch('/api/run-scenario', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({scenario_id: id}),
-    })
-    if (!r.ok) { const e = await r.json(); showToast(e.detail, 'error'); return }
-    showToast(`▶ Running: ${sc.name}`, 'info')
-    // Auto-select the asset
-    selectAsset(sc.asset)
-  } catch(e) { showToast('Scenario error: ' + e, 'error') }
-}
-
-async function pollScenarioStatus() {
-  setInterval(async () => {
-    try {
-      const s = await fetch('/api/scenario-status').then(r => r.json())
-      const btns = document.querySelectorAll('.sc-btn')
-      btns.forEach(b => b.disabled = s.running)
-    } catch(e) {}
-  }, 5000)
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// 3D PLOT
-// ────────────────────────────────────────────────────────────────────────────
-let plotRefreshTimer = null
+// ────────── PLOTLY FORECAST ───────────────────────────────────────────────────
 function refreshPlot() {
   if (!selectedAsset) return
-    const iframe = document.getElementById('plot-iframe')
-    const placeholder = document.getElementById('plot-placeholder')
-    const label = document.getElementById('plot-asset-label')
-    const expandBtn = document.getElementById('btn-expand-plot')
-    label.textContent = '— ' + (ASSET_META[selectedAsset]?.label || selectedAsset)
-    iframe.style.display = 'block'
-    placeholder.style.display = 'none'
-    expandBtn.style.display = 'inline-block'
-    iframe.src = `/api/plot/forecast/${selectedAsset}?cb=${Date.now()}`
-  }
-  
-  function expandPlot() {
-    if (!selectedAsset) return
-    const fs = document.getElementById('fs-plot')
-    const fsIframe = document.getElementById('fs-iframe')
-    fsIframe.src = `/api/plot/forecast/${selectedAsset}?cb=${Date.now()}`
-    fs.classList.add('open')
-  }
+  const iframe = document.getElementById('plot-iframe')
+  iframe.style.display = 'block'
+  document.getElementById('plot-placeholder').style.display = 'none'
+  iframe.src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
+}
+
+function expandPlot() {
+  if (!selectedAsset) return
+  const fs = document.getElementById('fs-plot')
+  document.getElementById('fs-iframe').src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
+  fs.classList.add('open')
+}
 function closeFsPlot() {
   document.getElementById('fs-plot').classList.remove('open')
   document.getElementById('fs-iframe').src = ''
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// AIRGAP
-// ────────────────────────────────────────────────────────────────────────────
-async function toggleAirgap() {
-  airgapMode = !airgapMode
+// ────────── SCENARIOS ─────────────────────────────────────────────────────────
+async function buildScenarioButtons() {
   try {
-    await fetch(`/api/simulate/airgap?enabled=${airgapMode}`, {method:'POST'})
+    const d = await fetch('/api/scenarios').then(r=>r.json())
+    scenariosData = d.scenarios || {}
+    const el = document.getElementById('scenario-list')
+    el.innerHTML = Object.entries(scenariosData).map(([id,sc])=>
+      `<button class="sc-btn" id="sc-${id}" onclick="runScenario('${id}')">
+        <div class="sc-name">▶ ${sc.name}</div>
+        <div class="sc-desc">${sc.description}</div>
+       </button>`
+    ).join('')
+    pollScenario()
   } catch(e) {}
-  updateAirgapUI()
+}
+async function runScenario(id) {
+  const sc = scenariosData[id]; if (!sc) return
+  const r = await fetch('/api/run-scenario',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario_id:id})})
+  if (!r.ok) { const e=await r.json(); showToast(e.detail,'error'); return }
+  showToast(`▶ Running: ${sc.name}`,'info')
+  selectAsset(sc.asset)
+}
+async function pollScenario() {
+  setInterval(async()=>{
+    try { const s=await fetch('/api/scenario-status').then(r=>r.json()); document.querySelectorAll('.sc-btn').forEach(b=>b.disabled=s.running) } catch(e){}
+  },5000)
 }
 
-function updateAirgapUI() {
-  const btn    = document.getElementById('airgap-btn')
-  const banner = document.getElementById('airgap-banner')
-  const header = document.getElementById('main-header')
-
-  if (airgapMode) {
-    btn.textContent = '✈ Airgap Mode'
-    btn.classList.add('airgap-on')
-    banner.classList.add('visible')
-    header.classList.add('airgap-on')
-    showToast('☁ Cloud network disconnected — GDC Edge running autonomously', 'info')
-  } else {
-    btn.textContent = '🌐 Cloud Connected'
-    btn.classList.remove('airgap-on')
-    banner.classList.remove('visible')
-    header.classList.remove('airgap-on')
-    showToast('🌐 Cloud network restored', 'ok')
-  }
-}
-
-// ────────────────────────────────────────────────────────────────────────────
-// DISPATCH MODAL
-// ────────────────────────────────────────────────────────────────────────────
-function openTopDispatch() {
-  if (dispatchQueue.length > 0) openDispatch(dispatchQueue[0].id)
-}
-
+// ────────── DISPATCH MODAL ────────────────────────────────────────────────────
 function openDispatch(eventId) {
-  const ev  = recentEvents.find(e => e.id === eventId)
-  if (!ev) { showToast('Event not found', 'error'); return }
-  const meta = ASSET_META[ev.asset_id] || {}
-  const rem  = REMEDIATION[ev.failure_type || ev.predicted_label] || {
-    risk:'See maintenance manual', action:'Manual inspection', cost:'TBD',
-  }
-  const t    = new Date(ev.event_time)
-  const ts   = t.toLocaleTimeString('en-US', {hour12:false}) + ' UTC'
-  const lbl  = ev.predicted_label || 'unknown'
-
-  document.getElementById('dispatch-wo-grid').innerHTML = `
-    <span class="wo-label">Asset:</span>
-    <span class="wo-value">${ASSET_META[ev.asset_id]?.label || ev.asset_id} — ${meta.type || ''}</span>
-    <span class="wo-label">Location:</span>
-    <span class="wo-value">${meta.location || '—'}</span>
-    <span class="wo-label">Detected:</span>
-    <span class="wo-value critical">${lbl.toUpperCase()} at ${ts}</span>
-    <span class="wo-label">Fault Type:</span>
-    <span class="wo-value">${FAULT_META[ev.failure_type]?.label || ev.failure_type || ev.predicted_label}</span>
-    <hr class="wo-divider">
-    <span class="wo-label">Risk:</span>
-    <span class="wo-value">${rem.risk}</span>
-    <span class="wo-label">Action:</span>
-    <span class="wo-value">${rem.action}</span>
-    <span class="wo-label">Downtime Avoided:</span>
-    <span class="wo-value saved">${rem.cost}</span>
-    <span class="wo-label">Contact:</span>
-    <span class="wo-value">${meta.contact || '—'}</span>
-    ${ev.ai_narrative ? `<div class="wo-narrative" style="grid-column:1/-1">${ev.ai_narrative}</div>` : ''}
+  const ev = recentEvents.find(e=>e.id===eventId); if (!ev) { showToast('Not found','error'); return }
+  const meta = ASSET_META[ev.asset_id]||{}
+  const rem  = REMEDIATION[ev.failure_type||ev.predicted_label]||{risk:'See OEM manual',action:'Inspect equipment',cost:'TBD'}
+  const ts   = new Date(ev.event_time).toLocaleTimeString('en-US',{hour12:false})+' UTC'
+  const lbl  = ev.predicted_label||'unknown'
+  document.getElementById('wo-grid').innerHTML = `
+    <span class="wo-lbl">Asset:</span><span class="wo-val">${ev.asset_id} — ${meta.type||''}</span>
+    <span class="wo-lbl">Location:</span><span class="wo-val">${meta.loc||'—'}</span>
+    <span class="wo-lbl">Detected:</span><span class="wo-val crit">${lbl.toUpperCase()} at ${ts}</span>
+    <span class="wo-lbl">Fault:</span><span class="wo-val">${FAULT_META[lbl]?.label||lbl}</span>
+    <div class="wo-div"></div>
+    <span class="wo-lbl">Risk:</span><span class="wo-val">${rem.risk}</span>
+    <span class="wo-lbl">Action:</span><span class="wo-val">${rem.action}</span>
+    <span class="wo-lbl">Cost Avoided:</span><span class="wo-val saved">${rem.cost}</span>
+    <span class="wo-lbl">Contact:</span><span class="wo-val">${meta.contact||'—'}</span>
+    ${ev.ai_narrative?`<div class="wo-narr" style="grid-column:1/-1">${ev.ai_narrative}</div>`:''}
   `
-  document.getElementById('dispatch-event-id').value = eventId
+  document.getElementById('wo-event-id').value = eventId
   document.getElementById('dispatch-modal').classList.add('open')
 }
-
-function closeDispatch() {
-  document.getElementById('dispatch-modal').classList.remove('open')
-}
-
+function closeModal() { document.getElementById('dispatch-modal').classList.remove('open') }
 async function acknowledgeDispatch() {
-  const eventId = parseInt(document.getElementById('dispatch-event-id').value)
-  if (!eventId) return
-  try {
-    const r = await fetch(`/api/acknowledge/${eventId}`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({operator: 'ops'}),
-    })
-    if (!r.ok) { const e = await r.json(); showToast(e.detail, 'error'); return }
-    closeDispatch()
-    showToast('✔ Crew dispatched — event acknowledged', 'ok')
-    await Promise.all([refreshEvents(), refreshStatus()])
-  } catch(e) { showToast('Acknowledge error: ' + e, 'error') }
+  const id = parseInt(document.getElementById('wo-event-id').value)
+  if (!id) return
+  const r = await fetch(`/api/acknowledge/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operator:'ops'})})
+  if (!r.ok) { const e=await r.json(); showToast(e.detail,'error'); return }
+  closeModal(); showToast('✔ Crew dispatched','ok')
+  await Promise.all([refreshEvents(),refreshStatus()])
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// TOAST
-// ────────────────────────────────────────────────────────────────────────────
-let toastTimer = null
-function showToast(msg, type = 'info') {
+async function clearDispatch() {
+  const r = await fetch('/api/clear-dispatch',{method:'POST'})
+  if (!r.ok) { showToast('Clear failed','error'); return }
+  const d = await r.json()
+  showToast(`✅ Cleared ${d.count} work orders`,'ok')
+  await Promise.all([refreshEvents(),refreshStatus()])
+}
+
+// ────────── AIRGAP ────────────────────────────────────────────────────────────
+async function toggleAirgap() {
+  airgapMode = !airgapMode
+  await fetch(`/api/simulate/airgap?enabled=${airgapMode}`,{method:'POST'}).catch(()=>{})
+  const btn    = document.getElementById('airgap-btn')
+  const banner = document.getElementById('airgap-banner')
+  const hdr    = document.getElementById('main-header')
+  if (airgapMode) {
+    btn.textContent = '✈ Airgap Mode'; btn.classList.add('airgap-on')
+    banner.classList.add('visible'); hdr.classList.add('airgap-on')
+    showToast('☁ Cloud disconnected — GDC Edge autonomous','info')
+  } else {
+    btn.textContent = '🌐 Cloud Connected'; btn.classList.remove('airgap-on')
+    banner.classList.remove('visible'); hdr.classList.remove('airgap-on')
+    showToast('🌐 Cloud network restored','ok')
+  }
+}
+
+// ────────── TOAST ─────────────────────────────────────────────────────────────
+let toastTimer
+function showToast(msg, type='info') {
   const t = document.getElementById('toast')
   t.textContent = msg
-  t.className = 'toast-' + type
-  t.style.cssText = `
-    display:block; position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
-    z-index:500; padding:9px 20px; border-radius:8px; font-size:0.78rem;
-    max-width:480px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.5);
-    ${type==='ok'    ? 'background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.4);color:var(--green);' :
-      type==='error' ? 'background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.4);color:var(--red);' :
-                       'background:#1a2a40;border:1px solid var(--border2);color:var(--text);'}
-  `
+  const styles = {
+    ok:    'background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.4);color:var(--green)',
+    error: 'background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.4);color:var(--red)',
+    info:  'background:#1a2a40;border:1px solid var(--border2);color:var(--text)',
+  }
+  t.style.cssText = `display:block;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:500;padding:8px 18px;border-radius:7px;font-size:0.76rem;max-width:440px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);${styles[type]||styles.info}`
   clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => { t.style.display = 'none' }, 3500)
+  toastTimer = setTimeout(()=>{t.style.display='none'},3500)
 }
 
-// Keyboard shortcuts
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') {
-    closeDispatch()
-    closeFsPlot()
-  }
-})
-
-// ────────────────────────────────────────────────────────────────────────────
-// START
-// ────────────────────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){closeModal();closeFsPlot()} })
 document.addEventListener('DOMContentLoaded', init)
 </script>
 </body>
