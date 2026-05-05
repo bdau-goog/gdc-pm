@@ -294,6 +294,12 @@ SCENARIOS = {
 # Track running scenario state for UI polling
 scenario_status: dict = {"running": False, "name": None, "step": 0, "total": 0, "note": ""}
 
+# ── Airgap state (in-memory) ──────────────────────────────────────────────────
+airgap_mode: bool = False
+
+# Track active gradual-degradation threads per asset_id
+active_degrades: dict = {}  # {asset_id: {"running": bool, "fault_type": str}}
+
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 app = FastAPI(title="GDC-PM Fault Trigger UI", version="2.0.0")
 
@@ -568,6 +574,252 @@ def acknowledge_event(event_id: int, req: AcknowledgeRequest):
     except Exception as e:
         log.error(f"Acknowledge error: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+# ── Airgap Simulation ─────────────────────────────────────────────────────────
+@app.get("/api/simulate/airgap")
+def get_airgap():
+    return {"airgap": airgap_mode}
+
+
+@app.post("/api/simulate/airgap")
+def set_airgap(enabled: bool = True):
+    global airgap_mode
+    airgap_mode = enabled
+    log.info(f"Airgap mode: {airgap_mode}")
+    return {"airgap": airgap_mode}
+
+
+# ── Gradual Degradation Injection ─────────────────────────────────────────────
+class DegradeRequest(BaseModel):
+    asset_id: str
+    fault_type: str
+    duration_seconds: int = 60
+
+
+def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -> None:
+    """
+    Incrementally ramps sensor values from normal toward the fault profile
+    over `duration_seconds`. Each step publishes one reading every 5s.
+    This simulates progressive degradation that the ML model detects mid-ramp.
+    """
+    global active_degrades
+    profile = FAULT_PROFILES.get(fault_type, FAULT_PROFILES["normal"])
+    normal  = FAULT_PROFILES["normal"]
+    steps   = max(1, duration_seconds // 5)
+
+    active_degrades[asset_id] = {"running": True, "fault_type": fault_type, "step": 0, "steps": steps}
+    log.info(f"▶ Gradual degrade: {fault_type} on {asset_id} over {duration_seconds}s ({steps} steps)")
+
+    for i in range(steps):
+        if not active_degrades.get(asset_id, {}).get("running"):
+            log.info(f"Degrade cancelled: {asset_id}")
+            break
+        t = (i + 1) / steps  # 0→1 interpolation factor
+        psi  = normal["psi_range"][0]  + t * (profile["psi_range"][0]  - normal["psi_range"][0])
+        temp = normal["temp_range"][0] + t * (profile["temp_range"][0] - normal["temp_range"][0])
+        vib  = normal["vib_range"][0]  + t * (profile["vib_range"][0]  - normal["vib_range"][0])
+
+        reading = {
+            "asset_id"    : asset_id,
+            "psi"         : round(psi  + random.uniform(-3, 3),    2),
+            "temp_f"      : round(temp + random.uniform(-1, 1),    2),
+            "vibration"   : round(vib  + random.uniform(-0.003, 0.003), 4),
+            "failure_type": fault_type,
+            "source"      : "gradual_degrade",
+            "timestamp"   : datetime.utcnow().isoformat() + "Z",
+        }
+        try:
+            publish_to_rabbitmq(reading)
+        except Exception as e:
+            log.error(f"Degrade publish error (step {i+1}): {e}")
+
+        active_degrades[asset_id]["step"] = i + 1
+        time.sleep(5)
+
+    active_degrades.pop(asset_id, None)
+    log.info(f"✅ Gradual degrade complete: {fault_type} on {asset_id}")
+
+
+@app.post("/api/inject/degrade")
+def inject_degrade(req: DegradeRequest):
+    """
+    Starts a gradual degradation background thread for an asset.
+    Sensor values ramp linearly from normal toward the fault profile over duration_seconds.
+    Poll /api/degrade-status for progress.
+    """
+    if req.asset_id in active_degrades:
+        raise HTTPException(status_code=409,
+                            detail=f"Degradation already running on {req.asset_id}. "
+                                   f"POST /api/cancel-degrade/{req.asset_id} to stop it.")
+    if req.fault_type not in FAULT_PROFILES:
+        raise HTTPException(status_code=400, detail=f"Unknown fault type: {req.fault_type}")
+    if req.asset_id not in ASSETS:
+        raise HTTPException(status_code=400, detail=f"Unknown asset: {req.asset_id}")
+
+    thread = threading.Thread(
+        target=_run_degrade_thread,
+        args=(req.asset_id, req.fault_type, req.duration_seconds),
+        daemon=True,
+    )
+    thread.start()
+    log.info(f"Degrade thread started: {req.fault_type} on {req.asset_id}")
+    return {"status": "started", "asset": req.asset_id,
+            "fault_type": req.fault_type, "duration_seconds": req.duration_seconds}
+
+
+@app.get("/api/degrade-status")
+def get_degrade_status():
+    """Returns all currently running gradual degradation tasks."""
+    return {"active": active_degrades}
+
+
+@app.post("/api/cancel-degrade/{asset_id}")
+def cancel_degrade(asset_id: str):
+    """Signals the running degradation thread for an asset to stop."""
+    if asset_id not in active_degrades:
+        raise HTTPException(status_code=404, detail=f"No active degradation on {asset_id}")
+    active_degrades[asset_id]["running"] = False
+    return {"status": "cancelling", "asset": asset_id}
+
+
+# ── 3D Plotly Sensor Cluster Visualization ────────────────────────────────────
+@app.get("/api/plot/3d/{asset_id}", response_class=HTMLResponse)
+def plot_3d(asset_id: str):
+    """
+    Returns a self-contained Plotly 3D scatter HTML page for the given asset.
+    Plots the last 150 readings as PSI × Temperature × Vibration, color-coded
+    by the ML predicted_label. Designed to be embedded in an iframe.
+    """
+    import plotly.graph_objects as go
+
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT psi, temp_f, vibration, predicted_label, event_time
+                FROM telemetry_events
+                WHERE asset_id = %s
+                ORDER BY event_time DESC
+                LIMIT 150
+                """,
+                (asset_id,),
+            )
+            rows = cur.fetchall()
+        conn.close()
+    except Exception as e:
+        log.error(f"3D plot DB error: {e}")
+        return HTMLResponse(
+            f'<body style="background:#0b0c10;color:#e0e0e0;font-family:Inter,sans-serif;padding:30px">'
+            f'<p style="color:#f44336">⚠ Database error: {e}</p></body>',
+            status_code=500,
+        )
+
+    if not rows:
+        return HTMLResponse(
+            f'<body style="background:#0b0c10;color:#5a6a7a;font-family:Inter,sans-serif;'
+            f'display:flex;align-items:center;justify-content:center;height:100vh;margin:0">'
+            f'<p>No data yet for {asset_id}.<br>Waiting for telemetry...</p></body>'
+        )
+
+    label_colors = {
+        "normal"  : "#00e676",
+        "advisory": "#ffb300",
+        "warning" : "#ff6d00",
+        "critical": "#f44336",
+    }
+    label_sizes = {"normal": 3, "advisory": 5, "warning": 6, "critical": 7}
+
+    # Group by predicted_label
+    groups: dict = {}
+    for r in rows:
+        lbl = (r["predicted_label"] or "normal").lower()
+        if lbl not in groups:
+            groups[lbl] = {"psi": [], "temp": [], "vib": [], "ts": []}
+        groups[lbl]["psi"].append(float(r["psi"]))
+        groups[lbl]["temp"].append(float(r["temp_f"]))
+        groups[lbl]["vib"].append(float(r["vibration"]))
+        groups[lbl]["ts"].append(str(r["event_time"])[:19])
+
+    # Build ordered traces: normal first (background), then faults on top
+    order = ["normal", "advisory", "warning", "critical"]
+    traces = []
+    for lbl in order:
+        if lbl not in groups:
+            continue
+        d = groups[lbl]
+        traces.append(go.Scatter3d(
+            x=d["psi"], y=d["temp"], z=d["vib"],
+            mode="markers",
+            name=lbl.title(),
+            marker=dict(
+                size=label_sizes.get(lbl, 5),
+                color=label_colors.get(lbl, "#888"),
+                opacity=0.80 if lbl == "normal" else 0.95,
+                line=dict(width=0),
+            ),
+            text=[
+                f"<b>{lbl.upper()}</b><br>PSI: {p:.1f}<br>Temp: {t:.1f}°F<br>Vib: {v:.4f} mm<br>{ts}"
+                for p, t, v, ts in zip(d["psi"], d["temp"], d["vib"], d["ts"])
+            ],
+            hovertemplate="%{text}<extra></extra>",
+        ))
+
+    # Add any unlabeled groups
+    for lbl, d in groups.items():
+        if lbl in order:
+            continue
+        traces.append(go.Scatter3d(
+            x=d["psi"], y=d["temp"], z=d["vib"],
+            mode="markers", name=lbl.title(),
+            marker=dict(size=4, color="#888", opacity=0.7),
+        ))
+
+    fig = go.Figure(data=traces)
+    axis_style = dict(
+        backgroundcolor="#0d1420",
+        gridcolor="#1e2a38",
+        zerolinecolor="#1e2a38",
+        tickfont=dict(color="#5a6a7a", size=9),
+        titlefont=dict(color="#7d8590", size=10),
+    )
+    fig.update_layout(
+        paper_bgcolor="#0b0c10",
+        plot_bgcolor="#0b0c10",
+        font=dict(color="#e0e0e0", family="Inter, sans-serif", size=10),
+        scene=dict(
+            xaxis=dict(title="Pressure (PSI)", **axis_style),
+            yaxis=dict(title="Temperature (°F)", **axis_style),
+            zaxis=dict(title="Vibration (mm)", **axis_style),
+            bgcolor="#0b0c10",
+        ),
+        margin=dict(l=0, r=0, t=40, b=0),
+        title=dict(
+            text=f"{asset_id} — Sensor Cluster (last {len(rows)} readings)",
+            font=dict(size=11, color="#7d8590"),
+            x=0.5,
+        ),
+        legend=dict(
+            x=0.01, y=0.99, bgcolor="rgba(11,12,16,0.7)",
+            bordercolor="#1e2a38", borderwidth=1,
+            font=dict(size=10),
+        ),
+        showlegend=True,
+    )
+
+    html = fig.to_html(
+        full_html=True,
+        include_plotlyjs="cdn",
+        config={"displayModeBar": True, "displaylogo": False,
+                "modeBarButtonsToRemove": ["sendDataToCloud"]},
+    )
+    # Inject dark body style
+    html = html.replace(
+        "<body>",
+        '<body style="background:#0b0c10;margin:0;padding:0;overflow:hidden;">'
+    )
+    return HTMLResponse(html)
 
 
 # ── Serve Frontend HTML ───────────────────────────────────────────────────────

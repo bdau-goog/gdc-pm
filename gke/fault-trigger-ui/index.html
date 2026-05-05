@@ -3,661 +3,1366 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GDC-PM — Fault Injection Control Panel</title>
+  <title>GDC-PM — Operations Command Center</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
   <style>
+    /* ── Design Tokens ────────────────────────────────────────────────────── */
     :root {
-      --bg: #0d1117; --surface: #161b22; --surface2: #1c2128; --border: #30363d;
-      --text: #e6edf3; --muted: #7d8590;
-      --green: #3fb950; --red: #f85149;
-      --blue: #388bfd; --accent: #1f6feb;
-      --critical: #FF1744; --warning: #FF9100; --advisory: #FFD600; --ok: #00BFA5;
+      --bg:       #0b0c10;
+      --surf:     #0f1318;
+      --surf2:    #141b22;
+      --surf3:    #1a2330;
+      --border:   #1e2a38;
+      --border2:  #2a3a50;
+      --text:     #e0e0e0;
+      --text2:    #a0b0c0;
+      --muted:    #5a6a7a;
+      --green:    #00e676;
+      --yellow:   #ffb300;
+      --orange:   #ff6d00;
+      --red:      #f44336;
+      --blue:     #1e90ff;
+      --blue-dim: rgba(30,144,255,0.15);
+      --font:     'Inter', system-ui, sans-serif;
+      --mono:     'JetBrains Mono', monospace;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-           background: var(--bg); color: var(--text); min-height: 100vh; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text);
+           font-size: 13px; line-height: 1.5; }
 
-    /* ── Header ── */
-    header { background: var(--surface); border-bottom: 1px solid var(--border);
-             padding: 12px 24px; display: flex; align-items: center; gap: 14px; position: sticky; top: 0; z-index: 100; }
-    header h1 { font-size: 1.1rem; font-weight: 600; }
-    .badge { font-size: 0.68rem; padding: 2px 8px; border-radius: 12px;
-             background: var(--accent); color: #fff; font-weight: 600; }
-    .status-dot { width: 9px; height: 9px; border-radius: 50%;
-                  background: var(--green); box-shadow: 0 0 5px var(--green); flex-shrink: 0; }
+    /* ── Scrollbars ───────────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-    /* ── Alert strip in header ── */
-    .header-alerts { display: flex; align-items: center; gap: 8px; margin-left: 20px; }
-    .strip-pill { padding: 2px 9px; border-radius: 10px; font-size: 0.72rem;
-                  font-weight: 700; display: flex; align-items: center; gap: 4px; }
-    .strip-critical { background: rgba(255,23,68,0.15);  color: var(--critical); border: 1px solid rgba(255,23,68,0.3); }
-    .strip-warning  { background: rgba(255,145,0,0.15);  color: var(--warning);  border: 1px solid rgba(255,145,0,0.3); }
-    .strip-advisory { background: rgba(255,214,0,0.15);  color: var(--advisory); border: 1px solid rgba(255,214,0,0.3); }
-    .strip-ok       { background: rgba(0,191,165,0.12);  color: var(--ok);       border: 1px solid rgba(0,191,165,0.25); }
-    @keyframes critical-pulse { 0%,100% { box-shadow: none; } 50% { box-shadow: 0 0 8px 2px rgba(255,23,68,0.5); } }
-    .strip-critical.pulsing { animation: critical-pulse 1.8s ease-in-out infinite; }
-    .header-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    #last-refresh { font-size: 0.72rem; color: var(--muted); }
+    /* ── Header ──────────────────────────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 0 20px; height: 52px; flex-shrink: 0;
+      background: var(--surf);
+      border-bottom: 1px solid var(--border);
+      transition: border-color 0.4s, background 0.4s;
+    }
+    header.airgap-on { border-bottom-color: #8b3a3a; background: #12080a; }
+    .hdr-logo { font-size: 18px; }
+    .hdr-title { font-size: 0.95rem; font-weight: 700; letter-spacing: 0.3px; }
+    .hdr-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+                 border-radius: 10px; background: rgba(30,144,255,0.2);
+                 color: var(--blue); border: 1px solid rgba(30,144,255,0.3);
+                 letter-spacing: 0.5px; }
+    .hdr-divider { width: 1px; height: 22px; background: var(--border); }
 
-    /* ── 3-Column Layout ── */
-    main {
+    /* Alert pills in header */
+    .alert-pills { display: flex; gap: 6px; align-items: center; }
+    .a-pill { font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+              border-radius: 10px; display: flex; align-items: center; gap: 3px; }
+    .a-critical { background: rgba(244,67,54,0.15);  color: var(--red);    border: 1px solid rgba(244,67,54,0.3); }
+    .a-warning  { background: rgba(255,109,0,0.15);  color: var(--orange); border: 1px solid rgba(255,109,0,0.3); }
+    .a-advisory { background: rgba(255,179,0,0.15);  color: var(--yellow); border: 1px solid rgba(255,179,0,0.3); }
+    .a-ok       { background: rgba(0,230,118,0.10);  color: var(--green);  border: 1px solid rgba(0,230,118,0.2); }
+    @keyframes hdr-pulse { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 8px 2px rgba(244,67,54,0.4)} }
+    .a-critical.pulsing { animation: hdr-pulse 1.8s ease-in-out infinite; }
+
+    /* Airgap toggle */
+    .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+    #airgap-btn {
+      font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 20px;
+      border: 1px solid var(--border2); background: var(--surf2); color: var(--text2);
+      cursor: pointer; transition: all 0.25s; white-space: nowrap;
+    }
+    #airgap-btn:hover { border-color: var(--blue); color: var(--blue); }
+    #airgap-btn.airgap-on { border-color: #8b3a3a; background: rgba(139,58,58,0.2); color: #ff6b6b; }
+    #last-refresh { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); }
+
+    /* GDC edge badge shown in airgap mode */
+    #gdc-edge-badge {
+      display: none; font-size: 0.65rem; font-weight: 700; padding: 3px 9px;
+      border-radius: 10px; background: rgba(0,230,118,0.15); color: var(--green);
+      border: 1px solid rgba(0,230,118,0.3);
+    }
+    .airgap-on #gdc-edge-badge { display: inline-block; }
+
+    /* ── Airgap banner ────────────────────────────────────────────────────── */
+    #airgap-banner {
+      display: none; align-items: center; justify-content: center; gap: 10px;
+      background: linear-gradient(90deg, #1a0a0a, #2a1010, #1a0a0a);
+      border-bottom: 1px solid #5a2020; color: #ff8080;
+      font-size: 0.72rem; font-weight: 600; padding: 5px 20px;
+      letter-spacing: 0.3px;
+    }
+    #airgap-banner.visible { display: flex; }
+
+    /* ── Dispatch banner (top of events) ─────────────────────────────────── */
+    #dispatch-banner {
+      display: none; align-items: center; gap: 8px; padding: 7px 12px;
+      background: rgba(244,67,54,0.12); border: 1px solid rgba(244,67,54,0.3);
+      border-radius: 6px; cursor: pointer; margin-bottom: 8px;
+      transition: background 0.15s;
+    }
+    #dispatch-banner:hover { background: rgba(244,67,54,0.2); }
+    #dispatch-banner.visible { display: flex; }
+    #dispatch-banner-text { font-size: 0.72rem; font-weight: 600; color: #ff8080; flex: 1; }
+    @keyframes banner-pulse { 0%,100%{opacity:1} 50%{opacity:0.7} }
+    #dispatch-banner.visible { animation: banner-pulse 2s ease-in-out infinite; }
+
+    /* ── Layout ───────────────────────────────────────────────────────────── */
+    .app-body {
       display: grid;
-      grid-template-columns: 300px 1fr 240px;
-      grid-template-rows: 1fr;
-      gap: 16px;
-      padding: 16px 20px;
-      max-width: 1600px;
-      margin: 0 auto;
-      min-height: calc(100vh - 50px);
+      grid-template-columns: 360px 1fr;
+      height: calc(100vh - 52px);
+      overflow: hidden;
     }
 
-    .card { background: var(--surface); border: 1px solid var(--border);
-            border-radius: 8px; padding: 16px; }
-    .card-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-                  letter-spacing: 0.06em; color: var(--muted); margin-bottom: 12px;
-                  display: flex; align-items: center; gap: 6px; }
-
-    /* ── LEFT: Fault Controls ── */
-    .left-panel { display: flex; flex-direction: column; gap: 14px; align-self: start; }
-
-    .fault-target { background: var(--surface2); border: 1px solid var(--border);
-                    border-radius: 6px; padding: 8px 12px; margin-bottom: 12px;
-                    font-size: 0.78rem; color: var(--muted); }
-    .fault-target strong { color: var(--blue); font-size: 0.85rem; }
-
-    .fault-grid { display: grid; gap: 7px; }
-    .fault-btn { width: 100%; padding: 11px 14px; border-radius: 7px; border: none;
-                 cursor: pointer; color: #fff; font-size: 0.88rem; font-weight: 600;
-                 transition: opacity 0.2s; display: flex; align-items: center; gap: 9px; text-align: left; }
-    .fault-btn:hover { opacity: 0.88; }
-    .fault-btn .desc { font-size: 0.7rem; font-weight: 400; opacity: 0.85; }
-    .prd   { background: linear-gradient(135deg, #c62828, #b71c1c); }
-    .therm { background: linear-gradient(135deg, #e65100, #bf360c); }
-    .bear  { background: linear-gradient(135deg, #f57f17, #e65100); }
-    .normal-btn { background: var(--bg); border: 1px solid var(--green); color: var(--green);
-                  padding: 8px; border-radius: 6px; cursor: pointer; width: 100%;
-                  font-size: 0.84rem; margin-top: 6px; transition: background 0.15s; }
-    .normal-btn:hover { background: rgba(63,185,80,0.08); }
-
-    .burst { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
-    .burst label { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
-    .burst input { background: var(--bg); border: 1px solid var(--border); color: var(--text);
-                   border-radius: 5px; padding: 4px 9px; width: 52px; font-size: 0.86rem; }
-
-    .scenario-list { display: grid; gap: 6px; }
-    .scenario-btn { background: var(--bg); border: 1px solid var(--border); color: var(--text);
-                    padding: 8px 12px; border-radius: 6px; cursor: pointer; text-align: left;
-                    font-size: 0.82rem; transition: all 0.15s; width: 100%; }
-    .scenario-btn:hover { border-color: var(--blue); background: rgba(56,139,253,0.06); }
-    .scenario-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .s-name { font-weight: 600; display: flex; align-items: center; gap: 5px; }
-    .s-desc { font-size: 0.7rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
-    .sp-wrap { margin-top: 8px; display: none; background: rgba(56,139,253,0.08);
-               border: 1px solid rgba(56,139,253,0.25); border-radius: 6px; padding: 9px 12px; font-size: 0.78rem; }
-    .sp-wrap.visible { display: block; }
-    .sp-bar-bg { background: var(--border); border-radius: 3px; height: 4px; margin: 6px 0; }
-    .sp-bar { height: 4px; border-radius: 3px; background: var(--blue); transition: width 0.5s; }
-    .sp-note { color: var(--muted); font-size: 0.72rem; margin-top: 3px; }
-
-    /* ── CENTER: Events ── */
-    .center-panel { min-height: 0; display: flex; flex-direction: column; }
-    .events-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .refresh-btn { background: none; border: 1px solid var(--border); color: var(--muted);
-                   padding: 3px 10px; border-radius: 5px; cursor: pointer; font-size: 0.76rem; }
-    .refresh-btn:hover { border-color: var(--blue); color: var(--blue); }
-    .table-wrap { overflow-y: auto; flex: 1; max-height: calc(100vh - 130px); }
-    table { width: 100%; border-collapse: collapse; font-size: 0.79rem; }
-    th { text-align: left; padding: 6px 9px; font-size: 0.69rem; font-weight: 600;
-         text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
-         border-bottom: 1px solid var(--border); position: sticky; top: 0;
-         background: var(--surface); z-index: 1; }
-    td { padding: 6px 9px; border-bottom: 1px solid rgba(48,54,61,0.5); vertical-align: middle; }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-
-    @keyframes row-flash { 0%,100% { background: rgba(255,23,68,0.05); } 50% { background: rgba(255,23,68,0.16); } }
-    .row-critical-fresh td { animation: row-flash 1.8s ease-in-out infinite; border-left: 3px solid var(--critical) !important; }
-    .row-critical td { border-left: 3px solid rgba(255,23,68,0.55) !important; }
-    .row-warning  td { border-left: 3px solid rgba(255,145,0,0.55) !important; }
-    .row-advisory td { border-left: 3px solid rgba(255,214,0,0.45) !important; }
-
-    .status-pill { padding: 1px 7px; border-radius: 9px; font-size: 0.7rem; font-weight: 600; white-space: nowrap; }
-    .pill-normal                { background: rgba(0,191,165,0.13);  color: var(--ok); }
-    .pill-prd_failure           { background: rgba(255,23,68,0.13);  color: var(--critical); }
-    .pill-thermal_runaway       { background: rgba(255,145,0,0.13);  color: var(--warning); }
-    .pill-bearing_wear          { background: rgba(255,214,0,0.13);  color: var(--advisory); }
-    .pill-rotor_imbalance       { background: rgba(255,214,0,0.13);  color: var(--advisory); }
-    .pill-blade_fouling         { background: rgba(255,145,0,0.13);  color: var(--warning); }
-    .pill-combustion_instability{ background: rgba(255,23,68,0.13);  color: var(--critical); }
-    .pill-core_loosening        { background: rgba(255,214,0,0.13);  color: var(--advisory); }
-    .pill-winding_overheat      { background: rgba(255,145,0,0.13);  color: var(--warning); }
-    .pill-dielectric_breakdown  { background: rgba(255,23,68,0.13);  color: var(--critical); }
-    .pill-unknown               { background: rgba(125,133,144,0.13);color: var(--muted); }
-
-    .conf-bar-wrap { display: flex; align-items: center; gap: 5px; }
-    .conf-bar  { height: 4px; border-radius: 2px; background: var(--border); width: 38px; }
-    .conf-fill { height: 4px; border-radius: 2px; }
-
-    .narrative-row td { padding: 0 9px 8px 9px !important; border-bottom: 1px solid rgba(48,54,61,0.6) !important; }
-    .narrative-panel { background: var(--surface2); border-radius: 5px; padding: 10px 12px; display: grid; gap: 6px; }
-    .narrative-label { font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
-    .narrative-text   { font-size: 0.76rem; color: #c9d1d9; line-height: 1.5; }
-    .narrative-action { font-size: 0.76rem; color: var(--warning); line-height: 1.5; }
-    .expand-link { cursor: pointer; color: var(--muted); font-size: 0.68rem; margin-left: 4px; user-select: none; }
-    .expand-link:hover { color: var(--blue); }
-    .ack-btn { background: none; border: 1px solid var(--border); color: var(--muted);
-               padding: 1px 7px; border-radius: 4px; cursor: pointer; font-size: 0.68rem; transition: all 0.15s; }
-    .ack-btn:hover { border-color: var(--ok); color: var(--ok); }
-    .acked-tag { font-size: 0.68rem; color: var(--muted); font-style: italic; }
-
-    /* ── RIGHT: Asset Selector ── */
-    .right-panel { display: flex; flex-direction: column; gap: 0; align-self: start; position: sticky; top: 66px; }
-
-    /* Filter tabs */
-    .class-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
-    .class-tab { background: var(--bg); border: 1px solid var(--border); color: var(--muted);
-                 padding: 6px 4px; border-radius: 6px; font-size: 0.7rem; cursor: pointer;
-                 transition: all 0.15s; font-weight: 600; text-align: center; }
-    .class-tab:hover { color: var(--text); border-color: var(--blue); }
-    .class-tab.active { background: rgba(56,139,253,0.15); color: var(--blue); border-color: rgba(56,139,253,0.35); }
-    .class-tab.all-tab { grid-column: span 2; }
-
-    /* Asset list */
-    .asset-list { display: grid; gap: 5px; max-height: calc(100vh - 200px); overflow-y: auto; }
-    .asset-list::-webkit-scrollbar { width: 4px; }
-    .asset-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-    /* Each asset row — hover shows card to the LEFT */
-    .asset-row { position: relative; }
-    .asset-btn { width: 100%; background: var(--bg); border: 1px solid var(--border);
-                 color: var(--text); padding: 8px 10px; border-radius: 6px; cursor: pointer;
-                 text-align: left; font-size: 0.8rem; transition: all 0.14s;
-                 display: flex; align-items: center; gap: 6px; }
-    .asset-btn:hover { border-color: var(--blue); background: rgba(56,139,253,0.06); }
-    .asset-btn.selected { border-color: var(--blue); background: rgba(56,139,253,0.14); }
-    .asset-name { font-weight: 500; flex: 1; font-size: 0.77rem; }
-
-    .asset-status-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .dot-ok       { background: var(--ok);      box-shadow: 0 0 4px var(--ok); }
-    .dot-advisory { background: var(--advisory); box-shadow: 0 0 4px var(--advisory); }
-    .dot-warning  { background: var(--warning);  box-shadow: 0 0 4px var(--warning); }
-    .dot-critical { background: var(--critical); box-shadow: 0 0 4px var(--critical);
-                    animation: critical-pulse 1.5s ease-in-out infinite; }
-    .dot-stale    { background: var(--muted); }
-
-    /* Hover card opens to the LEFT */
-    .asset-hover-card {
-      position: absolute; right: calc(100% + 10px); top: 0; z-index: 300;
-      width: 290px; background: #1c2128; border: 1px solid var(--border);
-      border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.16s ease, transform 0.16s ease;
-      transform: translateX(6px);
-      font-size: 0.78rem;
+    /* ── LEFT PANEL ───────────────────────────────────────────────────────── */
+    .left-panel {
+      display: flex; flex-direction: column;
+      border-right: 1px solid var(--border);
+      overflow: hidden;
     }
-    .asset-row:hover .asset-hover-card {
-      opacity: 1; pointer-events: auto; transform: translateX(0);
-    }
-    .ahc-header { padding: 9px 13px; border-bottom: 1px solid var(--border);
-                  display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-    .ahc-title  { font-weight: 700; font-size: 0.82rem; }
-    .ahc-crit   { font-size: 0.66rem; font-weight: 700; padding: 1px 6px; border-radius: 7px; }
-    .ahc-body   { padding: 9px 13px; display: grid; gap: 5px; }
-    .ahc-row    { display: grid; grid-template-columns: 90px 1fr; gap: 3px; font-size: 0.74rem; }
-    .ahc-key    { color: var(--muted); }
-    .ahc-val    { color: var(--text); }
-    .ahc-section{ font-size: 0.64rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin-top: 3px; }
-    .ahc-divider{ border: none; border-top: 1px solid var(--border); margin: 3px 0; }
-    .ahc-note   { font-size: 0.72rem; color: #c9d1d9; line-height: 1.45; }
 
-    /* ── Toast ── */
-    #toast { position: fixed; bottom: 20px; right: 20px; background: var(--surface);
-             border: 1px solid var(--border); border-radius: 8px; padding: 11px 16px;
-             font-size: 0.84rem; transform: translateY(80px); opacity: 0;
-             transition: all 0.3s; pointer-events: none; z-index: 400; max-width: 300px; }
-    #toast.show { transform: translateY(0); opacity: 1; }
-    #toast.ok   { border-color: var(--ok); }
-    #toast.err  { border-color: var(--critical); }
+    /* Event Log */
+    .section-hdr {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+      color: var(--muted); text-transform: uppercase;
+      padding: 10px 14px 6px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .section-hdr .live-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+      box-shadow: 0 0 4px var(--green);
+      animation: blink 2s ease-in-out infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    #event-log {
+      flex: 1; overflow-y: auto; padding: 8px 10px;
+      min-height: 0;
+    }
+    .ev-row {
+      display: grid; grid-template-columns: 58px 1fr auto auto;
+      gap: 6px; align-items: center;
+      padding: 5px 8px; border-radius: 5px; margin-bottom: 2px;
+      border: 1px solid transparent;
+      transition: background 0.15s;
+      cursor: default;
+    }
+    .ev-row:hover { background: var(--surf2); }
+    .ev-row.fault  { border-color: var(--border); }
+    .ev-time { font-family: var(--mono); font-size: 0.68rem; color: var(--muted); }
+    .ev-asset {
+      font-family: var(--mono); font-size: 0.72rem; color: var(--blue);
+      cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .ev-asset:hover { text-decoration: underline; }
+    .ev-label { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+    .ev-action button, .dispatch-btn {
+      font-size: 0.62rem; padding: 2px 7px; border-radius: 10px;
+      border: 1px solid rgba(244,67,54,0.4); background: rgba(244,67,54,0.1);
+      color: #ff8080; cursor: pointer; white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .ev-action button:hover, .dispatch-btn:hover { background: rgba(244,67,54,0.25); }
+    .ack-badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 8px;
+                 background: rgba(0,230,118,0.1); color: var(--green);
+                 border: 1px solid rgba(0,230,118,0.2); }
+
+    /* ── FAULT INJECTION PANEL ────────────────────────────────────────────── */
+    #inject-panel {
+      flex-shrink: 0; border-top: 1px solid var(--border);
+      background: var(--surf); padding: 12px 14px;
+      max-height: 320px; overflow-y: auto;
+    }
+    .inject-target {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+      padding: 7px 10px; border-radius: 6px; background: var(--surf2);
+      border: 1px solid var(--border);
+    }
+    .inject-target .target-icon { font-size: 16px; }
+    .inject-target .target-name {
+      font-family: var(--mono); font-size: 0.8rem; font-weight: 700; color: var(--blue);
+    }
+    .inject-target .target-sub { font-size: 0.65rem; color: var(--muted); }
+    .inject-placeholder { color: var(--muted); font-size: 0.75rem; font-style: italic;
+                          text-align: center; padding: 10px 0; }
+
+    /* Fault type radio pills */
+    .fault-options { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+    .fault-opt {
+      display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+      border-radius: 6px; border: 1px solid var(--border); cursor: pointer;
+      transition: all 0.15s; background: var(--bg);
+    }
+    .fault-opt:hover { border-color: var(--border2); background: var(--surf2); }
+    .fault-opt.selected { border-color: rgba(30,144,255,0.5); background: rgba(30,144,255,0.08); }
+    .fault-opt input[type=radio] { display: none; }
+    .fault-color-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .fault-info .fault-name { font-size: 0.75rem; font-weight: 600; }
+    .fault-info .fault-mode { font-size: 0.62rem; color: var(--muted); }
+
+    /* Inject controls row */
+    .inject-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .inject-opt-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 0.72rem; }
+    .inject-opt-row label { display: flex; align-items: center; gap: 4px; cursor: pointer; color: var(--text2); }
+    .inject-opt-row input[type=radio] { accent-color: var(--blue); }
+    .num-input {
+      width: 55px; background: var(--bg); border: 1px solid var(--border);
+      color: var(--text); border-radius: 5px; padding: 3px 7px;
+      font-size: 0.78rem; font-family: var(--mono);
+    }
+    .duration-row { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: var(--text2); }
+
+    /* Inject buttons */
+    .btn-inject {
+      flex: 1; padding: 8px 12px; border-radius: 6px; border: none;
+      font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+      background: linear-gradient(135deg, #1565c0, #0d47a1); color: #fff;
+    }
+    .btn-inject:hover { filter: brightness(1.15); }
+    .btn-inject:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-reset {
+      padding: 8px 10px; border-radius: 6px;
+      border: 1px solid rgba(0,230,118,0.35); background: rgba(0,230,118,0.07);
+      color: var(--green); cursor: pointer; font-size: 0.78rem; font-weight: 600;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .btn-reset:hover { background: rgba(0,230,118,0.15); }
+
+    /* Degrade progress */
+    #degrade-progress { display: none; margin-top: 8px; }
+    #degrade-progress.visible { display: block; }
+    .dprog-bar-bg { background: var(--border); border-radius: 3px; height: 4px; margin: 4px 0 2px; }
+    .dprog-bar { height: 4px; border-radius: 3px; background: var(--orange);
+                 transition: width 0.5s; }
+    .dprog-label { font-size: 0.65rem; color: var(--muted); display: flex; justify-content: space-between; }
+    #btn-cancel-degrade {
+      font-size: 0.65rem; padding: 2px 8px; border-radius: 8px; margin-top: 4px;
+      border: 1px solid rgba(255,109,0,0.4); background: rgba(255,109,0,0.1);
+      color: var(--orange); cursor: pointer;
+    }
+
+    /* Scenario buttons */
+    .scenarios-toggle {
+      font-size: 0.65rem; color: var(--muted); cursor: pointer; margin-top: 8px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .scenarios-toggle:hover { color: var(--text2); }
+    #scenario-list { display: none; margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+    .sc-btn {
+      padding: 6px 10px; border-radius: 5px; background: var(--bg);
+      border: 1px solid var(--border); color: var(--text); cursor: pointer;
+      text-align: left; font-size: 0.75rem; transition: all 0.15s;
+    }
+    .sc-btn:hover { border-color: var(--border2); background: var(--surf2); }
+    .sc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .sc-name { font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .sc-desc { font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
+
+    /* ── RIGHT PANEL ──────────────────────────────────────────────────────── */
+    .right-panel {
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+
+    /* Plant Map */
+    #plant-map-section {
+      flex: 0 0 auto; border-bottom: 1px solid var(--border);
+      position: relative; padding: 0;
+    }
+    .map-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px 6px; border-bottom: 1px solid var(--border);
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .map-body {
+      padding: 12px 16px 14px;
+      position: relative; overflow: hidden;
+    }
+
+    /* Sites row */
+    .sites-row {
+      display: flex; align-items: stretch; gap: 0; position: relative; z-index: 2;
+    }
+
+    /* Transmission line connectors */
+    .tx-connector {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 0 8px; gap: 2px; min-width: 50px; flex-shrink: 0; margin-top: 28px;
+    }
+    .tx-wire { width: 100%; height: 2px; background: repeating-linear-gradient(
+      90deg, var(--border2) 0, var(--border2) 6px, transparent 6px, transparent 12px); }
+    .tx-tower { font-size: 14px; color: var(--border2); }
+
+    /* Site zone */
+    .site-zone {
+      flex: 1; border: 1px solid var(--border);
+      border-radius: 8px; overflow: hidden;
+      background: var(--surf); transition: border-color 0.3s;
+    }
+    .site-zone.has-critical { border-color: rgba(244,67,54,0.5); }
+    .site-zone.has-warning  { border-color: rgba(255,109,0,0.4); }
+
+    .site-hdr {
+      padding: 6px 10px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surf2);
+    }
+    .site-icon { font-size: 14px; }
+    .site-name { font-size: 0.68rem; font-weight: 700; color: var(--text2); }
+    .site-health { margin-left: auto; width: 8px; height: 8px; border-radius: 50%;
+                   background: var(--green); transition: background 0.4s; }
+    .site-health.warning  { background: var(--orange); }
+    .site-health.critical { background: var(--red); box-shadow: 0 0 6px var(--red); }
+
+    .site-assets { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; }
+
+    /* Asset node */
+    .asset-node {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 7px 8px; border-radius: 7px;
+      border: 2px solid var(--border);
+      cursor: pointer; transition: all 0.2s;
+      background: var(--bg); min-width: 72px;
+      position: relative;
+    }
+    .asset-node:hover { background: var(--surf2); transform: translateY(-1px); }
+    .asset-node.selected { border-color: var(--blue) !important; background: rgba(30,144,255,0.08) !important; }
+
+    /* Status-based node styling */
+    .asset-node.s-normal   { border-color: rgba(0,230,118,0.4); }
+    .asset-node.s-advisory { border-color: rgba(255,179,0,0.6); }
+    .asset-node.s-warning  { border-color: rgba(255,109,0,0.7); }
+    .asset-node.s-critical { border-color: var(--red); box-shadow: 0 0 10px rgba(244,67,54,0.3); }
+    .asset-node.s-stale    { border-color: var(--border); opacity: 0.5; }
+
+    @keyframes node-pulse-warn { 0%,100%{box-shadow:none} 50%{box-shadow:0 0 10px rgba(255,109,0,0.4)} }
+    @keyframes node-pulse-crit { 0%,100%{box-shadow:0 0 8px rgba(244,67,54,0.2)} 50%{box-shadow:0 0 16px rgba(244,67,54,0.6)} }
+    .asset-node.s-warning  { animation: node-pulse-warn 2s ease-in-out infinite; }
+    .asset-node.s-critical { animation: node-pulse-crit 1.2s ease-in-out infinite; }
+
+    .node-icon { font-size: 18px; line-height: 1; }
+    .node-name { font-family: var(--mono); font-size: 0.58rem; color: var(--text2);
+                 text-align: center; line-height: 1.3; }
+    .node-status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border2); transition: background 0.3s;
+    }
+    .asset-node.s-normal   .node-status-dot { background: var(--green); }
+    .asset-node.s-advisory .node-status-dot { background: var(--yellow); }
+    .asset-node.s-warning  .node-status-dot { background: var(--orange); }
+    .asset-node.s-critical .node-status-dot { background: var(--red); }
+
+    /* Dispatch badge on node */
+    .node-dispatch-badge {
+      display: none; position: absolute; top: -5px; right: -5px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--red); color: #fff;
+      font-size: 8px; font-weight: 700; align-items: center; justify-content: center;
+      border: 1px solid var(--bg);
+    }
+    .asset-node.needs-dispatch .node-dispatch-badge { display: flex; }
+
+    /* Degrade progress ring on node */
+    .node-degrade-ring {
+      display: none; position: absolute; top: -4px; left: -4px;
+      width: calc(100% + 8px); height: calc(100% + 8px);
+      border: 2px dashed var(--orange); border-radius: 9px;
+      animation: spin-slow 3s linear infinite;
+    }
+    @keyframes spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+    .asset-node.degrading .node-degrade-ring { display: block; }
+
+    /* ── 3D PLOT SECTION ──────────────────────────────────────────────────── */
+    #plot-section {
+      flex: 1; min-height: 0; display: flex; flex-direction: column;
+    }
+    .plot-header {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      padding: 8px 14px; border-bottom: 1px solid var(--border);
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em;
+      color: var(--muted); text-transform: uppercase;
+    }
+    .plot-header .plot-asset-label { color: var(--blue); font-family: var(--mono);
+                                      font-size: 0.72rem; font-weight: 400; }
+    #btn-expand-plot {
+      margin-left: auto; font-size: 0.65rem; padding: 3px 8px; border-radius: 5px;
+      border: 1px solid var(--border); background: var(--surf2); color: var(--muted);
+      cursor: pointer; transition: all 0.15s;
+    }
+    #btn-expand-plot:hover { border-color: var(--border2); color: var(--text2); }
+
+    #plot-iframe-wrap {
+      flex: 1; min-height: 0; position: relative;
+      background: var(--bg);
+    }
+    #plot-iframe {
+      width: 100%; height: 100%; border: none;
+      display: block;
+    }
+    #plot-placeholder {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 8px;
+      color: var(--muted); font-size: 0.8rem;
+    }
+    #plot-placeholder .ph-icon { font-size: 36px; opacity: 0.4; }
+    #plot-placeholder .ph-text { font-size: 0.75rem; text-align: center; line-height: 1.6; }
+
+    /* ── DISPATCH MODAL ───────────────────────────────────────────────────── */
+    #dispatch-modal {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7); align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    #dispatch-modal.open { display: flex; }
+    .modal-card {
+      background: var(--surf); border: 1px solid var(--border2);
+      border-radius: 12px; padding: 24px; width: 480px; max-width: 95vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    .modal-title {
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal-title::before { content: '⚠'; font-size: 14px; color: var(--red); }
+    .wo-grid { display: grid; grid-template-columns: 120px 1fr; gap: 4px 10px; }
+    .wo-label { font-size: 0.72rem; color: var(--muted); font-weight: 600; padding: 3px 0; }
+    .wo-value { font-size: 0.72rem; color: var(--text); padding: 3px 0; }
+    .wo-value.critical { color: var(--red); font-weight: 700; }
+    .wo-value.saved    { color: var(--green); font-weight: 700; }
+    .wo-divider { grid-column: 1/-1; border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+    .wo-narrative {
+      grid-column: 1/-1; background: var(--surf2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 8px 10px; font-size: 0.7rem;
+      color: var(--text2); line-height: 1.6; margin-top: 4px;
+      max-height: 80px; overflow-y: auto;
+    }
+    .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+    .btn-ack {
+      flex: 1; padding: 10px; border-radius: 7px; border: none;
+      background: linear-gradient(135deg, #c62828, #b71c1c); color: #fff;
+      font-weight: 700; font-size: 0.82rem; cursor: pointer; transition: filter 0.15s;
+    }
+    .btn-ack:hover { filter: brightness(1.15); }
+    .btn-modal-close {
+      padding: 10px 16px; border-radius: 7px;
+      border: 1px solid var(--border); background: var(--surf2);
+      color: var(--text2); cursor: pointer; font-size: 0.78rem; transition: all 0.15s;
+    }
+    .btn-modal-close:hover { border-color: var(--border2); color: var(--text); }
+
+    /* ── Fullscreen 3D overlay ────────────────────────────────────────────── */
+    #fs-plot {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: var(--bg);
+    }
+    #fs-plot.open { display: block; }
+    #fs-plot iframe { width: 100%; height: 100%; border: none; }
+    #fs-close-btn {
+      position: absolute; top: 14px; right: 14px; z-index: 310;
+      padding: 6px 14px; border-radius: 6px; font-size: 0.75rem;
+      background: var(--surf); border: 1px solid var(--border);
+      color: var(--text); cursor: pointer;
+    }
+
+    /* ── Toast ────────────────────────────────────────────────────────────── */
+    #toast {
+      display: none; position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+      z-index: 500; padding: 9px 18px; border-radius: 8px; font-size: 0.78rem;
+      max-width: 440px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    #toast.info  { background: #1a2a40; border: 1px solid var(--border2); color: var(--text); }
+    #toast.ok    { background: rgba(0,230,118,0.15); border: 1px solid rgba(0,230,118,0.4); color: var(--green); }
+    #toast.error { background: rgba(244,67,54,0.15); border: 1px solid rgba(244,67,54,0.4); color: var(--red); }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="status-dot"></div>
-  <h1>GDC-PM Predictive Maintenance</h1>
-  <span class="badge">Operations Control Panel</span>
+<!-- ── AIRGAP BANNER ──────────────────────────────────────────────────────── -->
+<div id="airgap-banner">
+  <span>✈</span>
+  <span>CLOUD NETWORK DISCONNECTED — GDC Edge Running Autonomously</span>
+  <span>|</span>
+  <span style="color:var(--green)">✅ Local ML Inference Active &nbsp;·&nbsp; ✅ AlloyDB Omni Operational &nbsp;·&nbsp; ✅ RabbitMQ Local</span>
+</div>
 
-  <!-- Alert pills always visible in header -->
-  <div class="header-alerts" id="header-alerts"></div>
-
-  <div class="header-right">
-    <span id="last-refresh"></span>
+<!-- ── HEADER ─────────────────────────────────────────────────────────────── -->
+<header id="main-header">
+  <span class="hdr-logo">⚡</span>
+  <span class="hdr-title">GDC Predictive Maintenance</span>
+  <span class="hdr-badge">LIVE</span>
+  <div class="hdr-divider"></div>
+  <div class="alert-pills">
+    <span class="a-pill a-critical" id="pill-critical">🔴 0 Critical</span>
+    <span class="a-pill a-warning"  id="pill-warning">⚠ 0 Warning</span>
+    <span class="a-pill a-advisory" id="pill-advisory">⚡ 0 Advisory</span>
+    <span class="a-pill a-ok"       id="pill-ok">✓ All Clear</span>
+  </div>
+  <div class="hdr-right">
+    <span id="gdc-edge-badge">GDC Edge ✅</span>
+    <button id="airgap-btn" onclick="toggleAirgap()">🌐 Cloud Connected</button>
+    <span id="last-refresh">--:--:--</span>
   </div>
 </header>
 
-<main>
+<!-- ── MAIN LAYOUT ─────────────────────────────────────────────────────────── -->
+<div class="app-body">
 
-  <!-- ══════════════════════════════════════════════════
-       LEFT — Fault injection + Demo scenarios
-  ══════════════════════════════════════════════════ -->
+  <!-- LEFT: Event log + Fault injection -->
   <div class="left-panel">
 
-    <div class="card">
-      <div class="card-title">Inject Fault</div>
+    <!-- Dispatch banner -->
+    <div id="dispatch-banner" onclick="openTopDispatch()">
+      <span style="font-size:14px;color:var(--red)">⚠</span>
+      <span id="dispatch-banner-text"></span>
+      <span style="font-size:0.65rem;color:var(--muted);white-space:nowrap">Click to dispatch →</span>
+    </div>
 
-      <div class="fault-target">
-        Targeting: <strong id="selected-asset-label">COMP-TX-VALLEY-01</strong>
-        <span style="color:var(--muted);font-size:0.7rem;display:block;margin-top:2px">
-          Select asset in panel →
+    <!-- Event log section header -->
+    <div class="section-hdr">
+      <span class="live-dot"></span>
+      Live Detection Feed
+    </div>
+
+    <!-- Event rows -->
+    <div id="event-log">
+      <div style="color:var(--muted);font-size:0.75rem;padding:20px;text-align:center">Loading events…</div>
+    </div>
+
+    <!-- Fault injection panel -->
+    <div id="inject-panel">
+      <div class="section-hdr" style="padding:0 0 8px;border:none;font-size:0.62rem">
+        ⚙ FAULT INJECTION
+      </div>
+
+      <!-- Selected asset target -->
+      <div id="inject-target" class="inject-placeholder">
+        ← Click an asset on the plant map to select it
+      </div>
+
+      <!-- Fault options (populated by JS) -->
+      <div id="fault-options" class="fault-options" style="display:none"></div>
+
+      <!-- Injection mode: instant vs gradual -->
+      <div id="inject-mode-row" class="inject-opt-row" style="display:none">
+        <label><input type="radio" name="inject-mode" value="instant" checked onchange="onModeChange()"> Instant burst</label>
+        <label><input type="radio" name="inject-mode" value="gradual" onchange="onModeChange()"> Gradual ramp</label>
+      </div>
+
+      <!-- Burst count (instant mode) -->
+      <div id="burst-row" class="inject-controls" style="display:none">
+        <span style="color:var(--muted);font-size:0.72rem">Burst count:</span>
+        <input type="number" id="burst-count" class="num-input" value="3" min="1" max="10">
+      </div>
+
+      <!-- Duration (gradual mode) -->
+      <div id="duration-row" class="duration-row" style="display:none;margin-bottom:8px">
+        <span style="color:var(--muted)">Ramp duration:</span>
+        <input type="number" id="degrade-duration" class="num-input" value="60" min="15" max="300">
+        <span style="color:var(--muted)">seconds</span>
+      </div>
+
+      <!-- Degrade progress bar -->
+      <div id="degrade-progress">
+        <div class="dprog-label">
+          <span id="dprog-fault">Degrading…</span>
+          <span id="dprog-pct">0%</span>
+        </div>
+        <div class="dprog-bar-bg"><div id="dprog-bar" class="dprog-bar" style="width:0%"></div></div>
+        <button id="btn-cancel-degrade" onclick="cancelDegrade()">✕ Cancel</button>
+      </div>
+
+      <!-- Inject / Reset buttons -->
+      <div id="inject-btns" class="inject-controls" style="display:none;margin-top:8px">
+        <button class="btn-inject" id="btn-inject" onclick="injectFault()">⚡ Inject Fault</button>
+        <button class="btn-reset" onclick="resetNormal()">↺ Reset</button>
+      </div>
+
+      <!-- Scenario shortcuts -->
+      <details style="margin-top:10px">
+        <summary style="font-size:0.65rem;color:var(--muted);cursor:pointer;list-style:none">
+          ▸ Demo Scenarios
+        </summary>
+        <div id="scenario-list" style="margin-top:6px;display:flex;flex-direction:column;gap:4px"></div>
+      </details>
+    </div>
+  </div>
+
+  <!-- RIGHT: Plant map + 3D plot -->
+  <div class="right-panel">
+
+    <!-- Plant Map -->
+    <div id="plant-map-section">
+      <div class="map-header">
+        🗺 Plant Asset Monitor
+        <span style="margin-left:6px;color:var(--muted);font-weight:400;font-size:0.62rem;font-style:italic">
+          — click any asset to select
         </span>
       </div>
+      <div class="map-body">
+        <div class="sites-row">
 
-      <div class="burst">
-        <label>Burst:</label>
-        <input type="number" id="burst-count" min="1" max="10" value="3" />
-        <span style="font-size:0.73rem;color:var(--muted)">readings</span>
+          <!-- VALLEY SUBSTATION -->
+          <div class="site-zone" id="zone-valley">
+            <div class="site-hdr">
+              <span class="site-icon">🏭</span>
+              <span class="site-name">Valley Substation</span>
+              <span class="site-health" id="health-valley"></span>
+            </div>
+            <div class="site-assets">
+              <div class="asset-node" id="node-COMP-TX-VALLEY-01" data-id="COMP-TX-VALLEY-01" data-class="compressor" onclick="selectAsset('COMP-TX-VALLEY-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">⚙</div>
+                <div class="node-name">COMP-V01<br>Compressor</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-COMP-TX-VALLEY-02" data-id="COMP-TX-VALLEY-02" data-class="compressor" onclick="selectAsset('COMP-TX-VALLEY-02')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">⚙</div>
+                <div class="node-name">COMP-V02<br>Compressor</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-GTG-VALLEY-01" data-id="GTG-VALLEY-01" data-class="turbine" onclick="selectAsset('GTG-VALLEY-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">🌀</div>
+                <div class="node-name">GTG-V01<br>Turbine</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-XFR-VALLEY-01" data-id="XFR-VALLEY-01" data-class="transformer" onclick="selectAsset('XFR-VALLEY-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">🔌</div>
+                <div class="node-name">XFR-V01<br>115kV XFMR</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transmission connector -->
+          <div class="tx-connector">
+            <div class="tx-wire"></div>
+            <div class="tx-tower">🗼</div>
+            <div class="tx-wire"></div>
+          </div>
+
+          <!-- RIDGE PLANT -->
+          <div class="site-zone" id="zone-ridge">
+            <div class="site-hdr">
+              <span class="site-icon">🏗</span>
+              <span class="site-name">Ridge Plant</span>
+              <span class="site-health" id="health-ridge"></span>
+            </div>
+            <div class="site-assets">
+              <div class="asset-node" id="node-COMP-TX-RIDGE-01" data-id="COMP-TX-RIDGE-01" data-class="compressor" onclick="selectAsset('COMP-TX-RIDGE-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">⚙</div>
+                <div class="node-name">COMP-R01<br>Compressor</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-COMP-TX-RIDGE-02" data-id="COMP-TX-RIDGE-02" data-class="compressor" onclick="selectAsset('COMP-TX-RIDGE-02')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">⚙</div>
+                <div class="node-name">COMP-R02<br>Compressor</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-GTG-RIDGE-01" data-id="GTG-RIDGE-01" data-class="turbine" onclick="selectAsset('GTG-RIDGE-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">🌀</div>
+                <div class="node-name">GTG-R01<br>Turbine</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-XFR-RIDGE-01" data-id="XFR-RIDGE-01" data-class="transformer" onclick="selectAsset('XFR-RIDGE-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">🔌</div>
+                <div class="node-name">XFR-R01<br>115kV XFMR</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Transmission connector -->
+          <div class="tx-connector">
+            <div class="tx-wire"></div>
+            <div class="tx-tower">🗼</div>
+            <div class="tx-wire"></div>
+          </div>
+
+          <!-- BASIN STATION -->
+          <div class="site-zone" id="zone-basin" style="max-width:180px">
+            <div class="site-hdr">
+              <span class="site-icon">⛽</span>
+              <span class="site-name">Basin Station</span>
+              <span class="site-health" id="health-basin"></span>
+            </div>
+            <div class="site-assets">
+              <div class="asset-node" id="node-COMP-TX-BASIN-01" data-id="COMP-TX-BASIN-01" data-class="compressor" onclick="selectAsset('COMP-TX-BASIN-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">⚙</div>
+                <div class="node-name">COMP-B01<br>Compressor</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+              <div class="asset-node" id="node-XFR-BASIN-01" data-id="XFR-BASIN-01" data-class="transformer" onclick="selectAsset('XFR-BASIN-01')">
+                <div class="node-degrade-ring"></div>
+                <div class="node-icon">🔌</div>
+                <div class="node-name">XFR-B01<br>115kV XFMR</div>
+                <div class="node-status-dot"></div>
+                <div class="node-dispatch-badge">!</div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- .sites-row -->
+      </div><!-- .map-body -->
+    </div><!-- #plant-map-section -->
+
+    <!-- 3D Sensor Cluster Plot -->
+    <div id="plot-section">
+      <div class="plot-header">
+        📊 3D Sensor Cluster
+        <span class="plot-asset-label" id="plot-asset-label">— select an asset</span>
+        <button id="btn-expand-plot" onclick="expandPlot()" style="display:none">⤢ Fullscreen</button>
       </div>
-
-      <div class="fault-grid">
-        <button class="fault-btn prd" onclick="injectFault('prd_failure')">
-          <span>🔴</span>
-          <div><div>PRD Failure</div><div class="desc">Pressure drop · Temp spike · Vibration</div></div>
-        </button>
-        <button class="fault-btn therm" onclick="injectFault('thermal_runaway')">
-          <span>🟠</span>
-          <div><div>Thermal Runaway</div><div class="desc">&gt;178°F · Pressure normal (deceptive)</div></div>
-        </button>
-        <button class="fault-btn bear" onclick="injectFault('bearing_wear')">
-          <span>🟡</span>
-          <div><div>Bearing Wear</div><div class="desc">Elevated vibration · Gradual onset</div></div>
-        </button>
-      </div>
-      <button class="normal-btn" onclick="injectFault('normal')">✅ Inject Normal Reading</button>
-    </div>
-
-    <div class="card">
-      <div class="card-title">Demo Scenarios</div>
-      <div class="scenario-list" id="scenario-list"></div>
-      <div class="sp-wrap" id="sp-wrap">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <strong id="sp-name" style="font-size:0.78rem">—</strong>
-          <span id="sp-steps" style="font-size:0.7rem;color:var(--muted)">0 / 0</span>
+      <div id="plot-iframe-wrap">
+        <div id="plot-placeholder">
+          <div class="ph-icon">📡</div>
+          <div class="ph-text">
+            Select an asset on the plant map above<br>
+            to view its 3D sensor cluster visualization<br>
+            <span style="color:var(--muted);font-size:0.65rem">(PSI × Temperature × Vibration — color by ML prediction)</span>
+          </div>
         </div>
-        <div class="sp-bar-bg"><div class="sp-bar" id="sp-bar" style="width:0%"></div></div>
-        <div class="sp-note" id="sp-note"></div>
+        <iframe id="plot-iframe" src="" style="display:none"></iframe>
       </div>
     </div>
 
-  </div>
+  </div><!-- .right-panel -->
+</div><!-- .app-body -->
 
-  <!-- ══════════════════════════════════════════════════
-       CENTER — Events table
-  ══════════════════════════════════════════════════ -->
-  <div class="card center-panel">
-    <div class="events-header">
-      <div class="card-title" style="margin-bottom:0">Live Detections — Last 100 Events</div>
-      <button class="refresh-btn" onclick="loadEvents()">↻ Refresh</button>
+<!-- ── DISPATCH MODAL ──────────────────────────────────────────────────────── -->
+<div id="dispatch-modal">
+  <div class="modal-card">
+    <div class="modal-title">Local Work Order — Operator Dispatch Required</div>
+    <div class="wo-grid" id="dispatch-wo-grid">
+      <!-- Populated by JS -->
     </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Asset</th>
-            <th>PSI</th>
-            <th>Temp °F</th>
-            <th>Vib (mm)</th>
-            <th>ML Prediction</th>
-            <th>Conf</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody id="events-tbody"></tbody>
-      </table>
+    <div class="modal-actions">
+      <input type="hidden" id="dispatch-event-id" value="">
+      <button class="btn-ack" onclick="acknowledgeDispatch()">✔ Acknowledge & Dispatch Crew</button>
+      <button class="btn-modal-close" onclick="closeDispatch()">Close</button>
     </div>
   </div>
+</div>
 
-  <!-- ══════════════════════════════════════════════════
-       RIGHT — Asset selector
-  ══════════════════════════════════════════════════ -->
-  <div class="card right-panel">
-    <div class="card-title">Asset Selector</div>
+<!-- ── FULLSCREEN PLOT ─────────────────────────────────────────────────────── -->
+<div id="fs-plot">
+  <button id="fs-close-btn" onclick="closeFsPlot()">✕ Close</button>
+  <iframe id="fs-iframe" src=""></iframe>
+</div>
 
-    <!-- Class filter tabs -->
-    <div class="class-tabs">
-      <button class="class-tab all-tab active" onclick="setFilter('all')">All (10)</button>
-      <button class="class-tab" onclick="setFilter('compressor')">Compressors</button>
-      <button class="class-tab" onclick="setFilter('turbine')">Turbines</button>
-      <button class="class-tab" onclick="setFilter('transformer')">Transformers</button>
-    </div>
-
-    <div class="asset-list" id="asset-list"></div>
-  </div>
-
-</main>
-
+<!-- ── TOAST ──────────────────────────────────────────────────────────────── -->
 <div id="toast"></div>
 
+<!-- ── JAVASCRIPT ─────────────────────────────────────────────────────────── -->
 <script>
-// ─── Asset metadata ───────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// CONSTANTS
+// ────────────────────────────────────────────────────────────────────────────
+const FAULT_TYPES_BY_CLASS = {
+  compressor:  ['prd_failure', 'thermal_runaway', 'bearing_wear'],
+  turbine:     ['combustion_instability', 'blade_fouling', 'rotor_imbalance'],
+  transformer: ['winding_overheat', 'dielectric_breakdown', 'core_loosening'],
+}
+const GRADUAL_FAULTS = new Set([
+  'bearing_wear', 'thermal_runaway', 'blade_fouling',
+  'winding_overheat', 'core_loosening', 'rotor_imbalance',
+])
+const FAULT_META = {
+  prd_failure:            { label:'PRD Failure',             color:'#e53935', gradual:false },
+  thermal_runaway:        { label:'Thermal Runaway',          color:'#ff6f00', gradual:true  },
+  bearing_wear:           { label:'Bearing Wear',             color:'#f9a825', gradual:true  },
+  combustion_instability: { label:'Combustion Instability',   color:'#b71c1c', gradual:false },
+  blade_fouling:          { label:'Blade Fouling',            color:'#e65100', gradual:true  },
+  rotor_imbalance:        { label:'Rotor Imbalance',          color:'#f57f17', gradual:true  },
+  winding_overheat:       { label:'Winding Overheat',         color:'#880e4f', gradual:true  },
+  dielectric_breakdown:   { label:'Dielectric Breakdown',     color:'#6a1aaf', gradual:false },
+  core_loosening:         { label:'Core Loosening',           color:'#1a237e', gradual:true  },
+}
 const ASSET_META = {
-  "COMP-TX-VALLEY-01":{ cls:"compressor", type:"Gas Compressor — Reciprocating", loc:"Valley Substation",    crit:"HIGH",    critColor:"var(--warning)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"PRD valve last replaced Q3 2024. Lube interval 1,200 hrs." },
-  "COMP-TX-VALLEY-02":{ cls:"compressor", type:"Gas Compressor — Reciprocating", loc:"Valley Substation",    crit:"MEDIUM",  critColor:"var(--advisory)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"Standby unit — cold-start bearing risk. Run-test monthly." },
-  "COMP-TX-RIDGE-01": { cls:"compressor", type:"Gas Compressor — Centrifugal",   loc:"Ridge Plant",          crit:"CRITICAL", critColor:"var(--critical)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"Thermal runaway risk under peak summer demand." },
-  "COMP-TX-RIDGE-02": { cls:"compressor", type:"Gas Compressor — Centrifugal",   loc:"Ridge Plant",          crit:"HIGH",    critColor:"var(--warning)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"New bearing (2025-03). Monitor vib for 90-day run-in." },
-  "COMP-TX-BASIN-01": { cls:"compressor", type:"Gas Compressor — Screw",          loc:"Basin Station",        crit:"HIGH",    critColor:"var(--warning)", nominal:"PSI 855 · 112°F · 0.02mm vib", note:"Screw design sensitive to oil contamination." },
-  "GTG-VALLEY-01":    { cls:"turbine",    type:"Gas Turbine Generator",            loc:"Valley Substation",    crit:"CRITICAL", critColor:"var(--critical)", nominal:"PSI 2,200 · 1,050°F · 0.05mm vib", note:"Blade fouling risk in summer. Combustion instability precedes surge." },
-  "GTG-RIDGE-01":     { cls:"turbine",    type:"Gas Turbine Generator",            loc:"Ridge Plant",          crit:"CRITICAL", critColor:"var(--critical)", nominal:"PSI 2,200 · 1,050°F · 0.05mm vib", note:"Rotor imbalance detectable weeks before mechanical event." },
-  "XFR-VALLEY-01":    { cls:"transformer",type:"HV Transformer (115kV)",           loc:"Valley Substation",    crit:"CRITICAL", critColor:"var(--critical)", nominal:"115kV · 185°F oil · 0.01mm vib", note:"Dielectric breakdown irreversible. Oil temp >195°F = immediate action." },
-  "XFR-RIDGE-01":     { cls:"transformer",type:"HV Transformer (115kV)",           loc:"Ridge Plant",          crit:"CRITICAL", critColor:"var(--critical)", nominal:"115kV · 185°F oil · 0.01mm vib", note:"Core loosening shows distinctive vib signature at 0.06mm+." },
-  "XFR-BASIN-01":     { cls:"transformer",type:"HV Transformer (115kV)",           loc:"Basin Station",        crit:"HIGH",    critColor:"var(--warning)", nominal:"115kV · 185°F oil · 0.01mm vib", note:"Winding overheat follows sustained overload. Monitor load factor." },
-};
+  'COMP-TX-VALLEY-01': { label:'COMP-V01', location:'Valley Transmission Substation', type:'Gas Compressor',    site:'valley',  contact:'Valley Station (Ext. 412)' },
+  'COMP-TX-VALLEY-02': { label:'COMP-V02', location:'Valley Transmission Substation', type:'Gas Compressor',    site:'valley',  contact:'Valley Station (Ext. 412)' },
+  'GTG-VALLEY-01':     { label:'GTG-V01',  location:'Valley Transmission Substation', type:'Gas Turbine Gen.',  site:'valley',  contact:'Valley Station (Ext. 413)' },
+  'XFR-VALLEY-01':     { label:'XFR-V01',  location:'Valley Transmission Substation', type:'HV Transformer',   site:'valley',  contact:'Valley Station (Ext. 414)' },
+  'COMP-TX-RIDGE-01':  { label:'COMP-R01', location:'Ridge Transmission Plant',       type:'Gas Compressor',    site:'ridge',   contact:'Ridge Plant (Ext. 520)'    },
+  'COMP-TX-RIDGE-02':  { label:'COMP-R02', location:'Ridge Transmission Plant',       type:'Gas Compressor',    site:'ridge',   contact:'Ridge Plant (Ext. 520)'    },
+  'GTG-RIDGE-01':      { label:'GTG-R01',  location:'Ridge Transmission Plant',       type:'Gas Turbine Gen.',  site:'ridge',   contact:'Ridge Plant (Ext. 521)'    },
+  'XFR-RIDGE-01':      { label:'XFR-R01',  location:'Ridge Transmission Plant',       type:'HV Transformer',   site:'ridge',   contact:'Ridge Plant (Ext. 522)'    },
+  'COMP-TX-BASIN-01':  { label:'COMP-B01', location:'Basin Distribution Station',     type:'Gas Compressor',    site:'basin',   contact:'Basin Station (Ext. 600)'  },
+  'XFR-BASIN-01':      { label:'XFR-B01',  location:'Basin Distribution Station',     type:'HV Transformer',   site:'basin',   contact:'Basin Station (Ext. 601)'  },
+}
+const REMEDIATION = {
+  thermal_runaway:        { risk:'Compressor failure in ~2-4 hours',      action:'Coolant system inspection + flush',       cost:'$150,000+' },
+  bearing_wear:           { risk:'Mechanical failure in ~8-24 hours',      action:'Bearing inspection + replacement',        cost:'$85,000+'  },
+  prd_failure:            { risk:'Uncontrolled pressure release — immediate', action:'Shutdown + PRD valve inspection',       cost:'$220,000+' },
+  combustion_instability: { risk:'Turbine damage in ~1-2 hours',           action:'Fuel system + combustor inspection',      cost:'$300,000+' },
+  blade_fouling:          { risk:'Efficiency loss + risk in ~12 hours',     action:'Compressor wash + blading inspection',    cost:'$95,000+'  },
+  rotor_imbalance:        { risk:'Vibration failure in ~6-12 hours',        action:'Rotor dynamic balancing procedure',       cost:'$120,000+' },
+  winding_overheat:       { risk:'Transformer failure in ~1-3 hours',       action:'Load reduction + cooling inspection',     cost:'$400,000+' },
+  dielectric_breakdown:   { risk:'Arc fault — immediate shutdown required', action:'De-energize + insulation resistance test', cost:'$500,000+' },
+  core_loosening:         { risk:'Mechanical failure in ~24-72 hours',      action:'Core bolt inspection + re-torque',        cost:'$75,000+'  },
+}
+const LABEL_COLOR = { normal:'#00e676', advisory:'#ffb300', warning:'#ff6d00', critical:'#f44336', stale:'#3a4a5a' }
+const LABEL_ICON  = { normal:'✓', advisory:'⚡', warning:'⚠', critical:'🔴', stale:'○' }
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let selectedAsset = 'COMP-TX-VALLEY-01';
-let currentFilter = 'all';
-const ASSETS = [];
-let assetStatus = {};
+// ────────────────────────────────────────────────────────────────────────────
+// STATE
+// ────────────────────────────────────────────────────────────────────────────
+let selectedAsset   = null
+let assetStatuses   = {}   // {asset_id: {last_prediction, last_seen}}
+let recentEvents    = []
+let airgapMode      = false
+let activeDegrades  = {}   // {asset_id: {running, fault_type, step, steps}}
+let selectedFault   = null
+let dispatchQueue   = []   // unacknowledged critical/warning events
 
-const SEVERITY = {
-  prd_failure:3, combustion_instability:3, dielectric_breakdown:3,
-  thermal_runaway:2, blade_fouling:2, winding_overheat:2,
-  bearing_wear:1, rotor_imbalance:1, core_loosening:1,
-  normal:0, unknown:0
-};
-
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
+// INIT
+// ────────────────────────────────────────────────────────────────────────────
 async function init() {
-  const r = await fetch('/api/assets');
-  const data = await r.json();
-  data.assets.forEach(a => ASSETS.push(a));
-  renderAssets();
-  await loadEvents();
-  await loadScenarios();
-  await loadAssetStatus();
-  setInterval(async () => { await loadEvents(); await loadAssetStatus(); }, 5000);
+  buildScenarioButtons()
+  await Promise.all([refreshStatus(), refreshEvents()])
+  startPolling()
 }
 
-// ─── Asset status ─────────────────────────────────────────────────────────────
-async function loadAssetStatus() {
+function startPolling() {
+  setInterval(async () => {
+    await Promise.all([refreshStatus(), refreshEvents(), refreshDegradeStatus()])
+    if (selectedAsset) refreshPlot()
+    updateLastRefresh()
+  }, 10000)
+  updateLastRefresh()
+}
+
+function updateLastRefresh() {
+  const now = new Date()
+  document.getElementById('last-refresh').textContent =
+    now.toLocaleTimeString('en-US', {hour12:false})
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// ASSET STATUS + MAP HEALTH
+// ────────────────────────────────────────────────────────────────────────────
+async function refreshStatus() {
   try {
-    const r = await fetch('/api/asset-status');
-    const data = await r.json();
-    assetStatus = {};
-    data.statuses.forEach(s => { assetStatus[s.asset_id] = s; });
-    renderAssets();
+    const data = await fetch('/api/asset-status').then(r => r.json())
+    assetStatuses = {}
+    for (const s of (data.statuses || [])) {
+      assetStatuses[s.asset_id] = s
+    }
+    updateMapNodes()
+    updateSiteHealth()
+    updateAlertPills()
+  } catch(e) { console.warn('Status fetch error:', e) }
+}
+
+function updateMapNodes() {
+  document.querySelectorAll('.asset-node').forEach(node => {
+    const id = node.dataset.id
+    const lbl = assetStatuses[id]?.last_prediction || 'stale'
+    // Update status class
+    node.className = node.className.replace(/\bs-\w+/g, '')
+    node.classList.add('s-' + lbl)
+    // Dispatch badge
+    const needsDispatch = dispatchQueue.some(e => e.asset_id === id)
+    node.classList.toggle('needs-dispatch', needsDispatch)
+    // Degrade ring
+    node.classList.toggle('degrading', id in activeDegrades)
+  })
+}
+
+function updateSiteHealth() {
+  const sites = { valley: 'normal', ridge: 'normal', basin: 'normal' }
+  for (const [aid, s] of Object.entries(assetStatuses)) {
+    const meta = ASSET_META[aid]
+    if (!meta) continue
+    const site = meta.site
+    const lbl  = s.last_prediction || 'normal'
+    const rank  = {normal:0, advisory:1, warning:2, critical:3, stale:-1}
+    if ((rank[lbl]||0) > (rank[sites[site]]||0)) sites[site] = lbl
+  }
+  for (const [site, lbl] of Object.entries(sites)) {
+    const dot  = document.getElementById('health-' + site)
+    const zone = document.getElementById('zone-' + site)
+    if (!dot || !zone) continue
+    dot.className  = 'site-health' + (lbl==='critical'?' critical':lbl==='warning'?' warning':'')
+    zone.className = 'site-zone' + (lbl==='critical'?' has-critical':lbl==='warning'?' has-warning':'')
+  }
+}
+
+function updateAlertPills() {
+  const counts = {critical:0, warning:0, advisory:0, normal:0}
+  for (const s of Object.values(assetStatuses)) {
+    const lbl = s.last_prediction || 'normal'
+    if (lbl in counts) counts[lbl]++
+  }
+  const pc = document.getElementById('pill-critical')
+  const pw = document.getElementById('pill-warning')
+  const pa = document.getElementById('pill-advisory')
+  const po = document.getElementById('pill-ok')
+  pc.textContent = `🔴 ${counts.critical} Critical`
+  pw.textContent = `⚠ ${counts.warning} Warning`
+  pa.textContent = `⚡ ${counts.advisory} Advisory`
+  po.textContent = counts.critical===0 && counts.warning===0 && counts.advisory===0
+                   ? '✓ All Clear' : `✓ ${counts.normal} Normal`
+  pc.classList.toggle('pulsing', counts.critical > 0)
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// EVENTS
+// ────────────────────────────────────────────────────────────────────────────
+async function refreshEvents() {
+  try {
+    const data = await fetch('/api/recent-events?limit=40').then(r => r.json())
+    recentEvents = data.events || []
+    renderEventLog()
+    updateDispatchQueue()
+  } catch(e) { console.warn('Events fetch error:', e) }
+}
+
+function renderEventLog() {
+  const el = document.getElementById('event-log')
+  if (!recentEvents.length) {
+    el.innerHTML = '<div style="color:var(--muted);font-size:0.75rem;padding:20px;text-align:center">No events yet…</div>'
+    return
+  }
+  el.innerHTML = recentEvents.map(ev => {
+    const t   = new Date(ev.event_time)
+    const ts  = t.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})
+    const lbl = ev.predicted_label || 'unknown'
+    const col = LABEL_COLOR[lbl] || '#888'
+    const ico = LABEL_ICON[lbl]  || '?'
+    const assetShort = (ASSET_META[ev.asset_id]?.label || ev.asset_id)
+    const isActionable = !ev.acknowledged && (lbl === 'critical' || lbl === 'warning')
+    const isFault = lbl !== 'normal'
+    return `<div class="ev-row${isFault?' fault':''}" title="${ev.ai_narrative || ''}">
+      <span class="ev-time">${ts}</span>
+      <span class="ev-asset" onclick="selectAsset('${ev.asset_id}')">${assetShort}</span>
+      <span class="ev-label" style="color:${col}">${ico} ${lbl}</span>
+      <span class="ev-action">${
+        isActionable
+          ? `<button onclick="openDispatch(${ev.id})">Dispatch</button>`
+          : ev.acknowledged
+          ? '<span class="ack-badge">ACK</span>'
+          : ''
+      }</span>
+    </div>`
+  }).join('')
+}
+
+function updateDispatchQueue() {
+  dispatchQueue = recentEvents.filter(ev =>
+    !ev.acknowledged && (ev.predicted_label === 'critical' || ev.predicted_label === 'warning')
+  )
+  const banner = document.getElementById('dispatch-banner')
+  if (dispatchQueue.length > 0) {
+    banner.classList.add('visible')
+    const top = dispatchQueue[0]
+    document.getElementById('dispatch-banner-text').textContent =
+      `⚠ DISPATCH REQUIRED: ${(top.predicted_label||'').toUpperCase()} — ${ASSET_META[top.asset_id]?.label || top.asset_id} — ${ASSET_META[top.asset_id]?.location || ''}`
+  } else {
+    banner.classList.remove('visible')
+  }
+  updateMapNodes()
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// ASSET SELECTION
+// ────────────────────────────────────────────────────────────────────────────
+function selectAsset(assetId) {
+  selectedAsset = assetId
+  // Update node selection
+  document.querySelectorAll('.asset-node').forEach(n => n.classList.remove('selected'))
+  const node = document.getElementById('node-' + assetId)
+  if (node) node.classList.add('selected')
+  // Update inject panel
+  updateInjectPanel(assetId)
+  // Update 3D plot
+  refreshPlot()
+}
+
+function updateInjectPanel(assetId) {
+  const meta  = ASSET_META[assetId]
+  const aClass = document.getElementById('node-' + assetId)?.dataset.class || 'compressor'
+
+  // Update target display
+  const tgt = document.getElementById('inject-target')
+  tgt.className = 'inject-target'
+  tgt.innerHTML = `
+    <span class="target-icon">${aClass==='compressor'?'⚙':aClass==='turbine'?'🌀':'🔌'}</span>
+    <div>
+      <div class="target-name">${ASSET_META[assetId]?.label || assetId}</div>
+      <div class="target-sub">${meta?.type || ''} — ${meta?.location || ''}</div>
+    </div>
+  `
+
+  // Populate fault type options
+  const faultTypes = FAULT_TYPES_BY_CLASS[aClass] || FAULT_TYPES_BY_CLASS.compressor
+  const optsCont = document.getElementById('fault-options')
+  optsCont.style.display = 'flex'
+  selectedFault = null
+
+  optsCont.innerHTML = faultTypes.map(ft => {
+    const fm = FAULT_META[ft]
+    return `<label class="fault-opt" id="fopt-${ft}" onclick="selectFault('${ft}')">
+      <input type="radio" name="fault-type" value="${ft}">
+      <span class="fault-color-dot" style="background:${fm.color}"></span>
+      <span class="fault-info">
+        <span class="fault-name">${fm.label}</span>
+        <span class="fault-mode">${fm.gradual ? '⏱ Gradual ramp' : '⚡ Instant burst'}</span>
+      </span>
+    </label>`
+  }).join('')
+
+  // Show mode row and buttons
+  document.getElementById('inject-mode-row').style.display = 'none'
+  document.getElementById('burst-row').style.display       = 'none'
+  document.getElementById('duration-row').style.display    = 'none'
+  document.getElementById('inject-btns').style.display     = 'flex'
+
+  // Check if this asset has an active degrade
+  updateDegradeProgress()
+}
+
+function selectFault(ft) {
+  selectedFault = ft
+  // Update visual selection
+  document.querySelectorAll('.fault-opt').forEach(el => el.classList.remove('selected'))
+  const opt = document.getElementById('fopt-' + ft)
+  if (opt) opt.classList.add('selected')
+
+  const fm = FAULT_META[ft]
+  const modeRow    = document.getElementById('inject-mode-row')
+  const burstRow   = document.getElementById('burst-row')
+  const durRow     = document.getElementById('duration-row')
+
+  if (fm.gradual) {
+    // Gradual faults: show mode choice
+    modeRow.style.display = 'flex'
+    // Default to gradual mode
+    const gradualRadio = document.querySelector('input[name="inject-mode"][value="gradual"]')
+    if (gradualRadio) { gradualRadio.checked = true; onModeChange() }
+  } else {
+    // Instant only
+    modeRow.style.display = 'none'
+    burstRow.style.display  = 'flex'
+    durRow.style.display    = 'none'
+    const instantRadio = document.querySelector('input[name="inject-mode"][value="instant"]')
+    if (instantRadio) instantRadio.checked = true
+  }
+}
+
+function onModeChange() {
+  const mode = document.querySelector('input[name="inject-mode"]:checked')?.value || 'instant'
+  document.getElementById('burst-row').style.display    = mode === 'instant' ? 'flex' : 'none'
+  document.getElementById('duration-row').style.display = mode === 'gradual'  ? 'flex' : 'none'
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// FAULT INJECTION
+// ────────────────────────────────────────────────────────────────────────────
+async function injectFault() {
+  if (!selectedAsset) { showToast('Select an asset on the plant map first', 'error'); return }
+  if (!selectedFault) { showToast('Select a fault type', 'error'); return }
+
+  const mode = document.querySelector('input[name="inject-mode"]:checked')?.value || 'instant'
+  const fm   = FAULT_META[selectedFault]
+
+  if (mode === 'gradual' && fm.gradual) {
+    const dur = parseInt(document.getElementById('degrade-duration')?.value || '60')
+    try {
+      const r = await fetch('/api/inject/degrade', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({asset_id: selectedAsset, fault_type: selectedFault, duration_seconds: dur}),
+      })
+      if (!r.ok) { const e = await r.json(); showToast(`Error: ${e.detail}`, 'error'); return }
+      showToast(`Gradual ${fm.label} started on ${ASSET_META[selectedAsset]?.label} — ${dur}s ramp`, 'ok')
+      activeDegrades[selectedAsset] = {running:true, fault_type:selectedFault, step:0, steps:Math.floor(dur/5)}
+      updateDegradeProgress()
+      updateMapNodes()
+    } catch(e) { showToast('Injection error: ' + e.message, 'error') }
+  } else {
+    const burst = parseInt(document.getElementById('burst-count')?.value || '3')
+    try {
+      const r = await fetch('/api/inject-fault', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({asset_id: selectedAsset, fault_type: selectedFault, count: burst}),
+      })
+      if (!r.ok) { const e = await r.json(); showToast(`Error: ${e.detail}`, 'error'); return }
+      showToast(`Injected ${burst}× ${fm.label} on ${ASSET_META[selectedAsset]?.label}`, 'ok')
+      // Refresh plot & events shortly after
+      setTimeout(() => { refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
+    } catch(e) { showToast('Injection error: ' + e.message, 'error') }
+  }
+}
+
+async function resetNormal() {
+  if (!selectedAsset) return
+  try {
+    await fetch('/api/inject-fault', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({asset_id: selectedAsset, fault_type: 'normal', count: 5}),
+    })
+    await fetch('/api/cancel-degrade/' + selectedAsset, {method:'POST'}).catch(()=>{})
+    delete activeDegrades[selectedAsset]
+    showToast(`Reset ${ASSET_META[selectedAsset]?.label} to normal`, 'ok')
+    updateDegradeProgress()
+    updateMapNodes()
+    setTimeout(() => { refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
+  } catch(e) { showToast('Reset error: ' + e.message, 'error') }
+}
+
+async function cancelDegrade() {
+  if (!selectedAsset) return
+  try {
+    await fetch('/api/cancel-degrade/' + selectedAsset, {method:'POST'})
+    delete activeDegrades[selectedAsset]
+    updateDegradeProgress()
+    updateMapNodes()
+    showToast('Degradation cancelled', 'info')
+  } catch(e) { showToast('Cancel error: ' + e, 'error') }
+}
+
+async function refreshDegradeStatus() {
+  try {
+    const data = await fetch('/api/degrade-status').then(r => r.json())
+    activeDegrades = data.active || {}
+    updateDegradeProgress()
+    updateMapNodes()
   } catch(e) {}
 }
 
-function predToDot(p) {
-  const m = { normal:'dot-ok', bearing_wear:'dot-advisory', rotor_imbalance:'dot-advisory',
-    core_loosening:'dot-advisory', thermal_runaway:'dot-warning', blade_fouling:'dot-warning',
-    winding_overheat:'dot-warning', prd_failure:'dot-critical', combustion_instability:'dot-critical',
-    dielectric_breakdown:'dot-critical', stale:'dot-stale' };
-  return m[p] || 'dot-stale';
+function updateDegradeProgress() {
+  const el = document.getElementById('degrade-progress')
+  if (selectedAsset && activeDegrades[selectedAsset]) {
+    const d = activeDegrades[selectedAsset]
+    const pct = d.steps > 0 ? Math.round((d.step / d.steps) * 100) : 0
+    document.getElementById('dprog-fault').textContent = `Degrading: ${FAULT_META[d.fault_type]?.label || d.fault_type}`
+    document.getElementById('dprog-pct').textContent   = pct + '%'
+    document.getElementById('dprog-bar').style.width   = pct + '%'
+    el.classList.add('visible')
+  } else {
+    el.classList.remove('visible')
+  }
 }
 
-// ─── Asset list rendering ─────────────────────────────────────────────────────
-function setFilter(f) {
-  currentFilter = f;
-  document.querySelectorAll('.class-tab').forEach(b => {
-    const txt = b.textContent.toLowerCase();
-    const match = f === 'all' ? b.classList.contains('all-tab') : txt.includes(f);
-    b.classList.toggle('active', match);
-  });
-  renderAssets();
-}
-
-function renderAssets() {
-  const list = document.getElementById('asset-list');
-  list.innerHTML = '';
-  document.getElementById('selected-asset-label').textContent = selectedAsset;
-
-  const filtered = ASSETS.filter(a => {
-    const meta = ASSET_META[a];
-    if (currentFilter === 'all') return true;
-    return meta && meta.cls === currentFilter;
-  });
-
-  filtered.forEach(a => {
-    const st  = assetStatus[a];
-    const dot = st ? predToDot(st.last_prediction) : 'dot-stale';
-    const meta = ASSET_META[a] || {};
-
-    const row = document.createElement('div');
-    row.className = 'asset-row';
-
-    const btn = document.createElement('button');
-    btn.className = 'asset-btn' + (a === selectedAsset ? ' selected' : '');
-    btn.innerHTML = `<span class="asset-name">${a}</span><span class="asset-status-dot ${dot}"></span>`;
-    btn.onclick = () => { selectedAsset = a; renderAssets(); };
-
-    const card = document.createElement('div');
-    card.className = 'asset-hover-card';
-    const lastSeen = st ? new Date(st.last_seen).toLocaleTimeString() : '—';
-    const lastPred = st ? `<span class="status-pill pill-${st.last_prediction}">${(st.last_prediction||'').replace(/_/g,' ')}</span>` : '—';
-    card.innerHTML = `
-      <div class="ahc-header">
-        <span class="ahc-title">${a}</span>
-        <span class="ahc-crit" style="background:rgba(0,0,0,0.3);color:${meta.critColor||'var(--muted)'}">${meta.crit||''}</span>
-      </div>
-      <div class="ahc-body">
-        <div class="ahc-row"><span class="ahc-key">Type:</span><span class="ahc-val">${meta.type||'—'}</span></div>
-        <div class="ahc-row"><span class="ahc-key">Location:</span><span class="ahc-val">${meta.loc||'—'}</span></div>
-        <div class="ahc-row"><span class="ahc-key">Nominal:</span><span class="ahc-val">${meta.nominal||'—'}</span></div>
-        <hr class="ahc-divider"/>
-        <div class="ahc-section">Operations Note</div>
-        <p class="ahc-note">${meta.note||'—'}</p>
-        ${st ? `<hr class="ahc-divider"/>
-        <div class="ahc-row"><span class="ahc-key">Last seen:</span><span class="ahc-val">${lastSeen}</span></div>
-        <div class="ahc-row"><span class="ahc-key">ML result:</span><span class="ahc-val">${lastPred}</span></div>` : ''}
-      </div>`;
-
-    row.appendChild(btn);
-    row.appendChild(card);
-    list.appendChild(row);
-  });
-}
-
-// ─── Fault injection ──────────────────────────────────────────────────────────
-async function injectFault(faultType) {
-  const count = Math.max(1, Math.min(parseInt(document.getElementById('burst-count').value)||3, 10));
-  const payload = { fault_type: faultType, asset_id: selectedAsset,
-                    count: faultType === 'normal' ? 1 : count };
+// ────────────────────────────────────────────────────────────────────────────
+// SCENARIOS
+// ────────────────────────────────────────────────────────────────────────────
+let scenariosData = {}
+async function buildScenarioButtons() {
   try {
-    const r = await fetch('/api/inject-fault', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!r.ok) throw new Error(await r.text());
-    const result = await r.json();
-    showToast(`✅ Injected ${result.count}× ${result.fault} on ${result.asset}`, 'ok');
-    setTimeout(loadEvents, 1500);
-  } catch(e) { showToast(`❌ ${e}`, 'err'); }
-}
-
-// ─── Scenarios ────────────────────────────────────────────────────────────────
-async function loadScenarios() {
-  try {
-    const r = await fetch('/api/scenarios');
-    const data = await r.json();
-    const list = document.getElementById('scenario-list');
-    list.innerHTML = '';
-    Object.entries(data.scenarios).forEach(([id, sc]) => {
-      const btn = document.createElement('button');
-      btn.className = 'scenario-btn';
-      btn.innerHTML = `<div class="s-name">▶ ${sc.name}</div>
-                       <div class="s-desc">${sc.description} (${sc.step_count} steps)</div>`;
-      btn.onclick = () => runScenario(id, sc.name, sc.step_count);
-      list.appendChild(btn);
-    });
+    const data = await fetch('/api/scenarios').then(r => r.json())
+    scenariosData = data.scenarios || {}
+    const el = document.getElementById('scenario-list')
+    el.innerHTML = Object.entries(scenariosData).map(([id, sc]) =>
+      `<button class="sc-btn" id="sc-${id}" onclick="runScenario('${id}')">
+        <div class="sc-name">▶ ${sc.name}</div>
+        <div class="sc-desc">${sc.description}</div>
+      </button>`
+    ).join('')
+    pollScenarioStatus()
   } catch(e) {}
 }
 
-async function runScenario(id, name, stepCount) {
+async function runScenario(id) {
+  const sc = scenariosData[id]
+  if (!sc) return
   try {
     const r = await fetch('/api/run-scenario', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ scenario_id: id }),
-    });
-    if (!r.ok) throw new Error(await r.text());
-    showToast(`▶ Running: ${name}`, 'ok');
-    document.querySelectorAll('.scenario-btn').forEach(b => b.disabled = true);
-    pollScenario();
-  } catch(e) { showToast(`❌ ${e}`, 'err'); }
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({scenario_id: id}),
+    })
+    if (!r.ok) { const e = await r.json(); showToast(e.detail, 'error'); return }
+    showToast(`▶ Running: ${sc.name}`, 'info')
+    // Auto-select the asset
+    selectAsset(sc.asset)
+  } catch(e) { showToast('Scenario error: ' + e, 'error') }
 }
 
-function pollScenario() {
-  const iv = setInterval(async () => {
+async function pollScenarioStatus() {
+  setInterval(async () => {
     try {
-      const r = await fetch('/api/scenario-status');
-      const st = await r.json();
-      const el = document.getElementById('sp-wrap');
-      if (st.running || st.step > 0) {
-        el.classList.add('visible');
-        document.getElementById('sp-name').textContent = st.name || '—';
-        document.getElementById('sp-steps').textContent = `${st.step} / ${st.total}`;
-        document.getElementById('sp-bar').style.width = `${st.total>0?(st.step/st.total)*100:0}%`;
-        document.getElementById('sp-note').textContent = st.note || '';
-      }
-      if (!st.running) {
-        clearInterval(iv);
-        document.querySelectorAll('.scenario-btn').forEach(b => b.disabled = false);
-        if (st.step > 0) setTimeout(() => { el.classList.remove('visible'); document.getElementById('sp-bar').style.width='0%'; }, 5000);
-      }
-    } catch(e) { clearInterval(iv); }
-  }, 1000);
+      const s = await fetch('/api/scenario-status').then(r => r.json())
+      const btns = document.querySelectorAll('.sc-btn')
+      btns.forEach(b => b.disabled = s.running)
+    } catch(e) {}
+  }, 5000)
 }
 
-// ─── Events ───────────────────────────────────────────────────────────────────
-async function loadEvents() {
+// ────────────────────────────────────────────────────────────────────────────
+// 3D PLOT
+// ────────────────────────────────────────────────────────────────────────────
+let plotRefreshTimer = null
+function refreshPlot() {
+  if (!selectedAsset) return
+  const iframe = document.getElementById('plot-iframe')
+  const placeholder = document.getElementById('plot-placeholder')
+  const label = document.getElementById('plot-asset-label')
+  const expandBtn = document.getElementById('btn-expand-plot')
+  label.textContent = '— ' + (ASSET_META[selectedAsset]?.label || selectedAsset)
+  iframe.style.display = 'block'
+  placeholder.style.display = 'none'
+  expandBtn.style.display = 'inline-block'
+  iframe.src = `/api/plot/3d/${selectedAsset}?cb=${Date.now()}`
+}
+
+function expandPlot() {
+  if (!selectedAsset) return
+  const fs = document.getElementById('fs-plot')
+  const fsIframe = document.getElementById('fs-iframe')
+  fsIframe.src = `/api/plot/3d/${selectedAsset}?cb=${Date.now()}`
+  fs.classList.add('open')
+}
+function closeFsPlot() {
+  document.getElementById('fs-plot').classList.remove('open')
+  document.getElementById('fs-iframe').src = ''
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// AIRGAP
+// ────────────────────────────────────────────────────────────────────────────
+async function toggleAirgap() {
+  airgapMode = !airgapMode
   try {
-    const r = await fetch('/api/recent-events?limit=100');
-    const data = await r.json();
-    renderEvents(data.events);
-    document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString();
+    await fetch(`/api/simulate/airgap?enabled=${airgapMode}`, {method:'POST'})
   } catch(e) {}
+  updateAirgapUI()
 }
 
-async function acknowledgeEvent(id) {
+function updateAirgapUI() {
+  const btn    = document.getElementById('airgap-btn')
+  const banner = document.getElementById('airgap-banner')
+  const header = document.getElementById('main-header')
+
+  if (airgapMode) {
+    btn.textContent = '✈ Airgap Mode'
+    btn.classList.add('airgap-on')
+    banner.classList.add('visible')
+    header.classList.add('airgap-on')
+    showToast('☁ Cloud network disconnected — GDC Edge running autonomously', 'info')
+  } else {
+    btn.textContent = '🌐 Cloud Connected'
+    btn.classList.remove('airgap-on')
+    banner.classList.remove('visible')
+    header.classList.remove('airgap-on')
+    showToast('🌐 Cloud network restored', 'ok')
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// DISPATCH MODAL
+// ────────────────────────────────────────────────────────────────────────────
+function openTopDispatch() {
+  if (dispatchQueue.length > 0) openDispatch(dispatchQueue[0].id)
+}
+
+function openDispatch(eventId) {
+  const ev  = recentEvents.find(e => e.id === eventId)
+  if (!ev) { showToast('Event not found', 'error'); return }
+  const meta = ASSET_META[ev.asset_id] || {}
+  const rem  = REMEDIATION[ev.failure_type || ev.predicted_label] || {
+    risk:'See maintenance manual', action:'Manual inspection', cost:'TBD',
+  }
+  const t    = new Date(ev.event_time)
+  const ts   = t.toLocaleTimeString('en-US', {hour12:false}) + ' UTC'
+  const lbl  = ev.predicted_label || 'unknown'
+
+  document.getElementById('dispatch-wo-grid').innerHTML = `
+    <span class="wo-label">Asset:</span>
+    <span class="wo-value">${ASSET_META[ev.asset_id]?.label || ev.asset_id} — ${meta.type || ''}</span>
+    <span class="wo-label">Location:</span>
+    <span class="wo-value">${meta.location || '—'}</span>
+    <span class="wo-label">Detected:</span>
+    <span class="wo-value critical">${lbl.toUpperCase()} at ${ts}</span>
+    <span class="wo-label">Fault Type:</span>
+    <span class="wo-value">${FAULT_META[ev.failure_type]?.label || ev.failure_type || ev.predicted_label}</span>
+    <hr class="wo-divider">
+    <span class="wo-label">Risk:</span>
+    <span class="wo-value">${rem.risk}</span>
+    <span class="wo-label">Action:</span>
+    <span class="wo-value">${rem.action}</span>
+    <span class="wo-label">Downtime Avoided:</span>
+    <span class="wo-value saved">${rem.cost}</span>
+    <span class="wo-label">Contact:</span>
+    <span class="wo-value">${meta.contact || '—'}</span>
+    ${ev.ai_narrative ? `<div class="wo-narrative" style="grid-column:1/-1">${ev.ai_narrative}</div>` : ''}
+  `
+  document.getElementById('dispatch-event-id').value = eventId
+  document.getElementById('dispatch-modal').classList.add('open')
+}
+
+function closeDispatch() {
+  document.getElementById('dispatch-modal').classList.remove('open')
+}
+
+async function acknowledgeDispatch() {
+  const eventId = parseInt(document.getElementById('dispatch-event-id').value)
+  if (!eventId) return
   try {
-    const r = await fetch(`/api/acknowledge/${id}`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ operator: 'ops' }),
-    });
-    if (!r.ok) throw new Error(await r.text());
-    showToast(`✅ Event ${id} acknowledged`, 'ok');
-    setTimeout(loadEvents, 400);
-  } catch(e) { showToast(`❌ ${e}`, 'err'); }
+    const r = await fetch(`/api/acknowledge/${eventId}`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({operator: 'ops'}),
+    })
+    if (!r.ok) { const e = await r.json(); showToast(e.detail, 'error'); return }
+    closeDispatch()
+    showToast('✔ Crew dispatched — event acknowledged', 'ok')
+    await Promise.all([refreshEvents(), refreshStatus()])
+  } catch(e) { showToast('Acknowledge error: ' + e, 'error') }
 }
 
-function toggleNarrative(id) {
-  const nr = document.getElementById(id);
-  if (nr) nr.style.display = nr.style.display === 'none' ? 'table-row' : 'none';
+// ────────────────────────────────────────────────────────────────────────────
+// TOAST
+// ────────────────────────────────────────────────────────────────────────────
+let toastTimer = null
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast')
+  t.textContent = msg
+  t.className = 'toast-' + type
+  t.style.cssText = `
+    display:block; position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+    z-index:500; padding:9px 20px; border-radius:8px; font-size:0.78rem;
+    max-width:480px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    ${type==='ok'    ? 'background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.4);color:var(--green);' :
+      type==='error' ? 'background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.4);color:var(--red);' :
+                       'background:#1a2a40;border:1px solid var(--border2);color:var(--text);'}
+  `
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { t.style.display = 'none' }, 3500)
 }
 
-function renderEvents(events) {
-  const tbody = document.getElementById('events-tbody');
-  tbody.innerHTML = '';
-  const now = Date.now();
-  const cutoff = now - 30 * 60 * 1000;
-  let crit = 0, warn = 0, adv = 0;
-
-  events.forEach(ev => {
-    const label  = ev.predicted_label || 'unknown';
-    const evTime = new Date(ev.event_time).getTime();
-    const ageSec = (now - evTime) / 1000;
-    const conf   = ev.confidence || 0;
-    const sev    = SEVERITY[label] || 0;
-    const nrId   = `nr-${ev.id}`;
-
-    if (evTime > cutoff) {
-      if (sev===3) crit++; else if (sev===2) warn++; else if (sev===1) adv++;
-    }
-
-    let rowClass = '';
-    if (!ev.acknowledged) {
-      if (sev===3) rowClass = (ageSec < 60 && conf > 0.7) ? 'row-critical-fresh' : 'row-critical';
-      else if (sev===2) rowClass = 'row-warning';
-      else if (sev===1) rowClass = 'row-advisory';
-    }
-
-    const confPct   = (conf*100).toFixed(1);
-    const confColor = conf>0.85?'#FF1744':conf>0.6?'#FF9100':'var(--muted)';
-    const confHtml  = conf
-      ? `<div class="conf-bar-wrap"><span style="min-width:30px">${confPct}%</span><div class="conf-bar"><div class="conf-fill" style="width:${Math.round(conf*38)}px;background:${confColor}"></div></div></div>` : '—';
-
-    const hasNar = ev.ai_narrative || ev.recommended_action;
-    const expHtml = hasNar ? `<span class="expand-link" onclick="toggleNarrative('${nrId}')">▸</span>` : '';
-    const actHtml = ev.acknowledged
-      ? `<span class="acked-tag">✓</span>`
-      : (sev>0 ? `<button class="ack-btn" onclick="acknowledgeEvent(${ev.id})">Ack</button>` : '');
-
-    const tr = document.createElement('tr');
-    if (rowClass) tr.className = rowClass;
-    if (ev.acknowledged) tr.style.opacity = '0.35';
-    tr.innerHTML = `
-      <td style="white-space:nowrap;color:var(--muted);font-size:0.72rem">${new Date(ev.event_time).toLocaleTimeString()}</td>
-      <td style="font-size:0.75rem;font-weight:500">${ev.asset_id}</td>
-      <td>${ev.psi}</td><td>${ev.temp_f}</td><td>${ev.vibration}</td>
-      <td><span class="status-pill pill-${label}">${label.replace(/_/g,' ')}</span>${expHtml}</td>
-      <td>${confHtml}</td>
-      <td>${actHtml}</td>
-    `;
-    tbody.appendChild(tr);
-
-    if (hasNar) {
-      const simTxt = ev.similar_events_count > 0
-        ? ` <span style="color:var(--advisory);font-size:0.7rem">⚠ ${ev.similar_events_count} similar</span>` : '';
-      const nr = document.createElement('tr');
-      nr.className = 'narrative-row'; nr.id = nrId; nr.style.display = 'none';
-      nr.innerHTML = `<td colspan="8"><div class="narrative-panel">
-        ${ev.ai_narrative ? `<div><div class="narrative-label">AI Assessment${simTxt}</div><div class="narrative-text">${ev.ai_narrative}</div></div>` : ''}
-        ${ev.recommended_action ? `<div><div class="narrative-label">Recommended Action</div><div class="narrative-action">▶ ${ev.recommended_action}</div></div>` : ''}
-      </div></td>`;
-      tbody.appendChild(nr);
-    }
-  });
-
-  // Update header alert pills
-  const ha = document.getElementById('header-alerts');
-  ha.innerHTML = '';
-  if (crit > 0) {
-    const p = document.createElement('span');
-    p.className = 'strip-pill strip-critical pulsing';
-    p.textContent = `🔴 ${crit} Critical`;
-    ha.appendChild(p);
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeDispatch()
+    closeFsPlot()
   }
-  if (warn > 0) {
-    const p = document.createElement('span');
-    p.className = 'strip-pill strip-warning';
-    p.textContent = `🟠 ${warn} Warning`;
-    ha.appendChild(p);
-  }
-  if (adv > 0) {
-    const p = document.createElement('span');
-    p.className = 'strip-pill strip-advisory';
-    p.textContent = `🟡 ${adv} Advisory`;
-    ha.appendChild(p);
-  }
-  if (crit + warn + adv === 0) {
-    const p = document.createElement('span');
-    p.className = 'strip-pill strip-ok';
-    p.textContent = '✓ All Clear';
-    ha.appendChild(p);
-  }
+})
 
-  if (crit > 0)      document.title = `🔴 [${crit} CRITICAL] GDC-PM`;
-  else if (warn > 0) document.title = `🟠 [${warn} WARNING] GDC-PM`;
-  else               document.title = 'GDC-PM — Operations';
-}
-
-function showToast(msg, type) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'show ' + type;
-  setTimeout(() => { t.className = ''; }, 3500);
-}
-
-init();
+// ────────────────────────────────────────────────────────────────────────────
+// START
+// ────────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', init)
 </script>
 </body>
 </html>
