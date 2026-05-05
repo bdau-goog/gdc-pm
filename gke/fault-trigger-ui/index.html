@@ -545,6 +545,13 @@ const SENSOR_LABELS = {
   mud_pump:  {psi:'Discharge Pressure (PSI)', temp:'Fluid End Temp (°F)', vib:'Module Vibration (mm/s)'},
   top_drive: {psi:'Hydraulic Pressure (PSI)', temp:'Gearbox Oil Temp (°F)', vib:'Gearbox Vibration (mm/s)'},
 }
+// Short labels for the 3 sensor tabs — always unambiguous
+const SENSOR_TAB_LABELS = {
+  esp:       {psi:'Intake Pres.',  temp:'Winding Temp',  vib:'Vibration'},
+  gas_lift:  {psi:'Disch. Pres.', temp:'Discharge Temp', vib:'Vibration'},
+  mud_pump:  {psi:'Disch. Pres.', temp:'Fluid Temp',     vib:'Vibration'},
+  top_drive: {psi:'Hyd. Pres.',   temp:'Gearbox Temp',   vib:'Vibration'},
+}
 
 const CLASS_ICONS = {esp:'⚡', gas_lift:'⚙', mud_pump:'🔩', top_drive:'🔄'}
 
@@ -755,11 +762,11 @@ function selectAsset(assetId) {
   }
   // Update inject panel
   updateInjectPanel(assetId)
-  // Update sensor tabs labels
-  const sensorLbls = SENSOR_LABELS[meta?.aclass] || SENSOR_LABELS.esp
-  document.getElementById('tab-psi').textContent  = sensorLbls.psi.split(' ')[0]
-  document.getElementById('tab-temp').textContent = sensorLbls.temp.split(' ')[0]
-  document.getElementById('tab-vib').textContent  = sensorLbls.vib.split(' ')[0]
+  // Update sensor tab labels using the short unambiguous labels
+  const tabLbls = SENSOR_TAB_LABELS[meta?.aclass] || SENSOR_TAB_LABELS.esp
+  document.getElementById('tab-psi').textContent  = tabLbls.psi
+  document.getElementById('tab-temp').textContent = tabLbls.temp
+  document.getElementById('tab-vib').textContent  = tabLbls.vib
   document.getElementById('plot-asset-lbl').textContent = '— ' + assetId
   document.getElementById('btn-expand').style.display = 'inline-block'
   refreshPlot()
