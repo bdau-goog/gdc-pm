@@ -902,19 +902,31 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         crit_dir  = asset_meta["vib_crit_dir"]
 
     # ── RUL Prediction ────────────────────────────────────────────────────────
-    rul_minutes   = None
-    is_degrading  = active_degrades.get(asset_id, {}).get("running", False)
+    # GATE: Only run the RUL Regressor when:
+    #   1. We have enough data (min 8 readings = ~40s of simulator data)
+    #   2. The XGBoost Classifier has detected a fault in recent readings
+    #      (>20% of last 10 readings are non-normal)
+    # If the classifier says "normal", there is no time-to-failure to project.
+    # The classifier detects anomalies; the RUL regressor only quantifies them.
+    rul_minutes    = None
+    is_degrading   = active_degrades.get(asset_id, {}).get("running", False)
     forecast_color = "#00e676"  # green = stable
     status_text    = "✓ NOMINAL OPERATION"
 
-    if len(rows) >= 5 and asset_class in RUL_MODELS:
+    recent_labels = [str(r.get("predicted_label") or "normal").lower() for r in rows[-10:]]
+    fault_count   = sum(1 for l in recent_labels if l not in ("normal", ""))
+    fault_fraction = fault_count / max(len(recent_labels), 1)
+    # A gradual injection in progress also justifies running RUL
+    classifier_active = (fault_fraction > 0.20) or is_degrading
+
+    if len(rows) >= 8 and classifier_active and asset_class in RUL_MODELS:
         try:
             import xgboost as xgb
             rul_model = RUL_MODELS[asset_class]
             last_psi, last_temp, last_vib = psi_v[-1], temp_v[-1], vib_v[-1]
-            # Compute rate-of-change features (per minute)
-            window = min(5, len(rows) - 1)
-            dt_min = max(0.1, (times[-1] - times[-1 - window]).total_seconds() / 60.0)
+            # Compute rate-of-change features (per minute) using a stable window
+            window = min(8, len(rows) - 1)
+            dt_min = max(0.5, (times[-1] - times[-1 - window]).total_seconds() / 60.0)
             dpsi  = (psi_v[-1]  - psi_v[-1 - window])  / dt_min
             dtemp = (temp_v[-1] - temp_v[-1 - window]) / dt_min
             dvib  = (vib_v[-1]  - vib_v[-1 - window])  / dt_min
@@ -932,11 +944,13 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
             elif rul_minutes < 180:
                 forecast_color = "#ff6d00"   # orange: warning
                 status_text    = f"⚠ DEGRADATION DETECTED — {int(rul_minutes//60)}h {int(rul_minutes%60)}m RUL"
-            elif is_degrading:
-                forecast_color = "#ffb300"   # yellow: early
-                status_text    = f"⚡ ACTIVE MONITORING — RUL {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+            else:
+                forecast_color = "#ffb300"   # yellow: early degradation
+                status_text    = f"⚡ DEGRADATION TREND — RUL {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
         except Exception as e:
             log.warning(f"RUL prediction failed for {asset_id}: {e}")
+    elif len(rows) < 8:
+        status_text = f"⏳ COLLECTING BASELINE ({len(rows)}/8 readings)"
 
     # ── Forecast Projection ───────────────────────────────────────────────────
     future_times = [now + timedelta(minutes=i * 2) for i in range(1, 36)]  # next 70 min
