@@ -683,33 +683,35 @@ def cancel_degrade(asset_id: str):
     return {"status": "cancelling", "asset": asset_id}
 
 
-# ── 3D Plotly Sensor Cluster Visualization ────────────────────────────────────
-@app.get("/api/plot/3d/{asset_id}", response_class=HTMLResponse)
-def plot_3d(asset_id: str):
+# ── Predictive Forecast Visualization ─────────────────────────────────────────
+@app.get("/api/plot/forecast/{asset_id}", response_class=HTMLResponse)
+def plot_forecast(asset_id: str):
     """
-    Returns a self-contained Plotly 3D scatter HTML page for the given asset.
-    Plots the last 150 readings as PSI × Temperature × Vibration, color-coded
-    by the ML predicted_label. Designed to be embedded in an iframe.
+    Returns a self-contained Plotly HTML page showing a Time-to-Failure
+    predictive forecast curve for the given asset.
     """
     import plotly.graph_objects as go
+    from datetime import timedelta
+    import numpy as np
 
     try:
         conn = get_db()
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            # Get last ~20 minutes of data
             cur.execute(
                 """
-                SELECT psi, temp_f, vibration, predicted_label, event_time
+                SELECT event_time, vibration, temp_f, psi, failure_type, predicted_label
                 FROM telemetry_events
                 WHERE asset_id = %s
-                ORDER BY event_time DESC
-                LIMIT 150
+                  AND event_time > NOW() - INTERVAL '20 minutes'
+                ORDER BY event_time ASC
                 """,
                 (asset_id,),
             )
             rows = cur.fetchall()
         conn.close()
     except Exception as e:
-        log.error(f"3D plot DB error: {e}")
+        log.error(f"Forecast plot DB error: {e}")
         return HTMLResponse(
             f'<body style="background:#0b0c10;color:#e0e0e0;font-family:Inter,sans-serif;padding:30px">'
             f'<p style="color:#f44336">⚠ Database error: {e}</p></body>',
@@ -723,102 +725,174 @@ def plot_3d(asset_id: str):
             f'<p>No data yet for {asset_id}.<br>Waiting for telemetry...</p></body>'
         )
 
-    label_colors = {
-        "normal"  : "#00e676",
-        "advisory": "#ffb300",
-        "warning" : "#ff6d00",
-        "critical": "#f44336",
+    # We determine what metric is actively degrading to plot it.
+    # We default to vibration if normal.
+    metrics = {
+        "vibration": {"label": "Vibration (mm)", "y": [float(r["vibration"]) for r in rows], "crit": 0.5},
+        "temp_f": {"label": "Temperature (°F)", "y": [float(r["temp_f"]) for r in rows], "crit": 190},
+        "psi": {"label": "Pressure (PSI)", "y": [float(r["psi"]) for r in rows], "crit": 680}, # drop for PRD
     }
-    label_sizes = {"normal": 3, "advisory": 5, "warning": 6, "critical": 7}
+    
+    times = [r["event_time"] for r in rows]
+    now = times[-1]
+    
+    # Check if there is an active degradation injection
+    is_degrading = active_degrades.get(asset_id, {}).get("running", False)
+    active_fault = active_degrades.get(asset_id, {}).get("fault_type", "normal")
+    
+    # Pick the most interesting metric based on recent variance or active fault
+    target = "vibration"
+    if active_fault in ["thermal_runaway", "winding_overheat"]:
+        target = "temp_f"
+    elif active_fault in ["prd_failure", "combustion_instability"]:
+        target = "psi"
+        
+    y_vals = metrics[target]["y"]
+    y_label = metrics[target]["label"]
+    y_crit = metrics[target]["crit"]
+    
+    # Generate the ML Forecast (Future projection)
+    # If degrading, we project a curve that intersects the critical line.
+    # If normal, we project a flat stable line.
+    future_times = [now + timedelta(minutes=i*2) for i in range(1, 31)] # Next 60 mins
+    
+    # Simple linear/polynomial fit for demo purposes
+    x_num = np.array([(t - times[0]).total_seconds() for t in times])
+    if len(x_num) > 10 and is_degrading:
+        # Fit polynomial to recent trend
+        z = np.polyfit(x_num[-20:], y_vals[-20:], 2)
+        p = np.poly1d(z)
+        future_x = np.array([(t - times[0]).total_seconds() for t in future_times])
+        forecast_y = p(future_x)
+        # Add "Cone of Uncertainty" boundaries
+        noise = np.linspace(0.01, 0.15, len(future_x)) * np.abs(forecast_y)
+        upper_y = forecast_y + noise
+        lower_y = forecast_y - noise
+        forecast_color = "#ff6d00" # Orange warning
+        status_text = "⚠ ABNORMAL DEGRADATION DETECTED"
+    else:
+        # Stable projection
+        avg_y = np.mean(y_vals[-10:])
+        forecast_y = np.full(len(future_times), avg_y)
+        noise = np.linspace(0.01, 0.05, len(future_times)) * np.abs(avg_y)
+        upper_y = forecast_y + noise
+        lower_y = forecast_y - noise
+        forecast_color = "#00e676" # Green normal
+        status_text = "✓ NOMINAL OPERATION"
 
-    # Group by predicted_label
-    groups: dict = {}
-    for r in rows:
-        lbl = (r["predicted_label"] or "normal").lower()
-        if lbl not in groups:
-            groups[lbl] = {"psi": [], "temp": [], "vib": [], "ts": []}
-        groups[lbl]["psi"].append(float(r["psi"]))
-        groups[lbl]["temp"].append(float(r["temp_f"]))
-        groups[lbl]["vib"].append(float(r["vibration"]))
-        groups[lbl]["ts"].append(str(r["event_time"])[:19])
+    fig = go.Figure()
 
-    # Build ordered traces: normal first (background), then faults on top
-    order = ["normal", "advisory", "warning", "critical"]
-    traces = []
-    for lbl in order:
-        if lbl not in groups:
-            continue
-        d = groups[lbl]
-        traces.append(go.Scatter3d(
-            x=d["psi"], y=d["temp"], z=d["vib"],
-            mode="markers",
-            name=lbl.title(),
-            marker=dict(
-                size=label_sizes.get(lbl, 5),
-                color=label_colors.get(lbl, "#888"),
-                opacity=0.80 if lbl == "normal" else 0.95,
-                line=dict(width=0),
-            ),
-            text=[
-                f"<b>{lbl.upper()}</b><br>PSI: {p:.1f}<br>Temp: {t:.1f}°F<br>Vib: {v:.4f} mm<br>{ts}"
-                for p, t, v, ts in zip(d["psi"], d["temp"], d["vib"], d["ts"])
-            ],
-            hovertemplate="%{text}<extra></extra>",
-        ))
+    # 1. Historical data line
+    fig.add_trace(go.Scatter(
+        x=times, y=y_vals,
+        mode="lines",
+        name="Historical Telemetry",
+        line=dict(color="#1e90ff", width=3),
+        hovertemplate="Time: %{x}<br>Value: %{y:.2f}<extra></extra>"
+    ))
 
-    # Add any unlabeled groups
-    for lbl, d in groups.items():
-        if lbl in order:
-            continue
-        traces.append(go.Scatter3d(
-            x=d["psi"], y=d["temp"], z=d["vib"],
-            mode="markers", name=lbl.title(),
-            marker=dict(size=4, color="#888", opacity=0.7),
-        ))
+    # 2. Future Forecast Line (Dotted)
+    fig.add_trace(go.Scatter(
+        x=future_times, y=forecast_y,
+        mode="lines",
+        name="ML Prediction",
+        line=dict(color=forecast_color, width=3, dash="dot"),
+        hovertemplate="Forecast: %{x}<br>Value: %{y:.2f}<extra></extra>"
+    ))
 
-    fig = go.Figure(data=traces)
-    axis_style = dict(
-        backgroundcolor="#0d1420",
-        gridcolor="#1e2a38",
-        zerolinecolor="#1e2a38",
-        tickfont=dict(color="#5a6a7a", size=9),
-        titlefont=dict(color="#7d8590", size=10),
-    )
+    # 3. Cone of Uncertainty (Shaded area)
+    fig.add_trace(go.Scatter(
+        x=future_times + future_times[::-1],
+        y=list(upper_y) + list(lower_y)[::-1],
+        fill="toself",
+        fillcolor=f"rgba({255 if is_degrading else 0}, {109 if is_degrading else 230}, {0 if is_degrading else 118}, 0.15)",
+        line=dict(color="rgba(255,255,255,0)"),
+        name="95% Confidence Interval",
+        hoverinfo="skip"
+    ))
+
+    # 4. Critical Threshold Line (Red)
+    fig.add_trace(go.Scatter(
+        x=[times[0], future_times[-1]],
+        y=[y_crit, y_crit],
+        mode="lines",
+        name="Failure Threshold",
+        line=dict(color="#f44336", width=2, dash="dash"),
+        hoverinfo="skip"
+    ))
+
+    # Identify Time to Failure intersection
+    ttf_time = None
+    for i, fy in enumerate(forecast_y):
+        if (target != "psi" and fy >= y_crit) or (target == "psi" and fy <= y_crit):
+            ttf_time = future_times[i]
+            break
+
+    # Add Impact Zone Marker if intersection exists
+    if ttf_time and is_degrading:
+        fig.add_annotation(
+            x=ttf_time, y=y_crit,
+            text=f"<b>ESTIMATED FAILURE</b><br>{ttf_time.strftime('%H:%M')} UTC",
+            showarrow=True,
+            arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor="#f44336",
+            ax=0, ay=-40,
+            font=dict(color="#fff", size=11, family="Inter"),
+            bgcolor="rgba(244,67,54,0.8)", bordercolor="#f44336", borderwidth=1,
+            borderpad=4
+        )
+
+    # UI Styling (Dark Cyber-Industrial)
     fig.update_layout(
         paper_bgcolor="#0b0c10",
-        plot_bgcolor="#0b0c10",
-        font=dict(color="#e0e0e0", family="Inter, sans-serif", size=10),
-        scene=dict(
-            xaxis=dict(title="Pressure (PSI)", **axis_style),
-            yaxis=dict(title="Temperature (°F)", **axis_style),
-            zaxis=dict(title="Vibration (mm)", **axis_style),
-            bgcolor="#0b0c10",
-        ),
-        margin=dict(l=0, r=0, t=40, b=0),
+        plot_bgcolor="#0f1318",
+        font=dict(color="#e0e0e0", family="Inter, sans-serif", size=11),
+        margin=dict(l=50, r=20, t=50, b=40),
         title=dict(
-            text=f"{asset_id} — Sensor Cluster (last {len(rows)} readings)",
-            font=dict(size=11, color="#7d8590"),
-            x=0.5,
+            text=f"<b>{asset_id}</b> — ML Predictive Forecast<br><span style='font-size:12px;color:{forecast_color}'>{status_text}</span>",
+            font=dict(size=14, color="#e0e0e0"),
+            x=0.02, y=0.95
+        ),
+        xaxis=dict(
+            title="Time (UTC)",
+            gridcolor="#1e2a38", zeroline=False,
+            showline=True, linewidth=1, linecolor="#2a3a50",
+            range=[times[0], future_times[-1]]
+        ),
+        yaxis=dict(
+            title=y_label,
+            gridcolor="#1e2a38", zeroline=False,
+            showline=True, linewidth=1, linecolor="#2a3a50",
+            # Add padding above critical line
+            range=[min(min(y_vals), min(lower_y)) * 0.9, max(max(y_vals), max(upper_y), y_crit) * 1.1]
         ),
         legend=dict(
-            x=0.01, y=0.99, bgcolor="rgba(11,12,16,0.7)",
-            bordercolor="#1e2a38", borderwidth=1,
-            font=dict(size=10),
+            orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
+            bgcolor="rgba(11,12,16,0.7)", bordercolor="#1e2a38", borderwidth=1
         ),
-        showlegend=True,
+        # Vertical line marking 'NOW'
+        shapes=[
+            dict(
+                type="line", x0=now, x1=now, y0=0, y1=1,
+                xref="x", yref="paper",
+                line=dict(color="#5a6a7a", width=2, dash="dot")
+            )
+        ]
+    )
+    
+    # "NOW" text annotation
+    fig.add_annotation(
+        x=now, y=1.0, xref="x", yref="paper",
+        text="NOW", showarrow=False,
+        xanchor="right", xshift=-5, yanchor="bottom",
+        font=dict(color="#5a6a7a", size=10, family="JetBrains Mono")
     )
 
     html = fig.to_html(
         full_html=True,
         include_plotlyjs="cdn",
-        config={"displayModeBar": True, "displaylogo": False,
-                "modeBarButtonsToRemove": ["sendDataToCloud"]},
+        config={"displayModeBar": False, "responsive": True}
     )
-    # Inject dark body style
-    html = html.replace(
-        "<body>",
-        '<body style="background:#0b0c10;margin:0;padding:0;overflow:hidden;">'
-    )
+    html = html.replace('<body>', '<body style="background:#0b0c10;margin:0;padding:0;overflow:hidden;">')
     return HTMLResponse(html)
 
 

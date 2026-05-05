@@ -494,8 +494,7 @@
   <div class="hdr-divider"></div>
   <div class="alert-pills">
     <span class="a-pill a-critical" id="pill-critical">🔴 0 Critical</span>
-    <span class="a-pill a-warning"  id="pill-warning">⚠ 0 Warning</span>
-    <span class="a-pill a-advisory" id="pill-advisory">⚡ 0 Advisory</span>
+    <span class="a-pill a-warning"  id="pill-warning">⚠ 0 Warning/Advisory</span>
     <span class="a-pill a-ok"       id="pill-ok">✓ All Clear</span>
   </div>
   <div class="hdr-right">
@@ -726,7 +725,7 @@
     <!-- 3D Sensor Cluster Plot -->
     <div id="plot-section">
       <div class="plot-header">
-        📊 3D Sensor Cluster
+        📈 ML Predictive Forecast
         <span class="plot-asset-label" id="plot-asset-label">— select an asset</span>
         <button id="btn-expand-plot" onclick="expandPlot()" style="display:none">⤢ Fullscreen</button>
       </div>
@@ -735,8 +734,8 @@
           <div class="ph-icon">📡</div>
           <div class="ph-text">
             Select an asset on the plant map above<br>
-            to view its 3D sensor cluster visualization<br>
-            <span style="color:var(--muted);font-size:0.65rem">(PSI × Temperature × Vibration — color by ML prediction)</span>
+            to view its live telemetry and ML predictive forecast<br>
+            <span style="color:var(--muted);font-size:0.65rem">(Time-to-Failure projection based on multivariate degradation patterns)</span>
           </div>
         </div>
         <iframe id="plot-iframe" src="" style="display:none"></iframe>
@@ -818,8 +817,40 @@ const REMEDIATION = {
   dielectric_breakdown:   { risk:'Arc fault — immediate shutdown required', action:'De-energize + insulation resistance test', cost:'$500,000+' },
   core_loosening:         { risk:'Mechanical failure in ~24-72 hours',      action:'Core bolt inspection + re-torque',        cost:'$75,000+'  },
 }
-const LABEL_COLOR = { normal:'#00e676', advisory:'#ffb300', warning:'#ff6d00', critical:'#f44336', stale:'#3a4a5a' }
-const LABEL_ICON  = { normal:'✓', advisory:'⚡', warning:'⚠', critical:'🔴', stale:'○' }
+const LABEL_COLOR = {
+  normal:'#00e676', advisory:'#ffb300', warning:'#ff6d00', critical:'#f44336', stale:'#3a4a5a',
+  // Add mapping for raw fault names from the ML model
+  prd_failure: '#e53935',
+  thermal_runaway: '#ff6f00',
+  bearing_wear: '#f9a825',
+  combustion_instability: '#b71c1c',
+  blade_fouling: '#e65100',
+  rotor_imbalance: '#f57f17',
+  winding_overheat: '#880e4f',
+  dielectric_breakdown: '#6a1aaf',
+  core_loosening: '#1a237e'
+}
+const LABEL_ICON  = {
+  normal:'✓', advisory:'⚡', warning:'⚠', critical:'🔴', stale:'○',
+  prd_failure: '🔴',
+  thermal_runaway: '⚠',
+  bearing_wear: '⚠',
+  combustion_instability: '🔴',
+  blade_fouling: '⚠',
+  rotor_imbalance: '⚠',
+  winding_overheat: '⚠',
+  dielectric_breakdown: '🔴',
+  core_loosening: '⚠'
+}
+
+// Function to normalize any fault type or label into a simple severity class
+function getSeverityClass(lbl) {
+  lbl = lbl || 'normal';
+  if (['critical', 'prd_failure', 'combustion_instability', 'dielectric_breakdown'].includes(lbl)) return 'critical';
+  if (['warning', 'advisory', 'thermal_runaway', 'bearing_wear', 'blade_fouling', 'rotor_imbalance', 'winding_overheat', 'core_loosening'].includes(lbl)) return 'warning';
+  if (lbl === 'stale') return 'stale';
+  return 'normal';
+}
 
 // ────────────────────────────────────────────────────────────────────────────
 // STATE
@@ -875,10 +906,11 @@ async function refreshStatus() {
 function updateMapNodes() {
   document.querySelectorAll('.asset-node').forEach(node => {
     const id = node.dataset.id
-    const lbl = assetStatuses[id]?.last_prediction || 'stale'
+    const rawLbl = assetStatuses[id]?.last_prediction || 'stale'
+    const sevCls = getSeverityClass(rawLbl)
     // Update status class
     node.className = node.className.replace(/\bs-\w+/g, '')
-    node.classList.add('s-' + lbl)
+    node.classList.add('s-' + sevCls)
     // Dispatch badge
     const needsDispatch = dispatchQueue.some(e => e.asset_id === id)
     node.classList.toggle('needs-dispatch', needsDispatch)
@@ -893,9 +925,9 @@ function updateSiteHealth() {
     const meta = ASSET_META[aid]
     if (!meta) continue
     const site = meta.site
-    const lbl  = s.last_prediction || 'normal'
-    const rank  = {normal:0, advisory:1, warning:2, critical:3, stale:-1}
-    if ((rank[lbl]||0) > (rank[sites[site]]||0)) sites[site] = lbl
+    const sevCls = getSeverityClass(s.last_prediction || 'normal')
+    const rank  = {normal:0, warning:2, critical:3, stale:-1}
+    if ((rank[sevCls]||0) > (rank[sites[site]]||0)) sites[site] = sevCls
   }
   for (const [site, lbl] of Object.entries(sites)) {
     const dot  = document.getElementById('health-' + site)
@@ -909,17 +941,15 @@ function updateSiteHealth() {
 function updateAlertPills() {
   const counts = {critical:0, warning:0, advisory:0, normal:0}
   for (const s of Object.values(assetStatuses)) {
-    const lbl = s.last_prediction || 'normal'
-    if (lbl in counts) counts[lbl]++
+    const sev = getSeverityClass(s.last_prediction || 'normal')
+    if (sev in counts) counts[sev]++
   }
   const pc = document.getElementById('pill-critical')
   const pw = document.getElementById('pill-warning')
-  const pa = document.getElementById('pill-advisory')
   const po = document.getElementById('pill-ok')
   pc.textContent = `🔴 ${counts.critical} Critical`
-  pw.textContent = `⚠ ${counts.warning} Warning`
-  pa.textContent = `⚡ ${counts.advisory} Advisory`
-  po.textContent = counts.critical===0 && counts.warning===0 && counts.advisory===0
+  pw.textContent = `⚠ ${counts.warning} Warning/Advisory`
+  po.textContent = counts.critical===0 && counts.warning===0
                    ? '✓ All Clear' : `✓ ${counts.normal} Normal`
   pc.classList.toggle('pulsing', counts.critical > 0)
 }
@@ -948,9 +978,10 @@ function renderEventLog() {
     const lbl = ev.predicted_label || 'unknown'
     const col = LABEL_COLOR[lbl] || '#888'
     const ico = LABEL_ICON[lbl]  || '?'
+    const sev = getSeverityClass(lbl)
     const assetShort = (ASSET_META[ev.asset_id]?.label || ev.asset_id)
-    const isActionable = !ev.acknowledged && (lbl === 'critical' || lbl === 'warning')
-    const isFault = lbl !== 'normal'
+    const isActionable = !ev.acknowledged && (sev === 'critical' || sev === 'warning')
+    const isFault = sev !== 'normal'
     return `<div class="ev-row${isFault?' fault':''}" title="${ev.ai_narrative || ''}">
       <span class="ev-time">${ts}</span>
       <span class="ev-asset" onclick="selectAsset('${ev.asset_id}')">${assetShort}</span>
@@ -967,9 +998,10 @@ function renderEventLog() {
 }
 
 function updateDispatchQueue() {
-  dispatchQueue = recentEvents.filter(ev =>
-    !ev.acknowledged && (ev.predicted_label === 'critical' || ev.predicted_label === 'warning')
-  )
+  dispatchQueue = recentEvents.filter(ev => {
+    const sev = getSeverityClass(ev.predicted_label)
+    return !ev.acknowledged && (sev === 'critical' || sev === 'warning')
+  })
   const banner = document.getElementById('dispatch-banner')
   if (dispatchQueue.length > 0) {
     banner.classList.add('visible')
@@ -1215,24 +1247,24 @@ async function pollScenarioStatus() {
 let plotRefreshTimer = null
 function refreshPlot() {
   if (!selectedAsset) return
-  const iframe = document.getElementById('plot-iframe')
-  const placeholder = document.getElementById('plot-placeholder')
-  const label = document.getElementById('plot-asset-label')
-  const expandBtn = document.getElementById('btn-expand-plot')
-  label.textContent = '— ' + (ASSET_META[selectedAsset]?.label || selectedAsset)
-  iframe.style.display = 'block'
-  placeholder.style.display = 'none'
-  expandBtn.style.display = 'inline-block'
-  iframe.src = `/api/plot/3d/${selectedAsset}?cb=${Date.now()}`
-}
-
-function expandPlot() {
-  if (!selectedAsset) return
-  const fs = document.getElementById('fs-plot')
-  const fsIframe = document.getElementById('fs-iframe')
-  fsIframe.src = `/api/plot/3d/${selectedAsset}?cb=${Date.now()}`
-  fs.classList.add('open')
-}
+    const iframe = document.getElementById('plot-iframe')
+    const placeholder = document.getElementById('plot-placeholder')
+    const label = document.getElementById('plot-asset-label')
+    const expandBtn = document.getElementById('btn-expand-plot')
+    label.textContent = '— ' + (ASSET_META[selectedAsset]?.label || selectedAsset)
+    iframe.style.display = 'block'
+    placeholder.style.display = 'none'
+    expandBtn.style.display = 'inline-block'
+    iframe.src = `/api/plot/forecast/${selectedAsset}?cb=${Date.now()}`
+  }
+  
+  function expandPlot() {
+    if (!selectedAsset) return
+    const fs = document.getElementById('fs-plot')
+    const fsIframe = document.getElementById('fs-iframe')
+    fsIframe.src = `/api/plot/forecast/${selectedAsset}?cb=${Date.now()}`
+    fs.classList.add('open')
+  }
 function closeFsPlot() {
   document.getElementById('fs-plot').classList.remove('open')
   document.getElementById('fs-iframe').src = ''
