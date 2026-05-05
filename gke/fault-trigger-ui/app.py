@@ -937,62 +937,71 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
             rul_minutes = float(rul_model.predict(dmat)[0])
             rul_minutes = max(0.0, min(rul_minutes, 600.0))
 
-            # Classify severity based on RUL
+            # Status text color (red = urgent) — separate from the DOTTED line color
             if rul_minutes < 60:
-                forecast_color = "#f44336"   # red: imminent
-                status_text    = f"⚠ PREDICTED FAILURE — {int(rul_minutes)}m REMAINING"
+                status_color = "#f44336"   # red text: imminent
+                status_text  = f"⚠ PREDICTED FAILURE — {int(rul_minutes)}m REMAINING"
             elif rul_minutes < 180:
-                forecast_color = "#ff6d00"   # orange: warning
-                status_text    = f"⚠ DEGRADATION DETECTED — {int(rul_minutes//60)}h {int(rul_minutes%60)}m RUL"
+                status_color = "#ff6d00"   # orange text: warning
+                status_text  = f"⚠ DEGRADATION DETECTED — {int(rul_minutes//60)}h {int(rul_minutes%60)}m RUL"
             else:
-                forecast_color = "#ffb300"   # yellow: early degradation
-                status_text    = f"⚡ DEGRADATION TREND — RUL {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+                status_color = "#ffb300"   # yellow text: early trend
+                status_text  = f"⚡ DEGRADATION TREND — RUL {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+            # The DOTTED forecast line is always orange — keeps it distinct from the
+            # red dashed failure threshold line and from the blue historical trace.
+            forecast_color = "#ff8c00"
         except Exception as e:
             log.warning(f"RUL prediction failed for {asset_id}: {e}")
     elif len(rows) < 8:
-        status_text = f"⏳ COLLECTING BASELINE ({len(rows)}/8 readings)"
+        status_text  = f"⏳ COLLECTING BASELINE ({len(rows)}/8 readings)"
+        status_color = "#5a6a7a"
+
+    if rul_minutes is None:
+        status_color = forecast_color  # green for nominal
 
     # ── Forecast Projection ───────────────────────────────────────────────────
     future_times = [now + timedelta(minutes=i * 2) for i in range(1, 36)]  # next 70 min
 
     if rul_minutes is not None and rul_minutes < 580:
         # Project toward the critical threshold linearly based on RUL
-        y_start    = float(y_vals[-1])
-        steps_fwd  = max(1, int(rul_minutes / 2))  # 2-min steps
+        y_start = float(y_vals[-1])
         if crit_dir == "above":
             forecast_y = np.linspace(y_start, y_crit * 1.02, len(future_times))
         else:
             forecast_y = np.linspace(y_start, y_crit * 0.98, len(future_times))
     else:
         # Stable: flat projection with small noise
-        avg_y     = float(np.mean(y_vals[-10:]))
+        avg_y      = float(np.mean(y_vals[-10:]))
         forecast_y = np.full(len(future_times), avg_y)
 
-    noise = np.linspace(0.01, 0.12, len(future_times)) * np.abs(forecast_y)
+    noise   = np.linspace(0.01, 0.12, len(future_times)) * np.abs(forecast_y)
     upper_y = forecast_y + noise
     lower_y = forecast_y - noise
+
+    # Cone fill color: orange when degrading, green when stable
+    cone_rgba = "255,140,0" if rul_minutes is not None else "0,230,118"
 
     # ── Build Plotly Figure ───────────────────────────────────────────────────
     fig = go.Figure()
 
-    # 1. Historical line
+    # 1. Historical line — blue
     fig.add_trace(go.Scatter(
         x=times, y=y_vals, mode="lines", name="Live Telemetry",
         line=dict(color="#1e90ff", width=2.5),
     ))
 
-    # 2. Forecast line (dotted)
+    # 2. ML RUL Projection — orange dotted (always distinct from red threshold)
     fig.add_trace(go.Scatter(
         x=future_times, y=forecast_y, mode="lines", name="ML RUL Projection",
         line=dict(color=forecast_color, width=2.5, dash="dot"),
     ))
 
-    # 3. Cone of uncertainty
+    # 3. Cone of uncertainty — semi-transparent orange or green
     fig.add_trace(go.Scatter(
         x=future_times + future_times[::-1],
         y=list(upper_y) + list(lower_y)[::-1],
         fill="toself",
-        fillcolor=f"rgba({'244,67,54' if forecast_color=='#f44336' else '255,109,0' if forecast_color=='#ff6d00' else '0,230,118'}, 0.10)",
+        fillcolor=f"rgba({cone_rgba}, 0.10)",
         line=dict(color="rgba(255,255,255,0)"),
         name="95% Confidence",
         hoverinfo="skip",
