@@ -49,8 +49,45 @@ GCS_MODEL_PATH   = os.environ.get("GCS_MODEL_PATH", "")
 # Label maps match the integer classes used during BQML training (is_failure column).
 
 MODEL_CONFIGS = {
+    # ── Upstream O&G Asset Classes (Primary) ──────────────────────────────────
+    "esp_classifier": {
+        "description": "ESP (Electrical Submersible Pump) — Failure Classifier",
+        "label_map": {
+            0: "normal",
+            1: "gas_lock",
+            2: "sand_ingress",
+            3: "motor_overheat",
+        },
+    },
+    "gas_lift_classifier": {
+        "description": "Gas Lift Compressor — Failure Classifier",
+        "label_map": {
+            0: "normal",
+            1: "valve_failure",
+            2: "thermal_runaway",
+            3: "bearing_wear",
+        },
+    },
+    "mud_pump_classifier": {
+        "description": "Triplex Mud Pump — Failure Classifier",
+        "label_map": {
+            0: "normal",
+            1: "pulsation_dampener_failure",
+            2: "valve_washout",
+            3: "piston_seal_wear",
+        },
+    },
+    "top_drive_classifier": {
+        "description": "Top Drive — Failure Classifier",
+        "label_map": {
+            0: "normal",
+            1: "gearbox_bearing_spalling",
+            2: "hydraulic_leak",
+        },
+    },
+    # ── Legacy Power/Industrial Classes (Kept for backward compatibility) ─────
     "stator_classifier": {
-        "description": "Gas Compressor — Stator/PRD Failure Classifier",
+        "description": "Gas Compressor — Legacy Failure Classifier",
         "label_map": {
             0: "normal",
             1: "prd_failure",
@@ -59,7 +96,7 @@ MODEL_CONFIGS = {
         },
     },
     "turbine_classifier": {
-        "description": "Gas Turbine Generator — Failure Classifier",
+        "description": "Gas Turbine Generator — Legacy Failure Classifier",
         "label_map": {
             0: "normal",
             1: "combustion_instability",
@@ -68,7 +105,7 @@ MODEL_CONFIGS = {
         },
     },
     "transformer_classifier": {
-        "description": "High-Voltage Transformer — Failure Classifier",
+        "description": "High-Voltage Transformer — Legacy Failure Classifier",
         "label_map": {
             0: "normal",
             1: "winding_overheat",
@@ -78,8 +115,14 @@ MODEL_CONFIGS = {
     },
 }
 
-# Maps asset_type field → model name
+# Maps asset_type field → classifier model name
 ASSET_TYPE_TO_MODEL = {
+    # O&G asset types (primary)
+    "esp":       "esp_classifier",
+    "gas_lift":  "gas_lift_classifier",
+    "mud_pump":  "mud_pump_classifier",
+    "top_drive": "top_drive_classifier",
+    # Legacy industrial (kept for backward compat)
     "compressor":   "stator_classifier",
     "turbine":      "turbine_classifier",
     "transformer":  "transformer_classifier",
@@ -185,11 +228,11 @@ app = FastAPI(
 # ── Request / Response Models ─────────────────────────────────────────────────
 class TelemetryInput(BaseModel):
     # Primary sensor features (same 3 features used for all asset types)
-    psi:       float = Field(..., ge=0,   le=5000,  description="Pressure (PSI) or kV for transformers")
-    temp_f:    float = Field(..., ge=-50, le=1500,  description="Temperature (°F) — wide range for turbines")
-    vibration: float = Field(..., ge=0,  le=20.0,  description="Vibration amplitude (mm)")
+    psi:       float = Field(..., ge=0,   le=6000,  description="Pressure (PSI) — ESP intake, compressor discharge, mud pump, etc.")
+    temp_f:    float = Field(..., ge=-50, le=1500,  description="Temperature (°F) — wide range for all asset types")
+    vibration: float = Field(..., ge=0,   le=50.0,  description="Vibration amplitude (mm/s) — up to 28+ for mud pump dampener failures")
     # Asset routing
-    asset_type: str  = Field(default="compressor",
+    asset_type: str  = Field(default="esp",
                              description="Asset class: compressor | turbine | transformer")
     # Optional extended sensors (not yet used in scoring, stored for future models)
     kv:         Optional[float] = Field(default=None, description="Line voltage kV (transformers)")

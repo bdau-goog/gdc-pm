@@ -1,0 +1,373 @@
+{
+  "esp": {
+    "sensor_labels": {
+      "psi": [
+        "Intake Pressure",
+        "PSI"
+      ],
+      "temp": [
+        "Motor Winding Temp",
+        "\u00b0F"
+      ],
+      "vib": [
+        "Motor Vibration",
+        "mm/s"
+      ]
+    },
+    "gradual_faults": [
+      "sand_ingress",
+      "motor_overheat"
+    ],
+    "instant_faults": [
+      "gas_lock"
+    ],
+    "rul_primary": {
+      "sand_ingress": [
+        "vib",
+        "above",
+        8.0
+      ],
+      "motor_overheat": [
+        "temp",
+        "above",
+        280.0
+      ],
+      "gas_lock": [
+        "psi",
+        "below",
+        800.0
+      ]
+    },
+    "normal_ranges": {
+      "psi": [
+        1200,
+        1600
+      ],
+      "temp": [
+        180,
+        220
+      ],
+      "vib": [
+        0.8,
+        2.0
+      ]
+    },
+    "fault_ranges": {
+      "gas_lock": {
+        "psi": [
+          350,
+          750
+        ],
+        "temp": [
+          195,
+          245
+        ],
+        "vib": [
+          6.0,
+          12.0
+        ]
+      },
+      "sand_ingress": {
+        "psi": [
+          1280,
+          1580
+        ],
+        "temp": [
+          200,
+          240
+        ],
+        "vib": [
+          4.5,
+          9.5
+        ]
+      },
+      "motor_overheat": {
+        "psi": [
+          1300,
+          1560
+        ],
+        "temp": [
+          265,
+          295
+        ],
+        "vib": [
+          2.5,
+          4.5
+        ]
+      }
+    }
+  },
+  "gas_lift": {
+    "sensor_labels": {
+      "psi": [
+        "Discharge Pressure",
+        "PSI"
+      ],
+      "temp": [
+        "Discharge Temp",
+        "\u00b0F"
+      ],
+      "vib": [
+        "Frame Vibration",
+        "mm/s"
+      ]
+    },
+    "gradual_faults": [
+      "thermal_runaway",
+      "bearing_wear"
+    ],
+    "instant_faults": [
+      "valve_failure"
+    ],
+    "rul_primary": {
+      "valve_failure": [
+        "psi",
+        "below",
+        600.0
+      ],
+      "thermal_runaway": [
+        "temp",
+        "above",
+        230.0
+      ],
+      "bearing_wear": [
+        "vib",
+        "above",
+        12.0
+      ]
+    },
+    "normal_ranges": {
+      "psi": [
+        940,
+        1060
+      ],
+      "temp": [
+        140,
+        178
+      ],
+      "vib": [
+        1.0,
+        2.5
+      ]
+    },
+    "fault_ranges": {
+      "valve_failure": {
+        "psi": [
+          450,
+          640
+        ],
+        "temp": [
+          165,
+          200
+        ],
+        "vib": [
+          8.0,
+          14.0
+        ]
+      },
+      "thermal_runaway": {
+        "psi": [
+          940,
+          1040
+        ],
+        "temp": [
+          210,
+          248
+        ],
+        "vib": [
+          3.0,
+          5.5
+        ]
+      },
+      "bearing_wear": {
+        "psi": [
+          945,
+          1040
+        ],
+        "temp": [
+          163,
+          183
+        ],
+        "vib": [
+          7.5,
+          13.5
+        ]
+      }
+    }
+  },
+  "mud_pump": {
+    "sensor_labels": {
+      "psi": [
+        "Discharge Pressure",
+        "PSI"
+      ],
+      "temp": [
+        "Fluid End Temp",
+        "\u00b0F"
+      ],
+      "vib": [
+        "Module Vibration",
+        "mm/s"
+      ]
+    },
+    "gradual_faults": [
+      "valve_washout",
+      "piston_seal_wear"
+    ],
+    "instant_faults": [
+      "pulsation_dampener_failure"
+    ],
+    "rul_primary": {
+      "pulsation_dampener_failure": [
+        "vib",
+        "above",
+        20.0
+      ],
+      "valve_washout": [
+        "psi",
+        "below",
+        1800.0
+      ],
+      "piston_seal_wear": [
+        "temp",
+        "above",
+        180.0
+      ]
+    },
+    "normal_ranges": {
+      "psi": [
+        2550,
+        3150
+      ],
+      "temp": [
+        90,
+        120
+      ],
+      "vib": [
+        2.5,
+        4.5
+      ]
+    },
+    "fault_ranges": {
+      "pulsation_dampener_failure": {
+        "psi": [
+          3800,
+          4600
+        ],
+        "temp": [
+          120,
+          158
+        ],
+        "vib": [
+          15.0,
+          28.0
+        ]
+      },
+      "valve_washout": {
+        "psi": [
+          1800,
+          2400
+        ],
+        "temp": [
+          115,
+          145
+        ],
+        "vib": [
+          5.0,
+          10.0
+        ]
+      },
+      "piston_seal_wear": {
+        "psi": [
+          1900,
+          2450
+        ],
+        "temp": [
+          155,
+          190
+        ],
+        "vib": [
+          5.5,
+          8.5
+        ]
+      }
+    }
+  },
+  "top_drive": {
+    "sensor_labels": {
+      "psi": [
+        "Hydraulic Pressure",
+        "PSI"
+      ],
+      "temp": [
+        "Gearbox Oil Temp",
+        "\u00b0F"
+      ],
+      "vib": [
+        "Gearbox Vibration",
+        "mm/s"
+      ]
+    },
+    "gradual_faults": [
+      "gearbox_bearing_spalling",
+      "hydraulic_leak"
+    ],
+    "instant_faults": [],
+    "rul_primary": {
+      "gearbox_bearing_spalling": [
+        "vib",
+        "above",
+        15.0
+      ],
+      "hydraulic_leak": [
+        "psi",
+        "below",
+        2000.0
+      ]
+    },
+    "normal_ranges": {
+      "psi": [
+        2840,
+        3160
+      ],
+      "temp": [
+        130,
+        165
+      ],
+      "vib": [
+        1.8,
+        3.8
+      ]
+    },
+    "fault_ranges": {
+      "gearbox_bearing_spalling": {
+        "psi": [
+          2850,
+          3060
+        ],
+        "temp": [
+          175,
+          222
+        ],
+        "vib": [
+          11.0,
+          20.0
+        ]
+      },
+      "hydraulic_leak": {
+        "psi": [
+          1700,
+          2150
+        ],
+        "temp": [
+          158,
+          208
+        ],
+        "vib": [
+          3.5,
+          7.0
+        ]
+      }
+    }
+  }
+}

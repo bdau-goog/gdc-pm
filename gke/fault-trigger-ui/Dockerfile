@@ -7,6 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app.py .
 COPY index.html .
+COPY models/ ./models/
 
 EXPOSE 8080
 

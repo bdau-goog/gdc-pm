@@ -1,15 +1,32 @@
 """
 gke/telemetry-simulator/simulator.py
 
-Continuously generates realistic telemetry for all registered asset types and
-publishes it to a RabbitMQ exchange. Supports three asset classes:
+Continuously generates realistic telemetry for all 20 Upstream O&G assets
+across 4 sites and publishes readings to RabbitMQ.
 
-  compressor  — Gas compressors (PSI/Temp/Vib)
-                Failure modes: prd_failure, thermal_runaway, bearing_wear
-  turbine     — Gas turbine generators (PSI/Temp/Vib — high range)
-                Failure modes: combustion_instability, blade_fouling, rotor_imbalance
-  transformer — HV transformers (kV stored as PSI/Temp/Vib)
-                Failure modes: winding_overheat, dielectric_breakdown, core_loosening
+Asset classes and their sensor meanings:
+  esp        — Electrical Submersible Pump (Downhole)
+               psi = Intake Pressure (1200–1600 PSI)
+               temp_f = Motor Winding Temp (180–220°F)
+               vibration = Motor Vibration (0.8–2.0 mm/s)
+  gas_lift   — Gas Lift Compressor (Surface)
+               psi = Discharge Pressure (940–1060 PSI)
+               temp_f = Discharge Temp (140–178°F)
+               vibration = Frame Vibration (1.0–2.5 mm/s)
+  mud_pump   — Triplex Mud Pump (Drilling Rig)
+               psi = Discharge Pressure (2550–3150 PSI)
+               temp_f = Fluid End Temp (90–120°F)
+               vibration = Module Vibration (2.5–4.5 mm/s)
+  top_drive  — Top Drive (Drilling Rig Rotary System)
+               psi = Hydraulic System Pressure (2840–3160 PSI)
+               temp_f = Gearbox Oil Temp (130–165°F)
+               vibration = Gearbox Vibration (1.8–3.8 mm/s)
+
+Fleet: 4 sites × 4–6 assets each = 20 monitored assets
+  Pad Alpha   — 4 ESPs + 2 Gas Lifts
+  Pad Bravo   — 4 ESPs + 2 Gas Lifts
+  Pad Charlie — 3 ESPs + 1 Gas Lift
+  Rig 42      — 3 Mud Pumps + 1 Top Drive
 
 Environment Variables:
   RABBITMQ_HOST       — RabbitMQ host
@@ -18,9 +35,6 @@ Environment Variables:
   RABBITMQ_PASS       — Password
   RABBITMQ_VHOST      — Virtual host (default: gdc-pm)
   TELEMETRY_INTERVAL  — Seconds between normal readings (default: 5)
-  INJECT_FAULT        — Fault type to inject: prd_failure, combustion_instability,
-                        winding_overheat, etc. or 'none'
-  INJECT_ASSET        — Asset ID to target for fault injection
 """
 
 import os
@@ -47,268 +61,306 @@ TELEMETRY_INTERVAL = float(os.environ.get("TELEMETRY_INTERVAL", "5"))
 EXCHANGE_NAME = "telemetry"
 ROUTING_KEY   = "sensor.reading"
 
-# ── Asset Registry ────────────────────────────────────────────────────────────
-# Each entry: (asset_id, asset_type)
-# asset_type drives both the telemetry generator and the inference API model routing.
+# ── Asset Fleet (4 sites, 20 assets) ─────────────────────────────────────────
+# Each entry: (asset_id, asset_class, site)
 ASSET_REGISTRY = [
-    # Compressors (stator_classifier)
-    ("COMP-TX-VALLEY-01", "compressor"),
-    ("COMP-TX-VALLEY-02", "compressor"),
-    ("COMP-TX-RIDGE-01",  "compressor"),
-    ("COMP-TX-RIDGE-02",  "compressor"),
-    ("COMP-TX-BASIN-01",  "compressor"),
-    # Gas Turbine Generators (turbine_classifier)
-    ("GTG-VALLEY-01",     "turbine"),
-    ("GTG-RIDGE-01",      "turbine"),
-    # HV Transformers (transformer_classifier) — psi column stores kV
-    ("XFR-VALLEY-01",     "transformer"),
-    ("XFR-RIDGE-01",      "transformer"),
-    ("XFR-BASIN-01",      "transformer"),
+    # ── Pad Alpha — Production Pad ────────────────────────────────────────────
+    ("ESP-ALPHA-1",    "esp",      "pad_alpha"),
+    ("ESP-ALPHA-2",    "esp",      "pad_alpha"),
+    ("ESP-ALPHA-3",    "esp",      "pad_alpha"),
+    ("ESP-ALPHA-4",    "esp",      "pad_alpha"),
+    ("GLIFT-ALPHA-1",  "gas_lift", "pad_alpha"),
+    ("GLIFT-ALPHA-2",  "gas_lift", "pad_alpha"),
+    # ── Pad Bravo — Production Pad ────────────────────────────────────────────
+    ("ESP-BRAVO-1",    "esp",      "pad_bravo"),
+    ("ESP-BRAVO-2",    "esp",      "pad_bravo"),
+    ("ESP-BRAVO-3",    "esp",      "pad_bravo"),
+    ("ESP-BRAVO-4",    "esp",      "pad_bravo"),
+    ("GLIFT-BRAVO-1",  "gas_lift", "pad_bravo"),
+    ("GLIFT-BRAVO-2",  "gas_lift", "pad_bravo"),
+    # ── Pad Charlie — Production Pad ──────────────────────────────────────────
+    ("ESP-CHARLIE-1",  "esp",      "pad_charlie"),
+    ("ESP-CHARLIE-2",  "esp",      "pad_charlie"),
+    ("ESP-CHARLIE-3",  "esp",      "pad_charlie"),
+    ("GLIFT-CHARLIE-1","gas_lift", "pad_charlie"),
+    # ── Rig 42 — Drilling Rig ─────────────────────────────────────────────────
+    ("MUD-RIG42-1",    "mud_pump", "rig_42"),
+    ("MUD-RIG42-2",    "mud_pump", "rig_42"),
+    ("MUD-RIG42-3",    "mud_pump", "rig_42"),
+    ("TOPDRIVE-RIG42-1","top_drive","rig_42"),
 ]
 
-# Flat list of asset IDs (for env var matching)
-ASSETS = [a[0] for a in ASSET_REGISTRY]
-# Dict: asset_id → asset_type
-ASSET_TYPES = {a[0]: a[1] for a in ASSET_REGISTRY}
+ASSETS        = [a[0] for a in ASSET_REGISTRY]
+ASSET_CLASSES = {a[0]: a[1] for a in ASSET_REGISTRY}
+ASSET_SITES   = {a[0]: a[2] for a in ASSET_REGISTRY}
 
 
 # ── Normal Telemetry Generators ───────────────────────────────────────────────
-def normal_reading(asset_id: str, asset_type: str) -> dict:
-    """Generate a nominal reading for the given asset type."""
-    if asset_type == "turbine":
-        psi       = round(random.gauss(2200, 25), 2)
-        temp_f    = round(random.gauss(1050, 12), 2)
-        vibration = round(abs(random.gauss(0.05, 0.008)), 4)
-    elif asset_type == "transformer":
-        psi       = round(random.gauss(115, 1.2), 3)   # kV stored in psi column
-        temp_f    = round(random.gauss(185, 4), 2)
-        vibration = round(abs(random.gauss(0.010, 0.002)), 4)
-    else:  # compressor (default)
-        psi       = round(random.gauss(855, 8), 2)
-        temp_f    = round(random.gauss(112, 3), 2)
-        vibration = round(abs(random.gauss(0.02, 0.005)), 4)
+def normal_reading(asset_id: str, asset_class: str) -> dict:
+    """Generate a physically realistic nominal reading for the given asset class."""
+    if asset_class == "esp":
+        # Electrical Submersible Pump — downhole
+        psi       = round(random.gauss(1400, 65), 1)
+        temp_f    = round(random.gauss(198, 8), 1)
+        vibration = round(max(0.1, random.gauss(1.4, 0.18)), 3)
+
+    elif asset_class == "gas_lift":
+        # Gas Lift Compressor — surface injection
+        psi       = round(random.gauss(1000, 22), 1)
+        temp_f    = round(random.gauss(158, 6), 1)
+        vibration = round(max(0.1, random.gauss(1.7, 0.18)), 3)
+
+    elif asset_class == "mud_pump":
+        # Triplex Mud Pump — drilling rig
+        psi       = round(random.gauss(2850, 85), 1)
+        temp_f    = round(random.gauss(105, 5), 1)
+        vibration = round(max(0.2, random.gauss(3.5, 0.35)), 3)
+
+    elif asset_class == "top_drive":
+        # Top Drive — drilling rig rotary system
+        psi       = round(random.gauss(3000, 55), 1)
+        temp_f    = round(random.gauss(148, 5), 1)
+        vibration = round(max(0.1, random.gauss(2.8, 0.28)), 3)
+
+    else:
+        # Fallback
+        psi       = round(random.gauss(1000, 50), 1)
+        temp_f    = round(random.gauss(150, 10), 1)
+        vibration = round(abs(random.gauss(2.0, 0.3)), 3)
 
     return {
         "asset_id"    : asset_id,
-        "asset_type"  : asset_type,
+        "asset_type"  : asset_class,
         "psi"         : psi,
         "temp_f"      : temp_f,
         "vibration"   : vibration,
         "failure_type": "normal",
         "source"      : "simulator",
+        "timestamp"   : datetime.utcnow().isoformat() + "Z",
     }
 
 
-# ── Compressor Failure Generators ─────────────────────────────────────────────
-def prd_failure_reading(asset_id: str) -> dict:
+# ── ESP Fault Generators ──────────────────────────────────────────────────────
+def gas_lock_reading(asset_id: str) -> dict:
+    """Gas Lock: gas pockets overwhelm pump stages. PSI crashes, vibration spikes."""
     return {
-        "asset_id": asset_id, "asset_type": "compressor",
-        "psi":       round(random.gauss(645, 20), 2),
-        "temp_f":    round(random.gauss(162, 6), 2),
-        "vibration": round(abs(random.gauss(0.90, 0.12)), 4),
-        "failure_type": "prd_failure", "source": "simulator",
+        "asset_id": asset_id, "asset_type": "esp",
+        "psi":       round(random.gauss(550, 75), 1),
+        "temp_f":    round(random.gauss(222, 12), 1),
+        "vibration": round(max(0.5, random.gauss(9.0, 1.4)), 3),
+        "failure_type": "gas_lock", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+def sand_ingress_reading(asset_id: str) -> dict:
+    """Sand Ingress: formation sand erodes impeller. Vibration climbs steadily."""
+    return {
+        "asset_id": asset_id, "asset_type": "esp",
+        "psi":       round(random.gauss(1360, 60), 1),
+        "temp_f":    round(random.gauss(210, 10), 1),
+        "vibration": round(max(0.5, random.gauss(6.5, 1.0)), 3),
+        "failure_type": "sand_ingress", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+def motor_overheat_reading(asset_id: str) -> dict:
+    """Motor Overheat: downhole cooling degraded. Temperature climbs."""
+    return {
+        "asset_id": asset_id, "asset_type": "esp",
+        "psi":       round(random.gauss(1380, 60), 1),
+        "temp_f":    round(random.gauss(278, 8), 1),
+        "vibration": round(max(0.5, random.gauss(3.0, 0.4)), 3),
+        "failure_type": "motor_overheat", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+# ── Gas Lift Fault Generators ─────────────────────────────────────────────────
+def valve_failure_reading(asset_id: str) -> dict:
+    """Valve Failure: check valve breaks. Discharge pressure crashes, vibration spikes."""
+    return {
+        "asset_id": asset_id, "asset_type": "gas_lift",
+        "psi":       round(random.gauss(530, 55), 1),
+        "temp_f":    round(random.gauss(178, 10), 1),
+        "vibration": round(max(0.5, random.gauss(11.0, 1.5)), 3),
+        "failure_type": "valve_failure", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
 def thermal_runaway_reading(asset_id: str) -> dict:
+    """Thermal Runaway: cooling degradation. Temperature climbs, pressure normal."""
     return {
-        "asset_id": asset_id, "asset_type": "compressor",
-        "psi":       round(random.gauss(845, 12), 2),
-        "temp_f":    round(random.gauss(188, 10), 2),
-        "vibration": round(abs(random.gauss(0.12, 0.04)), 4),
+        "asset_id": asset_id, "asset_type": "gas_lift",
+        "psi":       round(random.gauss(990, 22), 1),
+        "temp_f":    round(random.gauss(228, 8), 1),
+        "vibration": round(max(0.5, random.gauss(3.5, 0.5)), 3),
         "failure_type": "thermal_runaway", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
 def bearing_wear_reading(asset_id: str) -> dict:
+    """Bearing Wear: progressive bearing degradation. Frame vibration climbs."""
     return {
-        "asset_id": asset_id, "asset_type": "compressor",
-        "psi":       round(random.gauss(850, 10), 2),
-        "temp_f":    round(random.gauss(124, 5), 2),
-        "vibration": round(abs(random.gauss(0.45, 0.07)), 4),
+        "asset_id": asset_id, "asset_type": "gas_lift",
+        "psi":       round(random.gauss(985, 22), 1),
+        "temp_f":    round(random.gauss(172, 6), 1),
+        "vibration": round(max(0.5, random.gauss(10.0, 1.5)), 3),
         "failure_type": "bearing_wear", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-# ── Turbine Failure Generators ────────────────────────────────────────────────
-def combustion_instability_reading(asset_id: str) -> dict:
+# ── Mud Pump Fault Generators ─────────────────────────────────────────────────
+def pulsation_dampener_failure_reading(asset_id: str) -> dict:
+    """Pulsation Dampener Failure: bladder rupture. Sudden extreme pressure spike + vibration."""
     return {
-        "asset_id": asset_id, "asset_type": "turbine",
-        "psi":       round(random.gauss(1800, 40), 2),   # pressure surge drop
-        "temp_f":    round(random.gauss(1120, 15), 2),   # temperature spike
-        "vibration": round(abs(random.gauss(0.18, 0.04)), 4),
-        "failure_type": "combustion_instability", "source": "simulator",
+        "asset_id": asset_id, "asset_type": "mud_pump",
+        "psi":       round(random.gauss(4200, 190), 1),
+        "temp_f":    round(random.gauss(138, 12), 1),
+        "vibration": round(max(1.0, random.gauss(22.0, 3.0)), 3),
+        "failure_type": "pulsation_dampener_failure", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-def blade_fouling_reading(asset_id: str) -> dict:
+def valve_washout_reading(asset_id: str) -> dict:
+    """Valve Seat Washout: fluid erodes valve seat. Discharge pressure slowly declines."""
     return {
-        "asset_id": asset_id, "asset_type": "turbine",
-        "psi":       round(random.gauss(2060, 25), 2),   # efficiency loss
-        "temp_f":    round(random.gauss(1093, 12), 2),   # thermal inefficiency
-        "vibration": round(abs(random.gauss(0.09, 0.015)), 4),
-        "failure_type": "blade_fouling", "source": "simulator",
+        "asset_id": asset_id, "asset_type": "mud_pump",
+        "psi":       round(random.gauss(2050, 85), 1),
+        "temp_f":    round(random.gauss(128, 10), 1),
+        "vibration": round(max(0.5, random.gauss(7.5, 1.0)), 3),
+        "failure_type": "valve_washout", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-def rotor_imbalance_reading(asset_id: str) -> dict:
+def piston_seal_wear_reading(asset_id: str) -> dict:
+    """Piston Seal Wear: seals degrade. Fluid temp rises, pressure slowly drops."""
     return {
-        "asset_id": asset_id, "asset_type": "turbine",
-        "psi":       round(random.gauss(2195, 18), 2),   # near-normal
-        "temp_f":    round(random.gauss(1055, 10), 2),   # slight friction rise
-        "vibration": round(abs(random.gauss(0.42, 0.07)), 4),   # progressive climb
-        "failure_type": "rotor_imbalance", "source": "simulator",
+        "asset_id": asset_id, "asset_type": "mud_pump",
+        "psi":       round(random.gauss(2150, 85), 1),
+        "temp_f":    round(random.gauss(168, 12), 1),
+        "vibration": round(max(0.5, random.gauss(6.5, 0.9)), 3),
+        "failure_type": "piston_seal_wear", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-# ── Transformer Failure Generators ────────────────────────────────────────────
-def winding_overheat_reading(asset_id: str) -> dict:
+# ── Top Drive Fault Generators ────────────────────────────────────────────────
+def gearbox_bearing_spalling_reading(asset_id: str) -> dict:
+    """Gearbox Bearing Spalling: metal fatigue in gearbox. Vibration signature climbs."""
     return {
-        "asset_id": asset_id, "asset_type": "transformer",
-        "psi":       round(random.gauss(110, 2), 3),     # kV — slight voltage sag
-        "temp_f":    round(random.gauss(212, 6), 2),     # dangerous oil temperature
-        "vibration": round(abs(random.gauss(0.015, 0.003)), 4),
-        "failure_type": "winding_overheat", "source": "simulator",
+        "asset_id": asset_id, "asset_type": "top_drive",
+        "psi":       round(random.gauss(2950, 55), 1),
+        "temp_f":    round(random.gauss(198, 12), 1),
+        "vibration": round(max(0.5, random.gauss(15.5, 2.0)), 3),
+        "failure_type": "gearbox_bearing_spalling", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-def dielectric_breakdown_reading(asset_id: str) -> dict:
+def hydraulic_leak_reading(asset_id: str) -> dict:
+    """Hydraulic Leak: fluid loss reduces system pressure over time."""
     return {
-        "asset_id": asset_id, "asset_type": "transformer",
-        "psi":       round(random.gauss(90, 5), 3),      # kV — severe voltage collapse
-        "temp_f":    round(random.gauss(210, 8), 2),     # arc fault heating
-        "vibration": round(abs(random.gauss(0.022, 0.005)), 4),
-        "failure_type": "dielectric_breakdown", "source": "simulator",
+        "asset_id": asset_id, "asset_type": "top_drive",
+        "psi":       round(random.gauss(1900, 85), 1),
+        "temp_f":    round(random.gauss(182, 12), 1),
+        "vibration": round(max(0.5, random.gauss(5.0, 0.7)), 3),
+        "failure_type": "hydraulic_leak", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
-def core_loosening_reading(asset_id: str) -> dict:
-    return {
-        "asset_id": asset_id, "asset_type": "transformer",
-        "psi":       round(random.gauss(114.5, 1.2), 3),  # kV — near-normal
-        "temp_f":    round(random.gauss(189, 4), 2),
-        "vibration": round(abs(random.gauss(0.09, 0.015)), 4),  # distinctive rise
-        "failure_type": "core_loosening", "source": "simulator",
-    }
-
-
-# ── Fault Generator Dispatch ─────────────────────────────────────────────────
+# ── Fault Dispatch Table ──────────────────────────────────────────────────────
 FAULT_GENERATORS = {
-    # Compressor
-    "prd_failure"            : prd_failure_reading,
-    "thermal_runaway"        : thermal_runaway_reading,
-    "bearing_wear"           : bearing_wear_reading,
-    # Turbine
-    "combustion_instability" : combustion_instability_reading,
-    "blade_fouling"          : blade_fouling_reading,
-    "rotor_imbalance"        : rotor_imbalance_reading,
-    # Transformer
-    "winding_overheat"       : winding_overheat_reading,
-    "dielectric_breakdown"   : dielectric_breakdown_reading,
-    "core_loosening"         : core_loosening_reading,
+    # ESP
+    "gas_lock":                       gas_lock_reading,
+    "sand_ingress":                   sand_ingress_reading,
+    "motor_overheat":                 motor_overheat_reading,
+    # Gas Lift
+    "valve_failure":                  valve_failure_reading,
+    "thermal_runaway":                thermal_runaway_reading,
+    "bearing_wear":                   bearing_wear_reading,
+    # Mud Pump
+    "pulsation_dampener_failure":     pulsation_dampener_failure_reading,
+    "valve_washout":                  valve_washout_reading,
+    "piston_seal_wear":               piston_seal_wear_reading,
+    # Top Drive
+    "gearbox_bearing_spalling":       gearbox_bearing_spalling_reading,
+    "hydraulic_leak":                 hydraulic_leak_reading,
 }
 
 
-# ── RabbitMQ ─────────────────────────────────────────────────────────────────
-def connect_rabbitmq() -> pika.BlockingConnection:
+# ── RabbitMQ Publishing ───────────────────────────────────────────────────────
+def get_connection() -> pika.BlockingConnection:
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
     params = pika.ConnectionParameters(
-        host=RABBITMQ_HOST, port=RABBITMQ_PORT,
-        virtual_host=RABBITMQ_VHOST, credentials=credentials,
-        heartbeat=60, blocked_connection_timeout=30,
+        host=RABBITMQ_HOST,
+        port=RABBITMQ_PORT,
+        virtual_host=RABBITMQ_VHOST,
+        credentials=credentials,
+        heartbeat=60,
+        blocked_connection_timeout=60,
+        socket_timeout=10,
     )
-    for attempt in range(1, 11):
-        try:
-            conn = pika.BlockingConnection(params)
-            log.info(f"✅ Connected to RabbitMQ at {RABBITMQ_HOST}:{RABBITMQ_PORT}")
-            return conn
-        except Exception as e:
-            log.warning(f"RabbitMQ connection attempt {attempt}/10 failed: {e}")
-            time.sleep(6)
-    raise RuntimeError("Could not connect to RabbitMQ after 10 attempts.")
+    return pika.BlockingConnection(params)
 
 
 def publish(channel, reading: dict) -> None:
-    payload = json.dumps({**reading, "timestamp": datetime.utcnow().isoformat() + "Z"})
     channel.basic_publish(
         exchange=EXCHANGE_NAME,
         routing_key=ROUTING_KEY,
-        body=payload,
-        properties=pika.BasicProperties(content_type="application/json", delivery_mode=2),
+        body=json.dumps(reading),
+        properties=pika.BasicProperties(
+            content_type="application/json",
+            delivery_mode=2,
+        ),
     )
-    log.info(f"[→ RabbitMQ] {reading['asset_id']} ({reading['asset_type']}) | "
-             f"{reading['failure_type']} | psi={reading['psi']} "
-             f"temp={reading['temp_f']} vib={reading['vibration']}")
 
 
 # ── Main Loop ─────────────────────────────────────────────────────────────────
-def main():
-    log.info("Starting GDC-PM Telemetry Simulator — Multi-Asset-Type Mode")
-    log.info(f"Assets: {ASSETS}")
-    log.info(f"Interval: {TELEMETRY_INTERVAL}s | RabbitMQ: {RABBITMQ_HOST}/{RABBITMQ_VHOST}")
+def run() -> None:
+    log.info(f"Telemetry Simulator starting. Fleet: {len(ASSET_REGISTRY)} assets")
+    log.info(f"  Sites: Pad Alpha (6), Pad Bravo (6), Pad Charlie (4), Rig 42 (4)")
+    log.info(f"  Publishing to {RABBITMQ_HOST} every {TELEMETRY_INTERVAL}s per asset")
 
-    conn    = connect_rabbitmq()
-    channel = conn.channel()
-    channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="topic", durable=True)
+    conn    = None
+    channel = None
 
-    cycle = 0
     while True:
         try:
-            inject_fault = os.environ.get("INJECT_FAULT", "none").lower().strip()
-            inject_asset = os.environ.get("INJECT_ASSET", ASSETS[0])
-            fault_fired  = False
+            if conn is None or conn.is_closed:
+                log.info("Connecting to RabbitMQ...")
+                conn    = get_connection()
+                channel = conn.channel()
+                channel.exchange_declare(
+                    exchange=EXCHANGE_NAME,
+                    exchange_type="topic",
+                    durable=True,
+                )
+                log.info("RabbitMQ connected ✅")
 
-            for asset_id in ASSETS:
-                asset_type = ASSET_TYPES[asset_id]
-
-                if inject_fault != "none" and asset_id == inject_asset:
-                    generator = FAULT_GENERATORS.get(inject_fault)
-                    if generator:
-                        reading     = generator(asset_id)
-                        fault_fired = True
-                        publish(channel, reading)
-                        continue
-                    else:
-                        log.warning(
-                            f"Unknown fault type '{inject_fault}'. "
-                            f"Known types: {list(FAULT_GENERATORS.keys())}"
-                        )
-
-                reading = normal_reading(asset_id, asset_type)
+            for asset_id, asset_class, site in ASSET_REGISTRY:
+                reading = normal_reading(asset_id, asset_class)
                 publish(channel, reading)
+                log.debug(f"  {asset_id} ({asset_class}) | "
+                          f"psi={reading['psi']} temp={reading['temp_f']} vib={reading['vibration']}")
 
-            # Clear injection flag AFTER the full asset loop — never inside it.
-            # This prevents the flag being lost if INJECT_ASSET doesn't match.
-            if inject_fault != "none":
-                os.environ["INJECT_FAULT"] = "none"
-                if not fault_fired:
-                    log.warning(
-                        f"INJECT_FAULT='{inject_fault}' was set but "
-                        f"INJECT_ASSET='{inject_asset}' did not match any known asset. "
-                        f"Known assets: {ASSETS}"
-                    )
-
-            cycle += 1
             time.sleep(TELEMETRY_INTERVAL)
 
-        except pika.exceptions.AMQPConnectionError:
-            log.warning("RabbitMQ connection lost. Reconnecting...")
-            try:
-                conn.close()
-            except Exception:
-                pass
-            conn    = connect_rabbitmq()
-            channel = conn.channel()
-            channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="topic", durable=True)
-        except KeyboardInterrupt:
-            log.info("Simulator stopped.")
-            break
+        except pika.exceptions.AMQPConnectionError as e:
+            log.warning(f"RabbitMQ connection error: {e}. Reconnecting in 10s...")
+            conn = None
+            time.sleep(10)
         except Exception as e:
-            log.error(f"Unexpected error: {e}")
+            log.error(f"Unexpected error: {e}", exc_info=True)
             time.sleep(5)
-
-    conn.close()
 
 
 if __name__ == "__main__":
-    main()
+    run()
