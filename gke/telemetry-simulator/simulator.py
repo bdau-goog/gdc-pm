@@ -42,6 +42,7 @@ import json
 import logging
 import random
 import time
+import urllib.request
 from datetime import datetime
 
 import pika
@@ -58,8 +59,14 @@ RABBITMQ_PASS      = os.environ.get("RABBITMQ_PASS", "")
 RABBITMQ_VHOST     = os.environ.get("RABBITMQ_VHOST", "gdc-pm")
 TELEMETRY_INTERVAL = float(os.environ.get("TELEMETRY_INTERVAL", "5"))
 
-EXCHANGE_NAME = "telemetry"
-ROUTING_KEY   = "sensor.reading"
+EXCHANGE_NAME      = "telemetry"
+ROUTING_KEY        = "sensor.reading"
+# URL of the fault-trigger-ui API — used to check which assets are under active
+# fault injection so the simulator can yield the floor to the injection thread.
+FAULT_TRIGGER_URL  = os.environ.get(
+    "FAULT_TRIGGER_URL",
+    "http://fault-trigger-ui.gdc-pm.svc.cluster.local/api/degrade-status",
+)
 
 # ── Asset Fleet (4 sites, 20 assets) ─────────────────────────────────────────
 # Pure-pad architecture: each pad uses a single artificial lift method.
@@ -297,6 +304,28 @@ FAULT_GENERATORS = {
 }
 
 
+# ── Active Degrade Check ──────────────────────────────────────────────────────
+def get_active_degrades() -> set:
+    """
+    Ask the fault-trigger-ui API which assets are currently under active fault
+    injection (gradual ramp). Returns a set of asset_ids.
+
+    The simulator SKIPS normal readings for these assets so that ONLY the
+    injection thread's readings appear in the DB — eliminating the interleaving
+    that caused wild RUL jumps and missing dispatch buttons.
+
+    Fails open (returns empty set) if the API is unreachable, so the simulator
+    continues operating normally when the UI is restarting.
+    """
+    try:
+        req = urllib.request.Request(FAULT_TRIGGER_URL, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(req, timeout=2) as resp:
+            data = json.loads(resp.read().decode())
+            return set(data.get("active", {}).keys())
+    except Exception:
+        return set()
+
+
 # ── RabbitMQ Publishing ───────────────────────────────────────────────────────
 def get_connection() -> pika.BlockingConnection:
     credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
@@ -346,11 +375,25 @@ def run() -> None:
                 )
                 log.info("RabbitMQ connected ✅")
 
+            # Check which assets are currently under active fault injection.
+            # We skip normal readings for those assets — the injection thread in
+            # fault-trigger-ui is the sole source of truth for them during the ramp.
+            active_degrades = get_active_degrades()
+            if active_degrades:
+                log.info(f"🚧 Yielding to fault injection for: {sorted(active_degrades)}")
+
+            skipped = 0
             for asset_id, asset_class, site in ASSET_REGISTRY:
+                if asset_id in active_degrades:
+                    skipped += 1
+                    continue  # injection thread owns this asset's data stream
                 reading = normal_reading(asset_id, asset_class)
                 publish(channel, reading)
                 log.debug(f"  {asset_id} ({asset_class}) | "
                           f"psi={reading['psi']} temp={reading['temp_f']} vib={reading['vibration']}")
+
+            if skipped:
+                log.debug(f"  (skipped {skipped} assets under fault injection)")
 
             time.sleep(TELEMETRY_INTERVAL)
 
