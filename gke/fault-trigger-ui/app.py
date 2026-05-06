@@ -1036,21 +1036,31 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         try:
             import xgboost as xgb
             rul_model = RUL_MODELS[asset_class]
-            # Smooth sensor inputs with a 5-reading rolling average BEFORE computing
-            # rate-of-change features. This prevents a single noisy sample from causing
-            # the RUL to jump wildly between chart refreshes.
-            sm = min(5, len(psi_v))
-            k  = np.ones(sm) / sm
-            psi_sm  = np.convolve(psi_v,  k, mode="valid")
-            temp_sm = np.convolve(temp_v, k, mode="valid")
-            vib_sm  = np.convolve(vib_v,  k, mode="valid")
-            last_psi, last_temp, last_vib = float(psi_sm[-1]), float(temp_sm[-1]), float(vib_sm[-1])
-            # Rate-of-change on smoothed data (much more stable signal)
-            window = min(8, len(psi_sm) - 1)
-            dt_min = max(0.5, (times[-1] - times[max(0, len(times)-1-window)]).total_seconds() / 60.0)
-            dpsi  = (psi_sm[-1]  - psi_sm[max(0, -1 - window)])  / dt_min
-            dtemp = (temp_sm[-1] - temp_sm[max(0, -1 - window)]) / dt_min
-            dvib  = (vib_sm[-1]  - vib_sm[max(0, -1 - window)])  / dt_min
+            # Smooth sensor inputs using a simple trailing window average
+            # This prevents a single noisy sample from causing RUL jumps.
+            window_size = min(8, len(psi_v) - 1)
+            
+            # Calculate current smoothed values (avg of last 3 readings)
+            curr_slice = slice(-3, None) if len(psi_v) >= 3 else slice(None)
+            last_psi  = float(np.mean(psi_v[curr_slice]))
+            last_temp = float(np.mean(temp_v[curr_slice]))
+            last_vib  = float(np.mean(vib_v[curr_slice]))
+
+            # Calculate past smoothed values (avg of 3 readings from 'window_size' ago)
+            past_idx = max(0, len(psi_v) - 1 - window_size)
+            past_slice = slice(max(0, past_idx - 2), past_idx + 1)
+            past_psi  = float(np.mean(psi_v[past_slice]))
+            past_temp = float(np.mean(temp_v[past_slice]))
+            past_vib  = float(np.mean(vib_v[past_slice]))
+
+            # Time delta between the two smoothed points
+            dt_min = max(0.2, (times[-1] - times[past_idx]).total_seconds() / 60.0)
+
+            # True rate of change
+            dpsi  = (last_psi  - past_psi)  / dt_min
+            dtemp = (last_temp - past_temp) / dt_min
+            dvib  = (last_vib  - past_vib)  / dt_min
+
             features = np.array([[last_psi, last_temp, last_vib, dpsi, dtemp, dvib]],
                                  dtype=np.float32)
             feature_names = ["psi", "temp_f", "vibration", "dpsi_dt", "dtemp_dt", "dvib_dt"]
