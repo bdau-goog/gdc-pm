@@ -507,7 +507,7 @@
             <div class="sensor-tab" id="tab-vib" onclick="selectTab('vib')">Vibration</div>
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
-          <button id="btn-cloud-compare" onclick="toggleCloudCompare()">☁ Compare Cloud vs Edge</button>
+          <button id="btn-cloud-compare" onclick="toggleCloudCompare()">☁ Cloud-Based Prediction</button>
           <button id="btn-asset-intel" onclick="openAssetIntel()">ℹ Asset Intel</button>
           <button id="btn-expand" onclick="expandPlot()">⤢</button>
         </div>
@@ -1073,9 +1073,18 @@ function updateDegradeProgress() {
   if (selectedAsset && activeDegrades[selectedAsset]) {
     const d = activeDegrades[selectedAsset]
     const pct = d.steps>0 ? Math.round(d.step/d.steps*100) : 0
-    document.getElementById('dprog-label').textContent = `Degrading: ${FAULT_META[d.fault_type]?.label||d.fault_type}`
-    document.getElementById('dprog-pct').textContent   = pct+'%'
-    document.getElementById('dprog-fill').style.width  = pct+'%'
+    if (d.held) {
+      // Ramp complete — holding at fault state, awaiting operator action
+      document.getElementById('dprog-label').textContent = `⚠ ${FAULT_META[d.fault_type]?.label||d.fault_type} — Dispatch crew then ↺ Reset`
+      document.getElementById('dprog-pct').textContent   = '100%'
+      document.getElementById('dprog-fill').style.width  = '100%'
+      document.getElementById('dprog-fill').style.background = 'var(--red)'
+    } else {
+      document.getElementById('dprog-label').textContent = `Degrading: ${FAULT_META[d.fault_type]?.label||d.fault_type}`
+      document.getElementById('dprog-pct').textContent   = pct+'%'
+      document.getElementById('dprog-fill').style.width  = pct+'%'
+      document.getElementById('dprog-fill').style.background = 'var(--orange)'
+    }
     el.classList.add('visible')
   } else { el.classList.remove('visible') }
 }
@@ -1112,8 +1121,8 @@ function toggleCloudCompare() {
   compareCloud = !compareCloud
   const btn = document.getElementById('btn-cloud-compare')
   btn.classList.toggle('active', compareCloud)
-  btn.textContent = compareCloud ? '⚡ Edge AI Only' : '☁ Compare Cloud vs Edge'
-  showToast(compareCloud ? '☁ Cloud comparison enabled — VSAT simulation active' : '⚡ Edge AI only mode','info')
+  btn.textContent = compareCloud ? '☁ Cloud Prediction ON' : '☁ Cloud-Based Prediction'
+  showToast(compareCloud ? '☁ Cloud-based prediction enabled' : '☁ Cloud prediction hidden','info')
   refreshPlot()
 }
 function closeFsPlot() {

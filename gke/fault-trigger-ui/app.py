@@ -682,8 +682,41 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
         active_degrades[asset_id]["step"] = i + 1
         time.sleep(5)
 
-    active_degrades.pop(asset_id, None)
-    log.info(f"✅ Degrade complete: {fault_type} on {asset_id}")
+    # ── Hold phase ────────────────────────────────────────────────────────────
+    # Ramp is complete. Keep sending the final fault-level readings every 5s
+    # so the 10-minute query window stays populated and the RUL/incidents
+    # remain active until the operator explicitly clicks ↺ Reset.
+    # The simulator is still skipping this asset because it's still in
+    # active_degrades — only cancel_degrade / resetNormal removes it.
+    if asset_id in active_degrades:
+        active_degrades[asset_id].update({"running": False, "held": True, "step": steps})
+
+    # Final fault-level values (end of ramp = 100% of the way to fault range)
+    final_psi  = (nr["psi"][0]  + nr["psi"][1])  / 2 + (profile["psi_range"][0]  - (nr["psi"][0]  + nr["psi"][1])  / 2)
+    final_temp = (nr["temp"][0] + nr["temp"][1]) / 2 + (profile["temp_range"][0] - (nr["temp"][0] + nr["temp"][1]) / 2)
+    final_vib  = (nr["vib"][0]  + nr["vib"][1])  / 2 + (profile["vib_range"][0]  - (nr["vib"][0]  + nr["vib"][1])  / 2)
+
+    log.info(f"⏸ Holding fault state: {fault_type} on {asset_id} — awaiting operator reset")
+    while asset_id in active_degrades:
+        time.sleep(5)
+        if asset_id not in active_degrades:
+            break  # Operator clicked Reset — exit immediately
+        hold_reading = {
+            "asset_id"    : asset_id,
+            "asset_type"  : asset_class,
+            "psi"         : round(final_psi  + random.uniform(-abs(final_psi  * 0.008), abs(final_psi  * 0.008)), 1),
+            "temp_f"      : round(final_temp + random.uniform(-abs(final_temp * 0.005), abs(final_temp * 0.005)), 1),
+            "vibration"   : round(max(0.05, final_vib + random.uniform(-abs(final_vib * 0.02), abs(final_vib * 0.02))), 3),
+            "failure_type": fault_type,
+            "source"      : "gradual_degrade",
+            "timestamp"   : datetime.utcnow().isoformat() + "Z",
+        }
+        try:
+            publish_to_rabbitmq(hold_reading)
+        except Exception as e:
+            log.error(f"Hold-phase publish error: {e}")
+
+    log.info(f"✅ Fault released: {fault_type} on {asset_id} — operator reset")
 
 
 @app.post("/api/inject/degrade")
@@ -708,10 +741,17 @@ def get_degrade_status():
 
 @app.post("/api/cancel-degrade/{asset_id}")
 def cancel_degrade(asset_id: str):
+    """Stop the degrade/hold thread and remove the asset so the simulator resumes."""
     if asset_id not in active_degrades:
         raise HTTPException(status_code=404, detail=f"No active degradation on {asset_id}")
+    # Signal any running loop to exit, then remove the entry.
+    # Both the ramp loop and the hold loop check `asset_id in active_degrades`
+    # or `active_degrades[asset_id]["running"]` — removing the entry cleanly
+    # terminates both and lets the simulator resume normal readings.
     active_degrades[asset_id]["running"] = False
-    return {"status": "cancelling", "asset": asset_id}
+    active_degrades.pop(asset_id, None)
+    log.info(f"Cancelled / reset fault injection for {asset_id}")
+    return {"status": "cancelled", "asset": asset_id}
 
 
 # ── Scenarios ──────────────────────────────────────────────────────────────────
