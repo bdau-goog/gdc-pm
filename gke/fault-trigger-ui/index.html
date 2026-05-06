@@ -626,17 +626,28 @@ const ASSET_META = {
 }
 
 const FAULT_META = {
-  gas_lock:                    {label:'Gas Lock',                    color:'#f44336', gradual:false},
-  sand_ingress:                {label:'Sand Ingress',                color:'#f9a825', gradual:true},
-  motor_overheat:              {label:'Motor Overheat',              color:'#ff6d00', gradual:true},
-  valve_failure:               {label:'Valve Failure',               color:'#e53935', gradual:false},
-  thermal_runaway:             {label:'Thermal Runaway',             color:'#ff6f00', gradual:true},
-  bearing_wear:                {label:'Bearing Wear',                color:'#f9a825', gradual:true},
-  pulsation_dampener_failure:  {label:'Dampener Failure',            color:'#b71c1c', gradual:false},
-  valve_washout:               {label:'Valve Seat Washout',          color:'#e65100', gradual:true},
-  piston_seal_wear:            {label:'Piston Seal Wear',            color:'#f57f17', gradual:true},
-  gearbox_bearing_spalling:    {label:'Gearbox Bearing Spalling',    color:'#880e4f', gradual:true},
-  hydraulic_leak:              {label:'Hydraulic Leak',              color:'#4a148c', gradual:true},
+  gas_lock:                    {label:'Gas Lock',                    color:'#f44336', gradual:true,
+    desc:'Gas entrainment rising — pump efficiency degrading as free gas overwhelms impeller stages'},
+  sand_ingress:                {label:'Sand Ingress',                color:'#f9a825', gradual:true,
+    desc:'Formation sand erodes impeller stages — vibration rises over hours while pressure holds'},
+  motor_overheat:              {label:'Motor Over-Temp',             color:'#ff6d00', gradual:true,
+    desc:'Downhole cooling degrades — winding temp climbs toward insulation failure (>280°F)'},
+  valve_failure:               {label:'Check Valve Failure',         color:'#e53935', gradual:false,
+    desc:'Check valve breaks open — discharge pressure crashes as gas reverses through compressor'},
+  thermal_runaway:             {label:'Thermal Runaway',             color:'#ff6f00', gradual:true,
+    desc:'Cylinder jacket cooling fails — discharge temp climbs while pressure stays normal'},
+  bearing_wear:                {label:'Journal Bearing Wear',        color:'#f9a825', gradual:true,
+    desc:'Crankshaft bearing wear — frame vibration rises slowly over hours, pressure/temp stable'},
+  pulsation_dampener_failure:  {label:'Dampener Rupture',            color:'#b71c1c', gradual:false,
+    desc:'Bladder ruptures — extreme pressure hammer and vibration spike, immediate pipe-rupture risk'},
+  valve_washout:               {label:'Valve Seat Washout',          color:'#e65100', gradual:true,
+    desc:'Fluid erodes valve seat over time — discharge pressure slowly declines as valve leaks'},
+  piston_seal_wear:            {label:'Liner Seal Wear',             color:'#f57f17', gradual:true,
+    desc:'Piston-liner seals degrade — fluid end temp rises, discharge pressure slowly drops'},
+  gearbox_bearing_spalling:    {label:'Gearbox Bearing Spalling',    color:'#880e4f', gradual:true,
+    desc:'Bearing race fatigue — distinctive vibration signature rises over 4–12h, seizure risk'},
+  hydraulic_leak:              {label:'Hydraulic System Leak',       color:'#4a148c', gradual:true,
+    desc:'Hydraulic fluid loss — system pressure drops until top drive loses torque capacity'},
 }
 
 const FAULTS_BY_CLASS = {
@@ -702,42 +713,43 @@ const ASSET_PHYSICS = {
   },
 }
 
+// ASSET_ECONOMICS keys map to FAULT_META keys so labels/descriptions stay in sync
 const ASSET_ECONOMICS = {
   esp: {
     failures: [
-      {name:'Gas Lock',       cost:'$150,000', detail:'Production stopped immediately. ~$45k/day deferred while shut-in + workover mobilization.'},
-      {name:'Sand Ingress',   cost:'$85,000+', detail:'Full workover required to pull pump string. Formation sand destroys impeller stages over hours.'},
-      {name:'Motor Burnout',  cost:'$200,000+',detail:'Motor replacement requires pulling the entire ESP string. Typically 3–5 days of deferred production.'},
+      {key:'gas_lock',       cost:'$150,000',  costDetail:'Early detection gives operator time to reduce VFD frequency 10–15%, raise intake pressure, and clear gas before lock-up — avoiding 4-day shut-in and workover.'},
+      {key:'sand_ingress',   cost:'$85,000+',  costDetail:'Full workover required to pull and replace pump string. Sand destroys impeller stages over hours.'},
+      {key:'motor_overheat', cost:'$200,000+', costDetail:'Motor winding burns out — must pull entire ESP string. Typically 3–5 days of deferred production.'},
     ],
     summary: '💰 Total risk per undetected ESP failure: ~$150,000–$350,000'
   },
   gas_lift: {
     failures: [
-      {name:'Valve Failure',    cost:'$42,500', detail:'Loss of gas injection — production from multiple wells declines immediately. Valve replacement + downtime.'},
-      {name:'Thermal Runaway',  cost:'$150,000+',detail:'Compressor rebuild cost. Unplanned shutdown = gas lift loss across the entire pad.'},
-      {name:'Bearing Seizure',  cost:'$85,000+', detail:'Planned shutdown for bearing replacement. Parts cost + rig-down + reinstallation labor.'},
+      {key:'valve_failure',   cost:'$42,500',   costDetail:'Lift gas injection stops — production from multiple wells declines immediately. Valve replacement + downtime.'},
+      {key:'thermal_runaway', cost:'$150,000+', costDetail:'Compressor rebuild or replacement cost. Unplanned pad shutdown = gas lift loss across all wells.'},
+      {key:'bearing_wear',    cost:'$85,000+',  costDetail:'Planned shutdown for bearing replacement. Parts cost + rig-down + reinstallation labor.'},
     ],
     summary: '💰 Total risk per undetected Gas Lift failure: ~$42,500–$200,000'
   },
   mud_pump: {
     failures: [
-      {name:'Pulsation Dampener', cost:'$500,000+', detail:'EMERGENCY: Bladder rupture causes pressure spikes. Risk of pipe rupture and lost circulation stops drilling immediately.'},
-      {name:'Valve Seat Washout', cost:'$52,500',   detail:'Mud circulation loss requires fluid end rebuild. Drilling suspended until repaired (4–8 hours).'},
-      {name:'Piston Seal Wear',   cost:'$15,000',   detail:'Scheduled maintenance window. Seal kit replacement + 8 hours of planned downtime.'},
+      {key:'pulsation_dampener_failure', cost:'$500,000+', costDetail:'EMERGENCY STOP: Pipe-rupture risk stops drilling cold. Lost circulation + rig downtime + potential well control incident.'},
+      {key:'valve_washout',              cost:'$52,500',   costDetail:'Mud circulation loss; fluid end rebuild required. Drilling suspended 4–8 hours minimum.'},
+      {key:'piston_seal_wear',           cost:'$15,000',   costDetail:'Scheduled maintenance window — seal kit replacement + 8 hours planned downtime. Lowest urgency.'},
     ],
     summary: '💰 Total risk per undetected Mud Pump failure: ~$15,000–$500,000+'
   },
   top_drive: {
     failures: [
-      {name:'Gearbox Bearing Spalling', cost:'$120,000+', detail:'Gearbox repair requires crane and specialized crew. Drilling halts completely until top drive is restored.'},
-      {name:'Hydraulic Leak',           cost:'$8,000',    detail:'Hydraulic fluid loss reduces top drive torque. Repair + drilling delay of 2–4 hours.'},
+      {key:'gearbox_bearing_spalling', cost:'$120,000+', costDetail:'Gearbox repair requires crane and specialist crew. Drilling halts completely until top drive is restored.'},
+      {key:'hydraulic_leak',           cost:'$8,000',    costDetail:'Hydraulic fluid loss reduces top drive torque capacity. Locate leak + repair + drilling delay of 2–4 hours.'},
     ],
     summary: '💰 Total risk per undetected Top Drive failure: ~$8,000–$120,000+'
   },
 }
 
 const REMEDIATION = {
-  gas_lock:                   {risk:'Gas lock — production stopped immediately', action:'Shut down pump, wait 4h, restart at reduced rate', cost:'$45,000–$120,000/day deferred'},
+  gas_lock:                   {risk:'Gas entrainment rising — pump lock-up imminent if GVF exceeds limit', action:'Reduce VFD frequency 10–15% to raise intake pressure; allow gas to migrate up annulus', cost:'$45,000–$120,000/day deferred production avoided'},
   sand_ingress:               {risk:'Pump impeller failure in ~8–24 hours', action:'Inspect fluid samples; plan workover if sand rate high', cost:'$85,000+ workover cost'},
   motor_overheat:             {risk:'Motor burnout in ~2–4 hours', action:'Reduce pump frequency 15%, check cooling circulation', cost:'$200,000+ motor replacement'},
   valve_failure:              {risk:'Lift gas injection loss — production decline', action:'Shutdown compressor, inspect check valve, replace valve disk', cost:'$25,000–$60,000 repair'},
@@ -976,7 +988,11 @@ function updateInjectPanel(assetId) {
     return `<label class="fault-opt" id="fopt-${ft}" onclick="selectFault('${ft}')">
       <input type="radio" name="fault-type" value="${ft}">
       <span class="f-dot" style="background:${fm.color}"></span>
-      <span><span class="f-name">${fm.label}</span><br><span class="f-mode">${fm.gradual?'⏱ Gradual ramp':'⚡ Instant burst'}</span></span>
+      <span>
+        <span class="f-name">${fm.label}</span>
+        <span style="font-size:0.58rem;color:var(--muted);margin-left:5px">${fm.gradual?'⏱':'⚡'}</span>
+        <br><span class="f-mode">${fm.desc||''}</span>
+      </span>
     </label>`
   }).join('')
 
@@ -1283,14 +1299,19 @@ function switchIntelTab(tab) {
   } else {
     const e = ASSET_ECONOMICS[aclass]
     if (!e) { body.innerHTML = '<div style="color:var(--muted);padding:12px">No economics data.</div>'; return }
+    // Use FAULT_META for label + description to ensure they match the injection panel
     body.innerHTML = `
       <div class="intel-section-lbl">Failure Cost Scenarios</div>
-      ${e.failures.map(f=>`
+      ${e.failures.map(f=>{
+        const fm = FAULT_META[f.key] || {}
+        return `
         <div class="econ-failure">
-          <div class="ef-name">${f.name}</div>
+          <div class="ef-name">${fm.label || f.key}</div>
           <div class="ef-cost">${f.cost}</div>
-          <div class="ef-detail">${f.detail}</div>
-        </div>`).join('')}
+          <div class="ef-detail">${fm.desc || ''}</div>
+          <div class="ef-detail" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">${f.costDetail}</div>
+        </div>`
+      }).join('')}
       <div class="econ-summary">${e.summary}</div>
     `
   }
