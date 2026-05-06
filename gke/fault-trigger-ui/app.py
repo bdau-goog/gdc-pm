@@ -1028,22 +1028,26 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         status_color = forecast_color  # green for nominal
 
     # ── Forecast Projection ───────────────────────────────────────────────────
-    future_times = [now + timedelta(minutes=i * 2) for i in range(1, 36)]  # next 70 min
+    # Shared starting point: median of last 5 readings (stable, no noise spike)
+    y_start = float(np.median(y_vals[-5:]))
+    # The target end-value is just past the critical threshold
+    y_end   = y_crit * 0.98 if crit_dir == "below" else y_crit * 1.02
 
     if rul_minutes is not None and rul_minutes < 580:
-        # Use median of last 5 readings as y_start — avoids a single noisy spike
-        # making the forecast line launch from an unrealistic value
-        y_start = float(np.median(y_vals[-5:]))
-        if crit_dir == "above":
-            forecast_y = np.linspace(y_start, y_crit * 1.02, len(future_times))
-        else:
-            forecast_y = np.linspace(y_start, y_crit * 0.98, len(future_times))
+        # Scale the future time window so the line crosses y_crit at EXACTLY
+        # rul_minutes from NOW — the visual crossover always matches the text label.
+        horizon_min = max(70, int(rul_minutes * 1.12) + 5)
+        future_times = [now + timedelta(minutes=i) for i in range(1, horizon_min + 1)]
+        # Linear ramp: y_start at t=0, y_end at t=rul_minutes, flat after that
+        t_arr   = np.array(range(1, len(future_times) + 1), dtype=float)
+        frac    = np.clip(t_arr / max(rul_minutes, 0.5), 0.0, 1.0)
+        forecast_y = y_start + (y_end - y_start) * frac
     else:
-        # Stable: flat projection with small noise
-        avg_y      = float(np.mean(y_vals[-10:]))
-        forecast_y = np.full(len(future_times), avg_y)
+        # Nominal / stable: flat projection
+        future_times = [now + timedelta(minutes=i * 2) for i in range(1, 36)]
+        forecast_y   = np.full(len(future_times), y_start)
 
-    noise   = np.linspace(0.01, 0.12, len(future_times)) * np.abs(forecast_y)
+    noise   = np.linspace(0.01, 0.10, len(future_times)) * np.abs(forecast_y)
     upper_y = forecast_y + noise
     lower_y = forecast_y - noise
 
@@ -1084,17 +1088,22 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         hoverinfo="skip",
     ))
 
-    # 5. Estimated failure annotation (Edge AI)
-    if rul_minutes is not None and rul_minutes < 400 and rul_minutes > 5:
+    # 5. Predicted failure time flag — always shown when fault is active
+    # Points to where the orange line visually crosses the failure threshold
+    if rul_minutes is not None and rul_minutes > 0:
         ttf_time = now + timedelta(minutes=rul_minutes)
+        lbl = f"{int(rul_minutes)}m" if rul_minutes < 60 else f"{int(rul_minutes//60)}h {int(rul_minutes%60)}m"
         fig.add_annotation(
             x=ttf_time, y=y_crit,
-            text=f"<b>⚡ Edge AI: {int(rul_minutes//60)}h {int(rul_minutes%60)}m</b>",
+            text=f"<b>⚡ Failure in {lbl}</b>",
             showarrow=True, arrowhead=2, arrowwidth=2, arrowcolor="#f44336",
-            ax=0, ay=-40,
+            ax=0, ay=-44,
             font=dict(color="#fff", size=11),
-            bgcolor="rgba(244,67,54,0.85)", bordercolor="#f44336", borderpad=4,
+            bgcolor="rgba(244,67,54,0.88)", bordercolor="#f44336", borderpad=4,
         )
+
+    # x-axis upper bound — extended to show cloud comparison line if it runs further
+    _x_end = future_times[-1]
 
     # Build title — default Edge AI title; will be replaced if cloud comparison succeeds
     _title_text = (
@@ -1134,15 +1143,27 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             cloud_rul  = float(rul_model.predict(cloud_dmat)[0])
             cloud_rul  = max(0.0, min(cloud_rul, 600.0))
 
-            cloud_future = [t + timedelta(minutes=cloud_latency_min) for t in future_times]
-            y_cloud_start = float(y_cloud[-1])
-            if cloud_rul < 580:
-                if crit_dir == "above":
-                    cloud_forecast = np.linspace(y_cloud_start, y_crit * 1.02, len(cloud_future))
-                else:
-                    cloud_forecast = np.linspace(y_cloud_start, y_crit * 0.98, len(cloud_future))
+            # Cloud line starts from the SAME y as Edge AI (same current sensor reading)
+            # but is delayed by cloud_latency_min and projects with a shallower slope
+            # (cloud_rul > rul_minutes because downsampled data missed the transient).
+            # Both lines start at the same y value — the demo narrative is about SLOPE difference.
+            cloud_horizon_min = max(len(future_times) + cloud_latency_min,
+                                    int(cloud_rul * 1.12) + cloud_latency_min + 5)
+            cloud_future = [now + timedelta(minutes=cloud_latency_min + i)
+                            for i in range(1, cloud_horizon_min + 1)]
+            if cloud_rul < 580 and cloud_rul > 0:
+                t_cloud = np.array(range(1, len(cloud_future) + 1), dtype=float)
+                frac_c  = np.clip(t_cloud / max(cloud_rul, 0.5), 0.0, 1.0)
+                cloud_forecast = y_start + (y_end - y_start) * frac_c  # Same y_start as Edge AI!
             else:
-                cloud_forecast = np.full(len(cloud_future), float(np.mean(y_cloud[-10:])))
+                cloud_forecast = np.full(len(cloud_future), y_start)
+            # Extend x-axis to show the cloud line's full extent if needed
+            if cloud_future[-1] > future_times[-1]:
+                future_times_extended = future_times + [
+                    t for t in cloud_future if t > future_times[-1]
+                ]
+            else:
+                future_times_extended = future_times
 
             fig.add_trace(go.Scatter(
                 x=cloud_future, y=cloud_forecast, mode="lines",
@@ -1160,6 +1181,9 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                     font=dict(color="#fff", size=10),
                     bgcolor="rgba(156,39,176,0.85)", bordercolor="#9c27b0", borderpad=4,
                 )
+
+            # Extend x-axis end to show full cloud line
+            _x_end = cloud_future[-1]
 
             # Override title with cloud comparison summary
             edge_txt = f"{int(rul_minutes)}m" if rul_minutes else "N/A"
@@ -1183,7 +1207,7 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         ),
         xaxis=dict(title="Time (UTC)", gridcolor="#1e2a38", zeroline=False,
                    showline=True, linecolor="#2a3a50",
-                   range=[times[0], future_times[-1]]),
+                   range=[times[0], _x_end]),
         yaxis=dict(title=y_label, gridcolor="#1e2a38", zeroline=False,
                    showline=True, linecolor="#2a3a50",
                    range=[
