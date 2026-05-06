@@ -26,28 +26,12 @@
       background: var(--surf); border-bottom: 1px solid var(--border);
       transition: background 0.4s, border-color 0.4s;
     }
-    header.airgap-on { background: #12080a; border-bottom-color: #8b3a3a; }
     .hdr-logo { font-size: 18px; }
     .hdr-title { font-size: 0.92rem; font-weight: 700; }
     .hdr-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
                  background: rgba(30,144,255,0.2); color: var(--blue); border: 1px solid rgba(30,144,255,0.3); }
     .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
-    #airgap-btn {
-      font-size: 0.72rem; font-weight: 600; padding: 5px 12px; border-radius: 20px;
-      border: 1px solid var(--border2); background: var(--surf2); color: var(--text2);
-      cursor: pointer; transition: all 0.25s;
-    }
-    #airgap-btn.airgap-on { border-color: #8b3a3a; background: rgba(139,58,58,0.2); color: #ff6b6b; }
     #last-refresh { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); }
-
-    /* ── Airgap Banner ── */
-    #airgap-banner {
-      display: none; align-items: center; justify-content: center; gap: 10px;
-      background: linear-gradient(90deg,#1a0a0a,#2a1010,#1a0a0a);
-      border-bottom: 1px solid #5a2020; color: #ff8080;
-      font-size: 0.72rem; font-weight: 600; padding: 5px 20px;
-    }
-    #airgap-banner.visible { display: flex; }
 
     /* ── App Body ── */
     .app-body {
@@ -429,20 +413,13 @@
 </head>
 <body>
 
-<!-- Airgap Banner -->
-<div id="airgap-banner">
-  ✈ CLOUD NETWORK DISCONNECTED — GDC Edge Running Autonomously &nbsp;|&nbsp;
-  <span style="color:var(--green)">✅ ML Inference Active · ✅ AlloyDB Omni Operational</span>
-</div>
-
 <!-- Header -->
 <header id="main-header">
   <span class="hdr-logo">⛽</span>
   <span class="hdr-title">GDC Predictive Maintenance</span>
-  <span class="hdr-badge">O&amp;G LIVE</span>
+  <span class="hdr-badge">O&G LIVE</span>
   <div class="hdr-right">
     <span id="savings-ticker">💰 Fleet Savings: $0</span>
-    <button id="airgap-btn" onclick="toggleAirgap()">🌐 Cloud Connected</button>
     <span id="last-refresh">--:--:--</span>
   </div>
 </header>
@@ -795,7 +772,6 @@ let assetStatuses = {}    // {asset_id: {last_prediction, last_seen}}
 let recentEvents  = []
 let activeDegrades = {}
 let dispatchQueue = []
-let airgapMode = false
 let scenariosData = {}
 let expandedSite = null
 
@@ -1211,24 +1187,6 @@ async function clearDispatch() {
   const d = await r.json()
   showToast(`✅ Cleared ${d.count} work orders · Savings reset to $0`,'ok')
   await Promise.all([refreshEvents(), refreshStatus(), refreshSavings()])
-}
-
-// ────────── AIRGAP ────────────────────────────────────────────────────────────
-async function toggleAirgap() {
-  airgapMode = !airgapMode
-  await fetch(`/api/simulate/airgap?enabled=${airgapMode}`,{method:'POST'}).catch(()=>{})
-  const btn    = document.getElementById('airgap-btn')
-  const banner = document.getElementById('airgap-banner')
-  const hdr    = document.getElementById('main-header')
-  if (airgapMode) {
-    btn.textContent = '✈ Airgap Mode'; btn.classList.add('airgap-on')
-    banner.classList.add('visible'); hdr.classList.add('airgap-on')
-    showToast('☁ Cloud disconnected — GDC Edge autonomous','info')
-  } else {
-    btn.textContent = '🌐 Cloud Connected'; btn.classList.remove('airgap-on')
-    banner.classList.remove('visible'); hdr.classList.remove('airgap-on')
-    showToast('🌐 Cloud network restored','ok')
-  }
 }
 
 // ────────── TOAST ─────────────────────────────────────────────────────────────
