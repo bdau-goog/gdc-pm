@@ -671,12 +671,15 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
         temp = (nr["temp"][0] + nr["temp"][1]) / 2 + t * (profile["temp_range"][0] - (nr["temp"][0] + nr["temp"][1]) / 2)
         vib  = (nr["vib"][0] + nr["vib"][1]) / 2  + t * (profile["vib_range"][0]  - (nr["vib"][0] + nr["vib"][1]) / 2)
 
+        # Dramatically lower noise for gradual degradation so the XGBoost model can
+        # accurately calculate the slope over long (1hr+) durations without noise
+        # causing the rate-of-change to flip positive/negative on every refresh.
         reading = {
             "asset_id"    : asset_id,
             "asset_type"  : asset_class,
-            "psi"         : round(psi  + random.uniform(-abs(psi * 0.015),  abs(psi * 0.015)),  1),
-            "temp_f"      : round(temp + random.uniform(-abs(temp * 0.008), abs(temp * 0.008)), 1),
-            "vibration"   : round(max(0.05, vib + random.uniform(-abs(vib * 0.04), abs(vib * 0.04))), 3),
+            "psi"         : round(psi  + random.uniform(-abs(psi * 0.002),  abs(psi * 0.002)),  1),
+            "temp_f"      : round(temp + random.uniform(-abs(temp * 0.001), abs(temp * 0.001)), 1),
+            "vibration"   : round(max(0.05, vib + random.uniform(-abs(vib * 0.005), abs(vib * 0.005))), 3),
             "failure_type": fault_type,
             "source"      : "gradual_degrade",
             "timestamp"   : datetime.utcnow().isoformat() + "Z",
@@ -711,9 +714,9 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
         hold_reading = {
             "asset_id"    : asset_id,
             "asset_type"  : asset_class,
-            "psi"         : round(final_psi  + random.uniform(-abs(final_psi  * 0.008), abs(final_psi  * 0.008)), 1),
-            "temp_f"      : round(final_temp + random.uniform(-abs(final_temp * 0.005), abs(final_temp * 0.005)), 1),
-            "vibration"   : round(max(0.05, final_vib + random.uniform(-abs(final_vib * 0.02), abs(final_vib * 0.02))), 3),
+            "psi"         : round(final_psi  + random.uniform(-abs(final_psi  * 0.002), abs(final_psi  * 0.002)), 1),
+            "temp_f"      : round(final_temp + random.uniform(-abs(final_temp * 0.001), abs(final_temp * 0.001)), 1),
+            "vibration"   : round(max(0.05, final_vib + random.uniform(-abs(final_vib * 0.005), abs(final_vib * 0.005))), 3),
             "failure_type": fault_type,
             "source"      : "gradual_degrade",
             "timestamp"   : datetime.utcnow().isoformat() + "Z",
