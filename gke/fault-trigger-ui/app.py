@@ -54,6 +54,13 @@ MODELS_DIR    = Path("/app/models")
 # Keyed by asset_class → loaded xgb.Booster (or None)
 RUL_MODELS: dict = {}
 
+# ── RUL Smoothing Buffer ──────────────────────────────────────────────────────
+# Rolling median of recent predictions per asset — prevents a single noisy
+# reading from flipping the displayed RUL between 0m and 60m on every refresh.
+from collections import deque
+import statistics as _stats
+RUL_HISTORY: dict = {}   # {asset_id: deque(maxlen=4)}
+
 def load_rul_models() -> None:
     """Load XGBoost RUL regressors from the models directory at startup."""
     try:
@@ -750,6 +757,9 @@ def cancel_degrade(asset_id: str):
     # terminates both and lets the simulator resume normal readings.
     active_degrades[asset_id]["running"] = False
     active_degrades.pop(asset_id, None)
+    # Clear the RUL smoothing buffer so stale predictions don't bleed into
+    # the next injection cycle on the same asset.
+    RUL_HISTORY.pop(asset_id, None)
     log.info(f"Cancelled / reset fault injection for {asset_id}")
     return {"status": "cancelled", "asset": asset_id}
 
@@ -1042,8 +1052,15 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                                  dtype=np.float32)
             feature_names = ["psi", "temp_f", "vibration", "dpsi_dt", "dtemp_dt", "dvib_dt"]
             dmat = xgb.DMatrix(features, feature_names=feature_names)
-            rul_minutes = float(rul_model.predict(dmat)[0])
-            rul_minutes = max(0.0, min(rul_minutes, 600.0))
+            rul_raw = float(rul_model.predict(dmat)[0])
+            rul_raw = max(0.0, min(rul_raw, 600.0))
+
+            # Rolling median smoothing — dampens flip-flopping between 0m and 60m
+            # that occurs when a single noisy reading changes the slope dramatically.
+            if asset_id not in RUL_HISTORY:
+                RUL_HISTORY[asset_id] = deque(maxlen=4)
+            RUL_HISTORY[asset_id].append(rul_raw)
+            rul_minutes = _stats.median(RUL_HISTORY[asset_id])
 
             # Status text color (red = urgent) — separate from the DOTTED line color
             if rul_minutes < 60:
