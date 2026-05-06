@@ -898,7 +898,8 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
     asset_meta  = ASSET_REGISTRY[asset_id]
     asset_class = asset_meta["asset_class"]
 
-    # Query last 20 minutes of telemetry
+    # Query last 10 minutes of telemetry (shorter window avoids stale spike outliers
+    # from prior burst injections distorting the y-axis and feature computation)
     try:
         conn = get_db()
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
@@ -906,7 +907,7 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                 """
                 SELECT event_time, psi, temp_f, vibration, failure_type, predicted_label
                 FROM telemetry_events
-                WHERE asset_id = %s AND event_time > NOW() - INTERVAL '20 minutes'
+                WHERE asset_id = %s AND event_time > NOW() - INTERVAL '10 minutes'
                 ORDER BY event_time ASC
                 """,
                 (asset_id,),
@@ -982,13 +983,21 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         try:
             import xgboost as xgb
             rul_model = RUL_MODELS[asset_class]
-            last_psi, last_temp, last_vib = psi_v[-1], temp_v[-1], vib_v[-1]
-            # Compute rate-of-change features (per minute) using a stable window
-            window = min(8, len(rows) - 1)
-            dt_min = max(0.5, (times[-1] - times[-1 - window]).total_seconds() / 60.0)
-            dpsi  = (psi_v[-1]  - psi_v[-1 - window])  / dt_min
-            dtemp = (temp_v[-1] - temp_v[-1 - window]) / dt_min
-            dvib  = (vib_v[-1]  - vib_v[-1 - window])  / dt_min
+            # Smooth sensor inputs with a 5-reading rolling average BEFORE computing
+            # rate-of-change features. This prevents a single noisy sample from causing
+            # the RUL to jump wildly between chart refreshes.
+            sm = min(5, len(psi_v))
+            k  = np.ones(sm) / sm
+            psi_sm  = np.convolve(psi_v,  k, mode="valid")
+            temp_sm = np.convolve(temp_v, k, mode="valid")
+            vib_sm  = np.convolve(vib_v,  k, mode="valid")
+            last_psi, last_temp, last_vib = float(psi_sm[-1]), float(temp_sm[-1]), float(vib_sm[-1])
+            # Rate-of-change on smoothed data (much more stable signal)
+            window = min(8, len(psi_sm) - 1)
+            dt_min = max(0.5, (times[-1] - times[max(0, len(times)-1-window)]).total_seconds() / 60.0)
+            dpsi  = (psi_sm[-1]  - psi_sm[max(0, -1 - window)])  / dt_min
+            dtemp = (temp_sm[-1] - temp_sm[max(0, -1 - window)]) / dt_min
+            dvib  = (vib_sm[-1]  - vib_sm[max(0, -1 - window)])  / dt_min
             features = np.array([[last_psi, last_temp, last_vib, dpsi, dtemp, dvib]],
                                  dtype=np.float32)
             feature_names = ["psi", "temp_f", "vibration", "dpsi_dt", "dtemp_dt", "dvib_dt"]
@@ -1022,8 +1031,9 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
     future_times = [now + timedelta(minutes=i * 2) for i in range(1, 36)]  # next 70 min
 
     if rul_minutes is not None and rul_minutes < 580:
-        # Project toward the critical threshold linearly based on RUL
-        y_start = float(y_vals[-1])
+        # Use median of last 5 readings as y_start — avoids a single noisy spike
+        # making the forecast line launch from an unrealistic value
+        y_start = float(np.median(y_vals[-5:]))
         if crit_dir == "above":
             forecast_y = np.linspace(y_start, y_crit * 1.02, len(future_times))
         else:
@@ -1176,8 +1186,12 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                    range=[times[0], future_times[-1]]),
         yaxis=dict(title=y_label, gridcolor="#1e2a38", zeroline=False,
                    showline=True, linecolor="#2a3a50",
-                   range=[min(min(y_vals), min(lower_y)) * 0.90,
-                          max(max(y_vals), max(upper_y), y_crit) * 1.10]),
+                   range=[
+                       # Use 5th-percentile of recent data (clips extreme outlier spikes
+                       # from prior burst injections that create the wedge appearance)
+                       min(float(np.percentile(y_vals, 5)), y_crit) * 0.85,
+                       max(float(np.percentile(y_vals, 95)), float(np.max(upper_y)), y_crit) * 1.10,
+                   ]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     bgcolor="rgba(11,12,16,0.7)", bordercolor="#1e2a38", borderwidth=1),
         shapes=[dict(type="line", x0=now, x1=now, y0=0, y1=1, xref="x", yref="paper",
