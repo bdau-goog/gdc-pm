@@ -496,7 +496,7 @@
         </div>
         <div id="dur-row" class="dur-row" style="display:none">
           <span style="color:var(--muted)">Duration:</span>
-          <input type="number" id="degrade-dur" class="num-input" value="60" min="15" max="300">
+          <input type="number" id="degrade-dur" class="num-input" value="300" min="30" max="600">
           <span style="color:var(--muted)">sec</span>
         </div>
 
@@ -626,8 +626,8 @@ const ASSET_META = {
 }
 
 const FAULT_META = {
-  gas_lock:                    {label:'Gas Lock',                    color:'#f44336', gradual:true,
-    desc:'Gas entrainment rising — pump efficiency degrading as free gas overwhelms impeller stages'},
+  gas_lock:                    {label:'Gas Lock',                    color:'#f44336', gradual:true, gradualOnly:true,
+    desc:'Gas entrainment rising — pump efficiency degrading, intake pressure declining toward lock-up'},
   sand_ingress:                {label:'Sand Ingress',                color:'#f9a825', gradual:true,
     desc:'Formation sand erodes impeller stages — vibration rises over hours while pressure holds'},
   motor_overheat:              {label:'Motor Over-Temp',             color:'#ff6d00', gradual:true,
@@ -1009,11 +1009,20 @@ function selectFault(ft) {
   document.querySelectorAll('.fault-opt').forEach(e=>e.classList.remove('sel'))
   document.getElementById(`fopt-${ft}`)?.classList.add('sel')
   const fm = FAULT_META[ft]
-  if (fm.gradual) {
+  if (fm.gradualOnly) {
+    // Gradual-only fault: skip mode selector, go straight to duration
+    document.getElementById('mode-row').style.display  = 'none'
+    document.getElementById('burst-row').style.display = 'none'
+    document.getElementById('dur-row').style.display   = 'flex'
+    const gr = document.querySelector('input[name="imode"][value="gradual"]')
+    if (gr) gr.checked = true
+  } else if (fm.gradual) {
+    // Fault supports both modes: show the mode selector, default to gradual
     document.getElementById('mode-row').style.display  = 'flex'
     const gr = document.querySelector('input[name="imode"][value="gradual"]')
     if (gr) { gr.checked=true; onModeChange() }
   } else {
+    // Instant-only fault
     document.getElementById('mode-row').style.display  = 'none'
     document.getElementById('burst-row').style.display = 'flex'
     document.getElementById('dur-row').style.display   = 'none'

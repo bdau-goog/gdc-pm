@@ -294,9 +294,11 @@ FAULT_PROFILES = {
     # ── ESP Faults ────────────────────────────────────────────────────────────
     "gas_lock": {
         "label": "Gas Lock", "asset_class": "esp",
-        "description": "Gas entrainment rising — pump efficiency degrading as free gas overwhelms impeller stages",
+        "description": "Gas entrainment rising — pump efficiency degrading, intake pressure declining toward lock-up",
         "color": "#f44336",
-        "psi_range": (350, 750), "temp_range": (195, 245), "vib_range": (6.0, 12.0),
+        # PSI range represents the APPROACH to gas lock (900–1100, near the 800 PSI critical threshold)
+        # NOT the post-lock state. This lets the RUL model predict when PSI will cross 800 PSI.
+        "psi_range": (875, 1100), "temp_range": (195, 225), "vib_range": (3.5, 6.5),
     },
     "sand_ingress": {
         "label": "Sand Ingress", "asset_class": "esp",
