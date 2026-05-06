@@ -75,16 +75,20 @@ def load_rul_models() -> None:
 load_rul_models()
 
 # ── Asset Fleet ────────────────────────────────────────────────────────────────
+# Pure-pad architecture: each pad uses a single artificial lift method.
+#   Pad Alpha   — 6 ESPs (ESP production pad)
+#   Pad Bravo   — 4 Gas Lift Compressors (gas lift production pad)
+#   Pad Charlie — 6 ESPs (ESP production pad)
+#   Rig 42      — 3 Mud Pumps + 1 Top Drive (drilling rig)
 ASSETS = [
-    # Pad Alpha (Production)
-    "ESP-ALPHA-1", "ESP-ALPHA-2", "ESP-ALPHA-3", "ESP-ALPHA-4",
-    "GLIFT-ALPHA-1", "GLIFT-ALPHA-2",
-    # Pad Bravo (Production)
-    "ESP-BRAVO-1", "ESP-BRAVO-2", "ESP-BRAVO-3", "ESP-BRAVO-4",
-    "GLIFT-BRAVO-1", "GLIFT-BRAVO-2",
-    # Pad Charlie (Production)
+    # Pad Alpha (ESP Production — Pure ESP Pad)
+    "ESP-ALPHA-1", "ESP-ALPHA-2", "ESP-ALPHA-3",
+    "ESP-ALPHA-4", "ESP-ALPHA-5", "ESP-ALPHA-6",
+    # Pad Bravo (Gas Lift Production — Pure Gas Lift Pad)
+    "GLIFT-BRAVO-1", "GLIFT-BRAVO-2", "GLIFT-BRAVO-3", "GLIFT-BRAVO-4",
+    # Pad Charlie (ESP Production — Pure ESP Pad)
     "ESP-CHARLIE-1", "ESP-CHARLIE-2", "ESP-CHARLIE-3",
-    "GLIFT-CHARLIE-1",
+    "ESP-CHARLIE-4", "ESP-CHARLIE-5", "ESP-CHARLIE-6",
     # Rig 42 (Drilling)
     "MUD-RIG42-1", "MUD-RIG42-2", "MUD-RIG42-3",
     "TOPDRIVE-RIG42-1",
@@ -128,61 +132,25 @@ ASSET_REGISTRY = {
         "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
-    "GLIFT-ALPHA-1": {
-        "asset_type": "Gas Lift Compressor", "asset_class": "gas_lift",
-        "location": "Pad Alpha — Injection Station", "site": "pad_alpha", "criticality": "HIGH",
-        "psi_label": "Discharge Pressure (PSI)", "temp_label": "Discharge Temp (°F)",
-        "vib_label": "Frame Vibration (mm/s)",
-        "nominal_psi": 1000.0, "nominal_temp_f": 158.0, "nominal_vib": 1.7,
-        "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "GLIFT-ALPHA-2": {
-        "asset_type": "Gas Lift Compressor", "asset_class": "gas_lift",
-        "location": "Pad Alpha — Injection Station", "site": "pad_alpha", "criticality": "MEDIUM",
-        "psi_label": "Discharge Pressure (PSI)", "temp_label": "Discharge Temp (°F)",
-        "vib_label": "Frame Vibration (mm/s)",
-        "nominal_psi": 1000.0, "nominal_temp_f": 158.0, "nominal_vib": 1.7,
-        "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    # ── Pad Bravo ESPs ────────────────────────────────────────────────────────
-    "ESP-BRAVO-1": {
+    "ESP-ALPHA-5": {
         "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Bravo — Well B-1", "site": "pad_bravo", "criticality": "CRITICAL",
+        "location": "Pad Alpha — Well A-5", "site": "pad_alpha", "criticality": "HIGH",
         "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
         "vib_label": "Motor Vibration (mm/s)",
         "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
         "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
-    "ESP-BRAVO-2": {
+    "ESP-ALPHA-6": {
         "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Bravo — Well B-2", "site": "pad_bravo", "criticality": "HIGH",
+        "location": "Pad Alpha — Well A-6", "site": "pad_alpha", "criticality": "MEDIUM",
         "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
         "vib_label": "Motor Vibration (mm/s)",
         "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
         "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
-    "ESP-BRAVO-3": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Bravo — Well B-3", "site": "pad_bravo", "criticality": "HIGH",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "ESP-BRAVO-4": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Bravo — Well B-4", "site": "pad_bravo", "criticality": "MEDIUM",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
+    # ── Pad Bravo Gas Lift Compressors ────────────────────────────────────────
     "GLIFT-BRAVO-1": {
         "asset_type": "Gas Lift Compressor", "asset_class": "gas_lift",
         "location": "Pad Bravo — Injection Station", "site": "pad_bravo", "criticality": "HIGH",
@@ -201,7 +169,25 @@ ASSET_REGISTRY = {
         "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
-    # ── Pad Charlie ───────────────────────────────────────────────────────────
+    "GLIFT-BRAVO-3": {
+        "asset_type": "Gas Lift Compressor", "asset_class": "gas_lift",
+        "location": "Pad Bravo — Injection Station", "site": "pad_bravo", "criticality": "HIGH",
+        "psi_label": "Discharge Pressure (PSI)", "temp_label": "Discharge Temp (°F)",
+        "vib_label": "Frame Vibration (mm/s)",
+        "nominal_psi": 1000.0, "nominal_temp_f": 158.0, "nominal_vib": 1.7,
+        "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
+        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
+    },
+    "GLIFT-BRAVO-4": {
+        "asset_type": "Gas Lift Compressor", "asset_class": "gas_lift",
+        "location": "Pad Bravo — Injection Station", "site": "pad_bravo", "criticality": "MEDIUM",
+        "psi_label": "Discharge Pressure (PSI)", "temp_label": "Discharge Temp (°F)",
+        "vib_label": "Frame Vibration (mm/s)",
+        "nominal_psi": 1000.0, "nominal_temp_f": 158.0, "nominal_vib": 1.7,
+        "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
+        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
+    },
+    # ── Pad Charlie ESPs ──────────────────────────────────────────────────────
     "ESP-CHARLIE-1": {
         "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
         "location": "Pad Charlie — Well C-1", "site": "pad_charlie", "criticality": "CRITICAL",
@@ -229,13 +215,31 @@ ASSET_REGISTRY = {
         "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
-    "GLIFT-CHARLIE-1": {
-        "asset_type": "Gas Lift Compressor", "asset_class": "gas_lift",
-        "location": "Pad Charlie — Injection Station", "site": "pad_charlie", "criticality": "HIGH",
-        "psi_label": "Discharge Pressure (PSI)", "temp_label": "Discharge Temp (°F)",
-        "vib_label": "Frame Vibration (mm/s)",
-        "nominal_psi": 1000.0, "nominal_temp_f": 158.0, "nominal_vib": 1.7,
-        "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
+    "ESP-CHARLIE-4": {
+        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
+        "location": "Pad Charlie — Well C-4", "site": "pad_charlie", "criticality": "HIGH",
+        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
+        "vib_label": "Motor Vibration (mm/s)",
+        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
+        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
+        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
+    },
+    "ESP-CHARLIE-5": {
+        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
+        "location": "Pad Charlie — Well C-5", "site": "pad_charlie", "criticality": "MEDIUM",
+        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
+        "vib_label": "Motor Vibration (mm/s)",
+        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
+        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
+        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
+    },
+    "ESP-CHARLIE-6": {
+        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
+        "location": "Pad Charlie — Well C-6", "site": "pad_charlie", "criticality": "MEDIUM",
+        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
+        "vib_label": "Motor Vibration (mm/s)",
+        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
+        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
     # ── Rig 42 ────────────────────────────────────────────────────────────────
@@ -367,6 +371,23 @@ FAULTS_BY_CLASS = {
     "top_drive": ["gearbox_bearing_spalling", "hydraulic_leak"],
 }
 
+# ── Remediation Cost Registry ──────────────────────────────────────────────────
+# Cost avoided (USD) when an operator acknowledges a Critical/Warning dispatch.
+# Represents the financial risk prevented by early Edge AI detection.
+REMEDIATION_COSTS = {
+    "gas_lock":                   150000,  # Production stopped + workover
+    "sand_ingress":                85000,  # Workover + impeller replacement
+    "motor_overheat":             200000,  # Motor burnout + replacement
+    "valve_failure":               42500,  # Valve replacement + downtime
+    "thermal_runaway":            150000,  # Compressor rebuild
+    "bearing_wear":                85000,  # Bearing replacement + rig-down
+    "pulsation_dampener_failure": 500000,  # Pipeline damage + emergency response
+    "valve_washout":               52500,  # Fluid end rebuild
+    "piston_seal_wear":            15000,  # Seal kit + 8h maintenance
+    "gearbox_bearing_spalling":   120000,  # Gearbox repair + drilling halt
+    "hydraulic_leak":               8000,  # Hydraulic repair + drilling delay
+}
+
 # ── Demo Scenarios ─────────────────────────────────────────────────────────────
 SCENARIOS = {
     "esp_gas_lock_cascade": {
@@ -404,17 +425,17 @@ SCENARIOS = {
     "pad_alpha_production_loss": {
         "name": "Pad Alpha — Multi-Well Production Loss",
         "description": (
-            "Motor overheat across two ESPs and a gas lift compressor failure. "
-            "Shows GDC monitoring across multiple assets at one production pad."
+            "Motor overheat cascade across three ESPs on Pad Alpha. "
+            "Shows GDC monitoring a pure-ESP production pad under simultaneous thermal stress."
         ),
         "asset": "ESP-ALPHA-1",
         "steps": [
             {"fault": "motor_overheat", "asset_override": "ESP-ALPHA-1",    "delay_s": 0,  "burst": 3,
-             "note": "ESP-ALPHA-1: motor temperature rising"},
-            {"fault": "thermal_runaway","asset_override": "GLIFT-ALPHA-1",  "delay_s": 5,  "burst": 3,
-             "note": "Gas lift compressor: cooling failure detected"},
+             "note": "ESP-ALPHA-1: motor winding temperature rising"},
+            {"fault": "motor_overheat", "asset_override": "ESP-ALPHA-3",    "delay_s": 5,  "burst": 3,
+             "note": "ESP-ALPHA-3: motor overheat spreading — shared cooling loop"},
             {"fault": "motor_overheat", "asset_override": "ESP-ALPHA-2",    "delay_s": 10, "burst": 3,
-             "note": "ESP-ALPHA-2: motor overheat — production pad critical"},
+             "note": "ESP-ALPHA-2: motor overheat — Pad Alpha production critical"},
         ],
     },
 }
@@ -758,13 +779,28 @@ def run_scenario(req: ScenarioRequest, background_tasks: BackgroundTasks):
 # ── Acknowledgement ────────────────────────────────────────────────────────────
 @app.post("/api/acknowledge/{event_id}")
 def acknowledge_event(event_id: int, req: AcknowledgeRequest):
+    """Acknowledge a dispatch and record the cost_avoided from REMEDIATION_COSTS."""
     try:
         conn = get_db()
+        # Fetch the event's fault label to look up remediation cost
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT failure_type, predicted_label FROM telemetry_events WHERE id=%s",
+                (event_id,),
+            )
+            ev = cur.fetchone()
+        if not ev:
+            conn.close()
+            raise HTTPException(status_code=404, detail=f"Event {event_id} not found.")
+        # Cost lookup: prefer predicted_label, fall back to failure_type
+        fault_key = (ev["predicted_label"] or ev["failure_type"] or "").lower()
+        cost = REMEDIATION_COSTS.get(fault_key, 0)
         with conn.cursor() as cur:
             cur.execute(
-                "UPDATE telemetry_events SET acknowledged=TRUE, ack_time=NOW(), ack_operator=%s "
+                "UPDATE telemetry_events "
+                "SET acknowledged=TRUE, ack_time=NOW(), ack_operator=%s, cost_avoided=%s "
                 "WHERE id=%s AND acknowledged=FALSE",
-                (req.operator, event_id),
+                (req.operator, cost, event_id),
             )
             updated = cur.rowcount
         conn.commit()
@@ -772,7 +808,9 @@ def acknowledge_event(event_id: int, req: AcknowledgeRequest):
         if updated == 0:
             raise HTTPException(status_code=404,
                                 detail=f"Event {event_id} not found or already acknowledged.")
-        return {"status": "acknowledged", "event_id": event_id, "operator": req.operator}
+        log.info(f"Acknowledged event {event_id} | fault={fault_key} | cost_avoided=${cost:,}")
+        return {"status": "acknowledged", "event_id": event_id,
+                "operator": req.operator, "cost_avoided": cost}
     except HTTPException:
         raise
     except Exception as e:
@@ -780,9 +818,24 @@ def acknowledge_event(event_id: int, req: AcknowledgeRequest):
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
+@app.get("/api/savings")
+def get_savings():
+    """Return the cumulative cost_avoided sum — powers the Fleet Savings Ticker."""
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COALESCE(SUM(cost_avoided), 0) FROM telemetry_events")
+            total = float(cur.fetchone()[0])
+        conn.close()
+        return {"total_savings": total}
+    except Exception as e:
+        log.error(f"savings error: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
 @app.post("/api/clear-dispatch")
 def clear_dispatch():
-    """Mark ALL unacknowledged events as acknowledged — resets the board for demo."""
+    """Mark ALL unacknowledged events as acknowledged and reset cost_avoided for a clean demo restart."""
     try:
         conn = get_db()
         with conn.cursor() as cur:
@@ -791,9 +844,11 @@ def clear_dispatch():
                 "WHERE acknowledged=FALSE"
             )
             cleared = cur.rowcount
+            # Reset entire savings counter so the demo can start fresh
+            cur.execute("UPDATE telemetry_events SET cost_avoided=0")
         conn.commit()
         conn.close()
-        log.info(f"Cleared {cleared} pending work orders")
+        log.info(f"Cleared {cleared} pending work orders and reset savings ticker")
         return {"status": "cleared", "count": cleared}
     except Exception as e:
         log.error(f"clear-dispatch error: {e}")
@@ -816,15 +871,17 @@ def set_airgap(enabled: bool = True):
 
 # ── ML Predictive Forecast Visualization ─────────────────────────────────────
 @app.get("/api/plot/forecast/{asset_id}", response_class=HTMLResponse)
-def plot_forecast(asset_id: str, metric: str = "auto"):
+def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = False):
     """
     Returns a Plotly time-series chart with:
       - Historical telemetry for the selected sensor
       - XGBoost RUL Regressor prediction → dotted line + Cone of Uncertainty
       - Failure threshold line
       - Estimated failure time annotation
+      - Optional purple dashed Cloud Inference line (compare_cloud=true)
 
     metric: psi | temp | vib | auto (auto selects the primary degrading sensor)
+    compare_cloud: when true, adds a second VSAT-constrained+delayed cloud prediction line
     """
     import plotly.graph_objects as go
     from datetime import timedelta
@@ -1015,26 +1072,101 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         hoverinfo="skip",
     ))
 
-    # 5. Estimated failure annotation
+    # 5. Estimated failure annotation (Edge AI)
     if rul_minutes is not None and rul_minutes < 400 and rul_minutes > 5:
         ttf_time = now + timedelta(minutes=rul_minutes)
         fig.add_annotation(
             x=ttf_time, y=y_crit,
-            text=f"<b>⚡ TTF: {int(rul_minutes//60)}h {int(rul_minutes%60)}m</b>",
+            text=f"<b>⚡ Edge AI: {int(rul_minutes//60)}h {int(rul_minutes%60)}m</b>",
             showarrow=True, arrowhead=2, arrowwidth=2, arrowcolor="#f44336",
             ax=0, ay=-40,
             font=dict(color="#fff", size=11),
             bgcolor="rgba(244,67,54,0.85)", bordercolor="#f44336", borderpad=4,
         )
 
-    # Styling
+    # Build title — default Edge AI title; will be replaced if cloud comparison succeeds
+    _title_text = (
+        f"<b>{asset_id}</b> — {y_label}<br>"
+        f"<span style='font-size:12px;color:{forecast_color}'>{status_text}</span>"
+    )
+
+    # 6. Cloud vs Edge comparison overlay ─────────────────────────────────────
+    # Simulates what happens when VSAT bandwidth constraints force data downsampling
+    # and cloud processing latency prevents timely failure prediction.
+    if compare_cloud and len(rows) >= 8 and classifier_active and asset_class in RUL_MODELS:
+        try:
+            import xgboost as xgb
+            rul_model = RUL_MODELS[asset_class]
+            cloud_latency_min = 5  # VSAT + cloud round-trip latency (minutes)
+
+            # Simulate VSAT bandwidth constraint: apply 10-reading rolling average
+            bw_window = min(10, len(y_vals))
+            kernel    = np.ones(bw_window) / bw_window
+            y_cloud   = np.convolve(y_vals, kernel, mode="same")
+            psi_cloud = np.convolve(psi_v,  kernel, mode="same")
+            temp_cloud= np.convolve(temp_v, kernel, mode="same")
+            vib_cloud = np.convolve(vib_v,  kernel, mode="same")
+
+            win = min(8, len(rows) - 1)
+            dt_c = max(0.5, (times[-1] - times[-1 - win]).total_seconds() / 60.0)
+            cloud_dpsi  = (psi_cloud[-1]  - psi_cloud[-1 - win])  / dt_c
+            cloud_dtemp = (temp_cloud[-1] - temp_cloud[-1 - win]) / dt_c
+            cloud_dvib  = (vib_cloud[-1]  - vib_cloud[-1 - win])  / dt_c
+
+            cloud_feats = np.array([[
+                float(psi_cloud[-1]), float(temp_cloud[-1]), float(vib_cloud[-1]),
+                cloud_dpsi, cloud_dtemp, cloud_dvib
+            ]], dtype=np.float32)
+            feature_names = ["psi", "temp_f", "vibration", "dpsi_dt", "dtemp_dt", "dvib_dt"]
+            cloud_dmat = xgb.DMatrix(cloud_feats, feature_names=feature_names)
+            cloud_rul  = float(rul_model.predict(cloud_dmat)[0])
+            cloud_rul  = max(0.0, min(cloud_rul, 600.0))
+
+            cloud_future = [t + timedelta(minutes=cloud_latency_min) for t in future_times]
+            y_cloud_start = float(y_cloud[-1])
+            if cloud_rul < 580:
+                if crit_dir == "above":
+                    cloud_forecast = np.linspace(y_cloud_start, y_crit * 1.02, len(cloud_future))
+                else:
+                    cloud_forecast = np.linspace(y_cloud_start, y_crit * 0.98, len(cloud_future))
+            else:
+                cloud_forecast = np.full(len(cloud_future), float(np.mean(y_cloud[-10:])))
+
+            fig.add_trace(go.Scatter(
+                x=cloud_future, y=cloud_forecast, mode="lines",
+                name="☁ Cloud Inference (VSAT)",
+                line=dict(color="#9c27b0", width=2.5, dash="dash"),
+            ))
+
+            if cloud_rul < 400 and cloud_rul > 5:
+                cloud_ttf = now + timedelta(minutes=cloud_rul + cloud_latency_min)
+                fig.add_annotation(
+                    x=cloud_ttf, y=y_crit,
+                    text=f"<b>☁ Cloud: {int(cloud_rul//60)}h {int(cloud_rul%60)}m<br>(+{cloud_latency_min}m VSAT delay)</b>",
+                    showarrow=True, arrowhead=2, arrowwidth=2, arrowcolor="#9c27b0",
+                    ax=0, ay=-75,
+                    font=dict(color="#fff", size=10),
+                    bgcolor="rgba(156,39,176,0.85)", bordercolor="#9c27b0", borderpad=4,
+                )
+
+            # Override title with cloud comparison summary
+            edge_txt = f"{int(rul_minutes)}m" if rul_minutes else "N/A"
+            cloud_txt = f"{int(cloud_rul)}m (+{cloud_latency_min}m)"
+            _title_text = (
+                f"<b>{asset_id}</b> — {y_label} | "
+                f"<span style='color:#ff8c00'>⚡ Edge AI: {edge_txt}</span>  "
+                f"<span style='color:#9c27b0'>☁ Cloud: {cloud_txt}</span>"
+            )
+        except Exception as e:
+            log.warning(f"Cloud comparison failed for {asset_id}: {e}")
+
+    # Styling ─────────────────────────────────────────────────────────────────
     fig.update_layout(
         paper_bgcolor="#0b0c10", plot_bgcolor="#0f1318",
         font=dict(color="#e0e0e0", family="Inter, sans-serif", size=11),
         margin=dict(l=55, r=20, t=50, b=40),
         title=dict(
-            text=f"<b>{asset_id}</b> — {y_label}<br>"
-                 f"<span style='font-size:12px;color:{forecast_color}'>{status_text}</span>",
+            text=_title_text,
             font=dict(size=14, color="#e0e0e0"), x=0.02, y=0.95
         ),
         xaxis=dict(title="Time (UTC)", gridcolor="#1e2a38", zeroline=False,

@@ -63,7 +63,8 @@ spec:
                   similar_events_count INTEGER,
                   acknowledged         BOOLEAN NOT NULL DEFAULT FALSE,
                   ack_time             TIMESTAMPTZ,
-                  ack_operator         TEXT
+                  ack_operator         TEXT,
+                  cost_avoided         NUMERIC DEFAULT 0
                 );
 
                 -- ── Indexes ──────────────────────────────────────────────────

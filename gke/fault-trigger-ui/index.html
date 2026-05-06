@@ -343,6 +343,88 @@
     #toast { display: none; position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
              z-index: 500; padding: 8px 18px; border-radius: 7px; font-size: 0.76rem;
              max-width: 440px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+
+    /* ── Savings Ticker ── */
+    #savings-ticker {
+      font-size: 0.72rem; font-weight: 700; padding: 4px 11px; border-radius: 20px;
+      border: 1px solid rgba(0,230,118,0.3); background: rgba(0,230,118,0.07);
+      color: var(--green); font-family: var(--mono); white-space: nowrap;
+      transition: background 0.6s, border-color 0.6s, box-shadow 0.6s;
+    }
+    #savings-ticker.updated {
+      background: rgba(0,230,118,0.22); border-color: var(--green);
+      box-shadow: 0 0 12px rgba(0,230,118,0.35);
+    }
+
+    /* ── Cloud Compare Toggle ── */
+    #btn-cloud-compare {
+      font-size: 0.65rem; font-weight: 600; padding: 3px 10px; border-radius: 8px;
+      border: 1px solid rgba(156,39,176,0.4); background: rgba(156,39,176,0.07);
+      color: #9c27b0; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      display: none; margin: 0 4px;
+    }
+    #btn-cloud-compare:hover { background: rgba(156,39,176,0.18); }
+    #btn-cloud-compare.active {
+      background: rgba(156,39,176,0.25); border-color: #9c27b0;
+      box-shadow: 0 0 8px rgba(156,39,176,0.3);
+    }
+    #btn-cloud-compare.visible { display: inline-block; }
+
+    /* ── Asset Intel Button ── */
+    #btn-asset-intel {
+      font-size: 0.65rem; font-weight: 600; padding: 3px 10px; border-radius: 8px;
+      border: 1px solid rgba(30,144,255,0.4); background: rgba(30,144,255,0.08);
+      color: var(--blue); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      display: none;
+    }
+    #btn-asset-intel:hover { background: rgba(30,144,255,0.2); }
+    #btn-asset-intel.visible { display: inline-block; }
+
+    /* ── Asset Intel Drawer ── */
+    #intel-drawer {
+      display: none; position: fixed; right: 0; top: 0; bottom: 0; z-index: 250;
+      width: 380px; max-width: 96vw;
+      background: var(--surf); border-left: 1px solid var(--border2);
+      box-shadow: -8px 0 32px rgba(0,0,0,0.55);
+      flex-direction: column; overflow: hidden;
+    }
+    #intel-drawer.open { display: flex; }
+    .intel-hdr {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 16px 12px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .intel-asset-name { flex: 1; font-size: 0.78rem; font-weight: 700; color: var(--blue);
+                        font-family: var(--mono); }
+    .intel-asset-type { font-size: 0.63rem; color: var(--muted); }
+    #btn-close-intel { padding: 4px 9px; border-radius: 5px; font-size: 0.68rem;
+                       border: 1px solid var(--border); background: var(--surf2);
+                       color: var(--muted); cursor: pointer; }
+    .intel-tabs { display: flex; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+    .intel-tab {
+      flex: 1; text-align: center; padding: 9px 6px; font-size: 0.72rem; font-weight: 600;
+      cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s;
+    }
+    .intel-tab:hover { color: var(--text2); }
+    .intel-tab.active { color: var(--blue); border-bottom-color: var(--blue); background: rgba(30,144,255,0.05); }
+    .intel-body { flex: 1; overflow-y: auto; padding: 14px 16px; }
+    .intel-section-lbl { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.08em;
+                          color: var(--muted); text-transform: uppercase; margin-bottom: 7px; }
+    .intel-fn-box { font-size: 0.7rem; color: var(--text2); line-height: 1.65; margin-bottom: 14px;
+                    padding: 8px 10px; background: var(--surf2); border: 1px solid var(--border);
+                    border-radius: 5px; }
+    .sensor-card { border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px;
+                   margin-bottom: 7px; background: var(--bg); }
+    .sensor-card .sc-name { font-size: 0.72rem; font-weight: 700; color: var(--text); margin-bottom: 5px; }
+    .sensor-card .sc-row { display: flex; justify-content: space-between; font-size: 0.67rem; margin-bottom: 2px; }
+    .sc-nom { color: var(--green); } .sc-crit { color: var(--red); }
+    .econ-failure { border: 1px solid var(--border); border-radius: 6px; padding: 9px 11px;
+                    margin-bottom: 7px; background: var(--bg); }
+    .econ-failure .ef-name { font-size: 0.72rem; font-weight: 700; color: var(--orange); margin-bottom: 3px; }
+    .econ-failure .ef-cost { font-family: var(--mono); font-size: 0.88rem; font-weight: 700; color: var(--red); }
+    .econ-failure .ef-detail { font-size: 0.66rem; color: var(--text2); line-height: 1.55; margin-top: 4px; }
+    .econ-summary { margin-top: 10px; padding: 8px 11px; border-radius: 6px;
+                    background: rgba(0,230,118,0.06); border: 1px solid rgba(0,230,118,0.22);
+                    font-size: 0.7rem; color: var(--green); font-weight: 600; }
   </style>
 </head>
 <body>
@@ -359,6 +441,7 @@
   <span class="hdr-title">GDC Predictive Maintenance</span>
   <span class="hdr-badge">O&amp;G LIVE</span>
   <div class="hdr-right">
+    <span id="savings-ticker">💰 Fleet Savings: $0</span>
     <button id="airgap-btn" onclick="toggleAirgap()">🌐 Cloud Connected</button>
     <span id="last-refresh">--:--:--</span>
   </div>
@@ -447,6 +530,8 @@
             <div class="sensor-tab" id="tab-vib" onclick="selectTab('vib')">Vibration</div>
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
+          <button id="btn-cloud-compare" onclick="toggleCloudCompare()">☁ Compare Cloud vs Edge</button>
+          <button id="btn-asset-intel" onclick="openAssetIntel()">ℹ Asset Intel</button>
           <button id="btn-expand" onclick="expandPlot()">⤢</button>
         </div>
         <div id="plot-iframe-wrap">
@@ -478,6 +563,24 @@
   </div>
 </div>
 
+<!-- Asset Intel Drawer -->
+<div id="intel-drawer">
+  <div class="intel-hdr">
+    <div>
+      <div class="intel-asset-name" id="intel-asset-name">—</div>
+      <div class="intel-asset-type" id="intel-asset-type"></div>
+    </div>
+    <button id="btn-close-intel" onclick="closeAssetIntel()">✕ Close</button>
+  </div>
+  <div class="intel-tabs">
+    <div class="intel-tab active" id="itab-physics" onclick="switchIntelTab('physics')">🔬 Physics</div>
+    <div class="intel-tab" id="itab-economics" onclick="switchIntelTab('economics')">💰 Economics</div>
+  </div>
+  <div class="intel-body" id="intel-body">
+    <!-- Populated by openAssetIntel() -->
+  </div>
+</div>
+
 <!-- Fullscreen plot -->
 <div id="fs-plot">
   <button id="fs-close" onclick="closeFsPlot()">✕ Close</button>
@@ -489,33 +592,37 @@
 <script>
 // ────────── CONSTANTS ──────────────────────────────────────────────────────────
 const SITES = {
-  pad_alpha:   { name: 'Pad Alpha',   icon: '🛢', type: 'Production', assets: ['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','GLIFT-ALPHA-1','GLIFT-ALPHA-2'] },
-  pad_bravo:   { name: 'Pad Bravo',   icon: '🛢', type: 'Production', assets: ['ESP-BRAVO-1','ESP-BRAVO-2','ESP-BRAVO-3','ESP-BRAVO-4','GLIFT-BRAVO-1','GLIFT-BRAVO-2'] },
-  pad_charlie: { name: 'Pad Charlie', icon: '🛢', type: 'Production', assets: ['ESP-CHARLIE-1','ESP-CHARLIE-2','ESP-CHARLIE-3','GLIFT-CHARLIE-1'] },
-  rig_42:      { name: 'Rig 42',      icon: '🏗', type: 'Drilling',   assets: ['MUD-RIG42-1','MUD-RIG42-2','MUD-RIG42-3','TOPDRIVE-RIG42-1'] },
+  pad_alpha:   { name: 'Pad Alpha',   icon: '🛢', type: 'ESP Production',      assets: ['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','ESP-ALPHA-5','ESP-ALPHA-6'] },
+  pad_bravo:   { name: 'Pad Bravo',   icon: '🛢', type: 'Gas Lift Production', assets: ['GLIFT-BRAVO-1','GLIFT-BRAVO-2','GLIFT-BRAVO-3','GLIFT-BRAVO-4'] },
+  pad_charlie: { name: 'Pad Charlie', icon: '🛢', type: 'ESP Production',      assets: ['ESP-CHARLIE-1','ESP-CHARLIE-2','ESP-CHARLIE-3','ESP-CHARLIE-4','ESP-CHARLIE-5','ESP-CHARLIE-6'] },
+  rig_42:      { name: 'Rig 42',      icon: '🏗', type: 'Drilling',            assets: ['MUD-RIG42-1','MUD-RIG42-2','MUD-RIG42-3','TOPDRIVE-RIG42-1'] },
 }
 
 const ASSET_META = {
-  'ESP-ALPHA-1':    {label:'ESP-A1',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-1',      contact:'Pad Alpha Ops (Ext. 210)'},
-  'ESP-ALPHA-2':    {label:'ESP-A2',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-2',      contact:'Pad Alpha Ops (Ext. 210)'},
-  'ESP-ALPHA-3':    {label:'ESP-A3',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-3',      contact:'Pad Alpha Ops (Ext. 211)'},
-  'ESP-ALPHA-4':    {label:'ESP-A4',   site:'pad_alpha',   type:'ESP',          aclass:'esp',      loc:'Pad Alpha — Well A-4',      contact:'Pad Alpha Ops (Ext. 211)'},
-  'GLIFT-ALPHA-1':  {label:'GL-A1',   site:'pad_alpha',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Alpha — Injection Stn', contact:'Pad Alpha Ops (Ext. 212)'},
-  'GLIFT-ALPHA-2':  {label:'GL-A2',   site:'pad_alpha',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Alpha — Injection Stn', contact:'Pad Alpha Ops (Ext. 212)'},
-  'ESP-BRAVO-1':    {label:'ESP-B1',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-1',      contact:'Pad Bravo Ops (Ext. 320)'},
-  'ESP-BRAVO-2':    {label:'ESP-B2',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-2',      contact:'Pad Bravo Ops (Ext. 320)'},
-  'ESP-BRAVO-3':    {label:'ESP-B3',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-3',      contact:'Pad Bravo Ops (Ext. 321)'},
-  'ESP-BRAVO-4':    {label:'ESP-B4',   site:'pad_bravo',   type:'ESP',          aclass:'esp',      loc:'Pad Bravo — Well B-4',      contact:'Pad Bravo Ops (Ext. 321)'},
-  'GLIFT-BRAVO-1':  {label:'GL-B1',   site:'pad_bravo',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 322)'},
-  'GLIFT-BRAVO-2':  {label:'GL-B2',   site:'pad_bravo',   type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 322)'},
-  'ESP-CHARLIE-1':  {label:'ESP-C1',   site:'pad_charlie', type:'ESP',          aclass:'esp',      loc:'Pad Charlie — Well C-1',    contact:'Pad Charlie Ops (Ext. 410)'},
-  'ESP-CHARLIE-2':  {label:'ESP-C2',   site:'pad_charlie', type:'ESP',          aclass:'esp',      loc:'Pad Charlie — Well C-2',    contact:'Pad Charlie Ops (Ext. 410)'},
-  'ESP-CHARLIE-3':  {label:'ESP-C3',   site:'pad_charlie', type:'ESP',          aclass:'esp',      loc:'Pad Charlie — Well C-3',    contact:'Pad Charlie Ops (Ext. 411)'},
-  'GLIFT-CHARLIE-1':{label:'GL-C1',   site:'pad_charlie', type:'Gas Lift',     aclass:'gas_lift', loc:'Pad Charlie — Injection Stn',contact:'Pad Charlie Ops (Ext. 412)'},
-  'MUD-RIG42-1':    {label:'MUD-1',    site:'rig_42',      type:'Mud Pump',     aclass:'mud_pump', loc:'Rig 42 — Pump Room #1',     contact:'Rig 42 Driller (Ext. 500)'},
-  'MUD-RIG42-2':    {label:'MUD-2',    site:'rig_42',      type:'Mud Pump',     aclass:'mud_pump', loc:'Rig 42 — Pump Room #2',     contact:'Rig 42 Driller (Ext. 500)'},
-  'MUD-RIG42-3':    {label:'MUD-3',    site:'rig_42',      type:'Mud Pump',     aclass:'mud_pump', loc:'Rig 42 — Pump Room #3',     contact:'Rig 42 Driller (Ext. 501)'},
-  'TOPDRIVE-RIG42-1':{label:'TDRIVE',  site:'rig_42',      type:'Top Drive',    aclass:'top_drive',loc:'Rig 42 — Derrick Floor',    contact:'Rig 42 Tool Pusher (Ext. 502)'},
+  // Pad Alpha — Pure ESP Production Pad
+  'ESP-ALPHA-1': {label:'ESP-A1', site:'pad_alpha', type:'ESP', aclass:'esp', loc:'Pad Alpha — Well A-1', contact:'Pad Alpha Ops (Ext. 210)'},
+  'ESP-ALPHA-2': {label:'ESP-A2', site:'pad_alpha', type:'ESP', aclass:'esp', loc:'Pad Alpha — Well A-2', contact:'Pad Alpha Ops (Ext. 210)'},
+  'ESP-ALPHA-3': {label:'ESP-A3', site:'pad_alpha', type:'ESP', aclass:'esp', loc:'Pad Alpha — Well A-3', contact:'Pad Alpha Ops (Ext. 211)'},
+  'ESP-ALPHA-4': {label:'ESP-A4', site:'pad_alpha', type:'ESP', aclass:'esp', loc:'Pad Alpha — Well A-4', contact:'Pad Alpha Ops (Ext. 211)'},
+  'ESP-ALPHA-5': {label:'ESP-A5', site:'pad_alpha', type:'ESP', aclass:'esp', loc:'Pad Alpha — Well A-5', contact:'Pad Alpha Ops (Ext. 212)'},
+  'ESP-ALPHA-6': {label:'ESP-A6', site:'pad_alpha', type:'ESP', aclass:'esp', loc:'Pad Alpha — Well A-6', contact:'Pad Alpha Ops (Ext. 212)'},
+  // Pad Bravo — Pure Gas Lift Production Pad
+  'GLIFT-BRAVO-1': {label:'GL-B1', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 320)'},
+  'GLIFT-BRAVO-2': {label:'GL-B2', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 320)'},
+  'GLIFT-BRAVO-3': {label:'GL-B3', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 321)'},
+  'GLIFT-BRAVO-4': {label:'GL-B4', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 321)'},
+  // Pad Charlie — Pure ESP Production Pad
+  'ESP-CHARLIE-1': {label:'ESP-C1', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-1', contact:'Pad Charlie Ops (Ext. 410)'},
+  'ESP-CHARLIE-2': {label:'ESP-C2', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-2', contact:'Pad Charlie Ops (Ext. 410)'},
+  'ESP-CHARLIE-3': {label:'ESP-C3', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-3', contact:'Pad Charlie Ops (Ext. 411)'},
+  'ESP-CHARLIE-4': {label:'ESP-C4', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-4', contact:'Pad Charlie Ops (Ext. 411)'},
+  'ESP-CHARLIE-5': {label:'ESP-C5', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-5', contact:'Pad Charlie Ops (Ext. 412)'},
+  'ESP-CHARLIE-6': {label:'ESP-C6', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-6', contact:'Pad Charlie Ops (Ext. 412)'},
+  // Rig 42 — Drilling Rig
+  'MUD-RIG42-1':     {label:'MUD-1',  site:'rig_42', type:'Mud Pump',  aclass:'mud_pump',  loc:'Rig 42 — Pump Room #1',  contact:'Rig 42 Driller (Ext. 500)'},
+  'MUD-RIG42-2':     {label:'MUD-2',  site:'rig_42', type:'Mud Pump',  aclass:'mud_pump',  loc:'Rig 42 — Pump Room #2',  contact:'Rig 42 Driller (Ext. 500)'},
+  'MUD-RIG42-3':     {label:'MUD-3',  site:'rig_42', type:'Mud Pump',  aclass:'mud_pump',  loc:'Rig 42 — Pump Room #3',  contact:'Rig 42 Driller (Ext. 501)'},
+  'TOPDRIVE-RIG42-1':{label:'TDRIVE', site:'rig_42', type:'Top Drive', aclass:'top_drive', loc:'Rig 42 — Derrick Floor', contact:'Rig 42 Tool Pusher (Ext. 502)'},
 }
 
 const FAULT_META = {
@@ -554,6 +661,80 @@ const SENSOR_TAB_LABELS = {
 }
 
 const CLASS_ICONS = {esp:'⚡', gas_lift:'⚙', mud_pump:'🔩', top_drive:'🔄'}
+
+// ── Asset Intel Data ──────────────────────────────────────────────────────────
+const ASSET_PHYSICS = {
+  esp: {
+    title: 'Electrical Submersible Pump (ESP)',
+    fn: 'Downhole centrifugal pump deployed on tubing string inside the wellbore. Lifts produced fluids from the reservoir to surface by adding energy via a downhole electric motor.',
+    sensors: [
+      {name:'Intake Pressure',    unit:'PSI',  nominal:'1,200–1,600 PSI', critical:'< 800 PSI (Gas Lock)'},
+      {name:'Motor Winding Temp', unit:'°F',   nominal:'180–220 °F',      critical:'> 280 °F (Motor Burnout)'},
+      {name:'Motor Vibration',    unit:'mm/s', nominal:'0.8–2.0 mm/s',    critical:'> 8.0 mm/s (Mechanical Failure)'},
+    ]
+  },
+  gas_lift: {
+    title: 'Gas Lift Compressor',
+    fn: 'Surface compressor that injects high-pressure lift gas into the wellbore annulus. Reduces the hydrostatic pressure of the fluid column, enabling reservoir pressure to drive production to surface.',
+    sensors: [
+      {name:'Discharge Pressure', unit:'PSI',  nominal:'940–1,060 PSI',   critical:'< 600 PSI (Valve Failure)'},
+      {name:'Discharge Temp',     unit:'°F',   nominal:'140–178 °F',      critical:'> 230 °F (Thermal Runaway)'},
+      {name:'Frame Vibration',    unit:'mm/s', nominal:'1.0–2.5 mm/s',    critical:'> 12.0 mm/s (Bearing Seizure)'},
+    ]
+  },
+  mud_pump: {
+    title: 'Triplex Mud Pump',
+    fn: 'High-pressure positive-displacement piston pump that circulates drilling fluid (mud) down through the drill string and back up the annulus, cooling the bit and transporting cuttings to surface.',
+    sensors: [
+      {name:'Discharge Pressure', unit:'PSI',  nominal:'2,550–3,150 PSI', critical:'< 1,800 PSI (Flow Loss)'},
+      {name:'Fluid End Temp',     unit:'°F',   nominal:'90–120 °F',       critical:'> 180 °F (Seal Failure)'},
+      {name:'Module Vibration',   unit:'mm/s', nominal:'2.5–4.5 mm/s',    critical:'> 20.0 mm/s (Piston Failure)'},
+    ]
+  },
+  top_drive: {
+    title: 'Top Drive',
+    fn: 'Electrically driven rotary system mounted on the derrick that rotates the drill string and provides reactive torque control. Replaces the traditional rotary table and offers directional drilling capability.',
+    sensors: [
+      {name:'Hydraulic Pressure', unit:'PSI',  nominal:'2,840–3,160 PSI', critical:'< 2,000 PSI (Hydraulic Leak)'},
+      {name:'Gearbox Oil Temp',   unit:'°F',   nominal:'130–165 °F',      critical:'> 220 °F (Gearbox Overheating)'},
+      {name:'Gearbox Vibration',  unit:'mm/s', nominal:'1.8–3.8 mm/s',    critical:'> 15.0 mm/s (Bearing Spalling)'},
+    ]
+  },
+}
+
+const ASSET_ECONOMICS = {
+  esp: {
+    failures: [
+      {name:'Gas Lock',       cost:'$150,000', detail:'Production stopped immediately. ~$45k/day deferred while shut-in + workover mobilization.'},
+      {name:'Sand Ingress',   cost:'$85,000+', detail:'Full workover required to pull pump string. Formation sand destroys impeller stages over hours.'},
+      {name:'Motor Burnout',  cost:'$200,000+',detail:'Motor replacement requires pulling the entire ESP string. Typically 3–5 days of deferred production.'},
+    ],
+    summary: '💰 Total risk per undetected ESP failure: ~$150,000–$350,000'
+  },
+  gas_lift: {
+    failures: [
+      {name:'Valve Failure',    cost:'$42,500', detail:'Loss of gas injection — production from multiple wells declines immediately. Valve replacement + downtime.'},
+      {name:'Thermal Runaway',  cost:'$150,000+',detail:'Compressor rebuild cost. Unplanned shutdown = gas lift loss across the entire pad.'},
+      {name:'Bearing Seizure',  cost:'$85,000+', detail:'Planned shutdown for bearing replacement. Parts cost + rig-down + reinstallation labor.'},
+    ],
+    summary: '💰 Total risk per undetected Gas Lift failure: ~$42,500–$200,000'
+  },
+  mud_pump: {
+    failures: [
+      {name:'Pulsation Dampener', cost:'$500,000+', detail:'EMERGENCY: Bladder rupture causes pressure spikes. Risk of pipe rupture and lost circulation stops drilling immediately.'},
+      {name:'Valve Seat Washout', cost:'$52,500',   detail:'Mud circulation loss requires fluid end rebuild. Drilling suspended until repaired (4–8 hours).'},
+      {name:'Piston Seal Wear',   cost:'$15,000',   detail:'Scheduled maintenance window. Seal kit replacement + 8 hours of planned downtime.'},
+    ],
+    summary: '💰 Total risk per undetected Mud Pump failure: ~$15,000–$500,000+'
+  },
+  top_drive: {
+    failures: [
+      {name:'Gearbox Bearing Spalling', cost:'$120,000+', detail:'Gearbox repair requires crane and specialized crew. Drilling halts completely until top drive is restored.'},
+      {name:'Hydraulic Leak',           cost:'$8,000',    detail:'Hydraulic fluid loss reduces top drive torque. Repair + drilling delay of 2–4 hours.'},
+    ],
+    summary: '💰 Total risk per undetected Top Drive failure: ~$8,000–$120,000+'
+  },
+}
 
 const REMEDIATION = {
   gas_lock:                   {risk:'Gas lock — production stopped immediately', action:'Shut down pump, wait 4h, restart at reduced rate', cost:'$45,000–$120,000/day deferred'},
@@ -597,6 +778,7 @@ function getSeverity(lbl) {
 let selectedAsset = null
 let selectedFault = null
 let selectedMetric = 'psi'
+let compareCloud = false        // Cloud vs Edge overlay toggle
 let assetStatuses = {}    // {asset_id: {last_prediction, last_seen}}
 let recentEvents  = []
 let activeDegrades = {}
@@ -610,12 +792,13 @@ async function init() {
   buildFleetBar()
   buildScenarioButtons()
   await Promise.all([refreshStatus(), refreshEvents()])
+  refreshSavings()
   startPolling()
 }
 
 function startPolling() {
   setInterval(async () => {
-    await Promise.all([refreshStatus(), refreshEvents(), refreshDegrades()])
+    await Promise.all([refreshStatus(), refreshEvents(), refreshDegrades(), refreshSavings()])
     if (selectedAsset) refreshPlot()
     document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('en-US',{hour12:false})
   }, 10000)
@@ -769,6 +952,8 @@ function selectAsset(assetId) {
   document.getElementById('tab-vib').textContent  = tabLbls.vib
   document.getElementById('plot-asset-lbl').textContent = '— ' + assetId
   document.getElementById('btn-expand').style.display = 'inline-block'
+  document.getElementById('btn-asset-intel').classList.add('visible')
+  document.getElementById('btn-cloud-compare').classList.add('visible')
   refreshPlot()
 }
 
@@ -908,14 +1093,27 @@ function refreshPlot() {
   const iframe = document.getElementById('plot-iframe')
   iframe.style.display = 'block'
   document.getElementById('plot-placeholder').style.display = 'none'
-  iframe.src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
+  const cloudParam = compareCloud ? '&compare_cloud=true' : ''
+  iframe.src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}${cloudParam}&cb=${Date.now()}`
 }
 
 function expandPlot() {
   if (!selectedAsset) return
   const fs = document.getElementById('fs-plot')
-  document.getElementById('fs-iframe').src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
+  const cloudParam = compareCloud ? '&compare_cloud=true' : ''
+  document.getElementById('fs-iframe').src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}${cloudParam}&cb=${Date.now()}`
   fs.classList.add('open')
+}
+
+// ────────── CLOUD VS EDGE TOGGLE ─────────────────────────────────────────────
+function toggleCloudCompare() {
+  if (!selectedAsset) return
+  compareCloud = !compareCloud
+  const btn = document.getElementById('btn-cloud-compare')
+  btn.classList.toggle('active', compareCloud)
+  btn.textContent = compareCloud ? '⚡ Edge AI Only' : '☁ Compare Cloud vs Edge'
+  showToast(compareCloud ? '☁ Cloud comparison enabled — VSAT simulation active' : '⚡ Edge AI only mode','info')
+  refreshPlot()
 }
 function closeFsPlot() {
   document.getElementById('fs-plot').classList.remove('open')
@@ -978,16 +1176,16 @@ async function acknowledgeDispatch() {
   if (!id) return
   const r = await fetch(`/api/acknowledge/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operator:'ops'})})
   if (!r.ok) { const e=await r.json(); showToast(e.detail,'error'); return }
-  closeModal(); showToast('✔ Crew dispatched','ok')
-  await Promise.all([refreshEvents(),refreshStatus()])
+  closeModal(); showToast('✔ Crew dispatched — savings updated','ok')
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings()])
 }
 
 async function clearDispatch() {
   const r = await fetch('/api/clear-dispatch',{method:'POST'})
   if (!r.ok) { showToast('Clear failed','error'); return }
   const d = await r.json()
-  showToast(`✅ Cleared ${d.count} work orders`,'ok')
-  await Promise.all([refreshEvents(),refreshStatus()])
+  showToast(`✅ Cleared ${d.count} work orders · Savings reset to $0`,'ok')
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings()])
 }
 
 // ────────── AIRGAP ────────────────────────────────────────────────────────────
@@ -1023,7 +1221,82 @@ function showToast(msg, type='info') {
   toastTimer = setTimeout(()=>{t.style.display='none'},3500)
 }
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape'){closeModal();closeFsPlot()} })
+// ────────── SAVINGS TICKER ────────────────────────────────────────────────────
+let _lastSavings = -1
+async function refreshSavings() {
+  try {
+    const d = await fetch('/api/savings').then(r=>r.json())
+    const total = d.total_savings || 0
+    const el = document.getElementById('savings-ticker')
+    const formatted = '$' + Math.round(total).toLocaleString('en-US')
+    el.textContent = '💰 Fleet Savings: ' + formatted
+    if (total !== _lastSavings && _lastSavings >= 0) {
+      el.classList.add('updated')
+      setTimeout(()=>el.classList.remove('updated'), 2500)
+    }
+    _lastSavings = total
+  } catch(e) { console.warn('savings err', e) }
+}
+
+// ────────── ASSET INTEL DRAWER ────────────────────────────────────────────────
+let currentIntelTab = 'physics'
+
+function openAssetIntel() {
+  if (!selectedAsset) return
+  const meta = ASSET_META[selectedAsset]
+  const aclass = meta?.aclass || 'esp'
+  // Header
+  document.getElementById('intel-asset-name').textContent = selectedAsset
+  document.getElementById('intel-asset-type').textContent = (meta?.type || '') + ' — ' + (meta?.loc || '')
+  // Reset to physics tab
+  currentIntelTab = 'physics'
+  switchIntelTab('physics')
+  document.getElementById('intel-drawer').classList.add('open')
+}
+
+function closeAssetIntel() {
+  document.getElementById('intel-drawer').classList.remove('open')
+}
+
+function switchIntelTab(tab) {
+  currentIntelTab = tab
+  document.querySelectorAll('.intel-tab').forEach(t=>t.classList.remove('active'))
+  document.getElementById(`itab-${tab}`)?.classList.add('active')
+  if (!selectedAsset) return
+  const aclass = ASSET_META[selectedAsset]?.aclass || 'esp'
+  const body = document.getElementById('intel-body')
+
+  if (tab === 'physics') {
+    const p = ASSET_PHYSICS[aclass]
+    if (!p) { body.innerHTML = '<div style="color:var(--muted);padding:12px">No physics data.</div>'; return }
+    body.innerHTML = `
+      <div class="intel-section-lbl">Function</div>
+      <div class="intel-fn-box">${p.fn}</div>
+      <div class="intel-section-lbl">Monitored Sensors</div>
+      ${p.sensors.map(s=>`
+        <div class="sensor-card">
+          <div class="sc-name">${s.name} <span style="font-size:0.6rem;color:var(--muted);font-weight:400">(${s.unit})</span></div>
+          <div class="sc-row"><span style="color:var(--muted)">Nominal:</span><span class="sc-nom">${s.nominal}</span></div>
+          <div class="sc-row"><span style="color:var(--muted)">Critical:</span><span class="sc-crit">${s.critical}</span></div>
+        </div>`).join('')}
+    `
+  } else {
+    const e = ASSET_ECONOMICS[aclass]
+    if (!e) { body.innerHTML = '<div style="color:var(--muted);padding:12px">No economics data.</div>'; return }
+    body.innerHTML = `
+      <div class="intel-section-lbl">Failure Cost Scenarios</div>
+      ${e.failures.map(f=>`
+        <div class="econ-failure">
+          <div class="ef-name">${f.name}</div>
+          <div class="ef-cost">${f.cost}</div>
+          <div class="ef-detail">${f.detail}</div>
+        </div>`).join('')}
+      <div class="econ-summary">${e.summary}</div>
+    `
+  }
+}
+
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'){closeModal();closeFsPlot();closeAssetIntel()} })
 document.addEventListener('DOMContentLoaded', init)
 </script>
 </body>

@@ -22,11 +22,11 @@ Asset classes and their sensor meanings:
                temp_f = Gearbox Oil Temp (130–165°F)
                vibration = Gearbox Vibration (1.8–3.8 mm/s)
 
-Fleet: 4 sites × 4–6 assets each = 20 monitored assets
-  Pad Alpha   — 4 ESPs + 2 Gas Lifts
-  Pad Bravo   — 4 ESPs + 2 Gas Lifts
-  Pad Charlie — 3 ESPs + 1 Gas Lift
-  Rig 42      — 3 Mud Pumps + 1 Top Drive
+Fleet: 4 sites × 4–6 assets each = 20 monitored assets (pure-pad architecture)
+  Pad Alpha   — 6 ESPs (pure ESP production pad)
+  Pad Bravo   — 4 Gas Lift Compressors (pure gas lift production pad)
+  Pad Charlie — 6 ESPs (pure ESP production pad)
+  Rig 42      — 3 Mud Pumps + 1 Top Drive (drilling rig)
 
 Environment Variables:
   RABBITMQ_HOST       — RabbitMQ host
@@ -62,27 +62,28 @@ EXCHANGE_NAME = "telemetry"
 ROUTING_KEY   = "sensor.reading"
 
 # ── Asset Fleet (4 sites, 20 assets) ─────────────────────────────────────────
+# Pure-pad architecture: each pad uses a single artificial lift method.
 # Each entry: (asset_id, asset_class, site)
 ASSET_REGISTRY = [
-    # ── Pad Alpha — Production Pad ────────────────────────────────────────────
+    # ── Pad Alpha — Pure ESP Production Pad (6 ESPs) ──────────────────────────
     ("ESP-ALPHA-1",    "esp",      "pad_alpha"),
     ("ESP-ALPHA-2",    "esp",      "pad_alpha"),
     ("ESP-ALPHA-3",    "esp",      "pad_alpha"),
     ("ESP-ALPHA-4",    "esp",      "pad_alpha"),
-    ("GLIFT-ALPHA-1",  "gas_lift", "pad_alpha"),
-    ("GLIFT-ALPHA-2",  "gas_lift", "pad_alpha"),
-    # ── Pad Bravo — Production Pad ────────────────────────────────────────────
-    ("ESP-BRAVO-1",    "esp",      "pad_bravo"),
-    ("ESP-BRAVO-2",    "esp",      "pad_bravo"),
-    ("ESP-BRAVO-3",    "esp",      "pad_bravo"),
-    ("ESP-BRAVO-4",    "esp",      "pad_bravo"),
+    ("ESP-ALPHA-5",    "esp",      "pad_alpha"),
+    ("ESP-ALPHA-6",    "esp",      "pad_alpha"),
+    # ── Pad Bravo — Pure Gas Lift Production Pad (4 Gas Lifts) ────────────────
     ("GLIFT-BRAVO-1",  "gas_lift", "pad_bravo"),
     ("GLIFT-BRAVO-2",  "gas_lift", "pad_bravo"),
-    # ── Pad Charlie — Production Pad ──────────────────────────────────────────
+    ("GLIFT-BRAVO-3",  "gas_lift", "pad_bravo"),
+    ("GLIFT-BRAVO-4",  "gas_lift", "pad_bravo"),
+    # ── Pad Charlie — Pure ESP Production Pad (6 ESPs) ────────────────────────
     ("ESP-CHARLIE-1",  "esp",      "pad_charlie"),
     ("ESP-CHARLIE-2",  "esp",      "pad_charlie"),
     ("ESP-CHARLIE-3",  "esp",      "pad_charlie"),
-    ("GLIFT-CHARLIE-1","gas_lift", "pad_charlie"),
+    ("ESP-CHARLIE-4",  "esp",      "pad_charlie"),
+    ("ESP-CHARLIE-5",  "esp",      "pad_charlie"),
+    ("ESP-CHARLIE-6",  "esp",      "pad_charlie"),
     # ── Rig 42 — Drilling Rig ─────────────────────────────────────────────────
     ("MUD-RIG42-1",    "mud_pump", "rig_42"),
     ("MUD-RIG42-2",    "mud_pump", "rig_42"),
@@ -325,8 +326,8 @@ def publish(channel, reading: dict) -> None:
 
 # ── Main Loop ─────────────────────────────────────────────────────────────────
 def run() -> None:
-    log.info(f"Telemetry Simulator starting. Fleet: {len(ASSET_REGISTRY)} assets")
-    log.info(f"  Sites: Pad Alpha (6), Pad Bravo (6), Pad Charlie (4), Rig 42 (4)")
+    log.info(f"Telemetry Simulator starting. Fleet: {len(ASSET_REGISTRY)} assets (pure-pad)")
+    log.info(f"  Sites: Pad Alpha (6 ESPs), Pad Bravo (4 Gas Lifts), Pad Charlie (6 ESPs), Rig 42 (4)")
     log.info(f"  Publishing to {RABBITMQ_HOST} every {TELEMETRY_INTERVAL}s per asset")
 
     conn    = None
