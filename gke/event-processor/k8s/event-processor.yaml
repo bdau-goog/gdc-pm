@@ -63,17 +63,17 @@ spec:
                   key: password
             - name: INFERENCE_API_URL
               value: "http://inference-api.gdc-pm.svc.cluster.local:8080/predict"
-            # AI Narrative mode: "false" | "rule_based" | "gemini"
-            # "rule_based" generates plain-English failure explanations without GPU/API.
-            # Switch to "gemini" when Vertex AI API access is available.
+            # AI Narrative mode: "false" | "rule_based" | "rag" | "gemini"
+            # "rag" uses pgvector + sentence-transformers + Ollama Gemma 2B (Phase 2).
+            # Falls back gracefully to rule_based while Ollama is initializing.
             - name: AI_NARRATIVE_ENABLED
-              value: "rule_based"
+              value: "rag"
             - name: GCP_PROJECT
               value: "gdc-pm"
           resources:
             requests:
               cpu: "100m"
-              memory: "128Mi"
+              memory: "512Mi"   # sentence-transformers + all-MiniLM-L6-v2 ~90MB + torch overhead
             limits:
               cpu: "500m"
-              memory: "256Mi"
+              memory: "1Gi"    # headroom for model singleton + concurrent message processing

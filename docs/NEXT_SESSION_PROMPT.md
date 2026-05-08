@@ -3,7 +3,7 @@
 
 ---
 
-Move to `~/gdc-pm`. Initialize as an expert in GCP, BigQuery, AI/ML, Vertex AI, GDC (Google Distributed Cloud), and Kubernetes/GKE.
+Move to `~/gdc-pm`. Initialize as an expert in GCP, BigQuery, Vertex AI, GDC (Google Distributed Cloud), and Kubernetes/GKE.
 
 Also initialize as an expert in industrial edge computing, oil and gas upstream drilling, production, operations, equipment and equipment maintenance. You are an expert in machine monitoring and telemetry, predictive maintenance, and machine learning systems used to predict imminent equipment failures.
 
@@ -13,46 +13,90 @@ You are deeply familiar with MLOps, training-serving skew, model drift, retraini
 
 ## Project State
 
-This is a GKE-based predictive maintenance demo (`gdc-pm`) running on GKE Autopilot cluster `gdc-edge-simulation` in project `gdc-pm-v2`. The UI is live at **http://35.188.3.97**.
+This is a GKE-based predictive maintenance demo (`gdc-pm`) running on GKE Autopilot cluster `gdc-edge-simulation` in project `gdc-pm-v2`.
 
-**Read `docs/PHASE_3_PLAN.md` first.** It contains the complete Phase 3 implementation plan including:
-- What Phase 2 built (currently live)
-- The root cause of RUL instability (training-serving skew)
-- All 7 Phase 3 tasks with precise implementation details
-- The complete demo script
-- Key engineering decisions made in the planning session
+- **UI:** http://35.188.3.97
+- **Grafana:** http://136.115.220.48
 
-**Critical context you must understand before writing any code:**
-1. The current live `fault-trigger-ui` pod is using a **TEMPORARY** geometric RUL calculation (pure physics, no ML model). This was a stopgap. It must be replaced with the XGBoost model using the clean feature extraction approach described in Task 1 of PHASE_3_PLAN.md.
-2. The XGBoost RUL models in GCS are V1 — trained on clean 5-minute synthetic data. They will still be noisy at first because of training-serving skew. This is **intentional** — it sets up the MLOps retraining demo in Task 3.
-3. Do NOT attempt to stabilize the RUL by reverting to geometry. The instability is the demo's opening act.
+**Read `docs/PHASE_3_DEPLOYMENT_STATUS.md` first.** It contains the complete Phase 3 implementation summary including:
+- All 7 tasks delivered (XGBoost RUL restore, V2 model training, MLOps retrain flow, chart upgrades, PNR/Failed states, tiered resolution actions, fault onset tracking)
+- 3 bug fixes applied (Grafana URL, ledger truncation, reset button)
+- Current cluster state and demo script
+- Known limitations
+- Phase 4 vision
 
-**Also read:**
-- `docs/PHASE_2_DEPLOYMENT_STATUS.md` — Phase 2 architecture reference
-- `gke/fault-trigger-ui/app.py` — current backend (especially `plot_forecast()` and `_run_degrade_thread()`)
-- `gke/fault-trigger-ui/index.html` — current frontend
+**Current live state:**
+- `fault-trigger-ui` pod: Phase 3 complete — all features deployed
+- RUL: XGBoost V1 (drifted, intentional) with fault-only feature extraction
+- Both V1 and V2 models loaded on startup; active version controlled via `/api/model/version`
+- MLOps retrain demo: click "☁ Sync & Retrain via Vertex AI" → 3-step pipeline toast → V2 model swap → stable RUL
+- Edge vs Cloud chart: solid vertical lines (PNR + Cloud Alert), horizontal Time-to-React arrows
+- Dispatch modal: 4-tier resolution actions with VIABLE/MARGINAL/NOT VIABLE scoring
+- Fleet Financials: separate `/api/ledger` endpoint (not limited by event log truncation), "♻ Reset Demo Data" button
 
 ---
 
-## What to Implement This Session (Phase 3)
+## Phase 4 Scope (Proposed — Not Yet Started)
 
-Work through `docs/PHASE_3_PLAN.md` tasks in order:
+Phase 4 is the "AI Agent closes the loop" milestone. The Gemma 2B model running via Ollama is already deployed in the cluster and connected via the event-processor RAG pipeline.
 
-1. **Task 1:** Restore XGBoost RUL model with fault-only clean feature extraction (`app.py`)
-2. **Task 7:** Add fault onset time tracking to `active_degrades` (needed by Tasks 4 and 5)
-3. **Task 2:** Write `scripts/retrain_edge_models.py` — generate V2 training data, train models, upload to GCS
-4. **Task 3:** MLOps "Drift & Retrain" UI flow — button + toast sequence + model swap endpoints
-5. **Task 4:** Upgrade Edge vs Cloud chart — vertical lines for PNR and Cloud Detection, horizontal Time to React arrows
-6. **Task 5:** PNR Exceeded / Asset Failed states in chart and incident panel
-7. **Task 6:** RUL-tiered resolution actions in dispatch modal
+### Proposed Phase 4 Tasks
 
-After each task, rebuild and push the `fault-trigger-ui` image:
+**Task 1: Autonomous Dispatch Proposal (Gemma → dispatch modal)**
+- When operator opens the dispatch modal, Gemma evaluates the active fault, current RUL, and the tiered resolution actions already computed by `/api/resolution-actions`
+- Gemma outputs a JSON recommendation: `{recommended_tier, justification, confidence, proposed_action}`
+- Modal shows "🤖 AI Recommends: [action]" with a confidence bar above the tier options
+- Operator can accept (one click) or override (manually select different tier)
+
+**Task 2: Parts Inventory Query (mock API)**
+- Create a mock `/api/inventory/{part_type}` endpoint returning availability + lead time for common O&G parts (impellers, seals, bearings, valve discs, etc.)
+- Gemma queries this before making a recommendation: "Is an ESP impeller string available on-site? Lead time 3 days → recommend early intervention, not emergency order."
+- Show inventory status in the dispatch modal alongside the resolution action
+
+**Task 3: Proactive PNR Alert (server-sent events or polling)**
+- When a fault is active and 50% of PNR time has elapsed with no acknowledgement, auto-generate a push notification / high-visibility toast: `⚠ T+12m — HALF OF PNR WINDOW ELAPSED — {asset_id} unacknowledged`
+- Implemented as a background thread checking `active_degrades` every 30s
+
+**Task 4: Multi-asset Correlation (fleet-level pattern detection)**
+- When 2+ assets on the same site trigger faults within 5 minutes, generate a fleet-level alert: `🔴 MULTI-ASSET EVENT — Pad Alpha: 2 ESPs degrading simultaneously`
+- Possible shared-cause hypotheses shown (shared cooling loop, formation breakthrough, etc.)
+- This sets up the AI agent's "why" narrative
+
+**Task 5: SCADA Command Simulation (closed-loop demo)**
+- Add a "🤖 Execute via SCADA" button to the dispatch modal for software_command tier actions
+- Clicking it triggers a simulated SCADA command toast: "Issuing VFD frequency reduction to ALPHA-1... confirmed at 14:32:07 UTC"
+- No real SCADA connection — purely visual simulation for demo impact
+- This is the "Phase 4 close" moment: AI detected, AI diagnosed, AI remediated, human approved
+
+---
+
+## Files to Read Before Starting Phase 4
+
+```
+docs/PHASE_3_DEPLOYMENT_STATUS.md   # Full Phase 3 summary
+gke/fault-trigger-ui/app.py         # Current backend (Phase 3 complete)
+gke/fault-trigger-ui/index.html     # Current frontend (Phase 3 complete)
+gke/event-processor/processor.py    # RAG pipeline + Gemma integration
+```
+
+---
+
+## Cluster Access
+
+```bash
+gcloud container clusters get-credentials gdc-edge-simulation \
+  --region us-central1 --project gdc-pm-v2
+```
+
+## Build + Deploy Pattern
+
 ```bash
 cd /home/brian/gdc-pm
 REG="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
 docker build --quiet -t "${REG}/fault-trigger-ui:latest" gke/fault-trigger-ui/ && \
   docker push --quiet "${REG}/fault-trigger-ui:latest" && \
-  kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+  kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm && \
+  kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=120s
 ```
 
 Wait for instructions before proceeding.

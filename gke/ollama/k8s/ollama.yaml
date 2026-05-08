@@ -1,0 +1,166 @@
+---
+# ============================================================================
+# Ollama LLM Inference Server
+# GPU-accelerated pod running Gemma 2B for disconnected Edge AI RAG pipeline.
+#
+# Portable design — works on GKE AND GDC Software-Only:
+#   - PVC uses the cluster's default StorageClass (no GKE-specific class).
+#   - GPU scheduling uses only the standard nvidia.com/gpu resource request.
+#     The GKE-specific cloud.google.com/gke-accelerator label is NOT used.
+#     On GDC Software-Only, install the NVIDIA GPU Operator; it will label
+#     GPU nodes with nvidia.com/gpu.present="true" automatically.
+#   - If you want to pin to a specific GPU node pool, add a nodeSelector:
+#       nvidia.com/gpu.present: "true"
+#     or whatever label your cluster admin applied to GPU nodes.
+#   - Init container pulls gemma:2b before the main server starts.
+#   - Readiness probe gates traffic until Ollama is ready to serve.
+# ============================================================================
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: ollama-models-pvc
+  namespace: gdc-pm
+spec:
+  accessModes:
+    - ReadWriteOnce
+  # No storageClassName set — uses the cluster's default StorageClass.
+  # On GKE this will be "standard-rwo" (GCE PD).
+  # On GDC Software-Only set this to your provisioned StorageClass, e.g.:
+  #   storageClassName: local-storage
+  resources:
+    requests:
+      storage: 10Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: gdc-pm
+  labels:
+    app: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ollama
+  template:
+    metadata:
+      labels:
+        app: ollama
+    spec:
+      # GKE Autopilot requires cloud.google.com/gke-accelerator to be set
+      # when requesting nvidia.com/gpu resources (enforced by Warden webhook).
+      # Using NVIDIA A2 (10GB VRAM, Ampere, sufficient for gemma:2b ~2GB).
+      # For GDC Software-Only, comment out this nodeSelector and use:
+      #   nvidia.com/gpu.present: "true"  (set by NVIDIA GPU Operator)
+      nodeSelector:
+        cloud.google.com/gke-accelerator: nvidia-a2
+      tolerations:
+        - key: "nvidia.com/gpu"
+          operator: "Exists"
+          effect: "NoSchedule"
+
+      # ── Init container: pull model before the server starts ───────────────
+      # INTERNET ACCESS REQUIRED: This init container pulls gemma:2b (~1.5GB)
+      # from the Ollama registry (https://registry.ollama.ai) at first startup.
+      # The model is persisted to the PVC so subsequent restarts skip the pull.
+      #
+      # For GDC Software-Only air-gapped deployments (no internet access):
+      # Option A — Pre-pull via PVC: on a connected node, kubectl exec into a
+      #            temporary Ollama pod, run `ollama pull gemma:2b`, then bind
+      #            the same PVC to this deployment.
+      # Option B — Custom image: build an image FROM ollama/ollama:0.3.12,
+      #            run `ollama pull gemma:2b` in the Dockerfile (requires net
+      #            at build time), then push to your local registry. Remove
+      #            this init container entirely and set OLLAMA_MODELS in
+      #            the main container to the baked-in path.
+      # Option C — Local model registry: use a VLAN-accessible OCI/Ollama
+      #            registry mirror pre-loaded with gemma:2b.
+      initContainers:
+        - name: pull-model
+          image: ollama/ollama:0.3.12
+          command:
+            - sh
+            - -c
+            - |
+              # Skip pull if model already exists on the PVC (subsequent restarts)
+              if ollama list 2>/dev/null | grep -q "gemma:2b"; then
+                echo "✅ gemma:2b already present on PVC — skipping pull"
+                exit 0
+              fi
+              echo "Starting Ollama server temporarily to pull model..."
+              ollama serve &
+              OLLAMA_PID=$!
+              sleep 5
+              echo "Pulling gemma:2b model..."
+              ollama pull gemma:2b
+              echo "✅ Model pulled — stopping temporary server"
+              kill $OLLAMA_PID
+              wait $OLLAMA_PID 2>/dev/null || true
+          env:
+            - name: OLLAMA_MODELS
+              value: /root/.ollama
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "4Gi"
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /root/.ollama
+
+      containers:
+        - name: ollama
+          image: ollama/ollama:0.3.12
+          ports:
+            - containerPort: 11434
+              name: http
+          env:
+            - name: OLLAMA_MODELS
+              value: /root/.ollama
+          resources:
+            requests:
+              memory: "4Gi"
+              cpu: "1000m"
+              nvidia.com/gpu: 1
+            limits:
+              memory: "8Gi"
+              nvidia.com/gpu: 1
+          readinessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/tags
+              port: 11434
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            failureThreshold: 3
+          volumeMounts:
+            - name: ollama-models
+              mountPath: /root/.ollama
+
+      volumes:
+        - name: ollama-models
+          persistentVolumeClaim:
+            claimName: ollama-models-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ollama
+  namespace: gdc-pm
+spec:
+  type: ClusterIP
+  selector:
+    app: ollama
+  ports:
+    - protocol: TCP
+      port: 11434
+      targetPort: 11434
+      name: http

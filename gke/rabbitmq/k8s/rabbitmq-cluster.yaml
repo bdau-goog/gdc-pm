@@ -18,7 +18,11 @@ spec:
       cpu: "1000m"
       memory: "1Gi"
   persistence:
-    storageClassName: standard
+    # storageClassName omitted — uses the cluster's default StorageClass.
+    # On GKE this resolves to "standard" (GCE PD).
+    # On GDC Software-Only, ensure a default StorageClass is provisioned,
+    # or uncomment and set the appropriate class:
+    # storageClassName: local-storage
     storage: 5Gi
   rabbitmq:
     additionalConfig: |

@@ -1,0 +1,58 @@
+# GDC-PM Project — Cline Rules
+# Applied automatically to every task in this workspace.
+
+## 1. TOKEN CONSERVATION — COMMAND OUTPUT
+Always apply these techniques to minimize context token consumption from verbose CLI output:
+
+### Docker builds and pushes
+- ALWAYS use `docker build --quiet` and `docker push --quiet`
+- For builds that may fail, redirect to a log file and tail only on error:
+  ```bash
+  docker build --quiet -t "$IMAGE" "$DIR" > /tmp/build-$(basename $DIR).log 2>&1 \
+    && echo "✅ Build OK: $IMAGE" \
+    || { echo "❌ Build FAILED:"; tail -20 /tmp/build-$(basename $DIR).log; exit 1; }
+  ```
+- Never run raw `docker build` or `docker push` interactively in a tool call.
+
+### kubectl output
+- Use `--output=name` for apply/create to suppress full YAML echo
+- For logs: ALWAYS use `--tail=20` (max) unless debugging a specific error
+- For rollout status: safe as-is (already concise)
+- For exec SQL: pipe through `tail -5` unless specifically checking for errors
+
+### pip install / npm install
+- Never run these interactively inside a tool call if they'll appear in output
+- Wrap in `> /dev/null 2>&1 && echo "✅ Done"` or inside Dockerfiles (not echoed back)
+
+### Long-running commands
+- Background with `& PID=$!`, do other tool calls, then `wait $PID` with exit check
+- Alternative: write to a script file, execute with output redirected:
+  ```bash
+  bash /tmp/script.sh > /tmp/script.log 2>&1; tail -10 /tmp/script.log
+  ```
+
+### grep / find / large file reads
+- Always add `| head -50` or `| head -100` to commands that might return large output
+- For `git diff`: use `--stat` first; only expand to full diff for specific files when needed
+- For log files: always use `tail -n 50` not `cat`
+
+## 2. TASK HANDOFF PATTERN
+When a task is approaching context limits (>400K tokens used):
+1. Write a `docs/PHASE_N_DEPLOYMENT_STATUS.md` capturing: what was built, what is deployed, exact commands to complete remaining work, and test verification steps
+2. Write a `scripts/deploy-phaseN.sh` that wraps all remaining deployment steps using the token-conservation patterns above
+3. State a crisp 1–2 sentence brief for the next task that an AI can execute cleanly in a fresh context
+
+## 3. DEPLOYMENT SCRIPTS
+All deployment scripts for this project use the pattern in `scripts/deploy-phase2.sh`.
+Key conventions:
+- One script deploys everything for a phase
+- `--quiet` on all Docker commands
+- Output redirected to `/tmp/*.log`, only tail on failure
+- Final summary table printed to stdout
+
+## 4. GDC-PM PROJECT CONTEXT
+- Namespace: `gdc-pm` on cluster `gdc-edge-simulation` (GKE Autopilot, project `gdc-pm-v2`, region `us-central1`)
+- Image registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/`
+- AlloyDB DB: `grid_reliability` on service `alloydb-omni.gdc-pm.svc.cluster.local`
+- The cluster is currently GKE Autopilot — `terraform/gke.tf` must NOT be applied (would destroy the cluster)
+- Phase 2 code is complete but not yet deployed — see `docs/PHASE_2_DEPLOYMENT_STATUS.md`

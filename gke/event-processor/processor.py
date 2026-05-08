@@ -47,9 +47,32 @@ INFERENCE_API_URL = os.environ.get(
     "http://inference-api.gdc-pm.svc.cluster.local:8080/predict"
 )
 
-# Narrative mode: "false" | "rule_based" | "gemini"
-AI_NARRATIVE_ENABLED = os.environ.get("AI_NARRATIVE_ENABLED", "rule_based").lower().strip()
-GCP_PROJECT          = os.environ.get("GCP_PROJECT", "gdc-pm")
+OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama.gdc-pm.svc.cluster.local:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma:2b")
+
+# Narrative mode: "false" | "rule_based" | "gemini" | "rag"
+AI_NARRATIVE_ENABLED = os.environ.get("AI_NARRATIVE_ENABLED", "rag").lower().strip()
+
+# ── Embedding model singleton ─────────────────────────────────────────────────
+# Loaded once at startup (not on every call) to avoid reloading 90MB of weights
+# per fault event, which caused multi-second latency spikes on every message.
+_EMBED_MODEL = None
+
+def _get_embed_model():
+    """Lazy singleton for the sentence embedding model."""
+    global _EMBED_MODEL
+    if _EMBED_MODEL is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            log.info("Loading embedding model all-MiniLM-L6-v2...")
+            _EMBED_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
+            log.info("✅ Embedding model loaded")
+        except Exception as e:
+            log.error(f"Failed to load embedding model: {e}")
+            return None
+    return _EMBED_MODEL
+
+GCP_PROJECT = os.environ.get("GCP_PROJECT", "gdc-pm")
 
 EXCHANGE_NAME = "telemetry"
 QUEUE_NAME    = "telemetry.events"
@@ -159,6 +182,78 @@ def generate_rule_based_narrative(
         return None, None
 
 
+def generate_rag_narrative(
+    db_conn, asset_id: str, asset_type: str, predicted_label: str
+) -> tuple[str | None, str | None]:
+    """
+    RAG Pipeline:
+    1. Query pgvector filtered by asset_class for the fault type.
+    2. Prompt local Ollama model to generate narrative and resolution options.
+    """
+    try:
+        model = _get_embed_model()
+        if model is None:
+            return None, None
+
+        query = f"{asset_type} {predicted_label}"
+        query_embedding = model.encode(query).tolist()
+        embedding_str = "[" + ",".join(str(x) for x in query_embedding) + "]"
+
+        # Retrieve top 3 context excerpts filtered by asset_class to avoid
+        # returning ESP content for mud pump faults etc.
+        context_excerpts = []
+        with db_conn.cursor() as cur:
+            cur.execute("""
+                SELECT content FROM rag_documents
+                WHERE asset_class = %s
+                ORDER BY embedding <-> %s::vector
+                LIMIT 3
+            """, (asset_type, embedding_str))
+            rows = cur.fetchall()
+            if not rows:
+                # Fallback: search all classes if no asset-specific docs exist
+                log.warning(f"No RAG docs for asset_class '{asset_type}', searching all classes")
+                cur.execute("""
+                    SELECT content FROM rag_documents
+                    ORDER BY embedding <-> %s::vector
+                    LIMIT 3
+                """, (embedding_str,))
+                rows = cur.fetchall()
+            for r in rows:
+                context_excerpts.append(r[0])
+                
+        context_text = "\n\n".join(context_excerpts)
+        
+        prompt = f"""You are an O&G maintenance AI. The XGBoost model detected {predicted_label} on {asset_id}. Using this manual: {context_text}
+        
+Write a 2-sentence assessment and list 2 specific resolution options.
+Output EXACTLY in this JSON format, no markdown formatting:
+{{
+  "assessment": "Two sentence assessment...",
+  "options": [
+    {{"action": "Option A action", "cost": 0, "time": "Instant"}},
+    {{"action": "Option B action", "cost": 5000, "time": "4 hours"}}
+  ]
+}}
+"""
+        
+        payload = {
+            "model": OLLAMA_MODEL,
+            "prompt": prompt,
+            "stream": False,
+            "format": "json"
+        }
+        
+        resp = requests.post(f"{OLLAMA_URL}/api/generate", json=payload, timeout=30)
+        resp.raise_for_status()
+        result_text = resp.json().get("response", "").strip()
+        
+        return result_text, "Awaiting operator selection"
+        
+    except Exception as e:
+        log.error(f"RAG narrative generation failed: {e}. Falling back to rule-based.")
+        return None, None
+
 def generate_gemini_narrative(
     asset_id: str, asset_type: str, predicted_label: str, confidence: float,
     psi: float, temp_f: float, vibration: float, similar_count: int
@@ -207,19 +302,23 @@ Maximum 80 words total."""
 
 
 def generate_narrative(
-    asset_id: str, asset_type: str, predicted_label: str, predicted_class: int,
+    db_conn, asset_id: str, asset_type: str, predicted_label: str, predicted_class: int,
     confidence: float, psi: float, temp_f: float, vibration: float,
     similar_count: int
 ) -> tuple[str | None, str | None]:
     """Dispatch to the correct narrative generator based on AI_NARRATIVE_ENABLED."""
     if AI_NARRATIVE_ENABLED == "false" or predicted_class == 0:
         return None, None
+    elif AI_NARRATIVE_ENABLED == "rag":
+        narr, action = generate_rag_narrative(db_conn, asset_id, asset_type, predicted_label)
+        if narr: return narr, action
+        return generate_rule_based_narrative(asset_id, asset_type, predicted_label, psi, temp_f, vibration)
     elif AI_NARRATIVE_ENABLED == "gemini":
         return generate_gemini_narrative(
             asset_id, asset_type, predicted_label, confidence,
             psi, temp_f, vibration, similar_count
         )
-    else:  # "rule_based" (default)
+    else:  # "rule_based"
         return generate_rule_based_narrative(
             asset_id, asset_type, predicted_label, psi, temp_f, vibration
         )
@@ -365,7 +464,7 @@ def make_handler(db_conn: psycopg2.extensions.connection):
 
         # Generate AI narrative
         ai_narrative, recommended_action = generate_narrative(
-            asset_id=asset_id, asset_type=asset_type,
+            db_conn=db_conn, asset_id=asset_id, asset_type=asset_type,
             predicted_label=predicted_label, predicted_class=predicted_class,
             confidence=confidence, psi=psi, temp_f=temp_f, vibration=vibration,
             similar_count=similar_count,

@@ -39,10 +39,22 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 log = logging.getLogger("inference-api")
 
 # ── Configuration ─────────────────────────────────────────────────────────────
+# ── Mode 1: GCS (GKE / cloud simulation) ──────────────────────────────────────
 GCS_MODEL_BUCKET = os.environ.get("GCS_MODEL_BUCKET", "")
 # Legacy single-model support: if GCS_MODEL_PATH is set but not GCS_MODEL_BUCKET,
 # use it as the stator classifier path.
 GCS_MODEL_PATH   = os.environ.get("GCS_MODEL_PATH", "")
+
+# ── Mode 2: Local filesystem (GDC Software-Only / air-gapped) ─────────────────
+# Set LOCAL_MODELS_DIR to a directory containing model files named
+# {model_name}.ubj, {model_name}.bst, or {model_name}.json
+# e.g. LOCAL_MODELS_DIR=/app/models with files:
+#   /app/models/esp_classifier.ubj
+#   /app/models/gas_lift_classifier.ubj
+#   /app/models/mud_pump_classifier.ubj
+#   /app/models/top_drive_classifier.ubj
+# When set, GCS is not contacted and no GCP credentials are needed.
+LOCAL_MODELS_DIR = os.environ.get("LOCAL_MODELS_DIR", "")
 
 # ── Model Registry ────────────────────────────────────────────────────────────
 # Each asset type maps to a named model. Models are loaded at startup from GCS.
@@ -164,17 +176,33 @@ def download_model_from_gcs(gcs_uri: str, local_path: str) -> None:
 
 def load_model(model_name: str) -> xgb.Booster | None:
     """
-    Attempt to load a model by name from GCS. Returns None if unavailable.
-    Uses GCS_MODEL_BUCKET to construct: gs://{bucket}/{model_name}/latest/
-    Falls back to GCS_MODEL_PATH for stator_classifier (legacy support).
+    Load a model by name. Priority order:
+    1. LOCAL_MODELS_DIR (GDC Software-Only / air-gapped) — no GCP required.
+    2. GCS_MODEL_BUCKET (GKE / cloud) — downloaded via google-cloud-storage.
+    3. Legacy GCS_MODEL_PATH (stator_classifier backward compat only).
     """
-    # Determine GCS path
+    # ── Priority 1: Local filesystem (GDC Software-Only / air-gapped) ────────
+    if LOCAL_MODELS_DIR:
+        for ext in (".ubj", ".bst", ".json"):
+            local_path = os.path.join(LOCAL_MODELS_DIR, f"{model_name}{ext}")
+            if os.path.exists(local_path):
+                try:
+                    booster = xgb.Booster()
+                    booster.load_model(local_path)
+                    log.info(f"✅ Loaded model from local path: {local_path}")
+                    return booster
+                except Exception as e:
+                    log.warning(f"⚠️  Failed to load {local_path}: {e}")
+        log.warning(f"⚠️  Model '{model_name}' not found in LOCAL_MODELS_DIR={LOCAL_MODELS_DIR}")
+        return None
+
+    # ── Priority 2/3: GCS download (GKE / cloud) ─────────────────────────────
     if GCS_MODEL_BUCKET:
         gcs_uri = f"gs://{GCS_MODEL_BUCKET}/{model_name}/latest/"
     elif model_name == "stator_classifier" and GCS_MODEL_PATH:
         gcs_uri = GCS_MODEL_PATH.strip()
     else:
-        log.warning(f"No GCS path configured for model '{model_name}' — skipping.")
+        log.warning(f"No path configured for model '{model_name}' — skipping.")
         return None
 
     local_path = f"/tmp/{model_name}.bst"
@@ -192,21 +220,27 @@ def load_model(model_name: str) -> xgb.Booster | None:
 # ── Startup / Lifespan ────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Load all configured models at startup. Gracefully skip unavailable ones."""
-    if not GCS_MODEL_BUCKET and not GCS_MODEL_PATH:
-        log.warning(
-            "Neither GCS_MODEL_BUCKET nor GCS_MODEL_PATH is set — "
-            "running in demo/dry-run mode. All predictions will return 503."
-        )
-    else:
+    """Load all configured models at startup. Gracefully skips unavailable ones."""
+    if LOCAL_MODELS_DIR:
+        log.info(f"Loading models from LOCAL_MODELS_DIR={LOCAL_MODELS_DIR} (air-gapped / GDC Software-Only mode)")
         for model_name in MODEL_CONFIGS:
             MODEL_REGISTRY[model_name] = load_model(model_name)
+    elif GCS_MODEL_BUCKET or GCS_MODEL_PATH:
+        log.info("Loading models from GCS (cloud / GKE mode)")
+        for model_name in MODEL_CONFIGS:
+            MODEL_REGISTRY[model_name] = load_model(model_name)
+    else:
+        log.warning(
+            "Neither LOCAL_MODELS_DIR nor GCS_MODEL_BUCKET is set — "
+            "running in dry-run mode. All predictions will return 503."
+        )
 
-        loaded = [k for k, v in MODEL_REGISTRY.items() if v is not None]
-        missing = [k for k, v in MODEL_REGISTRY.items() if v is None]
-        log.info(f"Models loaded: {loaded}")
-        if missing:
-            log.warning(f"Models not available (not yet trained): {missing}")
+    loaded  = [k for k, v in MODEL_REGISTRY.items() if v is not None]
+    missing = [k for k, v in MODEL_REGISTRY.items() if v is None]
+    if loaded:
+        log.info(f"Models loaded ({len(loaded)}): {loaded}")
+    if missing:
+        log.warning(f"Models not available: {missing}")
 
     yield
 

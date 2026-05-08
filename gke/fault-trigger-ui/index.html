@@ -30,10 +30,34 @@
     .hdr-title { font-size: 0.92rem; font-weight: 700; }
     .hdr-badge { font-size: 0.62rem; font-weight: 700; padding: 2px 7px; border-radius: 10px;
                  background: rgba(30,144,255,0.2); color: var(--blue); border: 1px solid rgba(30,144,255,0.3); }
+                 
+    .hdr-tabs {
+      display: flex; height: 100%; margin-left: 20px; align-items: flex-end; gap: 3px;
+    }
+    .hdr-tab {
+      display: flex; align-items: center; padding: 0 18px; height: 34px;
+      font-size: 0.76rem; font-weight: 600; color: var(--muted); cursor: pointer;
+      border-radius: 7px 7px 0 0; border: 1px solid transparent;
+      border-bottom: none; transition: all 0.15s; background: transparent;
+      position: relative;
+    }
+    .hdr-tab:hover { color: var(--text2); background: rgba(255,255,255,0.04); border-color: var(--border); }
+    .hdr-tab.active {
+      color: var(--blue); background: var(--surf2);
+      border-color: var(--border2);
+      box-shadow: 0 -2px 10px rgba(30,144,255,0.1), inset 0 1px 0 rgba(30,144,255,0.2);
+    }
+    .hdr-tab.active::after {
+      content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px;
+      background: var(--surf2);
+    }
+
     .hdr-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
     #last-refresh { font-size: 0.65rem; color: var(--muted); font-family: var(--mono); }
 
-    /* ── App Body ── */
+    /* ── App Body & Tabs ── */
+    .main-tab-content { display: none; height: 100%; flex-direction: column; overflow: hidden; }
+    .main-tab-content.active { display: flex; }
     .app-body {
       display: flex; flex-direction: column;
       height: calc(100vh - 50px); overflow: hidden;
@@ -151,8 +175,22 @@
                 box-shadow: 0 0 4px var(--green); animation: blink 2s ease-in-out infinite; }
     @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    /* Event Log */
-    #event-log { flex: 1; overflow-y: auto; padding: 6px 10px; min-height: 0; }
+    /* Event Log — has a resizable height controlled by #split-handle drag */
+    #event-log { height: 220px; min-height: 60px; overflow-y: auto; padding: 6px 10px; flex-shrink: 0; }
+
+    /* ── Drag Splitter ── */
+    #split-handle {
+      flex-shrink: 0; height: 8px; cursor: ns-resize;
+      background: var(--border); position: relative;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+    }
+    #split-handle:hover { background: var(--border2); }
+    #split-handle::before {
+      content: ''; display: block; width: 32px; height: 3px; border-radius: 2px;
+      background: var(--muted); opacity: 0.6;
+    }
+    #split-handle.dragging { background: rgba(30,144,255,0.3); }
     .ev-row {
       display: grid; grid-template-columns: 58px 1fr auto auto;
       gap: 5px; align-items: center; padding: 4px 7px; border-radius: 5px;
@@ -175,11 +213,10 @@
                  background: rgba(0,230,118,0.1); color: var(--green);
                  border: 1px solid rgba(0,230,118,0.2); }
 
-    /* Fault Injection Panel */
+    /* Fault Injection Panel — flex:1 so it takes all space below the splitter */
     #inject-panel {
-      flex-shrink: 0; border-top: 1px solid var(--border);
-      background: var(--surf); padding: 10px 14px;
-      max-height: 300px; overflow-y: auto;
+      flex: 1; min-height: 0; border-top: 1px solid var(--border);
+      background: var(--surf); padding: 10px 14px; overflow-y: auto;
     }
     .inject-target {
       display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
@@ -292,7 +329,8 @@
     #dispatch-modal.open { display: flex; }
     .modal-card {
       background: var(--surf); border: 1px solid var(--border2); border-radius: 12px;
-      padding: 22px; width: 460px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      padding: 22px; width: 540px; max-width: 95vw; max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
     }
     .modal-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
                    letter-spacing: 0.08em; color: var(--muted); margin-bottom: 14px;
@@ -305,8 +343,8 @@
     .wo-val.saved { color: var(--green); font-weight: 700; }
     .wo-div { grid-column: 1/-1; border-top: 1px solid var(--border); margin: 6px 0; }
     .wo-narr { grid-column: 1/-1; background: var(--surf2); border: 1px solid var(--border);
-               border-radius: 5px; padding: 7px 9px; font-size: 0.68rem; color: var(--text2);
-               line-height: 1.6; margin-top: 3px; max-height: 70px; overflow-y: auto; }
+               border-radius: 5px; padding: 9px 11px; font-size: 0.68rem; color: var(--text2);
+               line-height: 1.6; margin-top: 3px; max-height: 260px; overflow-y: auto; }
     .modal-actions { display: flex; gap: 8px; margin-top: 16px; }
     .btn-ack { flex: 1; padding: 9px; border-radius: 6px; border: none;
                background: linear-gradient(135deg,#c62828,#b71c1c); color: #fff;
@@ -328,17 +366,8 @@
              z-index: 500; padding: 8px 18px; border-radius: 7px; font-size: 0.76rem;
              max-width: 440px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
 
-    /* ── Savings Ticker ── */
-    #savings-ticker {
-      font-size: 0.72rem; font-weight: 700; padding: 4px 11px; border-radius: 20px;
-      border: 1px solid rgba(0,230,118,0.3); background: rgba(0,230,118,0.07);
-      color: var(--green); font-family: var(--mono); white-space: nowrap;
-      transition: background 0.6s, border-color 0.6s, box-shadow 0.6s;
-    }
-    #savings-ticker.updated {
-      background: rgba(0,230,118,0.22); border-color: var(--green);
-      box-shadow: 0 0 12px rgba(0,230,118,0.35);
-    }
+    /* ── Savings Ticker — hidden from header, lives in Financials tab only ── */
+    #savings-ticker { display: none; }
 
     /* ── Cloud Compare Toggle ── */
     #btn-cloud-compare {
@@ -353,6 +382,21 @@
       box-shadow: 0 0 8px rgba(156,39,176,0.3);
     }
     #btn-cloud-compare.visible { display: inline-block; }
+
+    /* ── Retrain Button (Task 3 — MLOps Drift & Retrain demo) ── */
+    #btn-retrain {
+      font-size: 0.65rem; font-weight: 600; padding: 3px 10px; border-radius: 8px;
+      border: 1px solid rgba(0,188,212,0.4); background: rgba(0,188,212,0.07);
+      color: #00bcd4; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      display: none; margin: 0 4px;
+    }
+    #btn-retrain:hover { background: rgba(0,188,212,0.18); }
+    #btn-retrain.visible { display: inline-block; }
+    #btn-retrain:disabled { opacity: 0.7; cursor: default; }
+    #btn-retrain.v2-active {
+      border-color: rgba(0,230,118,0.4); background: rgba(0,230,118,0.07);
+      color: var(--green); cursor: default;
+    }
 
     /* ── Asset Intel Button ── */
     #btn-asset-intel {
@@ -418,6 +462,11 @@
   <span class="hdr-logo">⛽</span>
   <span class="hdr-title">GDC Predictive Maintenance</span>
   <span class="hdr-badge">O&G LIVE</span>
+  <div class="hdr-tabs">
+    <div class="hdr-tab active" id="htab-operations" onclick="switchMainTab('operations')">Operations</div>
+    <div class="hdr-tab" id="htab-financials" onclick="switchMainTab('financials')">Fleet Financials</div>
+    <div class="hdr-tab" id="htab-telemetry" onclick="switchMainTab('telemetry')">Historical Telemetry</div>
+  </div>
   <div class="hdr-right">
     <span id="savings-ticker">💰 Fleet Savings: $0</span>
     <span id="last-refresh">--:--:--</span>
@@ -425,6 +474,9 @@
 </header>
 
 <div class="app-body">
+  
+  <!-- TAB 1: OPERATIONS -->
+  <div id="tab-operations" class="main-tab-content active">
 
   <!-- ── Fleet Overview Bar ── -->
   <div id="fleet-bar">
@@ -457,6 +509,8 @@
         <div style="color:var(--muted);padding:18px;text-align:center;font-size:0.74rem">Loading events…</div>
       </div>
 
+      <div id="split-handle" title="Drag to resize panels"></div>
+
       <div id="inject-panel">
         <div class="section-hdr" style="padding:0 0 7px;border:none;font-size:0.6rem">⚙ FAULT INJECTION</div>
 
@@ -473,7 +527,7 @@
         </div>
         <div id="dur-row" class="dur-row" style="display:none">
           <span style="color:var(--muted)">Duration:</span>
-          <input type="number" id="degrade-dur" class="num-input" value="600" min="60" max="28800">
+          <input type="number" id="degrade-dur" class="num-input" value="3600" min="60" max="28800">
           <span style="color:var(--muted)">sec</span>
         </div>
 
@@ -508,6 +562,7 @@
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
           <button id="btn-cloud-compare" onclick="toggleCloudCompare()">☁ Cloud-Based Prediction</button>
+          <button id="btn-retrain" onclick="triggerRetrain()">☁ Sync & Retrain via Vertex AI</button>
           <button id="btn-asset-intel" onclick="openAssetIntel()">ℹ Asset Intel</button>
           <button id="btn-expand" onclick="expandPlot()">⤢</button>
         </div>
@@ -525,6 +580,76 @@
     </div>
 
   </div><!-- .main-row -->
+  </div><!-- #tab-operations -->
+
+  <!-- TAB 2: FINANCIALS -->
+  <div id="tab-financials" class="main-tab-content" style="overflow-y:auto; padding:20px;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+      <span style="font-size:0.65rem; font-weight:700; letter-spacing:0.08em; color:var(--muted); text-transform:uppercase;">Fleet Financials — Resolved Incidents Ledger</span>
+      <button onclick="resetDemoData()" style="font-size:0.65rem; font-weight:600; padding:4px 12px; border-radius:7px; border:1px solid rgba(244,67,54,0.35); background:rgba(244,67,54,0.07); color:var(--red); cursor:pointer; transition:all 0.15s;" onmouseover="this.style.background='rgba(244,67,54,0.18)'" onmouseout="this.style.background='rgba(244,67,54,0.07)'">
+        ♻ Reset Demo Data
+      </button>
+    </div>
+    <div style="display:flex; gap:16px; margin-bottom:20px;">
+      <div style="flex:1; background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:16px;">
+        <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Aggregate Capital Saved</div>
+        <div id="fin-total-saved" style="font-size:1.4rem; font-weight:700; color:var(--green); font-family:var(--mono);">$0</div>
+      </div>
+      <div style="flex:1; background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:16px;">
+        <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Total Incidents Resolved</div>
+        <div id="fin-total-incidents" style="font-size:1.4rem; font-weight:700; color:var(--blue); font-family:var(--mono);">0</div>
+      </div>
+      <div style="flex:1; background:var(--surf); border:1px solid var(--border); border-radius:8px; padding:16px;">
+        <div style="font-size:0.7rem; color:var(--muted); text-transform:uppercase; font-weight:700; margin-bottom:8px;">Uptime Protected</div>
+        <div id="fin-uptime" style="font-size:1.4rem; font-weight:700; color:var(--text); font-family:var(--mono);">100.0%</div>
+      </div>
+    </div>
+    
+    <div style="background:var(--surf); border:1px solid var(--border); border-radius:8px; overflow:hidden;">
+      <table style="width:100%; border-collapse:collapse; text-align:left;">
+        <thead style="background:var(--surf2); border-bottom:1px solid var(--border);">
+          <tr>
+            <th style="padding:10px 16px; font-size:0.65rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Timestamp</th>
+            <th style="padding:10px 16px; font-size:0.65rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Asset</th>
+            <th style="padding:10px 16px; font-size:0.65rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Fault Type</th>
+            <th style="padding:10px 16px; font-size:0.65rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Resolution Taken</th>
+            <th style="padding:10px 16px; font-size:0.65rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Cost Incurred</th>
+            <th style="padding:10px 16px; font-size:0.65rem; color:var(--muted); font-weight:700; text-transform:uppercase;">Savings Realized</th>
+          </tr>
+        </thead>
+        <tbody id="ledger-body">
+          <!-- Populated by JS -->
+          <tr><td colspan="6" style="padding:20px; text-align:center; color:var(--muted);">Loading ledger...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div><!-- #tab-financials -->
+
+  <!-- TAB 3: TELEMETRY -->
+  <div id="tab-telemetry" class="main-tab-content" style="position:relative;">
+    <iframe id="grafana-iframe" src="" style="width:100%; height:100%; border:none;"
+      onload="document.getElementById('grafana-fallback').style.display='none'">
+    </iframe>
+    <!-- Fallback visible by default — hidden by onload when Grafana responds -->
+    <div id="grafana-fallback" style="display:flex; position:absolute; inset:0; flex-direction:column; align-items:center; justify-content:center; gap:18px; background:var(--bg); color:var(--muted);">
+      <div style="font-size:48px; opacity:0.3;">📊</div>
+      <div style="text-align:center; max-width:480px;">
+        <div style="font-size:1rem; font-weight:700; color:var(--text2); margin-bottom:10px;">Grafana Not Reachable</div>
+        <div style="font-size:0.78rem; line-height:1.8; margin-bottom:16px;">
+          The Grafana dashboard requires a connection to port 3000.<br>
+          Run the following command to expose it locally:
+        </div>
+        <code style="display:block; background:var(--surf2); border:1px solid var(--border); border-radius:6px; padding:10px 16px; font-family:var(--mono); font-size:0.76rem; color:var(--green); text-align:left; white-space:nowrap;">
+          kubectl port-forward -n gdc-pm svc/grafana 3000:80
+        </code>
+        <div style="font-size:0.7rem; color:var(--muted); margin-top:12px;">
+          Then click the <strong style="color:var(--text2)">Historical Telemetry</strong> tab again to reload Grafana.
+        </div>
+        <button onclick="reloadGrafana()" style="margin-top:14px; padding:8px 20px; border-radius:6px; border:1px solid var(--border2); background:var(--surf2); color:var(--text2); cursor:pointer; font-size:0.76rem;">↺ Retry Connection</button>
+      </div>
+    </div>
+  </div>
+
 </div><!-- .app-body -->
 
 <!-- Dispatch Modal -->
@@ -532,9 +657,12 @@
   <div class="modal-card">
     <div class="modal-title">Local Work Order — Operator Dispatch Required</div>
     <div class="wo-grid" id="wo-grid"></div>
-    <div class="modal-actions">
+    <div class="modal-actions" style="flex-wrap:wrap; gap:8px;">
       <input type="hidden" id="wo-event-id">
-      <button class="btn-ack" onclick="acknowledgeDispatch()">✔ Acknowledge &amp; Dispatch Crew</button>
+      <button class="btn-ack" onclick="acknowledgeDispatch()">✔ Acknowledge & Dispatch Crew</button>
+      <button onclick="acknowledgeIntermittent()" style="padding:9px 14px; border-radius:6px; border:1px solid rgba(255,179,0,0.4); background:rgba(255,179,0,0.07); color:var(--yellow); cursor:pointer; font-size:0.76rem; font-weight:600;">
+        ↩ Resolve as Intermittent / False Alarm
+      </button>
       <button class="btn-close-modal" onclick="closeModal()">Close</button>
     </div>
   </div>
@@ -649,6 +777,14 @@ const SENSOR_TAB_LABELS = {
 }
 
 const CLASS_ICONS = {esp:'⚡', gas_lift:'⚙', mud_pump:'🔩', top_drive:'🔄'}
+
+// PNR minutes per fault type — must match app.py PNR_MINUTES
+const PNR_MINUTES_JS = {
+  gas_lock:25, sand_ingress:120, motor_overheat:30,
+  valve_failure:5, thermal_runaway:40, bearing_wear:240,
+  pulsation_dampener_failure:0, valve_washout:60,
+  piston_seal_wear:180, gearbox_bearing_spalling:90, hydraulic_leak:45,
+}
 
 // ── Asset Intel Data ──────────────────────────────────────────────────────────
 const ASSET_PHYSICS = {
@@ -770,10 +906,35 @@ let selectedMetric = 'psi'
 let compareCloud = false        // Cloud vs Edge overlay toggle
 let assetStatuses = {}    // {asset_id: {last_prediction, last_seen}}
 let recentEvents  = []
+let ledgerEvents  = []    // separate from recentEvents — from /api/ledger (no limit=40)
 let activeDegrades = {}
 let dispatchQueue = []
 let scenariosData = {}
 let expandedSite = null
+
+// ────────── TAB NAVIGATION ───────────────────────────────────────────────────
+function switchMainTab(tabId) {
+  document.querySelectorAll('.hdr-tab').forEach(t=>t.classList.remove('active'))
+  document.querySelectorAll('.main-tab-content').forEach(c=>c.classList.remove('active'))
+  
+  document.getElementById(`htab-${tabId}`)?.classList.add('active')
+  document.getElementById(`tab-${tabId}`)?.classList.add('active')
+  
+  if (tabId === 'telemetry') {
+    const iframe = document.getElementById('grafana-iframe')
+    const fallback = document.getElementById('grafana-fallback')
+    // Always show the fallback while the iframe loads (onload hides it on success)
+    fallback.style.display = 'flex'
+    const meta = document.querySelector('meta[name="grafana-url"]')
+    const grafanaBase = meta ? meta.content : `${window.location.protocol}//${window.location.hostname}:3000`
+    const grafanaUrl = `${grafanaBase}/d/gdc-pm-main/gdc-predictive-maintenance?orgId=1&refresh=5s&kiosk`
+    // Force reload each tab switch so a fresh Grafana session starts
+    iframe.src = grafanaUrl
+  }
+  if (tabId === 'financials') {
+    refreshLedger()
+  }
+}
 
 // ────────── INIT ───────────────────────────────────────────────────────────────
 async function init() {
@@ -788,6 +949,8 @@ function startPolling() {
   setInterval(async () => {
     await Promise.all([refreshStatus(), refreshEvents(), refreshDegrades(), refreshSavings()])
     if (selectedAsset) refreshPlot()
+    // Refresh ledger in background so financials tab is always up to date
+    refreshLedger()
     document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('en-US',{hour12:false})
   }, 10000)
   document.getElementById('last-refresh').textContent = new Date().toLocaleTimeString('en-US',{hour12:false})
@@ -867,7 +1030,56 @@ async function refreshEvents() {
     recentEvents = d.events || []
     renderEventLog()
     updateIncidents()
+    renderLedger()
   } catch(e) { console.warn('events err', e) }
+}
+
+async function refreshLedger() {
+  try {
+    const d = await fetch('/api/ledger').then(r=>r.json())
+    ledgerEvents = d.events || []
+    renderLedger()
+  } catch(e) { console.warn('ledger err', e) }
+}
+
+function renderLedger() {
+  const tbody = document.getElementById('ledger-body')
+  if (!tbody) return
+  
+  // Only show entries with non-zero costs — clear-dispatch resets these to 0
+  const resolvedEvents = ledgerEvents.filter(ev => (ev.cost_avoided || 0) > 0 || (ev.cost_incurred || 0) > 0)
+  if (resolvedEvents.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="padding:20px; text-align:center; color:var(--muted);">No resolved incidents yet. Acknowledge a dispatch to populate this ledger.</td></tr>'
+    document.getElementById('fin-total-incidents').textContent = '0'
+    return
+  }
+  
+  document.getElementById('fin-total-incidents').textContent = resolvedEvents.length.toString()
+  
+  const formatMoney = (n) => '$' + Math.round(n || 0).toLocaleString('en-US')
+  
+  tbody.innerHTML = resolvedEvents.map(ev => {
+    const t   = new Date(ev.ack_time || ev.event_time)
+    const ts  = t.toLocaleDateString() + ' ' + t.toLocaleTimeString('en-US',{hour12:false})
+    const lbl = ev.predicted_label || ev.failure_type || 'unknown'
+    const faultLabel = FAULT_META[lbl]?.label || lbl
+    const short = ASSET_META[ev.asset_id]?.label || ev.asset_id
+    const costAvoided = ev.cost_avoided || 0
+    const costIncurred = (ev.cost_incurred && ev.cost_incurred > 0)
+      ? ev.cost_incurred
+      : (costAvoided > 0 ? costAvoided * 0.1 : 0)
+    const netSavings = costAvoided - costIncurred
+    const resolution = ev.recommended_action || REMEDIATION[ev.failure_type||lbl]?.action || 'Acknowledged'
+    
+    return `<tr style="border-bottom:1px solid var(--border); transition:background 0.15s;" onmouseover="this.style.background='var(--surf2)'" onmouseout="this.style.background='transparent'">
+      <td style="padding:10px 16px; font-family:var(--mono); font-size:0.7rem; color:var(--muted);">${ts}</td>
+      <td style="padding:10px 16px; font-family:var(--mono); font-size:0.72rem; color:var(--blue);">${short}</td>
+      <td style="padding:10px 16px; font-size:0.72rem; color:var(--orange);">${faultLabel}</td>
+      <td style="padding:10px 16px; font-size:0.7rem; color:var(--text2); max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${resolution}">${resolution}</td>
+      <td style="padding:10px 16px; font-family:var(--mono); font-size:0.72rem; color:var(--text);">${formatMoney(costIncurred)}</td>
+      <td style="padding:10px 16px; font-family:var(--mono); font-size:0.76rem; font-weight:700; color:var(--green);">${formatMoney(netSavings)}</td>
+    </tr>`
+  }).join('')
 }
 
 function renderEventLog() {
@@ -985,15 +1197,16 @@ function selectFault(ft) {
   document.querySelectorAll('.fault-opt').forEach(e=>e.classList.remove('sel'))
   document.getElementById(`fopt-${ft}`)?.classList.add('sel')
   const fm = FAULT_META[ft]
+  // Duration is always fixed at 3600s — never exposed to user
+  document.getElementById('dur-row').style.display = 'none'
   if (fm.gradualOnly) {
-    // Gradual-only fault: skip mode selector, go straight to duration
+    // Gradual-only fault: just set the mode, no UI choice needed
     document.getElementById('mode-row').style.display  = 'none'
     document.getElementById('burst-row').style.display = 'none'
-    document.getElementById('dur-row').style.display   = 'flex'
     const gr = document.querySelector('input[name="imode"][value="gradual"]')
     if (gr) gr.checked = true
   } else if (fm.gradual) {
-    // Fault supports both modes: show the mode selector, default to gradual
+    // Fault supports both modes: show Instant / Gradual toggle, no duration picker
     document.getElementById('mode-row').style.display  = 'flex'
     const gr = document.querySelector('input[name="imode"][value="gradual"]')
     if (gr) { gr.checked=true; onModeChange() }
@@ -1001,7 +1214,6 @@ function selectFault(ft) {
     // Instant-only fault
     document.getElementById('mode-row').style.display  = 'none'
     document.getElementById('burst-row').style.display = 'flex'
-    document.getElementById('dur-row').style.display   = 'none'
     const ins = document.querySelector('input[name="imode"][value="instant"]')
     if (ins) ins.checked = true
   }
@@ -1010,7 +1222,8 @@ function selectFault(ft) {
 function onModeChange() {
   const mode = document.querySelector('input[name="imode"]:checked')?.value || 'instant'
   document.getElementById('burst-row').style.display = mode==='instant'?'flex':'none'
-  document.getElementById('dur-row').style.display   = mode==='gradual' ?'flex':'none'
+  // Duration row is never shown — always use fixed 3600s internally
+  document.getElementById('dur-row').style.display   = 'none'
 }
 
 // ────────── INJECT / DEGRADE ──────────────────────────────────────────────────
@@ -1020,13 +1233,15 @@ async function injectFault() {
   const mode = document.querySelector('input[name="imode"]:checked')?.value || 'instant'
   const fm = FAULT_META[selectedFault]
   if (mode==='gradual' && fm.gradual) {
-    const dur = parseInt(document.getElementById('degrade-dur').value || '60')
+    // Duration is fixed at 3600s — matches model training trajectory length.
+    // The ramp completes then holds at fault state until operator resolves.
+    const FIXED_DURATION = 3600
     try {
       const r = await fetch('/api/inject/degrade',{method:'POST',headers:{'Content-Type':'application/json'},
-                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,duration_seconds:dur})})
+                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,duration_seconds:FIXED_DURATION})})
       if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
-      showToast(`▶ ${fm.label} ramp started — ${dur}s`,'ok')
-      activeDegrades[selectedAsset]={running:true,fault_type:selectedFault,step:0,steps:Math.floor(dur/5)}
+      showToast(`▶ ${fm.label} — gradual degradation started (holds until resolved)`,'ok')
+      activeDegrades[selectedAsset]={running:true,fault_type:selectedFault,step:0,steps:Math.floor(FIXED_DURATION/5)}
       updateDegradeProgress(); updateFleetBar()
     } catch(e) { showToast('Error: '+e.message,'error') }
   } else {
@@ -1158,13 +1373,40 @@ async function pollScenario() {
   },5000)
 }
 
-// ────────── DISPATCH MODAL ────────────────────────────────────────────────────
-function openDispatch(eventId) {
-  const ev = recentEvents.find(e=>e.id===eventId); if (!ev) { showToast('Not found','error'); return }
-  const meta = ASSET_META[ev.asset_id]||{}
-  const rem  = REMEDIATION[ev.failure_type||ev.predicted_label]||{risk:'See OEM manual',action:'Inspect equipment',cost:'TBD'}
-  const ts   = new Date(ev.event_time).toLocaleTimeString('en-US',{hour12:false})+' UTC'
-  const lbl  = ev.predicted_label||'unknown'
+// ────────── DISPATCH MODAL (Task 6 — RUL-tiered resolution actions) ───────────
+async function openDispatch(eventId) {
+  const ev = recentEvents.find(e=>e.id===eventId)
+  if (!ev) { showToast('Not found','error'); return }
+  const meta     = ASSET_META[ev.asset_id] || {}
+  const ts       = new Date(ev.event_time).toLocaleTimeString('en-US',{hour12:false}) + ' UTC'
+  const lbl      = ev.predicted_label || 'unknown'
+  const faultKey = ev.failure_type || lbl
+  const rem      = REMEDIATION[faultKey] || {risk:'See OEM manual', action:'Inspect equipment', cost:'TBD'}
+
+  // Compute elapsed time + PNR state from active degrade record
+  const deg = activeDegrades[ev.asset_id] || {}
+  let rul_minutes     = 60.0
+  let is_pnr_exceeded = ev.is_failed === true
+
+  if (deg.fault_onset_utc && deg.fault_type) {
+    const onsetMs  = new Date(deg.fault_onset_utc).getTime()
+    const elapsedM = (Date.now() - onsetMs) / 60000
+    const pnr      = PNR_MINUTES_JS[deg.fault_type] ?? 30
+    rul_minutes     = Math.max(0, pnr - elapsedM)
+    is_pnr_exceeded = is_pnr_exceeded || elapsedM > pnr || pnr === 0
+  }
+
+  // Change modal header for recovery (post-PNR) state
+  const modalTitle = document.querySelector('#dispatch-modal .modal-title')
+  if (is_pnr_exceeded || ev.is_failed) {
+    modalTitle.innerHTML = '⚠ RECOVERY DISPATCH — Asset Already Damaged'
+    modalTitle.style.color = 'var(--red)'
+  } else {
+    modalTitle.innerHTML = '⚠ Local Work Order — Operator Dispatch Required'
+    modalTitle.style.color = ''
+  }
+
+  // Static info block
   document.getElementById('wo-grid').innerHTML = `
     <span class="wo-lbl">Asset:</span><span class="wo-val">${ev.asset_id} — ${meta.type||''}</span>
     <span class="wo-lbl">Location:</span><span class="wo-val">${meta.loc||'—'}</span>
@@ -1172,11 +1414,76 @@ function openDispatch(eventId) {
     <span class="wo-lbl">Fault:</span><span class="wo-val">${FAULT_META[lbl]?.label||lbl}</span>
     <div class="wo-div"></div>
     <span class="wo-lbl">Risk:</span><span class="wo-val">${rem.risk}</span>
-    <span class="wo-lbl">Action:</span><span class="wo-val">${rem.action}</span>
-    <span class="wo-lbl">Cost Avoided:</span><span class="wo-val saved">${rem.cost}</span>
     <span class="wo-lbl">Contact:</span><span class="wo-val">${meta.contact||'—'}</span>
-    ${ev.ai_narrative?`<div class="wo-narr" style="grid-column:1/-1">${ev.ai_narrative}</div>`:''}
   `
+
+  // Fetch RUL-tiered resolution actions (Task 6)
+  const TIER_COLOR = {early:'#00e676', urgent:'#ffb300', critical:'#f44336', post_pnr:'#ce93d8'}
+  const TIER_LABEL = {early:'🟢 EARLY', urgent:'🟡 URGENT', critical:'🔴 CRITICAL', post_pnr:'🛠 RECOVERY'}
+  const TIER_NAME  = {early:'Early Intervention', urgent:'Urgent — Act Now', critical:'Emergency Only', post_pnr:'Recovery Dispatch'}
+  const TYPE_ICON  = {software_command:'💻', field_notification:'📞', emergency_procedure:'🚨', workover:'🔧'}
+
+  try {
+    const r = await fetch(`/api/resolution-actions/${encodeURIComponent(faultKey)}?rul_minutes=${rul_minutes.toFixed(1)}&is_pnr_exceeded=${is_pnr_exceeded}`)
+    if (r.ok) {
+      const data = await r.json()
+      const pnrInfo = `<div style="font-size:0.65rem;color:var(--muted);margin-bottom:8px;padding:5px 8px;background:var(--surf2);border-radius:4px;display:flex;gap:12px;flex-wrap:wrap;">
+        <span>Active Tier: <strong style="color:${TIER_COLOR[data.active_tier]}">${TIER_NAME[data.active_tier]||data.active_tier}</strong></span>
+        <span>RUL: <strong>${rul_minutes < 1 ? '<1m' : Math.round(rul_minutes)+'m'}</strong></span>
+        <span>PNR: <strong>T+${data.pnr_minutes}m</strong></span>
+      </div>`
+
+      const actionsHtml = Object.entries(data.actions).map(([tier, act]) => {
+        const isActive = act.is_active
+        const dim      = act.dim
+        const tCol     = TIER_COLOR[tier] || '#2a3a50'
+        const opacity  = dim ? 'opacity:0.38;' : ''
+        const icon     = TYPE_ICON[act.type] || '⚙'
+        const vBadge   = `<span style="font-size:0.58rem;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,0,0,0.35);color:${act.viability_color};border:1px solid ${act.viability_color}50">${act.viability}</span>`
+        const recBadge = isActive ? `<span style="font-size:0.58rem;padding:1px 5px;border-radius:3px;background:rgba(30,144,255,0.25);color:#1e90ff">RECOMMENDED</span>` : ''
+        const optVal   = JSON.stringify({action:act.action, cost:act.cost_incurred, time:act.time_to_execute, type:act.type})
+        return `<label style="display:flex;align-items:flex-start;gap:8px;padding:8px 10px;margin-bottom:5px;${opacity}
+            background:rgba(${tier==='post_pnr'?'156,39,176':'30,144,255'},${isActive?'0.07':'0.02'});
+            border:1px solid rgba(${tier==='post_pnr'?'156,39,176':'30,144,255'},${isActive?'0.45':'0.18'});
+            border-radius:6px;cursor:${dim?'not-allowed':'pointer'};">
+          <input type="radio" name="dispatch-opt" value='${optVal}' ${isActive?'checked':''} ${dim?'disabled':''} style="margin-top:3px;accent-color:var(--blue);flex-shrink:0">
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;margin-bottom:4px">
+              <span style="font-size:0.67rem;font-weight:700;color:${tCol}">${TIER_LABEL[tier]}</span>
+              ${vBadge} ${recBadge}
+            </div>
+            <div style="font-size:0.72rem;font-weight:600;color:var(--text);margin-bottom:3px">${icon} ${act.action}</div>
+            <div style="font-size:0.62rem;color:var(--muted)">Time: ${act.time_to_execute} &nbsp;·&nbsp; Cost: $${act.cost_incurred.toLocaleString()}</div>
+            ${dim ? `<div style="font-size:0.6rem;color:var(--red);margin-top:2px">⚠ Execution time exceeds remaining RUL window</div>` : ''}
+          </div>
+        </label>`
+      }).join('')
+      document.getElementById('wo-grid').innerHTML += `<div class="wo-narr" style="grid-column:1/-1">${pnrInfo}${actionsHtml}</div>`
+    } else {
+      // HTTP error — fallback to static action
+      document.getElementById('wo-grid').innerHTML += `
+        <span class="wo-lbl">Action:</span><span class="wo-val">${rem.action}</span>
+        <span class="wo-lbl">Cost Avoided:</span><span class="wo-val saved">${rem.cost}</span>`
+    }
+  } catch(e) {
+    // Network error — fallback
+    document.getElementById('wo-grid').innerHTML += `
+      <span class="wo-lbl">Action:</span><span class="wo-val">${rem.action}</span>
+      <span class="wo-lbl">Cost Avoided:</span><span class="wo-val saved">${rem.cost}</span>`
+  }
+
+  // AI narrative (append if present)
+  if (ev.ai_narrative) {
+    try {
+      const parsed    = JSON.parse(ev.ai_narrative)
+      const narrBlock = `<div class="wo-narr" style="grid-column:1/-1;margin-top:6px">
+        <div style="font-weight:600;color:var(--text);margin-bottom:6px">AI Assessment:</div>
+        <div style="font-size:0.7rem;color:var(--text2);line-height:1.65">${parsed.assessment||''}</div>
+      </div>`
+      document.getElementById('wo-grid').innerHTML += narrBlock
+    } catch(e) {}
+  }
+
   document.getElementById('wo-event-id').value = eventId
   document.getElementById('dispatch-modal').classList.add('open')
 }
@@ -1184,10 +1491,73 @@ function closeModal() { document.getElementById('dispatch-modal').classList.remo
 async function acknowledgeDispatch() {
   const id = parseInt(document.getElementById('wo-event-id').value)
   if (!id) return
-  const r = await fetch(`/api/acknowledge/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({operator:'ops'})})
+  
+  let resolutionData = {}
+  const opt = document.querySelector('input[name="dispatch-opt"]:checked')
+  if (opt) {
+    try { resolutionData = JSON.parse(opt.value) } catch(e){}
+  }
+  
+  const payload = {
+    operator: 'ops',
+    resolution_action: resolutionData.action || 'Crew dispatched',
+    cost_incurred: resolutionData.cost || 0
+  }
+  
+  const r = await fetch(`/api/acknowledge/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
   if (!r.ok) { const e=await r.json(); showToast(e.detail,'error'); return }
-  closeModal(); showToast('✔ Crew dispatched — savings updated','ok')
-  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings()])
+
+  // Auto-cancel the fault injection for this asset — resolving the event stops the simulation
+  const ev = recentEvents.find(e=>e.id===id)
+  if (ev?.asset_id) {
+    await fetch(`/api/cancel-degrade/${ev.asset_id}`,{method:'POST'}).catch(()=>{})
+    delete activeDegrades[ev.asset_id]
+    updateDegradeProgress(); updateFleetBar()
+  }
+
+  closeModal(); showToast('✔ Crew dispatched — fault simulation stopped','ok')
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings(), refreshLedger()])
+}
+
+async function acknowledgeIntermittent() {
+  const id = parseInt(document.getElementById('wo-event-id').value)
+  if (!id) return
+
+  const payload = {
+    operator: 'ops',
+    resolution_action: 'Self-resolved / Intermittent — No Dispatch',
+    cost_incurred: 0
+  }
+
+  const r = await fetch(`/api/acknowledge/${id}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+  if (!r.ok) { const e=await r.json(); showToast(e.detail,'error'); return }
+
+  // Auto-cancel the fault injection — intermittent faults self-resolve
+  const ev = recentEvents.find(e=>e.id===id)
+  if (ev?.asset_id) {
+    await fetch(`/api/cancel-degrade/${ev.asset_id}`,{method:'POST'}).catch(()=>{})
+    // Restore normal telemetry
+    await fetch('/api/inject-fault',{method:'POST',headers:{'Content-Type':'application/json'},
+                 body:JSON.stringify({asset_id:ev.asset_id,fault_type:'normal',count:5})}).catch(()=>{})
+    delete activeDegrades[ev.asset_id]
+    updateDegradeProgress(); updateFleetBar()
+  }
+
+  closeModal(); showToast('↩ Marked as intermittent — no dispatch required','ok')
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings(), refreshLedger()])
+}
+
+function reloadGrafana() {
+  const iframe = document.getElementById('grafana-iframe')
+  document.getElementById('grafana-fallback').style.display = 'none'
+  const src = iframe.src || ''
+  // Force reload by clearing and reassigning
+  iframe.src = ''
+  setTimeout(() => {
+    const meta = document.querySelector('meta[name="grafana-url"]')
+    const grafanaBase = meta ? meta.content : `${window.location.protocol}//${window.location.hostname}:3000`
+    iframe.src = `${grafanaBase}/d/gdc-pm-main/gdc-predictive-maintenance?orgId=1&refresh=5s&kiosk`
+  }, 200)
 }
 
 async function clearDispatch() {
@@ -1195,22 +1565,34 @@ async function clearDispatch() {
   if (!r.ok) { showToast('Clear failed','error'); return }
   const d = await r.json()
   showToast(`✅ Cleared ${d.count} work orders · Savings reset to $0`,'ok')
-  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings()])
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings(), refreshLedger()])
+}
+
+async function resetDemoData() {
+  if (!confirm('Reset all demo data? This will clear the ledger, reset savings to $0, and cancel all active work orders.')) return
+  const r = await fetch('/api/clear-dispatch',{method:'POST'})
+  if (!r.ok) { showToast('Reset failed','error'); return }
+  const d = await r.json()
+  // Also reset V1 model for clean MLOps demo restart
+  await resetModelToV1()
+  showToast(`✅ Demo reset — ledger cleared, savings reset to $0`,'ok')
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings(), refreshLedger()])
 }
 
 // ────────── TOAST ─────────────────────────────────────────────────────────────
 let toastTimer
-function showToast(msg, type='info') {
+function showToast(msg, type='info', duration=3500) {
   const t = document.getElementById('toast')
   t.textContent = msg
   const styles = {
-    ok:    'background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.4);color:var(--green)',
-    error: 'background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.4);color:var(--red)',
-    info:  'background:#1a2a40;border:1px solid var(--border2);color:var(--text)',
+    ok:      'background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.4);color:var(--green)',
+    error:   'background:rgba(244,67,54,0.15);border:1px solid rgba(244,67,54,0.4);color:var(--red)',
+    info:    'background:#1a2a40;border:1px solid var(--border2);color:var(--text)',
+    pipeline:'background:rgba(0,188,212,0.12);border:1px solid rgba(0,188,212,0.4);color:#00bcd4',
   }
-  t.style.cssText = `display:block;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:500;padding:8px 18px;border-radius:7px;font-size:0.76rem;max-width:440px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);${styles[type]||styles.info}`
+  t.style.cssText = `display:block;position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:500;padding:8px 18px;border-radius:7px;font-size:0.76rem;max-width:520px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.5);${styles[type]||styles.info}`
   clearTimeout(toastTimer)
-  toastTimer = setTimeout(()=>{t.style.display='none'},3500)
+  if (duration > 0) toastTimer = setTimeout(()=>{t.style.display='none'}, duration)
 }
 
 // ────────── SAVINGS TICKER ────────────────────────────────────────────────────
@@ -1222,6 +1604,9 @@ async function refreshSavings() {
     const el = document.getElementById('savings-ticker')
     const formatted = '$' + Math.round(total).toLocaleString('en-US')
     el.textContent = '💰 Fleet Savings: ' + formatted
+    
+    const finTotal = document.getElementById('fin-total-saved')
+    if (finTotal) finTotal.textContent = formatted
     if (total !== _lastSavings && _lastSavings >= 0) {
       el.classList.add('updated')
       setTimeout(()=>el.classList.remove('updated'), 2500)
@@ -1293,8 +1678,146 @@ function switchIntelTab(tab) {
   }
 }
 
+// ────────── SPLITTER DRAG ────────────────────────────────────────────────────
+function initSplitter() {
+  const handle  = document.getElementById('split-handle')
+  const logEl   = document.getElementById('event-log')
+  const leftPanel = document.querySelector('.left-panel')
+  if (!handle || !logEl) return
+
+  let dragging = false
+  let startY   = 0
+  let startH   = 0
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true
+    startY   = e.clientY
+    startH   = logEl.offsetHeight
+    handle.classList.add('dragging')
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor = 'ns-resize'
+    e.preventDefault()
+  })
+
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return
+    const dy     = e.clientY - startY
+    const newH   = Math.max(60, Math.min(startH + dy, leftPanel.offsetHeight - 120))
+    logEl.style.height = newH + 'px'
+  })
+
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return
+    dragging = false
+    handle.classList.remove('dragging')
+    document.body.style.userSelect = ''
+    document.body.style.cursor     = ''
+  })
+}
+
+// ────────── MLOps RETRAIN DEMO (Task 3) ──────────────────────────────────────
+let activeModelVersion = 'v1'   // mirrors server-side _active_model_version
+const _sleep = ms => new Promise(r => setTimeout(r, ms))
+
+async function triggerRetrain() {
+  if (!dispatchQueue.length) { showToast('No active fault to retrain against', 'error'); return }
+  const btn = document.getElementById('btn-retrain')
+  if (!btn || btn.disabled) return
+
+  btn.disabled = true
+  btn.textContent = '⏳ Retraining…'
+
+  // Simulated Vertex AI pipeline sequence (mirrors real GDC→BigQuery→Vertex→Edge flow)
+  const PIPELINE = [
+    { msg: '📤 Exporting AlloyDB edge telemetry → BigQuery…',                  delay: 1500 },
+    { msg: '🧠 Vertex AI: Training XGBoost v2.0 on 5s edge-profile data…',    delay: 2500 },
+    { msg: '📦 Model v2.0 validated — deploying to GDC Edge Registry…',       delay: 1500 },
+  ]
+  for (const step of PIPELINE) {
+    showToast(step.msg, 'pipeline', 0)   // persist — no auto-dismiss
+    await _sleep(step.delay)
+  }
+
+  try {
+    const r = await fetch('/api/model/version', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({version: 'v2'})
+    })
+    if (r.ok) {
+      activeModelVersion = 'v2'
+      showToast('✅ Model v2.0 active — RUL predictions now calibrated to edge data', 'ok', 5000)
+      btn.textContent = '✅ Model v2.0 Active'
+      btn.classList.add('v2-active')
+      // Refresh plot so the new model's stable prediction is immediately visible
+      setTimeout(() => refreshPlot(), 1200)
+    } else {
+      const e = await r.json().catch(()=>({}))
+      showToast('❌ Model swap failed: ' + (e.detail || 'server error'), 'error', 4000)
+      btn.disabled = false
+      btn.textContent = '☁ Sync & Retrain via Vertex AI'
+    }
+  } catch(e) {
+    showToast('❌ Network error — check connection', 'error', 4000)
+    btn.disabled = false
+    btn.textContent = '☁ Sync & Retrain via Vertex AI'
+  }
+}
+
+// Called on demo reset to put the MLOps story back to start state
+async function resetModelToV1() {
+  try {
+    await fetch('/api/model/version', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({version:'v1'})})
+    activeModelVersion = 'v1'
+    const btn = document.getElementById('btn-retrain')
+    if (btn) {
+      btn.disabled = false
+      btn.textContent = '☁ Sync & Retrain via Vertex AI'
+      btn.classList.remove('v2-active')
+    }
+  } catch(e) {}
+}
+
+// ────────── INCIDENT PANEL — FAILED STATE ────────────────────────────────────
+function updateIncidents() {
+  dispatchQueue = recentEvents.filter(ev => {
+    const sev = getSeverity(ev.predicted_label)
+    return !ev.acknowledged && (sev==='critical'||sev==='warning')
+  })
+  const panel = document.getElementById('incidents-panel')
+  const list  = document.getElementById('incidents-list')
+  // Show / hide the retrain button based on whether any active fault exists
+  const retrainBtn = document.getElementById('btn-retrain')
+  if (retrainBtn && activeModelVersion === 'v1') {
+    retrainBtn.classList.toggle('visible', dispatchQueue.length > 0)
+  }
+  if (dispatchQueue.length === 0) { panel.classList.remove('visible'); return }
+  panel.classList.add('visible')
+  list.innerHTML = dispatchQueue.slice(0,8).map(ev => {
+    const lbl       = ev.predicted_label || 'unknown'
+    const sev       = getSeverity(lbl)
+    const faultLabel= FAULT_META[lbl]?.label || lbl
+    const isFailed  = ev.is_failed === true
+    const rowBorder = isFailed
+      ? 'border-color:rgba(244,67,54,0.7); background:rgba(244,67,54,0.07);'
+      : ''
+    const badge = isFailed
+      ? `<span style="font-size:0.58rem;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(244,67,54,0.2);color:#f44336;border:1px solid rgba(244,67,54,0.4);margin-right:4px;">FAILED</span>`
+      : ''
+    return `<div class="incident-row" style="${rowBorder}" onclick="selectAsset('${ev.asset_id}'); openDispatch(${ev.id})">
+      <span class="inc-sev">${isFailed ? '💥' : sev==='critical'?'🔴':'⚠'}</span>
+      <span class="inc-asset">${ev.asset_id}</span>
+      <span class="inc-fault">${badge}${faultLabel}</span>
+      <button class="inc-diagnose" style="${isFailed?'border-color:rgba(244,67,54,0.5);color:#f44336;':''}"
+        onclick="event.stopPropagation(); selectAsset('${ev.asset_id}'); openDispatch(${ev.id})">
+        ${isFailed ? 'Resolve ▶' : 'Diagnose ▶'}
+      </button>
+    </div>`
+  }).join('')
+}
+
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){closeModal();closeFsPlot();closeAssetIntel()} })
-document.addEventListener('DOMContentLoaded', init)
+document.addEventListener('DOMContentLoaded', () => { init(); initSplitter() })
 </script>
 </body>
 </html>

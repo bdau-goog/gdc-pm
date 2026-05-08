@@ -64,7 +64,8 @@ spec:
                   acknowledged         BOOLEAN NOT NULL DEFAULT FALSE,
                   ack_time             TIMESTAMPTZ,
                   ack_operator         TEXT,
-                  cost_avoided         NUMERIC DEFAULT 0
+                  cost_avoided         NUMERIC DEFAULT 0,
+                  cost_incurred        NUMERIC DEFAULT 0
                 );
 
                 -- ── Indexes ──────────────────────────────────────────────────
@@ -79,6 +80,26 @@ spec:
                 CREATE INDEX IF NOT EXISTS idx_events_unacked
                   ON telemetry_events(acknowledged, event_time DESC)
                   WHERE acknowledged = FALSE AND predicted_class > 0;
+
+                -- ── pgvector & RAG Schema ─────────────────────────────────────
+                CREATE EXTENSION IF NOT EXISTS vector;
+
+                CREATE TABLE IF NOT EXISTS rag_documents (
+                  id SERIAL PRIMARY KEY,
+                  asset_class TEXT NOT NULL,
+                  doc_title TEXT NOT NULL,
+                  content TEXT NOT NULL,
+                  embedding vector(384)
+                );
+
+                -- HNSW index for fast cosine similarity search on rag_documents
+                CREATE INDEX IF NOT EXISTS idx_rag_embedding
+                  ON rag_documents USING hnsw (embedding vector_cosine_ops);
+
+                -- ── Live migration: add columns to existing telemetry_events ──
+                -- These are safe no-ops if the column already exists (Postgres 9.6+)
+                ALTER TABLE telemetry_events
+                  ADD COLUMN IF NOT EXISTS cost_incurred NUMERIC DEFAULT 0;
 
                 -- ── Asset registry ────────────────────────────────────────────
                 CREATE TABLE IF NOT EXISTS asset_registry (

@@ -1,8 +1,18 @@
 ---
 # ============================================================================
 # Inference API — Multi-Asset-Type Failure Classifier
-# Loads XGBoost models for compressors, turbines, and transformers from GCS.
-# Routes predictions to the correct model based on asset_type in the request.
+#
+# Two deployment modes — choose one:
+#
+# MODE 1: GKE (cloud simulation)
+#   - Set GCS_MODEL_BUCKET and enable Workload Identity on the ServiceAccount
+#   - Models are downloaded from GCS at pod startup
+#
+# MODE 2: GDC Software-Only (air-gapped / disconnected)
+#   - Set LOCAL_MODELS_DIR to "/app/models" (models baked into the image)
+#   - Clear GCS_MODEL_BUCKET and GCS_MODEL_PATH
+#   - Build the container with models already copied into /app/models/
+#   - No GCP credentials or internet access required
 # ============================================================================
 apiVersion: apps/v1
 kind: Deployment
@@ -28,17 +38,22 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            # GCS_MODEL_BUCKET: the bucket that holds all model artifacts.
-            # Models are loaded from: gs://{bucket}/{model_name}/latest/
-            # e.g. gs://gdc-pm-models/stator_classifier/latest/
-            #      gs://gdc-pm-models/turbine_classifier/latest/
-            #      gs://gdc-pm-models/transformer_classifier/latest/
+            # ── GKE / Cloud Mode ────────────────────────────────────────────
+            # Set GCS_MODEL_BUCKET to download models from GCS at startup.
+            # Requires Workload Identity annotation on the ServiceAccount.
             - name: GCS_MODEL_BUCKET
-              value: "GCS_MODEL_BUCKET_PLACEHOLDER"
+              value: "gdc-pm-v2-models"
 
             # Legacy single-model path (kept for backward compatibility).
-            # Set GCS_MODEL_BUCKET above instead for multi-model support.
             - name: GCS_MODEL_PATH
+              value: ""
+
+            # ── GDC Software-Only / Air-Gapped Mode ─────────────────────────
+            # Set LOCAL_MODELS_DIR to load models from the container image
+            # instead of GCS. Build the container with models at this path.
+            # When set, GCS_MODEL_BUCKET/GCS_MODEL_PATH are not used.
+            # Example: /app/models (models baked in at image build time)
+            - name: LOCAL_MODELS_DIR
               value: ""
           resources:
             requests:
@@ -77,13 +92,20 @@ spec:
     app: inference-api
 
 ---
-# Kubernetes Service Account bound to the ml-pipeline-sa GCP Service Account
-# for Workload Identity — grants GCS access to download model artifacts
-# without embedding JSON credentials in the container.
+# Kubernetes Service Account for the inference-api pod.
+#
+# GKE (cloud simulation): annotate with iam.gke.io/gcp-service-account to
+# enable Workload Identity so the pod can pull models from GCS without
+# embedding credentials:
+#   iam.gke.io/gcp-service-account: ml-pipeline-sa@PROJECT_ID.iam.gserviceaccount.com
+#
+# GDC Software-Only (air-gapped / disconnected): no annotation needed.
+# Set LOCAL_MODELS_DIR in the Deployment env vars instead so the inference-api
+# loads models from a path baked into the container image.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: ml-inference-ksa
   namespace: gdc-pm
   annotations:
-    iam.gke.io/gcp-service-account: ml-pipeline-sa@PROJECT_ID_PLACEHOLDER.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: ml-pipeline-sa@gdc-pm-v2.iam.gserviceaccount.com
