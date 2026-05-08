@@ -1486,7 +1486,10 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         for r in rows:
             ft = (r.get("failure_type") or "").lower()
             if ft and ft != "normal":
-                fault_onset = r["event_time"]; detected_fault_type = ft; break
+                _et = r["event_time"]
+                # Strip tz-info to match naive UTC from active_degrades["fault_onset_utc"]
+                fault_onset = _et.replace(tzinfo=None) if getattr(_et, "tzinfo", None) else _et
+                detected_fault_type = ft; break
     if fault_onset and detected_fault_type:
         _pnr_m = PNR_MINUTES.get(detected_fault_type, 9999)
         if _pnr_m < 9999:
@@ -1667,7 +1670,8 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             # fault_onset + detected_fault_type already resolved; provide fallback
             # for compare_cloud timing only if neither were set above.
             if fault_onset is None:
-                fault_onset = times[0]
+                _t0 = times[0]
+                fault_onset = _t0.replace(tzinfo=None) if getattr(_t0, "tzinfo", None) else _t0
                 detected_fault_type = next(
                     (str(r.get("predicted_label") or "").lower()
                      for r in rows if (r.get("predicted_label") or "normal") not in ("normal", "")),
