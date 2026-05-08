@@ -398,6 +398,17 @@
       color: var(--green); cursor: default;
     }
 
+    /* ── Diagnose Chart Button — dispatch shortcut from plot header ── */
+    #btn-diagnose-chart {
+      font-size: 0.65rem; font-weight: 700; padding: 3px 10px; border-radius: 8px;
+      border: 1px solid rgba(244,67,54,0.5); background: rgba(244,67,54,0.1);
+      color: var(--red); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+      display: none; margin: 0 4px; animation: diagBlink 1.5s ease-in-out infinite;
+    }
+    #btn-diagnose-chart:hover { background: rgba(244,67,54,0.22); }
+    #btn-diagnose-chart.visible { display: inline-block; }
+    @keyframes diagBlink { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
     /* ── Asset Intel Button ── */
     #btn-asset-intel {
       font-size: 0.65rem; font-weight: 600; padding: 3px 10px; border-radius: 8px;
@@ -561,8 +572,9 @@
             <div class="sensor-tab" id="tab-vib" onclick="selectTab('vib')">Vibration</div>
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
+          <button id="btn-diagnose-chart" onclick="diagnoseFault()">⚠ Diagnose ▶</button>
           <button id="btn-cloud-compare" onclick="toggleCloudCompare()">☁ Cloud-Based Prediction</button>
-          <button id="btn-retrain" onclick="triggerRetrain()">☁ Sync & Retrain via Vertex AI</button>
+          <button id="btn-retrain" onclick="triggerRetrain()">☁ Retrain via Vertex AI</button>
           <button id="btn-asset-intel" onclick="openAssetIntel()">ℹ Asset Intel</button>
           <button id="btn-expand" onclick="expandPlot()">⤢</button>
         </div>
@@ -1716,25 +1728,25 @@ function initSplitter() {
 }
 
 // ────────── MLOps RETRAIN DEMO (Task 3) ──────────────────────────────────────
-let activeModelVersion = 'v1'   // mirrors server-side _active_model_version
+let activeModelVersion = 'v2'   // mirrors server-side _active_model_version (V2 is default)
 const _sleep = ms => new Promise(r => setTimeout(r, ms))
 
 async function triggerRetrain() {
-  if (!dispatchQueue.length) { showToast('No active fault to retrain against', 'error'); return }
   const btn = document.getElementById('btn-retrain')
   if (!btn || btn.disabled) return
 
   btn.disabled = true
   btn.textContent = '⏳ Retraining…'
 
-  // Simulated Vertex AI pipeline sequence (mirrors real GDC→BigQuery→Vertex→Edge flow)
+  // Simulated Vertex AI pipeline sequence — demonstrates real GDC→BigQuery→Vertex→Edge flow.
+  // V2 is already the active model; this shows the continuous model refresh lifecycle.
   const PIPELINE = [
     { msg: '📤 Exporting AlloyDB edge telemetry → BigQuery…',                  delay: 1500 },
-    { msg: '🧠 Vertex AI: Training XGBoost v2.0 on 5s edge-profile data…',    delay: 2500 },
-    { msg: '📦 Model v2.0 validated — deploying to GDC Edge Registry…',       delay: 1500 },
+    { msg: '🧠 Vertex AI: Retraining XGBoost on latest 5s edge-profile data…', delay: 2500 },
+    { msg: '📦 Updated model validated — deploying to GDC Edge Registry…',     delay: 1500 },
   ]
   for (const step of PIPELINE) {
-    showToast(step.msg, 'pipeline', 0)   // persist — no auto-dismiss
+    showToast(step.msg, 'pipeline', 0)
     await _sleep(step.delay)
   }
 
@@ -1742,40 +1754,67 @@ async function triggerRetrain() {
     const r = await fetch('/api/model/version', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({version: 'v2'})
+      body: JSON.stringify({version: 'v2'})   // confirm/refresh V2 (clears smoothing buffers)
     })
     if (r.ok) {
       activeModelVersion = 'v2'
-      showToast('✅ Model v2.0 active — RUL predictions now calibrated to edge data', 'ok', 5000)
-      btn.textContent = '✅ Model v2.0 Active'
+      showToast('✅ Edge model refreshed — RUL predictions updated from latest edge data', 'ok', 5000)
+      btn.textContent = '✅ Model Refreshed'
       btn.classList.add('v2-active')
-      // Refresh plot so the new model's stable prediction is immediately visible
-      setTimeout(() => refreshPlot(), 1200)
+      setTimeout(() => {
+        btn.disabled = false
+        btn.textContent = '☁ Retrain via Vertex AI'
+        btn.classList.remove('v2-active')
+        refreshPlot()
+      }, 4000)
     } else {
       const e = await r.json().catch(()=>({}))
-      showToast('❌ Model swap failed: ' + (e.detail || 'server error'), 'error', 4000)
+      showToast('❌ Retrain failed: ' + (e.detail || 'server error'), 'error', 4000)
       btn.disabled = false
-      btn.textContent = '☁ Sync & Retrain via Vertex AI'
+      btn.textContent = '☁ Retrain via Vertex AI'
     }
   } catch(e) {
     showToast('❌ Network error — check connection', 'error', 4000)
     btn.disabled = false
-    btn.textContent = '☁ Sync & Retrain via Vertex AI'
+    btn.textContent = '☁ Retrain via Vertex AI'
   }
 }
 
-// Called on demo reset to put the MLOps story back to start state
+// Called on demo reset
 async function resetModelToV1() {
   try {
     await fetch('/api/model/version', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({version:'v1'})})
     activeModelVersion = 'v1'
-    const btn = document.getElementById('btn-retrain')
-    if (btn) {
-      btn.disabled = false
-      btn.textContent = '☁ Sync & Retrain via Vertex AI'
-      btn.classList.remove('v2-active')
-    }
   } catch(e) {}
+  // Always reset button state
+  const btn = document.getElementById('btn-retrain')
+  if (btn) {
+    btn.disabled = false
+    btn.textContent = '☁ Retrain via Vertex AI'
+    btn.classList.remove('v2-active')
+  }
+}
+
+// ────────── CHART DIAGNOSE SHORTCUT ──────────────────────────────────────────
+function diagnoseFault() {
+  if (!selectedAsset) return
+  // Find the most recent unacknowledged fault for the currently viewed asset
+  const ev = dispatchQueue.find(e => e.asset_id === selectedAsset)
+  if (ev) {
+    openDispatch(ev.id)
+  } else {
+    // Fallback: open dispatch for any active fault (e.g. different asset in queue)
+    const any = dispatchQueue[0]
+    if (any) { selectAsset(any.asset_id); openDispatch(any.id) }
+    else showToast('No active fault to diagnose', 'info')
+  }
+}
+
+function updateChartDiagnoseButton() {
+  const btn = document.getElementById('btn-diagnose-chart')
+  if (!btn) return
+  const hasFaultOnSelected = selectedAsset && dispatchQueue.some(e => e.asset_id === selectedAsset)
+  btn.classList.toggle('visible', hasFaultOnSelected)
 }
 
 // ────────── INCIDENT PANEL — FAILED STATE ────────────────────────────────────
@@ -1786,11 +1825,13 @@ function updateIncidents() {
   })
   const panel = document.getElementById('incidents-panel')
   const list  = document.getElementById('incidents-list')
-  // Show / hide the retrain button based on whether any active fault exists
+  // Show retrain button whenever there's an active fault (not gated on model version)
   const retrainBtn = document.getElementById('btn-retrain')
-  if (retrainBtn && activeModelVersion === 'v1') {
+  if (retrainBtn && !retrainBtn.disabled) {
     retrainBtn.classList.toggle('visible', dispatchQueue.length > 0)
   }
+  // Update chart-level diagnose button
+  updateChartDiagnoseButton()
   if (dispatchQueue.length === 0) { panel.classList.remove('visible'); return }
   panel.classList.add('visible')
   list.innerHTML = dispatchQueue.slice(0,8).map(ev => {

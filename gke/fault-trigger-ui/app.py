@@ -56,7 +56,8 @@ MODELS_DIR    = Path("/app/models")
 # The active version is controlled at runtime via /api/model/version endpoints.
 RUL_MODELS_V1: dict = {}   # {asset_class: xgb.Booster} — loaded from *_rul.ubj
 RUL_MODELS_V2: dict = {}   # {asset_class: xgb.Booster} — loaded from *_rul_v2.ubj
-_active_model_version: str = "v1"   # default: start with drifted V1 for MLOps demo
+_active_model_version: str = "v2"   # default: V2 edge-calibrated (stable, correct scale)
+                                     # V1 available via /api/model/version for MLOps drift demo
 
 # ── RUL Smoothing Buffer ──────────────────────────────────────────────────────
 # Exponential-weighted rolling average of recent predictions per asset —
@@ -1626,6 +1627,32 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             borderpad=10, borderwidth=1,
         )
 
+    # ── PNR Vertical Line — always visible when fault is active ───────────────
+    # Drawn unconditionally so operators always know the intervention deadline
+    # without needing to toggle the Cloud Comparison overlay.
+    _pnr_line_drawn  = False
+    _pnr_time_always = None
+    if classifier_active and fault_onset and detected_fault_type:
+        _pnr_m_always = PNR_MINUTES.get(detected_fault_type, 0)
+        if _pnr_m_always > 0:  # Skip instantaneous faults (PNR=0, e.g. dampener rupture)
+            _pnr_time_always = fault_onset + timedelta(minutes=_pnr_m_always)
+            # Extend x-axis to include PNR time (past or future)
+            _x_end = max(_x_end, _pnr_time_always + timedelta(minutes=3))
+            fig.add_shape(
+                type="line",
+                x0=_pnr_time_always, x1=_pnr_time_always, y0=0, y1=1,
+                xref="x", yref="paper",
+                line=dict(color="rgba(244,67,54,0.95)", width=3, dash="solid"),
+            )
+            fig.add_annotation(
+                x=_pnr_time_always, y=0.97, xref="x", yref="paper",
+                text=f"<b>⛔ PNR T+{_pnr_m_always}m</b>",
+                showarrow=False, xanchor="left", xshift=6,
+                font=dict(color="#f44336", size=11, family="JetBrains Mono"),
+                bgcolor="rgba(244,67,54,0.15)", bordercolor="rgba(244,67,54,0.5)", borderpad=4,
+            )
+            _pnr_line_drawn = True
+
     # 6. Edge vs Cloud Resiliency Overlay ─────────────────────────────────────
     # When compare_cloud=True, adds authentic latency-based comparison overlays:
     #   - Point-of-No-Return (PNR) vertical line — physics-based, per fault type
@@ -1665,20 +1692,9 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                 x_end_candidates.append(now + timedelta(minutes=max(60, rul_minutes * 1.2)))
             _x_end = max(x_end_candidates)
 
-            # ── PNR vertical line — solid, thick red ──────────────────────────
-            fig.add_shape(
-                type="line",
-                x0=pnr_time, x1=pnr_time, y0=0, y1=1,
-                xref="x", yref="paper",
-                line=dict(color="rgba(244,67,54,0.95)", width=3, dash="solid"),
-            )
-            fig.add_annotation(
-                x=pnr_time, y=0.97, xref="x", yref="paper",
-                text=f"<b>⛔ PNR T+{pnr_min}m</b>",
-                showarrow=False, xanchor="left", xshift=6,
-                font=dict(color="#f44336", size=11, family="JetBrains Mono"),
-                bgcolor="rgba(244,67,54,0.15)", bordercolor="rgba(244,67,54,0.5)", borderpad=4,
-            )
+            # ── PNR line already drawn above — skip to avoid duplicate ────────
+            # (_pnr_line_drawn = True means it's already on the chart)
+            # Recompute pnr_time for use by the arrows below.
 
             # ── Cloud Alert vertical line — solid purple ───────────────────────
             fig.add_shape(
