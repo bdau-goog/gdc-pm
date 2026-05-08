@@ -150,6 +150,12 @@ Incident panel already had `💥 FAILED` badge (Phase 2 feature). States B and C
 - Refreshes ledger (now shows empty because `cost_avoided=0` entries are filtered)
 - Confirmed with `confirm()` dialog to prevent accidental reset
 
+### Fix 4: PNR Line Visibility & Chart-Level Dispatch
+**Fix:** 
+- The PNR vertical line is now drawn unconditionally as soon as a fault is detected (previously gated behind the `compare_cloud` toggle).
+- Added a blinking red `⚠ Diagnose ▶` button to the plot header that appears when the selected asset has an active fault, opening the dispatch modal directly from the chart.
+- Fixed a `TypeError` internal server error caused by comparing offset-naive UTC datetimes (from the active fault tracker) with offset-aware datetimes (from AlloyDB).
+
 ---
 
 ## Current Cluster State (Phase 3 Complete)
