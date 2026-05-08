@@ -1276,7 +1276,8 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             f'<p>No data yet for {asset_id}.<br>Waiting for telemetry...</p></body>'
         )
 
-    times  = [r["event_time"] for r in rows]
+    # Strip tzinfo from DB timestamps so everything matches active_degrades naive UTC
+    times  = [r["event_time"].replace(tzinfo=None) if getattr(r["event_time"], "tzinfo", None) else r["event_time"] for r in rows]
     psi_v  = np.array([float(r["psi"])       for r in rows])
     temp_v = np.array([float(r["temp_f"])    for r in rows])
     vib_v  = np.array([float(r["vibration"]) for r in rows])
@@ -1483,13 +1484,10 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
         except Exception:
             pass
     if fault_onset is None and classifier_active:
-        for r in rows:
+        for i, r in enumerate(rows):
             ft = (r.get("failure_type") or "").lower()
             if ft and ft != "normal":
-                _et = r["event_time"]
-                # Strip tz-info to match naive UTC from active_degrades["fault_onset_utc"]
-                fault_onset = _et.replace(tzinfo=None) if getattr(_et, "tzinfo", None) else _et
-                detected_fault_type = ft; break
+                fault_onset = times[i]; detected_fault_type = ft; break
     if fault_onset and detected_fault_type:
         _pnr_m = PNR_MINUTES.get(detected_fault_type, 9999)
         if _pnr_m < 9999:
@@ -1670,8 +1668,7 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             # fault_onset + detected_fault_type already resolved; provide fallback
             # for compare_cloud timing only if neither were set above.
             if fault_onset is None:
-                _t0 = times[0]
-                fault_onset = _t0.replace(tzinfo=None) if getattr(_t0, "tzinfo", None) else _t0
+                fault_onset = times[0]
                 detected_fault_type = next(
                     (str(r.get("predicted_label") or "").lower()
                      for r in rows if (r.get("predicted_label") or "normal") not in ("normal", "")),
