@@ -44,11 +44,19 @@ spec:
             - name: GF_SECURITY_ADMIN_PASSWORD
               value: "gdc-pm-admin"
             - name: GF_AUTH_ANONYMOUS_ENABLED
-              value: "false"
+              value: "true"
+            - name: GF_AUTH_ANONYMOUS_ORG_ROLE
+              value: "Viewer"
+            - name: GF_SECURITY_ALLOW_EMBEDDING
+              value: "true"
             - name: GF_USERS_ALLOW_SIGN_UP
               value: "false"
             - name: GF_SERVER_ROOT_URL
-              value: "%(protocol)s://%(domain)s:%(http_port)s/"
+              value: "http://136.115.220.48"
+            - name: GF_SERVER_SERVE_FROM_SUB_PATH
+              value: "false"
+            - name: GF_SNAPSHOTS_EXTERNAL_ENABLED
+              value: "false"
             # AlloyDB datasource credentials injected as env vars
             # (referenced in the datasource ConfigMap via ${ALLOYDB_USER})
             - name: ALLOYDB_USER

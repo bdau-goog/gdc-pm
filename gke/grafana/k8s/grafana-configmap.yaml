@@ -52,7 +52,8 @@ data:
 
 ---
 # ============================================================================
-# Grafana — GDC-PM Predictive Maintenance Dashboard JSON
+# Grafana — GDC-PM O&G Predictive Maintenance Dashboard JSON
+# Phase 4.2 — fully aligned to ESP / Gas Lift / Mud Pump / Top Drive schema
 # ============================================================================
 apiVersion: v1
 kind: ConfigMap
@@ -62,9 +63,9 @@ metadata:
 data:
   gdc-pm-dashboard.json: |
     {
-      "title": "GDC-PM — Grid Reliability Monitoring",
+      "title": "GDC-PM — O&G Predictive Maintenance",
       "uid": "gdc-pm-main",
-      "tags": ["gdc", "predictive-maintenance", "ml", "grid"],
+      "tags": ["gdc", "predictive-maintenance", "oil-gas", "esp", "mud-pump"],
       "timezone": "browser",
       "refresh": "5s",
       "time": { "from": "now-30m", "to": "now" },
@@ -74,7 +75,7 @@ data:
           "id": 20,
           "type": "table",
           "title": "🚨  Active Alerts — Unacknowledged Faults (Last Hour)",
-          "description": "Faults detected by ML that have NOT been acknowledged by an operator. These require action.",
+          "description": "ML-detected faults not yet acknowledged by an operator. ESP gas_lock and Mud Pump dampener failures are immediate emergencies.",
           "gridPos": { "x": 0, "y": 0, "w": 24, "h": 7 },
           "options": {
             "sortBy": [{ "desc": true, "displayName": "event_time" }],
@@ -85,32 +86,36 @@ data:
             "defaults": { "custom": { "displayMode": "auto", "inspect": false } },
             "overrides": [
               { "matcher": { "id": "byName", "options": "event_time" },
-                "properties": [{ "id": "displayName", "value": "Time" }, { "id": "custom.width", "value": 120 }] },
+                "properties": [{ "id": "displayName", "value": "Time" }, { "id": "custom.width", "value": 130 }] },
               { "matcher": { "id": "byName", "options": "asset_id" },
                 "properties": [{ "id": "displayName", "value": "Asset" }, { "id": "custom.width", "value": 160 }] },
               { "matcher": { "id": "byName", "options": "predicted_label" },
                 "properties": [
-                  { "id": "displayName", "value": "ML Fault Type" },
-                  { "id": "custom.width", "value": 160 },
+                  { "id": "displayName", "value": "ML Fault" },
+                  { "id": "custom.width", "value": 200 },
                   { "id": "custom.displayMode", "value": "color-background" },
                   { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } }
                 ]},
               { "matcher": { "id": "byName", "options": "confidence" },
                 "properties": [{ "id": "displayName", "value": "Confidence" }, { "id": "unit", "value": "percentunit" }, { "id": "custom.width", "value": 100 }] },
-              { "matcher": { "id": "byName", "options": "recommended_action" },
-                "properties": [{ "id": "displayName", "value": "Recommended Action" }] },
               { "matcher": { "id": "byName", "options": "psi" },
-                "properties": [{ "id": "custom.width", "value": 80 }] },
+                "properties": [{ "id": "displayName", "value": "PSI" }, { "id": "custom.width", "value": 80 }] },
               { "matcher": { "id": "byName", "options": "temp_f" },
                 "properties": [{ "id": "displayName", "value": "Temp °F" }, { "id": "custom.width", "value": 80 }] },
               { "matcher": { "id": "byName", "options": "vibration" },
-                "properties": [{ "id": "displayName", "value": "Vib (mm)" }, { "id": "custom.width", "value": 80 }] }
+                "properties": [{ "id": "displayName", "value": "Vib mm/s" }, { "id": "custom.width", "value": 80 }] },
+              { "matcher": { "id": "byName", "options": "motor_amps" },
+                "properties": [{ "id": "displayName", "value": "Amps" }, { "id": "custom.width", "value": 70 }] },
+              { "matcher": { "id": "byName", "options": "spm" },
+                "properties": [{ "id": "displayName", "value": "SPM" }, { "id": "custom.width", "value": 70 }] },
+              { "matcher": { "id": "byName", "options": "recommended_action" },
+                "properties": [{ "id": "displayName", "value": "Recommended Action" }] }
             ]
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time, asset_id, predicted_label, ROUND(confidence::numeric, 3) AS confidence, psi, temp_f, vibration, recommended_action FROM telemetry_events WHERE acknowledged = FALSE AND predicted_label != 'normal' AND event_time > NOW() - INTERVAL '1 hour' ORDER BY event_time DESC LIMIT 40",
+              "rawSql": "SELECT event_time, asset_id, predicted_label, ROUND(confidence::numeric, 3) AS confidence, psi, temp_f, vibration, motor_amps, spm, recommended_action FROM telemetry_events WHERE acknowledged = FALSE AND predicted_label != 'normal' AND event_time > NOW() - INTERVAL '1 hour' ORDER BY event_time DESC LIMIT 40",
               "format": "table"
             }
           ]
@@ -120,6 +125,7 @@ data:
           "id": 21,
           "type": "stat",
           "title": "🔴  Critical Faults (30m)",
+          "description": "gas_lock · valve_failure · pulsation_dampener_failure",
           "gridPos": { "x": 0, "y": 7, "w": 4, "h": 4 },
           "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
@@ -135,7 +141,7 @@ data:
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('prd_failure','combustion_instability','dielectric_breakdown') AND event_time > NOW() - INTERVAL '30 minutes'",
+              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('gas_lock','valve_failure','pulsation_dampener_failure') AND event_time > NOW() - INTERVAL '30 minutes'",
               "format": "table"
             }
           ]
@@ -145,6 +151,7 @@ data:
           "id": 22,
           "type": "stat",
           "title": "🟠  Warnings (30m)",
+          "description": "sand_ingress · motor_overheat · thermal_runaway · bearing_wear · valve_washout · piston_seal_wear · gearbox_bearing_spalling · hydraulic_leak",
           "gridPos": { "x": 4, "y": 7, "w": 4, "h": 4 },
           "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
@@ -158,7 +165,7 @@ data:
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('thermal_runaway','blade_fouling','winding_overheat') AND event_time > NOW() - INTERVAL '30 minutes'",
+              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('sand_ingress','motor_overheat','thermal_runaway','bearing_wear','valve_washout','piston_seal_wear','gearbox_bearing_spalling','hydraulic_leak') AND event_time > NOW() - INTERVAL '30 minutes'",
               "format": "table"
             }
           ]
@@ -167,32 +174,9 @@ data:
         {
           "id": 23,
           "type": "stat",
-          "title": "🟡  Advisories (30m)",
-          "gridPos": { "x": 8, "y": 7, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null },
-                { "color": "yellow", "value": 1 }
-              ]}
-            }
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('bearing_wear','rotor_imbalance','core_loosening') AND event_time > NOW() - INTERVAL '30 minutes'",
-              "format": "table"
-            }
-          ]
-        },
-
-        {
-          "id": 24,
-          "type": "stat",
           "title": "⏱  Mins Since Last Critical",
-          "description": "Time elapsed since last critical event. Goes red at <15 min, orange at <60 min.",
-          "gridPos": { "x": 12, "y": 7, "w": 4, "h": 4 },
+          "description": "Time since last gas_lock, valve_failure, or dampener rupture. Green >3h, red <15m.",
+          "gridPos": { "x": 8, "y": 7, "w": 4, "h": 4 },
           "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
             "defaults": {
@@ -209,7 +193,32 @@ data:
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(event_time)))/60 AS value FROM telemetry_events WHERE predicted_label IN ('prd_failure','combustion_instability','dielectric_breakdown')",
+              "rawSql": "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(event_time)))/60 AS value FROM telemetry_events WHERE predicted_label IN ('gas_lock','valve_failure','pulsation_dampener_failure')",
+              "format": "table"
+            }
+          ]
+        },
+
+        {
+          "id": 24,
+          "type": "stat",
+          "title": "🛢  Active Assets (5m)",
+          "description": "Assets with at least one telemetry row in the last 5 minutes.",
+          "gridPos": { "x": 12, "y": 7, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": {
+            "defaults": {
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red",   "value": null },
+                { "color": "orange","value": 5 },
+                { "color": "green", "value": 10 }
+              ]}
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT COUNT(DISTINCT asset_id) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '5 minutes'",
               "format": "table"
             }
           ]
@@ -268,8 +277,8 @@ data:
         {
           "id": 9,
           "type": "state-timeline",
-          "title": "Fleet Health Timeline — All 10 Assets",
-          "description": "Green = Normal · Yellow = Advisory (bearing/rotor/core) · Orange = Warning (thermal/blade/winding) · Red = Critical (PRD/combustion/dielectric). An operator reads the entire fleet in 3 seconds.",
+          "title": "Fleet Health Timeline — ESP · Gas Lift · Mud Pump · Top Drive",
+          "description": "Green=Normal · Orange=Warning · Red=Critical. Covers all 15 O&G assets.",
           "gridPos": { "x": 0, "y": 11, "w": 24, "h": 7 },
           "options": {
             "mergeValues": true,
@@ -282,10 +291,8 @@ data:
             "defaults": {
               "custom": { "lineWidth": 0, "fillOpacity": 85 },
               "mappings": [
-                { "type": "value", "options": { "0": { "text": "Normal",   "color": "#00BFA5", "index": 0 } } },
-                { "type": "value", "options": { "1": { "text": "Advisory", "color": "#FFD600", "index": 1 } } },
-                { "type": "value", "options": { "2": { "text": "Warning",  "color": "#FF9100", "index": 2 } } },
-                { "type": "value", "options": { "3": { "text": "Critical", "color": "#FF1744", "index": 3 } } }
+                { "type": "value", "options": { "2": { "text": "Warning",  "color": "#FF9100", "index": 0 } } },
+                { "type": "value", "options": { "3": { "text": "Critical", "color": "#FF1744", "index": 1 } } }
               ],
               "thresholds": { "mode": "absolute", "steps": [ { "color": "#00BFA5", "value": null } ] }
             }
@@ -293,7 +300,7 @@ data:
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, CASE predicted_label WHEN 'bearing_wear' THEN 1 WHEN 'rotor_imbalance' THEN 1 WHEN 'core_loosening' THEN 1 WHEN 'thermal_runaway' THEN 2 WHEN 'blade_fouling' THEN 2 WHEN 'winding_overheat' THEN 2 WHEN 'prd_failure' THEN 3 WHEN 'combustion_instability' THEN 3 WHEN 'dielectric_breakdown' THEN 3 ELSE NULL END AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND predicted_label != 'normal' ORDER BY event_time",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, CASE predicted_label WHEN 'gas_lock'                   THEN 3 WHEN 'valve_failure'              THEN 3 WHEN 'pulsation_dampener_failure' THEN 3 WHEN 'sand_ingress'               THEN 2 WHEN 'motor_overheat'             THEN 2 WHEN 'thermal_runaway'            THEN 2 WHEN 'bearing_wear'               THEN 2 WHEN 'valve_washout'              THEN 2 WHEN 'piston_seal_wear'           THEN 2 WHEN 'gearbox_bearing_spalling'   THEN 2 WHEN 'hydraulic_leak'             THEN 2 ELSE NULL END AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND predicted_label != 'normal' ORDER BY event_time",
               "format": "time_series"
             }
           ]
@@ -302,67 +309,73 @@ data:
         {
           "id": 5,
           "type": "timeseries",
-          "title": "Pressure — Compressors (PSI)",
+          "title": "ESP Intake Pressure (PSI)",
+          "description": "Nominal 1,200–1,600 PSI. Below 800 PSI → Gas Lock risk. Above 1,800 PSI → check valves.",
           "gridPos": { "x": 0, "y": 18, "w": 8, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
               "unit": "pressurepsi",
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red", "value": null }, { "color": "green", "value": 700 }, { "color": "red", "value": 900 }
-              ]}
+                { "color": "red", "value": null }, { "color": "green", "value": 800 }, { "color": "yellow", "value": 1700 }, { "color": "red", "value": 1850 }
+              ]},
+              "custom": { "thresholdsStyle": { "mode": "line" } }
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'COMP%' GROUP BY event_time, asset_id ORDER BY event_time",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' GROUP BY event_time, asset_id ORDER BY event_time",
               "format": "time_series"
             }
           ]
         },
 
         {
-          "id": 27,
+          "id": 31,
           "type": "timeseries",
-          "title": "Pressure — Turbines (PSI)",
+          "title": "Gas Lift Discharge Pressure (PSI)",
+          "description": "Nominal 940–1,060 PSI. Below 600 PSI → Check Valve Failure. Drop rate signals valve seat wear.",
           "gridPos": { "x": 8, "y": 18, "w": 8, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
               "unit": "pressurepsi",
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red", "value": null }, { "color": "green", "value": 1800 }, { "color": "red", "value": 2400 }
-              ]}
+                { "color": "red", "value": null }, { "color": "green", "value": 600 }, { "color": "yellow", "value": 1100 }, { "color": "red", "value": 1200 }
+              ]},
+              "custom": { "thresholdsStyle": { "mode": "line" } }
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GTG%' GROUP BY event_time, asset_id ORDER BY event_time",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' GROUP BY event_time, asset_id ORDER BY event_time",
               "format": "time_series"
             }
           ]
         },
 
         {
-          "id": 28,
+          "id": 32,
           "type": "timeseries",
-          "title": "Voltage — Transformers (kV proxy)",
+          "title": "Mud Pump Discharge Pressure (PSI)",
+          "description": "Nominal 2,550–3,150 PSI. High pressure spikes → Dampener Rupture. Slow decline → Valve Washout.",
           "gridPos": { "x": 16, "y": 18, "w": 8, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
-              "unit": "kvolt",
+              "unit": "pressurepsi",
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red", "value": null }, { "color": "green", "value": 110 }, { "color": "red", "value": 120 }
-              ]}
+                { "color": "red", "value": null }, { "color": "green", "value": 1800 }, { "color": "yellow", "value": 3300 }, { "color": "red", "value": 3800 }
+              ]},
+              "custom": { "thresholdsStyle": { "mode": "line" } }
             }
           },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'XFR%' GROUP BY event_time, asset_id ORDER BY event_time",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'MUD-%' GROUP BY event_time, asset_id ORDER BY event_time",
               "format": "time_series"
             }
           ]
@@ -372,14 +385,16 @@ data:
           "id": 6,
           "type": "timeseries",
           "title": "Temperature °F — All Assets",
+          "description": "ESP winding 180–220°F · Gas Lift 140–178°F · Mud Pump fluid 90–120°F · Top Drive gearbox 130–165°F",
           "gridPos": { "x": 0, "y": 26, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
               "unit": "fahrenheit",
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null }, { "color": "yellow", "value": 140 }, { "color": "red", "value": 175 }
-              ]}
+                { "color": "green", "value": null }, { "color": "yellow", "value": 180 }, { "color": "red", "value": 230 }
+              ]},
+              "custom": { "lineWidth": 1, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } }
             }
           },
           "targets": [
@@ -394,15 +409,17 @@ data:
         {
           "id": 7,
           "type": "timeseries",
-          "title": "Vibration mm — All Assets",
+          "title": "Vibration mm/s — All Assets",
+          "description": "ESP vib 0.8–2.0 mm/s · Gas Lift 1.0–2.5 · Mud Pump 2.5–4.5 · Top Drive 1.8–3.8. Rising vib = earliest fault precursor.",
           "gridPos": { "x": 12, "y": 26, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
-              "unit": "lengthmm",
+              "unit": "velocityms",
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null }, { "color": "yellow", "value": 0.3 }, { "color": "red", "value": 0.7 }
-              ]}
+                { "color": "green", "value": null }, { "color": "yellow", "value": 5.0 }, { "color": "red", "value": 10.0 }
+              ]},
+              "custom": { "lineWidth": 1, "fillOpacity": 8, "thresholdsStyle": { "mode": "line" } }
             }
           },
           "targets": [
@@ -418,7 +435,7 @@ data:
           "id": 29,
           "type": "timeseries",
           "title": "Motor Current — ESP Assets (A)",
-          "description": "Downhole motor load current for all ESP assets. Nominal 60–90 A. Overcurrent (>105 A) → Motor Overheat; undercurrent (<45 A) → Gas Lock or Sand Erosion impeller loss.",
+          "description": "Nominal 60–90 A. Overcurrent >105 A → Motor Overheat. Undercurrent <45 A → Gas Lock or Sand Erosion impeller loss.",
           "gridPos": { "x": 0, "y": 34, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
@@ -446,24 +463,20 @@ data:
           "id": 30,
           "type": "timeseries",
           "title": "Stroke Rate — Mud Pump Assets (SPM)",
-          "description": "Triplex mud pump strokes per minute for all Mud Pump assets. Nominal 75–100 SPM. Chaotic/erratic SPM → Pulsation Dampener Rupture; declining SPM → Valve Washout or Seal Wear.",
+          "description": "Nominal 75–100 SPM. Erratic / chaotic SPM → Pulsation Dampener Rupture (emergency). Declining SPM → Valve Washout or Seal Wear.",
           "gridPos": { "x": 12, "y": 34, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
               "unit": "short",
+              "custom": { "lineWidth": 1, "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } },
               "thresholds": { "mode": "absolute", "steps": [
                 { "color": "red",    "value": null },
                 { "color": "green",  "value": 60 },
                 { "color": "yellow", "value": 110 },
                 { "color": "red",    "value": 120 }
-              ]},
-              "custom": { "lineWidth": 1, "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
-            },
-            "overrides": [
-              { "matcher": { "id": "byName", "options": "value" },
-                "properties": [{ "id": "displayName", "value": "SPM" }] }
-            ]
+              ]}
+            }
           },
           "targets": [
             {
@@ -478,7 +491,7 @@ data:
           "id": 10,
           "type": "timeseries",
           "title": "ML Confidence — Failure Predictions Only",
-          "description": "Model confidence when a failure is predicted. Rising confidence = escalating certainty. This is information threshold alarms cannot provide.",
+          "description": "Confidence when the XGBoost model scores a non-normal prediction. Rising confidence = escalating certainty. V2 edge-calibrated model produces tighter, more stable trajectories than V1.",
           "gridPos": { "x": 0, "y": 42, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
@@ -504,7 +517,7 @@ data:
           "id": 11,
           "type": "timeseries",
           "title": "Anomaly Rate % — Hourly Trend (24h)",
-          "description": "% of all readings scored as failures per hour. Stable at ~0% under normal conditions. Spikes indicate injected scenarios or real degradation.",
+          "description": "% of all scored readings flagged as failures per hour. Normally near 0%. Spikes = active fault injection or real degradation.",
           "gridPos": { "x": 12, "y": 42, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
@@ -530,12 +543,26 @@ data:
           "id": 8,
           "type": "table",
           "title": "Recent ML Detections — Full Log",
+          "description": "All telemetry events with ML predictions. Includes motor_amps (ESP) and spm (Mud Pump).",
           "gridPos": { "x": 0, "y": 50, "w": 24, "h": 8 },
           "options": { "sortBy": [{ "desc": true, "displayName": "event_time" }], "cellHeight": "sm" },
+          "fieldConfig": {
+            "defaults": {},
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "predicted_label" },
+                "properties": [
+                  { "id": "custom.displayMode", "value": "color-background" },
+                  { "id": "custom.width", "value": 180 },
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }
+                ]},
+              { "matcher": { "id": "byName", "options": "confidence" },
+                "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "custom.width", "value": 90 }] }
+            ]
+          },
           "targets": [
             {
               "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time, asset_id, psi, temp_f, vibration, predicted_label, ROUND(confidence::numeric, 3) AS confidence, acknowledged, ai_narrative FROM telemetry_events WHERE $__timeFilter(event_time) ORDER BY event_time DESC LIMIT 75",
+              "rawSql": "SELECT event_time, asset_id, psi, temp_f, vibration, motor_amps, spm, predicted_label, ROUND(confidence::numeric, 3) AS confidence, acknowledged FROM telemetry_events WHERE $__timeFilter(event_time) ORDER BY event_time DESC LIMIT 75",
               "format": "table"
             }
           ]
