@@ -20,15 +20,17 @@ This is a GKE-based predictive maintenance demo (`gdc-pm`) running on GKE Autopi
 - **UI:** http://35.188.3.97
 - **Grafana:** http://136.115.220.48
 
-**Read `docs/PHASE_4_PLAN.md` first.** It contains the full Phase 4 strategy, validated scenarios, and implementation plan that has been approved for implementation.
+**Read `docs/PHASE_4_PLAN.md` first.** It contains the full Phase 4 strategy, validated scenarios, and implementation plan.
 
-**Also read `docs/PHASE_3_1_DEPLOYMENT_STATUS.md`** for the current live state summary.
-
-**Current live state:**
+**Current live state (Phase 4 deployed):**
 - 14 assets across 3 sites: Pad Alpha (6 ESPs), Pad Bravo (4 Gas Lift), Rig 42 (3 Mud Pumps + 1 Top Drive)
-- Pad Charlie has been removed
-- `fault-trigger-ui` pod: Phase 3+ complete — all core Phase 3 features deployed, plus chart UX refactor
-- RUL: XGBoost V1 (drifted, intentional) with fault-only feature extraction
+- `fault-trigger-ui` pod: Phase 4 deployed — agentic predictive maintenance overhaul live
+- Cloud latency narrative fully removed (no more purple line, VSAT countdown, or ☁ compare button)
+- New: `/api/agent/context/{fault_type}` and `/api/agent/recommend` endpoints live
+- New: Dispatch modal shows 🤖 GDC AGENT RECOMMENDATION section with enterprise source badge
+- New: SENSOR4_CONFIG (motor_amps for ESP, spm for Mud Pump) in data model
+- RAG documents fully expanded with industry-accurate O&G engineering detail
+- RUL: XGBoost V2 (default) with fault-only feature extraction
 - Both V1 and V2 models loaded on startup; active version controlled via `/api/model/version`
 
 ---
