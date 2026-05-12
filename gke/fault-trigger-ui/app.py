@@ -2,7 +2,7 @@
 gke/fault-trigger-ui/app.py
 
 Fault Trigger UI — FastAPI backend for the GDC-PM Predictive Maintenance Demo.
-Upstream O&G Edition: 20 assets across 4 sites (Pad Alpha, Pad Bravo, Pad Charlie, Rig 42).
+Upstream O&G Edition: 14 assets across 3 sites (Pad Alpha, Pad Bravo, Rig 42).
 
 Provides:
   1. Live asset status from AlloyDB Omni
@@ -111,7 +111,6 @@ load_rul_models()
 # Pure-pad architecture: each pad uses a single artificial lift method.
 #   Pad Alpha   — 6 ESPs (ESP production pad)
 #   Pad Bravo   — 4 Gas Lift Compressors (gas lift production pad)
-#   Pad Charlie — 6 ESPs (ESP production pad)
 #   Rig 42      — 3 Mud Pumps + 1 Top Drive (drilling rig)
 ASSETS = [
     # Pad Alpha (ESP Production — Pure ESP Pad)
@@ -119,9 +118,6 @@ ASSETS = [
     "ESP-ALPHA-4", "ESP-ALPHA-5", "ESP-ALPHA-6",
     # Pad Bravo (Gas Lift Production — Pure Gas Lift Pad)
     "GLIFT-BRAVO-1", "GLIFT-BRAVO-2", "GLIFT-BRAVO-3", "GLIFT-BRAVO-4",
-    # Pad Charlie (ESP Production — Pure ESP Pad)
-    "ESP-CHARLIE-1", "ESP-CHARLIE-2", "ESP-CHARLIE-3",
-    "ESP-CHARLIE-4", "ESP-CHARLIE-5", "ESP-CHARLIE-6",
     # Rig 42 (Drilling)
     "MUD-RIG42-1", "MUD-RIG42-2", "MUD-RIG42-3",
     "TOPDRIVE-RIG42-1",
@@ -218,61 +214,6 @@ ASSET_REGISTRY = {
         "vib_label": "Frame Vibration (mm/s)",
         "nominal_psi": 1000.0, "nominal_temp_f": 158.0, "nominal_vib": 1.7,
         "crit_psi": 600.0, "crit_temp": 230.0, "crit_vib": 12.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    # ── Pad Charlie ESPs ──────────────────────────────────────────────────────
-    "ESP-CHARLIE-1": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Charlie — Well C-1", "site": "pad_charlie", "criticality": "CRITICAL",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "ESP-CHARLIE-2": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Charlie — Well C-2", "site": "pad_charlie", "criticality": "HIGH",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "ESP-CHARLIE-3": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Charlie — Well C-3", "site": "pad_charlie", "criticality": "HIGH",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "ESP-CHARLIE-4": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Charlie — Well C-4", "site": "pad_charlie", "criticality": "HIGH",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "ESP-CHARLIE-5": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Charlie — Well C-5", "site": "pad_charlie", "criticality": "MEDIUM",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
-        "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
-    },
-    "ESP-CHARLIE-6": {
-        "asset_type": "Electrical Submersible Pump", "asset_class": "esp",
-        "location": "Pad Charlie — Well C-6", "site": "pad_charlie", "criticality": "MEDIUM",
-        "psi_label": "Intake Pressure (PSI)", "temp_label": "Motor Winding Temp (°F)",
-        "vib_label": "Motor Vibration (mm/s)",
-        "nominal_psi": 1400.0, "nominal_temp_f": 198.0, "nominal_vib": 1.4,
-        "crit_psi": 800.0, "crit_temp": 280.0, "crit_vib": 8.0,
         "psi_crit_dir": "below", "temp_crit_dir": "above", "vib_crit_dir": "above",
     },
     # ── Rig 42 ────────────────────────────────────────────────────────────────
@@ -1319,6 +1260,7 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
     # If the classifier says "normal", there is no time-to-failure to project.
     # The classifier detects anomalies; the RUL regressor only quantifies them.
     rul_minutes    = None
+    dpsi_dt = dtemp_dt = dvib_dt = 0.0   # init slopes — overridden below when classifier is active
     # is_degrading: True during the active ramp OR during the hold phase
     _deg_state     = active_degrades.get(asset_id, {})
     is_degrading   = _deg_state.get("running", False) or _deg_state.get("held", False)
@@ -1451,13 +1393,13 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
 
                 if rul_minutes < 60:
                     status_color = "#f44336"
-                    status_text  = f"⚠ PREDICTED FAILURE — {int(rul_minutes)}m REMAINING"
+                    status_text  = f"⚡ ALARM IN {int(rul_minutes)}m — sensor threshold approaching"
                 elif rul_minutes < 180:
                     status_color = "#ff6d00"
-                    status_text  = f"⚠ DEGRADATION DETECTED — {int(rul_minutes//60)}h {int(rul_minutes%60)}m RUL"
+                    status_text  = f"⚠ DEGRADATION DETECTED — alarm in {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
                 else:
                     status_color = "#ffb300"
-                    status_text  = f"⚡ DEGRADATION TREND — RUL {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+                    status_text  = f"⚡ DEGRADATION TREND — alarm in {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
                 forecast_color = "#ff8c00"
 
         except Exception as e:
@@ -1506,101 +1448,110 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             if is_asset_failed_plot: break
 
     # ── Forecast Projection ───────────────────────────────────────────────────
-    # Shared starting point: median of last 5 readings (stable, no noise spike)
     y_start = float(np.median(y_vals[-5:]))
-    # The target end-value is just past the critical threshold
     y_end   = y_crit * 0.98 if crit_dir == "below" else y_crit * 1.02
 
+    # ── Pre-compute ALL key event times BEFORE sizing the x-axis ─────────────
+    # This guarantees every vertical marker is always inside the visible range.
+    _cloud_lag   = 20   # VSAT latency midpoint (15–25m round-trip)
+    ttf_time     = (now + timedelta(minutes=rul_minutes)) if (rul_minutes is not None and rul_minutes > 0) else None
+    cloud_alert_t = None
+    pnr_t         = None
+    _pnr_m_final  = 0
+    if classifier_active and fault_onset and detected_fault_type:
+        _pnr_m_final  = PNR_MINUTES.get(detected_fault_type, 0)
+        cloud_alert_t = fault_onset + timedelta(minutes=_cloud_lag)
+        if _pnr_m_final > 0:
+            pnr_t = fault_onset + timedelta(minutes=_pnr_m_final)
+
+    # X-axis end: sized to show failure and cloud alert times clearly.
+    # PNR only extends the axis if it's within 60 minutes — avoids 2-hour wide charts
+    # for high-PNR faults like sand_ingress (120m) and bearing_wear (240m).
+    # When PNR is off-screen it still shows in the countdown callout.
+    _x_cands = [now + timedelta(minutes=40)]
+    for _t in [ttf_time, cloud_alert_t]:
+        if _t is not None:
+            _x_cands.append(_t + timedelta(minutes=8))
+    if pnr_t is not None:
+        _mins_to_pnr = (pnr_t - now).total_seconds() / 60
+        if _mins_to_pnr <= 60:
+            _x_cands.append(pnr_t + timedelta(minutes=5))
+    _x_end = min(max(_x_cands), now + timedelta(minutes=60))
+
+    # Projection spans from now to x-axis end
+    horizon_min  = max(int((_x_end - now).total_seconds() / 60) + 1, 40)
+    future_times = [now + timedelta(minutes=i) for i in range(1, horizon_min + 1)]
+    t_arr        = np.array(range(1, len(future_times) + 1), dtype=float)
+
+    # ML projection: linear ramp from y_start → y_end over rul_minutes, flat after.
+    # The orange line shows WHERE THE MODEL SAYS THE SENSOR IS HEADING — it is the
+    # ML prediction trajectory, not a continuation of observed slope.
     if rul_minutes is not None and rul_minutes < 580:
-        # Scale the future time window so the line crosses y_crit at EXACTLY
-        # rul_minutes from NOW — the visual crossover always matches the text label.
-        horizon_min = max(70, int(rul_minutes * 1.12) + 5)
-        future_times = [now + timedelta(minutes=i) for i in range(1, horizon_min + 1)]
-        # Linear ramp: y_start at t=0, y_end at t=rul_minutes, flat after that
-        t_arr   = np.array(range(1, len(future_times) + 1), dtype=float)
-        frac    = np.clip(t_arr / max(rul_minutes, 0.5), 0.0, 1.0)
+        frac       = np.clip(t_arr / max(rul_minutes, 0.5), 0.0, 1.0)
         forecast_y = y_start + (y_end - y_start) * frac
     else:
-        # Nominal / stable: flat projection
-        future_times = [now + timedelta(minutes=i * 2) for i in range(1, 36)]
-        forecast_y   = np.full(len(future_times), y_start)
+        forecast_y = np.full(len(future_times), y_start)
 
-    noise   = np.linspace(0.01, 0.10, len(future_times)) * np.abs(forecast_y)
-    upper_y = forecast_y + noise
-    lower_y = forecast_y - noise
-
-    # Cone fill color: orange when degrading, green when stable
-    cone_rgba = "255,140,0" if rul_minutes is not None else "0,230,118"
+    # Uncertainty cone: widens as a fraction of the projected y-range.
+    # Using a fraction of y_start made the cone invisibly thin (0.04 mm/s on a
+    # 1–9 mm/s vibration chart). Using the traversed range makes it proportional.
+    _proj_range = abs(y_end - y_start) if rul_minutes is not None else abs(y_crit - y_start) * 0.1
+    _cone_frac  = np.linspace(0.04, 0.18, len(future_times))  # 4% → 18% of range
+    noise       = _cone_frac * max(_proj_range, abs(y_start) * 0.05)
+    upper_y     = forecast_y + noise
+    lower_y     = forecast_y - noise
+    cone_rgba   = "255,140,0" if rul_minutes is not None else "0,230,118"
 
     # ── Build Plotly Figure ───────────────────────────────────────────────────
     fig = go.Figure()
 
-    # 1. Historical line — blue
+    # 1. Historical telemetry — blue solid
     fig.add_trace(go.Scatter(
         x=times, y=y_vals, mode="lines", name="Live Telemetry",
         line=dict(color="#1e90ff", width=2.5),
     ))
 
-    # 2. ML RUL Projection — orange dotted (always distinct from red threshold)
+    # 2. ML RUL projection — orange dotted
     fig.add_trace(go.Scatter(
         x=future_times, y=forecast_y, mode="lines", name="ML RUL Projection",
         line=dict(color=forecast_color, width=2.5, dash="dot"),
     ))
 
-    # 3. Cone of uncertainty — semi-transparent orange or green
+    # 3. Uncertainty cone
     fig.add_trace(go.Scatter(
         x=future_times + future_times[::-1],
         y=list(upper_y) + list(lower_y)[::-1],
-        fill="toself",
-        fillcolor=f"rgba({cone_rgba}, 0.10)",
+        fill="toself", fillcolor=f"rgba({cone_rgba}, 0.08)",
         line=dict(color="rgba(255,255,255,0)"),
-        name="95% Confidence",
-        hoverinfo="skip",
+        name="Confidence Band", hoverinfo="skip",
     ))
 
-    # 4. Failure threshold line
+    # 4. Alarm threshold — dashed red horizontal
+    # This is the sensor threshold — when crossed, the SCADA alarm would trigger.
+    # Our ML model predicts how long until this threshold is reached.
     fig.add_trace(go.Scatter(
         x=[times[0], future_times[-1]], y=[y_crit, y_crit],
-        mode="lines", name="Failure Threshold",
+        mode="lines", name="Alarm Threshold",
         line=dict(color="#f44336", width=1.5, dash="dash"),
         hoverinfo="skip",
     ))
 
-    # 5. Predicted failure time flag — always shown when fault is active
-    # Points to where the orange line visually crosses the failure threshold
-    if rul_minutes is not None and rul_minutes > 0:
-        ttf_time = now + timedelta(minutes=rul_minutes)
-        lbl = f"{int(rul_minutes)}m" if rul_minutes < 60 else f"{int(rul_minutes//60)}h {int(rul_minutes%60)}m"
-        fig.add_annotation(
-            x=ttf_time, y=y_crit,
-            text=f"<b>⚡ Failure in {lbl}</b>",
-            showarrow=True, arrowhead=2, arrowwidth=2, arrowcolor="#f44336",
-            ax=0, ay=-44,
-            font=dict(color="#fff", size=11),
-            bgcolor="rgba(244,67,54,0.88)", bordercolor="#f44336", borderpad=4,
-        )
-
-    # x-axis upper bound — extended to show cloud comparison line if it runs further
-    _x_end = future_times[-1]
-
-    # Build title — default; overridden by State B/C and compare_cloud below
+    # ── Chart title ───────────────────────────────────────────────────────────
     _title_text = (
         f"<b>{asset_id}</b> — {y_label}<br>"
         f"<span style='font-size:12px;color:{forecast_color}'>{status_text}</span>"
     )
 
-    # ── Task 5 State B: PNR Exceeded ─────────────────────────────────────────
+    # ── State B: PNR Exceeded ─────────────────────────────────────────────────
     if is_pnr_exceeded and not is_asset_failed_plot and fault_onset and detected_fault_type:
-        _fl  = detected_fault_type.replace("_", " ").upper()
-        _pm  = PNR_MINUTES.get(detected_fault_type, 30)
-        _pt  = fault_onset + timedelta(minutes=_pm)
+        _fl = detected_fault_type.replace("_", " ").upper()
         _title_text = (
             f"<b>⚠ INTERVENTION WINDOW CLOSED — {_fl}</b><br>"
             f"<span style='color:#f44336;font-size:11px'>⛔ PNR exceeded — damage window has passed</span>"
         )
-        if _pt >= times[0]:
+        if pnr_t and pnr_t >= times[0]:
             fig.add_annotation(
-                x=_pt, y=0.5, xref="x", yref="paper",
+                x=pnr_t, y=0.5, xref="x", yref="paper",
                 text="<b>⛔ PNR PASSED<br>Damage Irreversible</b>",
                 showarrow=False, xanchor="center",
                 font=dict(color="#f44336", size=13, family="JetBrains Mono"),
@@ -1608,7 +1559,7 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                 borderpad=8, borderwidth=1,
             )
 
-    # ── Task 5 State C: Asset Failed — Sensors Past Critical Threshold ────────
+    # ── State C: Asset Failed ─────────────────────────────────────────────────
     if is_asset_failed_plot:
         fig.update_layout(plot_bgcolor="rgba(50,10,10,0.8)")
         _title_text = (
@@ -1628,140 +1579,114 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             borderpad=10, borderwidth=1,
         )
 
-    # ── PNR Vertical Line — always visible when fault is active ───────────────
-    # Drawn unconditionally so operators always know the intervention deadline
-    # without needing to toggle the Cloud Comparison overlay.
-    _pnr_line_drawn  = False
-    _pnr_time_always = None
-    if classifier_active and fault_onset and detected_fault_type:
-        _pnr_m_always = PNR_MINUTES.get(detected_fault_type, 0)
-        if _pnr_m_always > 0:  # Skip instantaneous faults (PNR=0, e.g. dampener rupture)
-            _pnr_time_always = fault_onset + timedelta(minutes=_pnr_m_always)
-            # Extend x-axis to include PNR time (past or future)
-            _x_end = max(_x_end, _pnr_time_always + timedelta(minutes=3))
-            fig.add_shape(
-                type="line",
-                x0=_pnr_time_always, x1=_pnr_time_always, y0=0, y1=1,
-                xref="x", yref="paper",
-                line=dict(color="rgba(244,67,54,0.95)", width=3, dash="solid"),
-            )
-            fig.add_annotation(
-                x=_pnr_time_always, y=0.97, xref="x", yref="paper",
-                text=f"<b>⛔ PNR T+{_pnr_m_always}m</b>",
-                showarrow=False, xanchor="left", xshift=6,
-                font=dict(color="#f44336", size=11, family="JetBrains Mono"),
-                bgcolor="rgba(244,67,54,0.15)", bordercolor="rgba(244,67,54,0.5)", borderpad=4,
-            )
-            _pnr_line_drawn = True
+    # ── Vertical Marker 1: ML Predicted Failure Time ── BRIGHT RED ────────────
+    # Color: #ff1744 (distinct from PNR orange).  Label at y=0.97 (top row).
+    if ttf_time is not None:
+        _lbl = f"{int(rul_minutes)}m" if rul_minutes < 60 else f"{int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+        fig.add_shape(
+            type="line", x0=ttf_time, x1=ttf_time, y0=0, y1=1,
+            xref="x", yref="paper",
+            line=dict(color="rgba(255,23,68,0.95)", width=3, dash="solid"),
+        )
+        fig.add_annotation(
+            x=ttf_time, y=0.97, xref="x", yref="paper",
+            text=f"<b>⚡ Alarm in {_lbl}</b>",
+            showarrow=False, xanchor="center",
+            font=dict(color="#ff1744", size=11, family="JetBrains Mono"),
+            bgcolor="rgba(255,23,68,0.15)", bordercolor="rgba(255,23,68,0.5)", borderpad=4,
+        )
 
-    # 6. Edge vs Cloud Resiliency Overlay ─────────────────────────────────────
-    # When compare_cloud=True, adds authentic latency-based comparison overlays:
-    #   - Point-of-No-Return (PNR) vertical line — physics-based, per fault type
-    #   - Cloud Detection Zone — shaded band at T+15 to T+25 from fault onset
-    #     (realistic VSAT uplink + batch processing + queue + notification latency)
-    #   - Summary callout showing edge vs cloud response windows in minutes
-    # This is NOT a model handicap — it reflects real-world VSAT infrastructure
-    # constraints that make cloud-only approaches unsuitable for edge O&G.
-    if compare_cloud and classifier_active:
+    # ── Vertical Marker 2: Cloud Alert Time ── PURPLE ─────────────────────────
+    # Always drawn when fault active — no toggle needed.
+    # Label at y=0.89 (middle row, staggered below failure label).
+    if cloud_alert_t is not None and classifier_active:
+        fig.add_shape(
+            type="line", x0=cloud_alert_t, x1=cloud_alert_t, y0=0, y1=1,
+            xref="x", yref="paper",
+            line=dict(color="rgba(156,39,176,0.9)", width=2.5, dash="solid"),
+        )
+        fig.add_annotation(
+            x=cloud_alert_t, y=0.89, xref="x", yref="paper",
+            text=f"<b>☁ Cloud T+{_cloud_lag}m</b>",
+            showarrow=False, xanchor="center",
+            font=dict(color="#ce93d8", size=11, family="JetBrains Mono"),
+            bgcolor="rgba(156,39,176,0.15)", bordercolor="rgba(156,39,176,0.5)", borderpad=4,
+        )
+
+    # ── Vertical Marker 3: Point of No Return ── ORANGE ───────────────────────
+    # Color: #ff6d00 (distinct orange, not same red as failure).
+    # Label at y=0.81 (bottom row, staggered below cloud label).
+    # Skipped for PNR=0 faults (pulsation dampener — instantaneous).
+    if pnr_t is not None and classifier_active:
+        fig.add_shape(
+            type="line", x0=pnr_t, x1=pnr_t, y0=0, y1=1,
+            xref="x", yref="paper",
+            line=dict(color="rgba(255,109,0,0.95)", width=3, dash="solid"),
+        )
+        fig.add_annotation(
+            x=pnr_t, y=0.81, xref="x", yref="paper",
+            text=f"<b>⛔ PNR T+{_pnr_m_final}m</b>",
+            showarrow=False, xanchor="center",
+            font=dict(color="#ff6d00", size=11, family="JetBrains Mono"),
+            bgcolor="rgba(255,109,0,0.15)", bordercolor="rgba(255,109,0,0.5)", borderpad=4,
+        )
+
+    # ── Response Window Countdown Callout ─────────────────────────────────────
+    # Always shown when a fault is active (no toggle).
+    # Shows how much time remains before PNR for Edge vs Cloud detection.
+    if classifier_active and fault_onset and pnr_t and cloud_alert_t:
+        _now_utc  = datetime.utcnow()
+        _edge_win = max(0.0, (pnr_t - _now_utc).total_seconds() / 60)
+        _cld_win  = max(0.0, (pnr_t - cloud_alert_t).total_seconds() / 60)
+
+        _edge_str = f"{int(_edge_win)}m remaining" if _edge_win > 0 else "WINDOW EXPIRED"
+        _cld_str  = f"{int(_cld_win)}m remaining"  if _cld_win  > 0 else "❌ NO WINDOW — alert after PNR"
+        _ec       = "#00e676" if _edge_win > 5 else ("#ffb300" if _edge_win > 0 else "#f44336")
+        _cc       = "#ffb300" if _cld_win  > 5 else "#f44336"
+
+        _callout = (
+            f"<b>Response Windows</b><br>"
+            f"<span style='color:#00e676'>⚡ Edge AI: Detected at T+0 (&lt;1s)</span><br>"
+            f"<span style='color:{_ec}'>   {_edge_str} before PNR</span><br>"
+            f"<span style='color:#ce93d8'>☁ Cloud AI: Alert at T+{_cloud_lag}m (VSAT)</span><br>"
+            f"<span style='color:{_cc}'>   {_cld_str}</span><br>"
+            f"<span style='color:#ff6d00'>⛔ PNR: T+{_pnr_m_final}m from fault onset</span>"
+        )
+        fig.add_annotation(
+            x=0.99, y=0.03, xref="paper", yref="paper",
+            text=_callout,
+            showarrow=False, xanchor="right", yanchor="bottom", align="left",
+            font=dict(color="#e0e0e0", size=10.5),
+            bgcolor="rgba(15,19,24,0.92)", bordercolor="#2a3a50", borderpad=10, borderwidth=1,
+        )
+
+    # ── Optional: compare_cloud adds horizontal span arrows ───────────────────
+    # The three vertical lines above are ALWAYS drawn.
+    # compare_cloud=True adds the horizontal arrows + detailed callout box.
+    if compare_cloud and classifier_active and fault_onset and pnr_t and cloud_alert_t:
         try:
-            # ── Fault onset — reuse values computed by Task 5 block ───────────
-            # fault_onset + detected_fault_type already resolved; provide fallback
-            # for compare_cloud timing only if neither were set above.
-            if fault_onset is None:
-                fault_onset = times[0]
-                detected_fault_type = next(
-                    (str(r.get("predicted_label") or "").lower()
-                     for r in rows if (r.get("predicted_label") or "normal") not in ("normal", "")),
-                    None
-                )
+            edge_window_min  = _pnr_m_final
+            cloud_window_min = max(0, _pnr_m_final - _cloud_lag)
+            edge_color  = "#00e676" if edge_window_min > 0 else "#ffb300"
+            cloud_color = "#ffb300" if cloud_window_min > 0 else "#f44336"
+            edge_verdict  = f"✅ SAVED — {edge_window_min}m response window" if edge_window_min > 0 else "⚠ instant fault"
+            cloud_verdict = f"⚠ PARTIAL — {cloud_window_min}m window" if cloud_window_min > 0 else f"❌ LOST — alert after PNR"
 
-            pnr_min = PNR_MINUTES.get(detected_fault_type or "", 30)
-            pnr_time = fault_onset + timedelta(minutes=pnr_min)
-
-            # ── Cloud Detection Window ────────────────────────────────────────
-            # Realistic VSAT O&G latency model:
-            #   • Batch uplink interval:   5–10 min (VSAT bandwidth limited)
-            #   • Cloud inference + queue: 3–7 min (multi-tenant processing)
-            #   • Alert round-trip (VSAT): 2–5 min (back to edge device)
-            #   • Midpoint estimate used for the vertical line: T+20
-            cloud_detect_mid_min = 20
-            cloud_detect_time = fault_onset + timedelta(minutes=cloud_detect_mid_min)
-
-            # Extend x-axis far enough to show both vertical lines + arrow spans
-            x_end_candidates = [_x_end, pnr_time, cloud_detect_time + timedelta(minutes=5)]
-            if rul_minutes:
-                x_end_candidates.append(now + timedelta(minutes=max(60, rul_minutes * 1.2)))
-            _x_end = max(x_end_candidates)
-
-            # ── PNR line already drawn above — skip to avoid duplicate ────────
-            # (_pnr_line_drawn = True means it's already on the chart)
-            # Recompute pnr_time for use by the arrows below.
-
-            # ── Cloud Alert vertical line — solid purple ───────────────────────
-            fig.add_shape(
-                type="line",
-                x0=cloud_detect_time, x1=cloud_detect_time, y0=0, y1=1,
-                xref="x", yref="paper",
-                line=dict(color="rgba(156,39,176,0.9)", width=2.5, dash="solid"),
-            )
-            fig.add_annotation(
-                x=cloud_detect_time, y=0.97, xref="x", yref="paper",
-                text=f"<b>☁ Cloud Alert T+{cloud_detect_mid_min}m</b>",
-                showarrow=False, xanchor="left", xshift=6,
-                font=dict(color="#ce93d8", size=11, family="JetBrains Mono"),
-                bgcolor="rgba(156,39,176,0.15)", bordercolor="rgba(156,39,176,0.5)", borderpad=4,
-            )
-
-            # ── Response window calculations ──────────────────────────────────
-            edge_window_min  = pnr_min          # Edge detects at T+0, full PNR window available
-            cloud_window_min = max(0, pnr_min - cloud_detect_mid_min)
-
-            # Edge result
-            if edge_window_min > 0:
-                edge_verdict = f"✅ SAVED — {edge_window_min}m response window"
-                edge_color   = "#00e676"
-            else:
-                edge_verdict = "⚠ MARGINAL — instant fault"
-                edge_color   = "#ffb300"
-
-            # Cloud result
-            if cloud_window_min <= 0:
-                cloud_verdict = f"❌ LOST — alert arrives after PNR ({cloud_detect_mid_min}m > {pnr_min}m)"
-                cloud_color   = "#f44336"
-            else:
-                cloud_verdict = f"⚠ PARTIAL — only {cloud_window_min}m window"
-                cloud_color   = "#ffb300"
-
-            # ── Time-to-React arrows (Task 4) ─────────────────────────────────
-            # Horizontal span arrows at fixed paper-y heights so they never
-            # overlap the telemetry traces.  axref/ayref="x"/"paper" lets Plotly
-            # draw the arrow tail in data coordinates and the head in data coords.
-
-            # Edge arrow: fault_onset → PNR  (green, y=0.88 paper)
             if edge_window_min > 0:
                 fig.add_annotation(
-                    x=pnr_time, y=0.88,
-                    xref="x", yref="paper",
-                    ax=fault_onset, ay=0.88,
-                    axref="x", ayref="paper",
-                    arrowhead=2, arrowsize=1.2, arrowwidth=2.5,
-                    arrowcolor="#00e676",
+                    x=pnr_t, y=0.70, xref="x", yref="paper",
+                    ax=fault_onset, ay=0.70, axref="x", ayref="paper",
+                    arrowhead=2, arrowsize=1.2, arrowwidth=2.5, arrowcolor="#00e676",
                     text=f"  ⚡ Edge: {edge_window_min}m to act",
                     showarrow=True, xanchor="left",
                     font=dict(color="#00e676", size=10),
                     bgcolor="rgba(0,230,118,0.08)", borderpad=3,
                 )
-
-            # Cloud arrow: cloud_detect_time → PNR  (purple, y=0.80 paper)
-            # If cloud_window_min == 0, show a "NO WINDOW" label at the PNR line instead
             if cloud_window_min > 0:
                 fig.add_annotation(
-                    x=pnr_time, y=0.80,
-                    xref="x", yref="paper",
-                    ax=cloud_detect_time, ay=0.80,
-                    axref="x", ayref="paper",
-                    arrowhead=2, arrowsize=1.2, arrowwidth=2.5,
-                    arrowcolor="#ce93d8",
+                    x=pnr_t, y=0.62, xref="x", yref="paper",
+                    ax=cloud_alert_t, ay=0.62, axref="x", ayref="paper",
+                    arrowhead=2, arrowsize=1.2, arrowwidth=2.5, arrowcolor="#ce93d8",
                     text=f"  ☁ Cloud: {cloud_window_min}m to act",
                     showarrow=True, xanchor="left",
                     font=dict(color="#ce93d8", size=10),
@@ -1769,44 +1694,33 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                 )
             else:
                 fig.add_annotation(
-                    x=cloud_detect_time, y=0.80,
-                    xref="x", yref="paper",
+                    x=cloud_alert_t, y=0.62, xref="x", yref="paper",
                     text="  ☁ NO WINDOW — Alert after PNR",
                     showarrow=False, xanchor="left", xshift=6,
                     font=dict(color="#f44336", size=10),
                     bgcolor="rgba(244,67,54,0.08)", borderpad=3,
                 )
 
-            # Asset financial risk
             asset_risk = REMEDIATION_COSTS.get(detected_fault_type or "", 0)
             risk_str   = f"${asset_risk:,}" if asset_risk else "N/A"
-
-            # ── Summary callout box (top-right corner) ────────────────────────
             callout_text = (
                 f"<b>GDC Edge vs Cloud Analysis</b><br>"
-                f"<span style='color:#00e676'>⚡ Edge AI: Detected at T+0 (<1s)</span><br>"
-                f"<span style='color:{edge_color}'>{edge_verdict}</span><br>"
-                f"<span style='color:#ce93d8'>☁ Cloud AI: Alert at T+{cloud_detect_mid_min}m (VSAT)</span><br>"
-                f"<span style='color:{cloud_color}'>{cloud_verdict}</span><br>"
-                f"<span style='color:#f44336'>⛔ Point of No Return: T+{pnr_min}m</span><br>"
-                f"<span style='color:#a0b0c0'>💰 Asset at risk: {risk_str}</span>"
+                f"<span style='color:{edge_color}'>⚡ Edge: {edge_verdict}</span><br>"
+                f"<span style='color:{cloud_color}'>☁ Cloud: {cloud_verdict}</span><br>"
+                f"<span style='color:#ff6d00'>⛔ PNR: T+{_pnr_m_final}m</span><br>"
+                f"<span style='color:#a0b0c0'>💰 Asset risk: {risk_str}</span>"
             )
             fig.add_annotation(
-                x=0.99, y=0.72, xref="paper", yref="paper",
+                x=0.99, y=0.55, xref="paper", yref="paper",
                 text=callout_text,
                 showarrow=False, xanchor="right", yanchor="top", align="left",
                 font=dict(color="#e0e0e0", size=10.5),
-                bgcolor="rgba(15,19,24,0.92)", bordercolor="#2a3a50", borderpad=10,
-                borderwidth=1,
+                bgcolor="rgba(15,19,24,0.92)", bordercolor="#2a3a50", borderpad=10, borderwidth=1,
             )
-
-            # ── Override chart title ──────────────────────────────────────────
             _title_text = (
-                f"<b>{asset_id}</b> — {y_label} · Edge vs Cloud Resiliency<br>"
-                f"<span style='color:{edge_color}; font-size:11px'>"
-                f"⚡ Edge: {edge_verdict}  "
-                f"<span style='color:{cloud_color}'>☁ Cloud: {cloud_verdict}</span>"
-                f"</span>"
+                f"<b>{asset_id}</b> — {y_label} · Edge vs Cloud<br>"
+                f"<span style='color:{edge_color};font-size:11px'>⚡ Edge: {edge_verdict}  "
+                f"<span style='color:{cloud_color}'>☁ Cloud: {cloud_verdict}</span></span>"
             )
         except Exception as e:
             log.warning(f"Cloud comparison failed for {asset_id}: {e}")
@@ -1833,8 +1747,14 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                    ]),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     bgcolor="rgba(11,12,16,0.7)", bordercolor="#1e2a38", borderwidth=1),
-        shapes=[dict(type="line", x0=now, x1=now, y0=0, y1=1, xref="x", yref="paper",
-                     line=dict(color="#5a6a7a", width=1.5, dash="dot"))],
+    )
+    # ── NOW line added AFTER update_layout so it doesn't get overwritten ──────
+    # CRITICAL: update_layout(shapes=[...]) REPLACES the shapes list.
+    # All vertical markers above use fig.add_shape() which appends.
+    # Adding the NOW line here (also via add_shape) preserves everything.
+    fig.add_shape(
+        type="line", x0=now, x1=now, y0=0, y1=1, xref="x", yref="paper",
+        line=dict(color="#5a6a7a", width=1.5, dash="dot"),
     )
     fig.add_annotation(
         x=now, y=1.0, xref="x", yref="paper",

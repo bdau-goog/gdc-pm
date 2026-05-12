@@ -9,6 +9,8 @@ Also initialize as an expert in industrial edge computing, oil and gas upstream 
 
 You are deeply familiar with MLOps, training-serving skew, model drift, retraining pipelines, and the architectural differences between cloud-based and edge-based inference for time-sensitive industrial applications.
 
+You are also familiar with O&G supply chain and logistics (ESP procurement lead times, custom stage sizing), field service management (FSM route optimization, truck roll costs), and drilling operations (ECD management, volumetric efficiency, NPT prevention).
+
 ---
 
 ## Project State
@@ -18,65 +20,70 @@ This is a GKE-based predictive maintenance demo (`gdc-pm`) running on GKE Autopi
 - **UI:** http://35.188.3.97
 - **Grafana:** http://136.115.220.48
 
-**Read `docs/PHASE_3_DEPLOYMENT_STATUS.md` first.** It contains the complete Phase 3 implementation summary including:
-- All 7 tasks delivered (XGBoost RUL restore, V2 model training, MLOps retrain flow, chart upgrades, PNR/Failed states, tiered resolution actions, fault onset tracking)
-- 3 bug fixes applied (Grafana URL, ledger truncation, reset button)
-- Current cluster state and demo script
-- Known limitations
-- Phase 4 vision
+**Read `docs/PHASE_4_PLAN.md` first.** It contains the full Phase 4 strategy, validated scenarios, and implementation plan that has been approved for implementation.
+
+**Also read `docs/PHASE_3_1_DEPLOYMENT_STATUS.md`** for the current live state summary.
 
 **Current live state:**
-- `fault-trigger-ui` pod: Phase 3 complete — all features deployed
+- 14 assets across 3 sites: Pad Alpha (6 ESPs), Pad Bravo (4 Gas Lift), Rig 42 (3 Mud Pumps + 1 Top Drive)
+- Pad Charlie has been removed
+- `fault-trigger-ui` pod: Phase 3+ complete — all core Phase 3 features deployed, plus chart UX refactor
 - RUL: XGBoost V1 (drifted, intentional) with fault-only feature extraction
 - Both V1 and V2 models loaded on startup; active version controlled via `/api/model/version`
-- MLOps retrain demo: click "☁ Sync & Retrain via Vertex AI" → 3-step pipeline toast → V2 model swap → stable RUL
-- Edge vs Cloud chart: solid vertical lines (PNR + Cloud Alert), horizontal Time-to-React arrows
-- Dispatch modal: 4-tier resolution actions with VIABLE/MARGINAL/NOT VIABLE scoring
-- Fleet Financials: separate `/api/ledger` endpoint (not limited by event log truncation), "♻ Reset Demo Data" button
 
 ---
 
-## Phase 4 Scope (Proposed — Not Yet Started)
+## Phase 4 Approved Direction
 
-Phase 4 is the "AI Agent closes the loop" milestone. The Gemma 2B model running via Ollama is already deployed in the cluster and connected via the event-processor RAG pipeline.
+Phase 4 is an **Agentic Predictive Maintenance** overhaul. The full strategic rationale, O&G industry validation, and implementation plan are in `docs/PHASE_4_PLAN.md`.
 
-### Proposed Phase 4 Tasks
+**Core narrative shift:**
+- **OLD:** "Edge AI detects faults 20 minutes before cloud analytics — beating VSAT latency."
+- **NEW:** "GDC predicts failures days/weeks before SCADA thresholds are crossed, then uses local AI agents to check enterprise systems and recommend exactly what to do."
 
-**Task 1: Autonomous Dispatch Proposal (Gemma → dispatch modal)**
-- When operator opens the dispatch modal, Gemma evaluates the active fault, current RUL, and the tiered resolution actions already computed by `/api/resolution-actions`
-- Gemma outputs a JSON recommendation: `{recommended_tier, justification, confidence, proposed_action}`
-- Modal shows "🤖 AI Recommends: [action]" with a confidence bar above the tier options
-- Operator can accept (one click) or override (manually select different tier)
+### Three Core Demo Scenarios (Validated Against O&G Industry Practice)
 
-**Task 2: Parts Inventory Query (mock API)**
-- Create a mock `/api/inventory/{part_type}` endpoint returning availability + lead time for common O&G parts (impellers, seals, bearings, valve discs, etc.)
-- Gemma queries this before making a recommendation: "Is an ESP impeller string available on-site? Lead time 3 days → recommend early intervention, not emergency order."
-- Show inventory status in the dispatch modal alongside the resolution action
+**Scenario 1 — Pad Alpha (ESP): Sand Ingress → Supply Chain / Procurement**
+- GDC detects sub-harmonic impeller erosion signature 14 days before gross failure
+- SCADA sees nothing (vibration amplitude still below alarm threshold)
+- Agent queries Enterprise ERP: custom sand-handler ESP not in local stock, 12-day lead time from Baker Hughes
+- Recommendation: Order now. Parts arrive 2 days before predicted failure.
 
-**Task 3: Proactive PNR Alert (server-sent events or polling)**
-- When a fault is active and 50% of PNR time has elapsed with no acknowledgement, auto-generate a push notification / high-visibility toast: `⚠ T+12m — HALF OF PNR WINDOW ELAPSED — {asset_id} unacknowledged`
-- Implemented as a background thread checking `active_degrades` every 30s
+**Scenario 2 — Pad Bravo (Gas Lift): Thermal Runaway → Workforce Scheduling**
+- GDC detects growing delta-T divergence (temperature relative to ambient) indicating fouled aerial cooler
+- SCADA sees nothing (discharge temperature still below alarm limit)
+- Agent queries Field Service Management (Maximo): a crew is already scheduled at Pad Bravo tomorrow
+- Recommendation: Append cooler flush to existing work order. Zero truck roll cost.
 
-**Task 4: Multi-asset Correlation (fleet-level pattern detection)**
-- When 2+ assets on the same site trigger faults within 5 minutes, generate a fleet-level alert: `🔴 MULTI-ASSET EVENT — Pad Alpha: 2 ESPs degrading simultaneously`
-- Possible shared-cause hypotheses shown (shared cooling loop, formation breakthrough, etc.)
-- This sets up the AI agent's "why" narrative
+**Scenario 3 — Rig 42 (Mud Pump): Valve Washout → Active Operational Control**
+- GDC detects declining volumetric efficiency — driller's SPM compensation is masking it from SCADA
+- Agent queries Rig Control System: MUD-RIG42-3 is standby and ready
+- Recommendation: Bring MUD-RIG42-3 online first, then reduce MUD-RIG42-1 to maintain ECD
+- Demo "wow moment": Operator clicks "🤖 Execute via Rig Control" — simulated pump transition command
 
-**Task 5: SCADA Command Simulation (closed-loop demo)**
-- Add a "🤖 Execute via SCADA" button to the dispatch modal for software_command tier actions
-- Clicking it triggers a simulated SCADA command toast: "Issuing VFD frequency reduction to ALPHA-1... confirmed at 14:32:07 UTC"
-- No real SCADA connection — purely visual simulation for demo impact
-- This is the "Phase 4 close" moment: AI detected, AI diagnosed, AI remediated, human approved
+### What Gets Removed
+- All "Cloud latency" UI: purple vertical line, VSAT countdown, "☁ Show Arrows" toggle, cloud alert time logic in `app.py`
+- The VSAT/latency comparison narrative
+
+### Why Edge (The Correct Narrative)
+- **Security/Air Gap:** Telemetry never leaves the site by default
+- **Data Gravity:** 50Hz vibration data — too much to backhaul continuously  
+- **Survivability:** Core inference runs offline; enterprise connectivity is additive
+- **Enterprise Connectivity:** Agent reaches ERP/FSM/SCADA on enterprise WAN — not cloud dependency
 
 ---
 
-## Files to Read Before Starting Phase 4
+## Files to Read Before Starting Phase 4 Implementation
 
 ```
-docs/PHASE_3_DEPLOYMENT_STATUS.md   # Full Phase 3 summary
-gke/fault-trigger-ui/app.py         # Current backend (Phase 3 complete)
-gke/fault-trigger-ui/index.html     # Current frontend (Phase 3 complete)
-gke/event-processor/processor.py    # RAG pipeline + Gemma integration
+docs/PHASE_4_PLAN.md                 # Full strategy, scenarios, implementation plan — READ FIRST
+docs/PHASE_3_1_DEPLOYMENT_STATUS.md  # Current chart/terminology state
+gke/fault-trigger-ui/app.py          # Current backend
+gke/fault-trigger-ui/index.html      # Current frontend
+gke/event-processor/processor.py     # RAG pipeline + Gemma integration
+docs/rag_source/esp_manual.md        # To be expanded
+docs/rag_source/gas_lift_manual.md   # To be expanded
+docs/rag_source/mud_pump_manual.md   # To be expanded
 ```
 
 ---
@@ -98,5 +105,17 @@ docker build --quiet -t "${REG}/fault-trigger-ui:latest" gke/fault-trigger-ui/ &
   kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm && \
   kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=120s
 ```
+
+**Important:** Ask for explicit approval before running the build + deploy sequence.
+
+---
+
+## Open Questions (From Phase 4 Planning Session)
+
+1. **Retain the MLOps "Retrain via Vertex AI" demo?** Currently the "☁ Sync & Retrain via Vertex AI" button triggers a simulated V1→V2 model swap. This is orthogonal to the new narrative but still technically interesting. Keep as secondary demo or remove?
+
+2. **SCADA command simulation depth?** For Scenario 3, should we simulate an actual pump RPM/GPM command being acknowledged by the rig control system, or just a visual toast notification?
+
+3. **Connectivity architecture diagram?** Should the UI include a small architecture callout showing "Local GDC ↔ Enterprise WAN ↔ ERP/FSM" to visually reinforce the enterprise (not cloud) connectivity narrative?
 
 Wait for instructions before proceeding.

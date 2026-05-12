@@ -711,7 +711,6 @@
 const SITES = {
   pad_alpha:   { name: 'Pad Alpha',   icon: '🛢', type: 'ESP Production',      assets: ['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','ESP-ALPHA-5','ESP-ALPHA-6'] },
   pad_bravo:   { name: 'Pad Bravo',   icon: '🛢', type: 'Gas Lift Production', assets: ['GLIFT-BRAVO-1','GLIFT-BRAVO-2','GLIFT-BRAVO-3','GLIFT-BRAVO-4'] },
-  pad_charlie: { name: 'Pad Charlie', icon: '🛢', type: 'ESP Production',      assets: ['ESP-CHARLIE-1','ESP-CHARLIE-2','ESP-CHARLIE-3','ESP-CHARLIE-4','ESP-CHARLIE-5','ESP-CHARLIE-6'] },
   rig_42:      { name: 'Rig 42',      icon: '🏗', type: 'Drilling',            assets: ['MUD-RIG42-1','MUD-RIG42-2','MUD-RIG42-3','TOPDRIVE-RIG42-1'] },
 }
 
@@ -728,13 +727,6 @@ const ASSET_META = {
   'GLIFT-BRAVO-2': {label:'GL-B2', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 320)'},
   'GLIFT-BRAVO-3': {label:'GL-B3', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 321)'},
   'GLIFT-BRAVO-4': {label:'GL-B4', site:'pad_bravo', type:'Gas Lift', aclass:'gas_lift', loc:'Pad Bravo — Injection Stn', contact:'Pad Bravo Ops (Ext. 321)'},
-  // Pad Charlie — Pure ESP Production Pad
-  'ESP-CHARLIE-1': {label:'ESP-C1', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-1', contact:'Pad Charlie Ops (Ext. 410)'},
-  'ESP-CHARLIE-2': {label:'ESP-C2', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-2', contact:'Pad Charlie Ops (Ext. 410)'},
-  'ESP-CHARLIE-3': {label:'ESP-C3', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-3', contact:'Pad Charlie Ops (Ext. 411)'},
-  'ESP-CHARLIE-4': {label:'ESP-C4', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-4', contact:'Pad Charlie Ops (Ext. 411)'},
-  'ESP-CHARLIE-5': {label:'ESP-C5', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-5', contact:'Pad Charlie Ops (Ext. 412)'},
-  'ESP-CHARLIE-6': {label:'ESP-C6', site:'pad_charlie', type:'ESP', aclass:'esp', loc:'Pad Charlie — Well C-6', contact:'Pad Charlie Ops (Ext. 412)'},
   // Rig 42 — Drilling Rig
   'MUD-RIG42-1':     {label:'MUD-1',  site:'rig_42', type:'Mud Pump',  aclass:'mud_pump',  loc:'Rig 42 — Pump Room #1',  contact:'Rig 42 Driller (Ext. 500)'},
   'MUD-RIG42-2':     {label:'MUD-2',  site:'rig_42', type:'Mud Pump',  aclass:'mud_pump',  loc:'Rig 42 — Pump Room #2',  contact:'Rig 42 Driller (Ext. 500)'},
@@ -1348,8 +1340,8 @@ function toggleCloudCompare() {
   compareCloud = !compareCloud
   const btn = document.getElementById('btn-cloud-compare')
   btn.classList.toggle('active', compareCloud)
-  btn.textContent = compareCloud ? '☁ Cloud Prediction ON' : '☁ Cloud-Based Prediction'
-  showToast(compareCloud ? '☁ Cloud-based prediction enabled' : '☁ Cloud prediction hidden','info')
+  btn.textContent = compareCloud ? '☁ Arrows ON' : '☁ Show Arrows'
+  showToast(compareCloud ? '☁ Edge vs Cloud arrows shown (lines always visible)' : '☁ Arrows hidden','info')
   refreshPlot()
 }
 function closeFsPlot() {
