@@ -749,6 +749,10 @@ def inject_fault(req: InjectRequest):
                 "source"      : "manual_injection",
                 "timestamp"   : datetime.utcnow().isoformat() + "Z",
             }
+            # 4th sensor normal values
+            _s4c = SENSOR4_CONFIG.get(asset_class)
+            if _s4c:
+                reading[_s4c["key"]] = round(random.uniform(*_s4c["normal_range"]), 1)
             publish_to_rabbitmq(reading)
             injected.append(reading)
     else:
@@ -766,6 +770,10 @@ def inject_fault(req: InjectRequest):
                 "source"      : "manual_injection",
                 "timestamp"   : datetime.utcnow().isoformat() + "Z",
             }
+            # 4th sensor fault values
+            _s4c = SENSOR4_CONFIG.get(asset_class)
+            if _s4c and _s4c["range_key"] in profile:
+                reading[_s4c["key"]] = round(random.uniform(*profile[_s4c["range_key"]]), 1)
             publish_to_rabbitmq(reading)
             injected.append(reading)
 
@@ -796,6 +804,19 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
         temp = (nr["temp"][0] + nr["temp"][1]) / 2 + t * (profile["temp_range"][0] - (nr["temp"][0] + nr["temp"][1]) / 2)
         vib  = (nr["vib"][0] + nr["vib"][1]) / 2  + t * (profile["vib_range"][0]  - (nr["vib"][0] + nr["vib"][1]) / 2)
 
+        # ── 4th-sensor ramp (ESP: motor_amps, Mud Pump: spm) ──────────────────
+        _s4c = SENSOR4_CONFIG.get(asset_class)
+        _s4_val = None
+        if _s4c and _s4c["range_key"] in profile:
+            _s4_nom = _s4c["nominal"]
+            _s4_rng = profile[_s4c["range_key"]]
+            _s4_end = (_s4_rng[0] + _s4_rng[1]) / 2.0
+            if asset_class == "mud_pump" and fault_type == "pulsation_dampener_failure":
+                _s4_val = round(random.uniform(_s4_rng[0], _s4_rng[1]), 1)
+            else:
+                _s4_mid = _s4_nom + t * (_s4_end - _s4_nom)
+                _s4_val = round(max(10.0, _s4_mid + random.uniform(-abs(_s4_mid * 0.003), abs(_s4_mid * 0.003))), 1)
+
         # Dramatically lower noise for gradual degradation so the XGBoost model can
         # accurately calculate the slope over long (1hr+) durations without noise
         # causing the rate-of-change to flip positive/negative on every refresh.
@@ -809,6 +830,8 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
             "source"      : "gradual_degrade",
             "timestamp"   : datetime.utcnow().isoformat() + "Z",
         }
+        if _s4_val is not None:
+            reading[_s4c["key"]] = _s4_val
         try:
             publish_to_rabbitmq(reading)
         except Exception as e:
@@ -831,6 +854,14 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
     final_temp = (nr["temp"][0] + nr["temp"][1]) / 2 + (profile["temp_range"][0] - (nr["temp"][0] + nr["temp"][1]) / 2)
     final_vib  = (nr["vib"][0]  + nr["vib"][1])  / 2 + (profile["vib_range"][0]  - (nr["vib"][0]  + nr["vib"][1])  / 2)
 
+    # Final 4th-sensor value (hold at fault midpoint for hold phase)
+    _s4c_hold = SENSOR4_CONFIG.get(asset_class)
+    _final_s4 = None
+    _final_s4_rng = None
+    if _s4c_hold and _s4c_hold["range_key"] in profile:
+        _final_s4_rng = profile[_s4c_hold["range_key"]]
+        _final_s4 = (_final_s4_rng[0] + _final_s4_rng[1]) / 2.0
+
     log.info(f"⏸ Holding fault state: {fault_type} on {asset_id} — awaiting operator reset")
     while asset_id in active_degrades:
         time.sleep(5)
@@ -846,6 +877,12 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
             "source"      : "gradual_degrade",
             "timestamp"   : datetime.utcnow().isoformat() + "Z",
         }
+        # 4th sensor hold-phase value
+        if _final_s4 is not None and _s4c_hold is not None:
+            if asset_class == "mud_pump" and fault_type == "pulsation_dampener_failure":
+                hold_reading[_s4c_hold["key"]] = round(random.uniform(_final_s4_rng[0], _final_s4_rng[1]), 1)
+            else:
+                hold_reading[_s4c_hold["key"]] = round(max(10.0, _final_s4 + random.uniform(-abs(_final_s4 * 0.003), abs(_final_s4 * 0.003))), 1)
         try:
             publish_to_rabbitmq(hold_reading)
         except Exception as e:
@@ -933,6 +970,10 @@ def _run_scenario_thread(scenario_id: str, scenario: dict) -> None:
                 "source"      : "scenario",
                 "timestamp"   : datetime.utcnow().isoformat() + "Z",
             }
+            # 4th sensor fault values for scenario injections
+            _s4c = SENSOR4_CONFIG.get(asset_class)
+            if _s4c and _s4c["range_key"] in profile:
+                reading[_s4c["key"]] = round(random.uniform(*profile[_s4c["range_key"]]), 1)
             try:
                 publish_to_rabbitmq(reading)
             except Exception as e:
@@ -1225,7 +1266,8 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
             cur.execute(
                 """
-                SELECT event_time, psi, temp_f, vibration, failure_type, predicted_label
+                SELECT event_time, psi, temp_f, vibration, motor_amps, spm,
+                       failure_type, predicted_label
                 FROM telemetry_events
                 WHERE asset_id = %s AND event_time > NOW() - INTERVAL '10 minutes'
                 ORDER BY event_time ASC
@@ -1255,7 +1297,8 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     now    = times[-1]
 
     # Select metric to plot
-    if metric == "auto" or metric not in ("psi", "temp", "vib"):
+    # "amps" and "spm" are explicitly user-selected (4th sensor tab) — never auto-chosen
+    if metric == "auto" or metric not in ("psi", "temp", "vib", "amps", "spm"):
         # Pick the sensor with the highest relative deviation from its nominal
         nom_psi  = asset_meta["nominal_psi"]
         nom_temp = asset_meta["nominal_temp_f"]
@@ -1265,6 +1308,8 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         dev_vib  = abs(vib_v[-1]  - nom_vib)  / max(nom_vib,  1)
         metric = "psi" if dev_psi >= dev_temp and dev_psi >= dev_vib else \
                  "temp" if dev_temp >= dev_vib else "vib"
+
+    _s4c = SENSOR4_CONFIG.get(asset_class)   # None for gas_lift / top_drive
 
     if metric == "psi":
         y_vals    = psi_v
@@ -1276,6 +1321,13 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         y_label   = asset_meta.get("temp_label", "Temperature (°F)")
         y_crit    = asset_meta["crit_temp"]
         crit_dir  = asset_meta["temp_crit_dir"]
+    elif metric in ("amps", "spm") and _s4c is not None:
+        # 4th sensor chart: motor_amps (ESP) or spm (Mud Pump)
+        _s4_key = _s4c["key"]
+        y_vals   = np.array([float(r.get(_s4_key) or _s4c["nominal"]) for r in rows])
+        y_label  = _s4c["label"]
+        y_crit   = _s4c["crit"]
+        crit_dir = _s4c["crit_dir"]
     else:
         y_vals    = vib_v
         y_label   = asset_meta.get("vib_label", "Vibration (mm/s)")
@@ -1358,24 +1410,52 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
             else:
                 dpsi_dt = dtemp_dt = dvib_dt = 0.0
 
+            # ── 4th-sensor window and slope (ESP: motor_amps, Mud Pump: spm) ──
+            # Uses the same fault-window filter as the 3 primary sensors.
+            last_s4 = ds4_dt = 0.0
+            if _s4c is not None and asset_class in ("esp", "mud_pump"):
+                _s4_key = _s4c["key"]
+                s4_v_all = np.array([
+                    float(r.get(_s4_key) or _s4c["nominal"]) for r in rows
+                ])
+                if len(fault_idx) >= 6:
+                    s4_w = s4_v_all[fault_idx]
+                else:
+                    win  = min(60, len(s4_v_all))
+                    s4_w = s4_v_all[-win:]
+                last_s4 = float(np.median(s4_w[-curr_n:]))
+                t_s4    = np.arange(len(s4_w), dtype=np.float64)
+                ds4_dt  = (float(np.polyfit(t_s4, s4_w, 1)[0]) * READINGS_PER_MIN
+                           if len(s4_w) >= 6 else 0.0)
+
             # ── XGBoost Regressor predict — version-aware ─────────────────────
             rul_raw    = None
             _registry  = RUL_MODELS_V2 if _active_model_version == "v2" else RUL_MODELS_V1
             rul_model  = _registry.get(asset_class)
             if rul_model is not None:
                 import xgboost as xgb
-                feature_row = np.array([[last_psi, last_temp, last_vib,
-                                         dpsi_dt, dtemp_dt, dvib_dt]])
-                dmat    = xgb.DMatrix(
-                    feature_row,
-                    feature_names=["psi", "temp_f", "vibration",
-                                   "dpsi_dt", "dtemp_dt", "dvib_dt"],
-                )
+                # ESP and Mud Pump use 8-feature vectors (motor_amps/spm added Phase 4.1)
+                # Gas Lift and Top Drive remain at 6 features (unchanged)
+                if asset_class == "esp":
+                    feature_row = np.array([[last_psi, last_temp, last_vib, last_s4,
+                                             dpsi_dt, dtemp_dt, dvib_dt, ds4_dt]])
+                    fn = ["psi", "temp_f", "vibration", "motor_amps",
+                          "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
+                elif asset_class == "mud_pump":
+                    feature_row = np.array([[last_psi, last_temp, last_vib, last_s4,
+                                             dpsi_dt, dtemp_dt, dvib_dt, ds4_dt]])
+                    fn = ["psi", "temp_f", "vibration", "spm",
+                          "dpsi_dt", "dtemp_dt", "dvib_dt", "dspm_dt"]
+                else:
+                    feature_row = np.array([[last_psi, last_temp, last_vib,
+                                             dpsi_dt, dtemp_dt, dvib_dt]])
+                    fn = ["psi", "temp_f", "vibration", "dpsi_dt", "dtemp_dt", "dvib_dt"]
+                dmat    = xgb.DMatrix(feature_row, feature_names=fn)
                 rul_raw = float(rul_model.predict(dmat)[0])
                 rul_raw = max(0.0, min(rul_raw, 600.0))
-                log.debug(f"XGBoost RUL raw={rul_raw:.1f}m  asset={asset_id}  "
+                log.debug(f"XGBoost RUL raw={rul_raw:.1f}m  asset={asset_id} ({len(fn)}f)  "
                           f"psi={last_psi:.0f}  dpsi={dpsi_dt:.3f}/min  "
-                          f"temp={last_temp:.1f}  vib={last_vib:.3f}")
+                          f"temp={last_temp:.1f}  vib={last_vib:.3f}  s4={last_s4:.1f}")
             else:
                 # ── Geometric fallback when model file not present ─────────────
                 log.warning(f"No RUL model for {asset_class} — using geometric fallback")

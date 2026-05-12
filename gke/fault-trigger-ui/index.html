@@ -557,6 +557,7 @@
             <div class="sensor-tab active" id="tab-psi" onclick="selectTab('psi')">Pressure</div>
             <div class="sensor-tab" id="tab-temp" onclick="selectTab('temp')">Temperature</div>
             <div class="sensor-tab" id="tab-vib" onclick="selectTab('vib')">Vibration</div>
+            <div class="sensor-tab" id="tab-sensor4" style="display:none">—</div>
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
           <button id="btn-diagnose-chart" onclick="diagnoseFault()">⚠ Diagnose ▶</button>
@@ -767,6 +768,13 @@ const SENSOR_TAB_LABELS = {
 }
 
 const CLASS_ICONS = {esp:'⚡', gas_lift:'⚙', mud_pump:'🔩', top_drive:'🔄'}
+
+// ── 4th sensor tab — conditionally shown for ESP and Mud Pump ─────────────────
+// Matches SENSOR4_CONFIG keys in app.py
+const SENSOR4_TAB = {
+  esp:      {metric: 'amps', label: 'Motor Current'},
+  mud_pump: {metric: 'spm',  label: 'Stroke Rate'},
+}
 
 // PNR minutes per fault type — must match app.py PNR_MINUTES
 const PNR_MINUTES_JS = {
@@ -1140,6 +1148,26 @@ function selectAsset(assetId) {
   document.getElementById('tab-psi').textContent  = tabLbls.psi
   document.getElementById('tab-temp').textContent = tabLbls.temp
   document.getElementById('tab-vib').textContent  = tabLbls.vib
+
+  // ── 4th sensor tab: show for ESP (Motor Current) and Mud Pump (Stroke Rate)
+  const s4 = SENSOR4_TAB[meta?.aclass]
+  const tab4 = document.getElementById('tab-sensor4')
+  if (tab4) {
+    if (s4) {
+      tab4.textContent = s4.label
+      tab4.style.display = ''
+      tab4.onclick = () => selectTab(s4.metric)
+    } else {
+      tab4.style.display = 'none'
+      // If operator was viewing the 4th tab on a different asset, reset to psi
+      if (selectedMetric === 'amps' || selectedMetric === 'spm') {
+        selectedMetric = 'psi'
+        document.querySelectorAll('.sensor-tab').forEach(t=>t.classList.remove('active'))
+        document.getElementById('tab-psi')?.classList.add('active')
+      }
+    }
+  }
+
   document.getElementById('plot-asset-lbl').textContent = '— ' + assetId
   document.getElementById('btn-expand').style.display = 'inline-block'
   document.getElementById('btn-asset-intel').classList.add('visible')
@@ -1297,7 +1325,11 @@ function updateDegradeProgress() {
 function selectTab(metric) {
   selectedMetric = metric
   document.querySelectorAll('.sensor-tab').forEach(t=>t.classList.remove('active'))
-  document.getElementById(`tab-${metric}`).classList.add('active')
+  // 'amps' and 'spm' map to the single 4th sensor tab element (tab-sensor4)
+  const tabEl = (metric === 'amps' || metric === 'spm')
+    ? document.getElementById('tab-sensor4')
+    : document.getElementById(`tab-${metric}`)
+  if (tabEl) tabEl.classList.add('active')
   if (selectedAsset) refreshPlot()
 }
 

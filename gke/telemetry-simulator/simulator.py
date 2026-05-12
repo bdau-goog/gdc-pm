@@ -108,9 +108,10 @@ def normal_reading(asset_id: str, asset_class: str) -> dict:
     """Generate a physically realistic nominal reading for the given asset class."""
     if asset_class == "esp":
         # Electrical Submersible Pump — downhole
-        psi       = round(random.gauss(1400, 65), 1)
-        temp_f    = round(random.gauss(198, 8), 1)
-        vibration = round(max(0.1, random.gauss(1.4, 0.18)), 3)
+        psi        = round(random.gauss(1400, 65), 1)
+        temp_f     = round(random.gauss(198, 8), 1)
+        vibration  = round(max(0.1, random.gauss(1.4, 0.18)), 3)
+        motor_amps = round(max(40.0, random.gauss(75.0, 6.0)), 1)
 
     elif asset_class == "gas_lift":
         # Gas Lift Compressor — surface injection
@@ -123,6 +124,7 @@ def normal_reading(asset_id: str, asset_class: str) -> dict:
         psi       = round(random.gauss(2850, 85), 1)
         temp_f    = round(random.gauss(105, 5), 1)
         vibration = round(max(0.2, random.gauss(3.5, 0.35)), 3)
+        spm       = round(max(55.0, random.gauss(87.0, 7.0)), 1)
 
     elif asset_class == "top_drive":
         # Top Drive — drilling rig rotary system
@@ -136,7 +138,7 @@ def normal_reading(asset_id: str, asset_class: str) -> dict:
         temp_f    = round(random.gauss(150, 10), 1)
         vibration = round(abs(random.gauss(2.0, 0.3)), 3)
 
-    return {
+    reading = {
         "asset_id"    : asset_id,
         "asset_type"  : asset_class,
         "psi"         : psi,
@@ -146,40 +148,52 @@ def normal_reading(asset_id: str, asset_class: str) -> dict:
         "source"      : "simulator",
         "timestamp"   : datetime.utcnow().isoformat() + "Z",
     }
+    # Attach 4th-sensor columns for asset classes that have them
+    if asset_class == "esp":
+        reading["motor_amps"] = motor_amps
+    elif asset_class == "mud_pump":
+        reading["spm"] = spm
+    return reading
 
 
 # ── ESP Fault Generators ──────────────────────────────────────────────────────
 def gas_lock_reading(asset_id: str) -> dict:
-    """Gas Lock: gas pockets overwhelm pump stages. PSI crashes, vibration spikes."""
+    """Gas Lock: gas pockets overwhelm pump stages. PSI crashes, vibration spikes.
+    motor_amps drops sharply as pump unloads with rising GVF (20–45 A)."""
     return {
         "asset_id": asset_id, "asset_type": "esp",
-        "psi":       round(random.gauss(550, 75), 1),
-        "temp_f":    round(random.gauss(222, 12), 1),
-        "vibration": round(max(0.5, random.gauss(9.0, 1.4)), 3),
+        "psi":        round(random.gauss(550, 75), 1),
+        "temp_f":     round(random.gauss(222, 12), 1),
+        "vibration":  round(max(0.5, random.gauss(9.0, 1.4)), 3),
+        "motor_amps": round(max(15.0, random.gauss(32.5, 7.0)), 1),
         "failure_type": "gas_lock", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
 def sand_ingress_reading(asset_id: str) -> dict:
-    """Sand Ingress: formation sand erodes impeller. Vibration climbs steadily."""
+    """Sand Ingress: formation sand erodes impeller. Vibration climbs steadily.
+    motor_amps declines as stages erode and pump does less hydraulic work (45–65 A)."""
     return {
         "asset_id": asset_id, "asset_type": "esp",
-        "psi":       round(random.gauss(1360, 60), 1),
-        "temp_f":    round(random.gauss(210, 10), 1),
-        "vibration": round(max(0.5, random.gauss(6.5, 1.0)), 3),
+        "psi":        round(random.gauss(1360, 60), 1),
+        "temp_f":     round(random.gauss(210, 10), 1),
+        "vibration":  round(max(0.5, random.gauss(6.5, 1.0)), 3),
+        "motor_amps": round(max(35.0, random.gauss(55.0, 7.0)), 1),
         "failure_type": "sand_ingress", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
 def motor_overheat_reading(asset_id: str) -> dict:
-    """Motor Overheat: downhole cooling degraded. Temperature climbs."""
+    """Motor Overheat: downhole cooling degraded. Temperature climbs.
+    motor_amps rises — overcurrent as motor fights increased winding resistance (88–105 A)."""
     return {
         "asset_id": asset_id, "asset_type": "esp",
-        "psi":       round(random.gauss(1380, 60), 1),
-        "temp_f":    round(random.gauss(278, 8), 1),
-        "vibration": round(max(0.5, random.gauss(3.0, 0.4)), 3),
+        "psi":        round(random.gauss(1380, 60), 1),
+        "temp_f":     round(random.gauss(278, 8), 1),
+        "vibration":  round(max(0.5, random.gauss(3.0, 0.4)), 3),
+        "motor_amps": round(max(80.0, random.gauss(96.5, 6.0)), 1),
         "failure_type": "motor_overheat", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
@@ -224,36 +238,42 @@ def bearing_wear_reading(asset_id: str) -> dict:
 
 # ── Mud Pump Fault Generators ─────────────────────────────────────────────────
 def pulsation_dampener_failure_reading(asset_id: str) -> dict:
-    """Pulsation Dampener Failure: bladder rupture. Sudden extreme pressure spike + vibration."""
+    """Pulsation Dampener Failure: bladder rupture. Sudden extreme pressure spike + vibration.
+    spm is erratic (55–135 SPM) — chaotic pulsation causes driller to oscillate rate."""
     return {
         "asset_id": asset_id, "asset_type": "mud_pump",
         "psi":       round(random.gauss(4200, 190), 1),
         "temp_f":    round(random.gauss(138, 12), 1),
         "vibration": round(max(1.0, random.gauss(22.0, 3.0)), 3),
+        "spm":       round(random.uniform(55.0, 135.0), 1),
         "failure_type": "pulsation_dampener_failure", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
 def valve_washout_reading(asset_id: str) -> dict:
-    """Valve Seat Washout: fluid erodes valve seat. Discharge pressure slowly declines."""
+    """Valve Seat Washout: fluid erodes valve seat. Discharge pressure slowly declines.
+    spm rises (95–120 SPM) — driller compensates for efficiency loss by increasing stroke rate."""
     return {
         "asset_id": asset_id, "asset_type": "mud_pump",
         "psi":       round(random.gauss(2050, 85), 1),
         "temp_f":    round(random.gauss(128, 10), 1),
         "vibration": round(max(0.5, random.gauss(7.5, 1.0)), 3),
+        "spm":       round(max(80.0, random.gauss(107.5, 7.0)), 1),
         "failure_type": "valve_washout", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
 
 def piston_seal_wear_reading(asset_id: str) -> dict:
-    """Piston Seal Wear: seals degrade. Fluid temp rises, pressure slowly drops."""
+    """Piston Seal Wear: seals degrade. Fluid temp rises, pressure slowly drops.
+    spm rises moderately (90–110 SPM) — slower compensation over days of seal degradation."""
     return {
         "asset_id": asset_id, "asset_type": "mud_pump",
         "psi":       round(random.gauss(2150, 85), 1),
         "temp_f":    round(random.gauss(168, 12), 1),
         "vibration": round(max(0.5, random.gauss(6.5, 0.9)), 3),
+        "spm":       round(max(75.0, random.gauss(100.0, 7.0)), 1),
         "failure_type": "piston_seal_wear", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }

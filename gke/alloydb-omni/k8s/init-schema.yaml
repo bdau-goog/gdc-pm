@@ -101,6 +101,14 @@ spec:
                 ALTER TABLE telemetry_events
                   ADD COLUMN IF NOT EXISTS cost_incurred NUMERIC DEFAULT 0;
 
+                -- ── Phase 4.1 migration: 4th sensor columns ───────────────────
+                -- motor_amps: ESP VFD motor current (A) — NULL for non-ESP assets
+                -- spm: Mud Pump stroke rate (SPM)       — NULL for non-MudPump assets
+                ALTER TABLE telemetry_events
+                  ADD COLUMN IF NOT EXISTS motor_amps NUMERIC(7,2);
+                ALTER TABLE telemetry_events
+                  ADD COLUMN IF NOT EXISTS spm NUMERIC(7,2);
+
                 -- ── Asset registry ────────────────────────────────────────────
                 CREATE TABLE IF NOT EXISTS asset_registry (
                   asset_id        TEXT PRIMARY KEY,

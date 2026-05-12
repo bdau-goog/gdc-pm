@@ -438,6 +438,9 @@ def make_handler(db_conn: psycopg2.extensions.connection):
         vibration    = float(msg.get("vibration", 0))
         kv           = float(msg["kv"]) if "kv" in msg else None
         acoustic_db  = float(msg["acoustic_db"]) if "acoustic_db" in msg else None
+        # Phase 4.1: 4th sensor columns — NULL for non-ESP / non-MudPump assets
+        motor_amps   = float(msg["motor_amps"]) if "motor_amps" in msg else None
+        spm          = float(msg["spm"])        if "spm"        in msg else None
         failure_type = msg.get("failure_type", "normal")
         source       = msg.get("source", "simulator")
 
@@ -477,13 +480,15 @@ def make_handler(db_conn: psycopg2.extensions.connection):
                     """
                     INSERT INTO telemetry_events
                       (asset_id, asset_type, psi, temp_f, vibration, kv, acoustic_db,
+                       motor_amps, spm,
                        is_failure, failure_type, predicted_class, predicted_label,
                        confidence, source, ai_narrative, recommended_action,
                        similar_events_count)
-                    VALUES (%s,%s,%s,%s,%s,%s,%s, %s,%s,%s,%s,%s,%s,%s,%s,%s)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
                     """,
                     (
                         asset_id, asset_type, psi, temp_f, vibration, kv, acoustic_db,
+                        motor_amps, spm,
                         1 if is_failure else 0, failure_type,
                         predicted_class, predicted_label, confidence, source,
                         ai_narrative, recommended_action, similar_count,
