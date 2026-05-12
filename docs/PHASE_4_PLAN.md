@@ -1,8 +1,20 @@
 # GDC-PM Phase 4 — Agentic Predictive Maintenance
-**Status:** Planning — Awaiting Design Approval  
+**Status:** Deployed — commit `304bc60`  
 **Date:** 2026-05-12  
 **Preceded by:** `PHASE_3_1_DEPLOYMENT_STATUS.md`  
 **UI:** http://35.188.3.97
+
+## ⚠️ Known Gap — Phase 4.1 Required
+
+Phase 4 added `motor_amps` (ESP) and `spm` (Mud Pump) to the UI data model (`SENSOR4_CONFIG` in `app.py`) and the demo narrative, but did **not** update the telemetry simulator, event processor, AlloyDB schema, or XGBoost models. The new sensors are defined in the frontend but not generated or predicted in the pipeline.
+
+**See `PHASE_4_1_SENSOR_RETRAIN.md` for the full implementation plan to resolve this.**
+
+Until Phase 4.1 is complete:
+- The 4th sensor tab will appear in the UI but show no data
+- The Agent recommendation narratives reference `motor_amps` and `spm` but these are not persisted in AlloyDB
+- The XGBoost RUL models continue to use the 6-feature vector (psi, temp, vib + slopes)
+
 
 ---
 
