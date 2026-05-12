@@ -415,11 +415,71 @@ data:
         },
 
         {
+          "id": 29,
+          "type": "timeseries",
+          "title": "Motor Current — ESP Assets (A)",
+          "description": "Downhole motor load current for all ESP assets. Nominal 60–90 A. Overcurrent (>105 A) → Motor Overheat; undercurrent (<45 A) → Gas Lock or Sand Erosion impeller loss.",
+          "gridPos": { "x": 0, "y": 34, "w": 12, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "amp",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red",    "value": null },
+                { "color": "green",  "value": 45 },
+                { "color": "yellow", "value": 95 },
+                { "color": "red",    "value": 105 }
+              ]},
+              "custom": { "lineWidth": 1, "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
+            }
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(motor_amps) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' AND motor_amps IS NOT NULL GROUP BY event_time, asset_id ORDER BY event_time",
+              "format": "time_series"
+            }
+          ]
+        },
+
+        {
+          "id": 30,
+          "type": "timeseries",
+          "title": "Stroke Rate — Mud Pump Assets (SPM)",
+          "description": "Triplex mud pump strokes per minute for all Mud Pump assets. Nominal 75–100 SPM. Chaotic/erratic SPM → Pulsation Dampener Rupture; declining SPM → Valve Washout or Seal Wear.",
+          "gridPos": { "x": 12, "y": 34, "w": 12, "h": 8 },
+          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red",    "value": null },
+                { "color": "green",  "value": 60 },
+                { "color": "yellow", "value": 110 },
+                { "color": "red",    "value": 120 }
+              ]},
+              "custom": { "lineWidth": 1, "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
+            },
+            "overrides": [
+              { "matcher": { "id": "byName", "options": "value" },
+                "properties": [{ "id": "displayName", "value": "SPM" }] }
+            ]
+          },
+          "targets": [
+            {
+              "datasource": "AlloyDB-Omni",
+              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(spm) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'MUD-%' AND spm IS NOT NULL GROUP BY event_time, asset_id ORDER BY event_time",
+              "format": "time_series"
+            }
+          ]
+        },
+
+        {
           "id": 10,
           "type": "timeseries",
           "title": "ML Confidence — Failure Predictions Only",
           "description": "Model confidence when a failure is predicted. Rising confidence = escalating certainty. This is information threshold alarms cannot provide.",
-          "gridPos": { "x": 0, "y": 34, "w": 12, "h": 8 },
+          "gridPos": { "x": 0, "y": 42, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
@@ -445,7 +505,7 @@ data:
           "type": "timeseries",
           "title": "Anomaly Rate % — Hourly Trend (24h)",
           "description": "% of all readings scored as failures per hour. Stable at ~0% under normal conditions. Spikes indicate injected scenarios or real degradation.",
-          "gridPos": { "x": 12, "y": 34, "w": 12, "h": 8 },
+          "gridPos": { "x": 12, "y": 42, "w": 12, "h": 8 },
           "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
           "fieldConfig": {
             "defaults": {
@@ -470,7 +530,7 @@ data:
           "id": 8,
           "type": "table",
           "title": "Recent ML Detections — Full Log",
-          "gridPos": { "x": 0, "y": 42, "w": 24, "h": 8 },
+          "gridPos": { "x": 0, "y": 50, "w": 24, "h": 8 },
           "options": { "sortBy": [{ "desc": true, "displayName": "event_time" }], "cellHeight": "sm" },
           "targets": [
             {

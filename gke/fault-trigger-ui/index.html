@@ -793,6 +793,7 @@ const ASSET_PHYSICS = {
       {name:'Intake Pressure',    unit:'PSI',  nominal:'1,200–1,600 PSI', critical:'< 800 PSI (Gas Lock)'},
       {name:'Motor Winding Temp', unit:'°F',   nominal:'180–220 °F',      critical:'> 280 °F (Motor Burnout)'},
       {name:'Motor Vibration',    unit:'mm/s', nominal:'0.8–2.0 mm/s',    critical:'> 8.0 mm/s (Mechanical Failure)'},
+      {name:'Motor Current',      unit:'A',    nominal:'60–90 A',          critical:'> 105 A (Motor Overheat) / < 45 A (Gas Lock / Sand Erosion)'},
     ]
   },
   gas_lift: {
@@ -811,6 +812,7 @@ const ASSET_PHYSICS = {
       {name:'Discharge Pressure', unit:'PSI',  nominal:'2,550–3,150 PSI', critical:'< 1,800 PSI (Flow Loss)'},
       {name:'Fluid End Temp',     unit:'°F',   nominal:'90–120 °F',       critical:'> 180 °F (Seal Failure)'},
       {name:'Module Vibration',   unit:'mm/s', nominal:'2.5–4.5 mm/s',    critical:'> 20.0 mm/s (Piston Failure)'},
+      {name:'Stroke Rate',        unit:'SPM',  nominal:'75–100 SPM',       critical:'> 120 SPM or Chaotic (Dampener Rupture) / < 60 SPM (Valve Washout)'},
     ]
   },
   top_drive: {
