@@ -369,19 +369,6 @@
     /* ── Savings Ticker — hidden from header, lives in Financials tab only ── */
     #savings-ticker { display: none; }
 
-    /* ── Cloud Compare Toggle ── */
-    #btn-cloud-compare {
-      font-size: 0.65rem; font-weight: 600; padding: 3px 10px; border-radius: 8px;
-      border: 1px solid rgba(156,39,176,0.4); background: rgba(156,39,176,0.07);
-      color: #9c27b0; cursor: pointer; transition: all 0.15s; white-space: nowrap;
-      display: none; margin: 0 4px;
-    }
-    #btn-cloud-compare:hover { background: rgba(156,39,176,0.18); }
-    #btn-cloud-compare.active {
-      background: rgba(156,39,176,0.25); border-color: #9c27b0;
-      box-shadow: 0 0 8px rgba(156,39,176,0.3);
-    }
-    #btn-cloud-compare.visible { display: inline-block; }
 
     /* ── Retrain Button (Task 3 — MLOps Drift & Retrain demo) ── */
     #btn-retrain {
@@ -573,7 +560,6 @@
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
           <button id="btn-diagnose-chart" onclick="diagnoseFault()">⚠ Diagnose ▶</button>
-          <button id="btn-cloud-compare" onclick="toggleCloudCompare()">☁ Cloud-Based Prediction</button>
           <button id="btn-retrain" onclick="triggerRetrain()">☁ Retrain via Vertex AI</button>
           <button id="btn-asset-intel" onclick="openAssetIntel()">ℹ Asset Intel</button>
           <button id="btn-expand" onclick="expandPlot()">⤢</button>
@@ -907,7 +893,7 @@ function getSeverity(lbl) {
 let selectedAsset = null
 let selectedFault = null
 let selectedMetric = 'psi'
-let compareCloud = false        // Cloud vs Edge overlay toggle
+// compareCloud removed (Phase 4 — cloud latency narrative retired)
 let assetStatuses = {}    // {asset_id: {last_prediction, last_seen}}
 let recentEvents  = []
 let ledgerEvents  = []    // separate from recentEvents — from /api/ledger (no limit=40)
@@ -1157,7 +1143,6 @@ function selectAsset(assetId) {
   document.getElementById('plot-asset-lbl').textContent = '— ' + assetId
   document.getElementById('btn-expand').style.display = 'inline-block'
   document.getElementById('btn-asset-intel').classList.add('visible')
-  document.getElementById('btn-cloud-compare').classList.add('visible')
   refreshPlot()
 }
 
@@ -1322,28 +1307,16 @@ function refreshPlot() {
   const iframe = document.getElementById('plot-iframe')
   iframe.style.display = 'block'
   document.getElementById('plot-placeholder').style.display = 'none'
-  const cloudParam = compareCloud ? '&compare_cloud=true' : ''
-  iframe.src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}${cloudParam}&cb=${Date.now()}`
+  iframe.src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
 }
 
 function expandPlot() {
   if (!selectedAsset) return
   const fs = document.getElementById('fs-plot')
-  const cloudParam = compareCloud ? '&compare_cloud=true' : ''
-  document.getElementById('fs-iframe').src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}${cloudParam}&cb=${Date.now()}`
+  document.getElementById('fs-iframe').src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
   fs.classList.add('open')
 }
 
-// ────────── CLOUD VS EDGE TOGGLE ─────────────────────────────────────────────
-function toggleCloudCompare() {
-  if (!selectedAsset) return
-  compareCloud = !compareCloud
-  const btn = document.getElementById('btn-cloud-compare')
-  btn.classList.toggle('active', compareCloud)
-  btn.textContent = compareCloud ? '☁ Arrows ON' : '☁ Show Arrows'
-  showToast(compareCloud ? '☁ Edge vs Cloud arrows shown (lines always visible)' : '☁ Arrows hidden','info')
-  refreshPlot()
-}
 function closeFsPlot() {
   document.getElementById('fs-plot').classList.remove('open')
   document.getElementById('fs-iframe').src = ''
@@ -1476,6 +1449,61 @@ async function openDispatch(eventId) {
       <span class="wo-lbl">Cost Avoided:</span><span class="wo-val saved">${rem.cost}</span>`
   }
 
+  // ── Agent Recommendation (Phase 4 — Agentic Predictive Maintenance) ─────────
+  // Load async — modal opens immediately, agent section populates within ~500ms
+  const agentPlaceholder = `<div id="agent-rec-block" class="wo-narr" style="grid-column:1/-1;margin-top:8px;border-color:rgba(0,188,212,0.3);">
+    <div style="font-size:0.65rem;font-weight:700;color:#00bcd4;letter-spacing:0.06em;margin-bottom:6px">🤖 GDC AGENT — QUERYING ENTERPRISE SYSTEMS…</div>
+    <div style="font-size:0.68rem;color:var(--muted)">Checking inventory, schedules, and site data…</div>
+  </div>`
+  document.getElementById('wo-grid').innerHTML += agentPlaceholder
+
+  // Async agent recommendation fetch — fires after modal opens
+  ;(async () => {
+    try {
+      const agResp = await fetch(`/api/agent/recommend?fault_type=${encodeURIComponent(faultKey)}&asset_id=${encodeURIComponent(ev.asset_id)}&rul_minutes=${rul_minutes.toFixed(1)}&is_pnr_exceeded=${is_pnr_exceeded}`, {method:'POST'})
+      const block = document.getElementById('agent-rec-block')
+      if (!block) return
+      if (agResp.ok) {
+        const ag = await agResp.json()
+        const srcBadge = `<span style="font-size:0.58rem;font-weight:700;padding:1px 6px;border-radius:3px;background:rgba(0,188,212,0.15);color:#00bcd4;border:1px solid rgba(0,188,212,0.35);font-family:var(--mono)">${ag.enterprise_source}</span>`
+        const llmBadge = ag.enhanced_by_llm ? `<span style="font-size:0.58rem;padding:1px 5px;border-radius:3px;background:rgba(0,230,118,0.12);color:var(--green)">✨ Gemma</span>` : ''
+        // Scenario-specific action button
+        const ctxSum = ag.context_summary || {}
+        let actionBtn = ''
+        if (ag.scenario === 'operational_control' && ctxSum.recommended_transition) {
+          const tr = ctxSum.recommended_transition
+          actionBtn = `<div style="margin-top:8px">
+            <button onclick="executeRigControl('${ev.asset_id}','${faultKey}')"
+              style="padding:6px 14px;border-radius:6px;border:1px solid rgba(0,188,212,0.5);background:rgba(0,188,212,0.1);color:#00bcd4;cursor:pointer;font-size:0.72rem;font-weight:600;width:100%">
+              🤖 Execute via Rig Control: ${tr.step_1}
+            </button>
+          </div>`
+        } else if (ag.scenario === 'software_command' && ctxSum.available_commands?.length) {
+          const cmd = ctxSum.available_commands[0]
+          actionBtn = `<div style="margin-top:8px">
+            <button onclick="executeSCADACommand('${ev.asset_id}','${cmd.cmd}','${cmd.label}')"
+              style="padding:6px 14px;border-radius:6px;border:1px solid rgba(0,188,212,0.5);background:rgba(0,188,212,0.1);color:#00bcd4;cursor:pointer;font-size:0.72rem;font-weight:600;width:100%">
+              💻 Execute via SCADA: ${cmd.label}
+            </button>
+          </div>`
+        }
+        block.innerHTML = `
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:7px;flex-wrap:wrap">
+            <span style="font-size:0.65rem;font-weight:700;color:#00bcd4;letter-spacing:0.06em">🤖 GDC AGENT RECOMMENDATION</span>
+            ${srcBadge} ${llmBadge}
+          </div>
+          <div style="font-size:0.72rem;color:var(--text);line-height:1.65">${ag.recommendation}</div>
+          ${actionBtn}
+        `
+      } else {
+        if (block) block.style.display = 'none'
+      }
+    } catch(e) {
+      const block = document.getElementById('agent-rec-block')
+      if (block) block.style.display = 'none'
+    }
+  })()
+
   // AI narrative (append if present)
   if (ev.ai_narrative) {
     try {
@@ -1490,6 +1518,28 @@ async function openDispatch(eventId) {
 
   document.getElementById('wo-event-id').value = eventId
   document.getElementById('dispatch-modal').classList.add('open')
+}
+
+// ── Simulated Control Execution (Phase 4 — Closed-Loop Demo) ─────────────────
+async function executeRigControl(assetId, faultType) {
+  const steps = [
+    `🔧 Connecting to Pason EDR — Rig 42 control network…`,
+    `⚙ Bringing MUD-RIG42-3 online to 300 GPM…`,
+    `📊 Standpipe pressure stable — ECD nominal…`,
+    `✅ MUD-RIG42-1 reduced to 50 GPM (maintenance mode). Total flow: 700 GPM maintained.`,
+  ]
+  for (let i = 0; i < steps.length; i++) {
+    showToast(steps[i], 'pipeline', 0)
+    await _sleep(1200)
+  }
+  showToast(`✅ Rig Control command executed — ECD maintained, pump transition complete`, 'ok', 6000)
+}
+
+async function executeSCADACommand(assetId, cmd, label) {
+  showToast(`💻 Issuing SCADA command to ${assetId}: "${label}"…`, 'pipeline', 0)
+  await _sleep(1500)
+  const now = new Date().toLocaleTimeString('en-US',{hour12:false})
+  showToast(`✅ SCADA confirmed — "${label}" applied to ${assetId} at ${now} UTC`, 'ok', 6000)
 }
 function closeModal() { document.getElementById('dispatch-modal').classList.remove('open') }
 async function acknowledgeDispatch() {

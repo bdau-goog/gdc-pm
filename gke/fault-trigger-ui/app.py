@@ -50,6 +50,9 @@ EXCHANGE_NAME = "telemetry"
 ROUTING_KEY   = "sensor.reading"
 MODELS_DIR    = Path("/app/models")
 
+OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.local:11434")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma:2b")
+
 # ── RUL Model Registries (Task 3 — dual-version for MLOps demo) ───────────────
 # V1: original models trained on clean 5-minute interval data (intentionally drifted)
 # V2: retrained models matched to 5-second edge noise profile (stable, calibrated)
@@ -263,6 +266,28 @@ NORMAL_RANGES = {
     "top_drive": {"psi": (2840, 3160), "temp": (130, 165), "vib": (1.8, 3.8)},
 }
 
+# ── Fourth Sensor Config (Phase 4) ────────────────────────────────────────────
+# motor_amps for ESP: measured at VFD surface panel — standard on every ESP installation.
+#   Current is proportional to pump hydraulic work. As stages erode or gas locks the pump,
+#   current falls — the earliest and most sensitive indicator of pump health degradation.
+# spm for Mud Pump: stroke counter is the most basic drilling measurement (Pason/NOV EDR).
+#   SPM × liner_vol = theoretical flow. When SPM trends up while PSI holds, the driller
+#   is compensating for valve leakage — the volumetric efficiency signature SCADA misses.
+SENSOR4_CONFIG = {
+    "esp": {
+        "key": "motor_amps", "range_key": "amps_range",
+        "label": "Motor Current (A)",
+        "nominal": 75.0, "normal_range": (60, 90),
+        "crit": 40.0, "crit_dir": "below",
+    },
+    "mud_pump": {
+        "key": "spm", "range_key": "spm_range",
+        "label": "Stroke Rate (SPM)",
+        "nominal": 87.0, "normal_range": (75, 100),
+        "crit": 115.0, "crit_dir": "above",
+    },
+}
+
 # ── Fault Profiles ─────────────────────────────────────────────────────────────
 FAULT_PROFILES = {
     # ── ESP Faults ────────────────────────────────────────────────────────────
@@ -273,18 +298,21 @@ FAULT_PROFILES = {
         # PSI range represents the APPROACH to gas lock (900–1100, near the 800 PSI critical threshold)
         # NOT the post-lock state. This lets the RUL model predict when PSI will cross 800 PSI.
         "psi_range": (875, 1100), "temp_range": (195, 225), "vib_range": (3.5, 6.5),
+        "amps_range": (20, 45),   # Pump unloads as gas void fraction rises — current drops sharply
     },
     "sand_ingress": {
         "label": "Sand Ingress", "asset_class": "esp",
         "description": "Formation sand erodes impeller stages — vibration rises over hours while pressure holds",
         "color": "#f9a825",
         "psi_range": (1280, 1580), "temp_range": (200, 240), "vib_range": (4.5, 9.5),
+        "amps_range": (45, 65),   # Declining as impeller stages erode — pump does less hydraulic work
     },
     "motor_overheat": {
         "label": "Motor Over-Temp", "asset_class": "esp",
         "description": "Downhole cooling degrades — winding temp climbs toward insulation failure (>280°F)",
         "color": "#ff6d00",
         "psi_range": (1300, 1560), "temp_range": (265, 295), "vib_range": (2.5, 4.5),
+        "amps_range": (88, 105),  # Overcurrent — motor drawing more power fighting increased resistance
     },
     # ── Gas Lift Compressor Faults ────────────────────────────────────────────
     "valve_failure": {
@@ -311,18 +339,21 @@ FAULT_PROFILES = {
         "description": "Bladder ruptures — extreme pressure hammer and vibration spike, immediate pipe-rupture risk",
         "color": "#b71c1c",
         "psi_range": (3800, 4600), "temp_range": (120, 158), "vib_range": (15.0, 28.0),
+        "spm_range": (55, 135),   # Erratic — bladder failure causes chaotic pressure pulsation
     },
     "valve_washout": {
         "label": "Valve Seat Washout", "asset_class": "mud_pump",
         "description": "Fluid erodes valve seat over time — discharge pressure slowly declines as valve leaks",
         "color": "#e65100",
         "psi_range": (1800, 2400), "temp_range": (115, 145), "vib_range": (5.0, 10.0),
+        "spm_range": (95, 120),   # Rising — driller compensates for efficiency loss by increasing stroke rate
     },
     "piston_seal_wear": {
         "label": "Liner Seal Wear", "asset_class": "mud_pump",
         "description": "Piston-liner seals degrade — fluid end temp rises, discharge pressure slowly drops",
         "color": "#f57f17",
         "psi_range": (1900, 2450), "temp_range": (155, 190), "vib_range": (5.5, 8.5),
+        "spm_range": (90, 110),   # Moderate rise — slower compensation over days of seal degradation
     },
     # ── Top Drive Faults ──────────────────────────────────────────────────────
     "gearbox_bearing_spalling": {
@@ -1163,17 +1194,16 @@ def set_airgap(enabled: bool = True):
 
 # ── ML Predictive Forecast Visualization ─────────────────────────────────────
 @app.get("/api/plot/forecast/{asset_id}", response_class=HTMLResponse)
-def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = False):
+def plot_forecast(asset_id: str, metric: str = "auto"):
     """
     Returns a Plotly time-series chart with:
-      - Historical telemetry for the selected sensor
+      - Historical telemetry for the selected sensor (psi | temp | vib)
       - XGBoost RUL Regressor prediction → dotted line + Cone of Uncertainty
-      - Failure threshold line
-      - Estimated failure time annotation
-      - Optional purple dashed Cloud Inference line (compare_cloud=true)
+      - Alarm threshold line (when crossed, SCADA would fire — GDC predicts when)
+      - Estimated alarm time vertical marker (red)
+      - Point of No Return vertical marker (orange)
 
     metric: psi | temp | vib | auto (auto selects the primary degrading sensor)
-    compare_cloud: when true, adds a second VSAT-constrained+delayed cloud prediction line
     """
     import plotly.graph_objects as go
     from datetime import timedelta
@@ -1453,25 +1483,20 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
 
     # ── Pre-compute ALL key event times BEFORE sizing the x-axis ─────────────
     # This guarantees every vertical marker is always inside the visible range.
-    _cloud_lag   = 20   # VSAT latency midpoint (15–25m round-trip)
-    ttf_time     = (now + timedelta(minutes=rul_minutes)) if (rul_minutes is not None and rul_minutes > 0) else None
-    cloud_alert_t = None
+    ttf_time      = (now + timedelta(minutes=rul_minutes)) if (rul_minutes is not None and rul_minutes > 0) else None
     pnr_t         = None
     _pnr_m_final  = 0
     if classifier_active and fault_onset and detected_fault_type:
         _pnr_m_final  = PNR_MINUTES.get(detected_fault_type, 0)
-        cloud_alert_t = fault_onset + timedelta(minutes=_cloud_lag)
         if _pnr_m_final > 0:
             pnr_t = fault_onset + timedelta(minutes=_pnr_m_final)
 
-    # X-axis end: sized to show failure and cloud alert times clearly.
+    # X-axis end: sized to show alarm and PNR times clearly.
     # PNR only extends the axis if it's within 60 minutes — avoids 2-hour wide charts
     # for high-PNR faults like sand_ingress (120m) and bearing_wear (240m).
-    # When PNR is off-screen it still shows in the countdown callout.
     _x_cands = [now + timedelta(minutes=40)]
-    for _t in [ttf_time, cloud_alert_t]:
-        if _t is not None:
-            _x_cands.append(_t + timedelta(minutes=8))
+    if ttf_time is not None:
+        _x_cands.append(ttf_time + timedelta(minutes=8))
     if pnr_t is not None:
         _mins_to_pnr = (pnr_t - now).total_seconds() / 60
         if _mins_to_pnr <= 60:
@@ -1596,27 +1621,9 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             bgcolor="rgba(255,23,68,0.15)", bordercolor="rgba(255,23,68,0.5)", borderpad=4,
         )
 
-    # ── Vertical Marker 2: Cloud Alert Time ── PURPLE ─────────────────────────
-    # Always drawn when fault active — no toggle needed.
-    # Label at y=0.89 (middle row, staggered below failure label).
-    if cloud_alert_t is not None and classifier_active:
-        fig.add_shape(
-            type="line", x0=cloud_alert_t, x1=cloud_alert_t, y0=0, y1=1,
-            xref="x", yref="paper",
-            line=dict(color="rgba(156,39,176,0.9)", width=2.5, dash="solid"),
-        )
-        fig.add_annotation(
-            x=cloud_alert_t, y=0.89, xref="x", yref="paper",
-            text=f"<b>☁ Cloud T+{_cloud_lag}m</b>",
-            showarrow=False, xanchor="center",
-            font=dict(color="#ce93d8", size=11, family="JetBrains Mono"),
-            bgcolor="rgba(156,39,176,0.15)", bordercolor="rgba(156,39,176,0.5)", borderpad=4,
-        )
-
-    # ── Vertical Marker 3: Point of No Return ── ORANGE ───────────────────────
-    # Color: #ff6d00 (distinct orange, not same red as failure).
-    # Label at y=0.81 (bottom row, staggered below cloud label).
-    # Skipped for PNR=0 faults (pulsation dampener — instantaneous).
+    # ── Vertical Marker 2: Point of No Return ── ORANGE ───────────────────────
+    # Color: #ff6d00 (distinct orange, not same red as alarm marker).
+    # Staggered below alarm label. Skipped for PNR=0 faults (instantaneous).
     if pnr_t is not None and classifier_active:
         fig.add_shape(
             type="line", x0=pnr_t, x1=pnr_t, y0=0, y1=1,
@@ -1630,100 +1637,6 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
             font=dict(color="#ff6d00", size=11, family="JetBrains Mono"),
             bgcolor="rgba(255,109,0,0.15)", bordercolor="rgba(255,109,0,0.5)", borderpad=4,
         )
-
-    # ── Response Window Countdown Callout ─────────────────────────────────────
-    # Always shown when a fault is active (no toggle).
-    # Shows how much time remains before PNR for Edge vs Cloud detection.
-    if classifier_active and fault_onset and pnr_t and cloud_alert_t:
-        _now_utc  = datetime.utcnow()
-        _edge_win = max(0.0, (pnr_t - _now_utc).total_seconds() / 60)
-        _cld_win  = max(0.0, (pnr_t - cloud_alert_t).total_seconds() / 60)
-
-        _edge_str = f"{int(_edge_win)}m remaining" if _edge_win > 0 else "WINDOW EXPIRED"
-        _cld_str  = f"{int(_cld_win)}m remaining"  if _cld_win  > 0 else "❌ NO WINDOW — alert after PNR"
-        _ec       = "#00e676" if _edge_win > 5 else ("#ffb300" if _edge_win > 0 else "#f44336")
-        _cc       = "#ffb300" if _cld_win  > 5 else "#f44336"
-
-        _callout = (
-            f"<b>Response Windows</b><br>"
-            f"<span style='color:#00e676'>⚡ Edge AI: Detected at T+0 (&lt;1s)</span><br>"
-            f"<span style='color:{_ec}'>   {_edge_str} before PNR</span><br>"
-            f"<span style='color:#ce93d8'>☁ Cloud AI: Alert at T+{_cloud_lag}m (VSAT)</span><br>"
-            f"<span style='color:{_cc}'>   {_cld_str}</span><br>"
-            f"<span style='color:#ff6d00'>⛔ PNR: T+{_pnr_m_final}m from fault onset</span>"
-        )
-        fig.add_annotation(
-            x=0.99, y=0.03, xref="paper", yref="paper",
-            text=_callout,
-            showarrow=False, xanchor="right", yanchor="bottom", align="left",
-            font=dict(color="#e0e0e0", size=10.5),
-            bgcolor="rgba(15,19,24,0.92)", bordercolor="#2a3a50", borderpad=10, borderwidth=1,
-        )
-
-    # ── Optional: compare_cloud adds horizontal span arrows ───────────────────
-    # The three vertical lines above are ALWAYS drawn.
-    # compare_cloud=True adds the horizontal arrows + detailed callout box.
-    if compare_cloud and classifier_active and fault_onset and pnr_t and cloud_alert_t:
-        try:
-            edge_window_min  = _pnr_m_final
-            cloud_window_min = max(0, _pnr_m_final - _cloud_lag)
-            edge_color  = "#00e676" if edge_window_min > 0 else "#ffb300"
-            cloud_color = "#ffb300" if cloud_window_min > 0 else "#f44336"
-            edge_verdict  = f"✅ SAVED — {edge_window_min}m response window" if edge_window_min > 0 else "⚠ instant fault"
-            cloud_verdict = f"⚠ PARTIAL — {cloud_window_min}m window" if cloud_window_min > 0 else f"❌ LOST — alert after PNR"
-
-            if edge_window_min > 0:
-                fig.add_annotation(
-                    x=pnr_t, y=0.70, xref="x", yref="paper",
-                    ax=fault_onset, ay=0.70, axref="x", ayref="paper",
-                    arrowhead=2, arrowsize=1.2, arrowwidth=2.5, arrowcolor="#00e676",
-                    text=f"  ⚡ Edge: {edge_window_min}m to act",
-                    showarrow=True, xanchor="left",
-                    font=dict(color="#00e676", size=10),
-                    bgcolor="rgba(0,230,118,0.08)", borderpad=3,
-                )
-            if cloud_window_min > 0:
-                fig.add_annotation(
-                    x=pnr_t, y=0.62, xref="x", yref="paper",
-                    ax=cloud_alert_t, ay=0.62, axref="x", ayref="paper",
-                    arrowhead=2, arrowsize=1.2, arrowwidth=2.5, arrowcolor="#ce93d8",
-                    text=f"  ☁ Cloud: {cloud_window_min}m to act",
-                    showarrow=True, xanchor="left",
-                    font=dict(color="#ce93d8", size=10),
-                    bgcolor="rgba(156,39,176,0.08)", borderpad=3,
-                )
-            else:
-                fig.add_annotation(
-                    x=cloud_alert_t, y=0.62, xref="x", yref="paper",
-                    text="  ☁ NO WINDOW — Alert after PNR",
-                    showarrow=False, xanchor="left", xshift=6,
-                    font=dict(color="#f44336", size=10),
-                    bgcolor="rgba(244,67,54,0.08)", borderpad=3,
-                )
-
-            asset_risk = REMEDIATION_COSTS.get(detected_fault_type or "", 0)
-            risk_str   = f"${asset_risk:,}" if asset_risk else "N/A"
-            callout_text = (
-                f"<b>GDC Edge vs Cloud Analysis</b><br>"
-                f"<span style='color:{edge_color}'>⚡ Edge: {edge_verdict}</span><br>"
-                f"<span style='color:{cloud_color}'>☁ Cloud: {cloud_verdict}</span><br>"
-                f"<span style='color:#ff6d00'>⛔ PNR: T+{_pnr_m_final}m</span><br>"
-                f"<span style='color:#a0b0c0'>💰 Asset risk: {risk_str}</span>"
-            )
-            fig.add_annotation(
-                x=0.99, y=0.55, xref="paper", yref="paper",
-                text=callout_text,
-                showarrow=False, xanchor="right", yanchor="top", align="left",
-                font=dict(color="#e0e0e0", size=10.5),
-                bgcolor="rgba(15,19,24,0.92)", bordercolor="#2a3a50", borderpad=10, borderwidth=1,
-            )
-            _title_text = (
-                f"<b>{asset_id}</b> — {y_label} · Edge vs Cloud<br>"
-                f"<span style='color:{edge_color};font-size:11px'>⚡ Edge: {edge_verdict}  "
-                f"<span style='color:{cloud_color}'>☁ Cloud: {cloud_verdict}</span></span>"
-            )
-        except Exception as e:
-            log.warning(f"Cloud comparison failed for {asset_id}: {e}")
 
     # Styling ─────────────────────────────────────────────────────────────────
     fig.update_layout(
@@ -1766,6 +1679,340 @@ def plot_forecast(asset_id: str, metric: str = "auto", compare_cloud: bool = Fal
                        config={"displayModeBar": False, "responsive": True})
     html = html.replace("<body>", '<body style="background:#0b0c10;margin:0;padding:0;overflow:hidden;">')
     return HTMLResponse(html)
+
+
+# ── Agent Context API (Phase 4 — Agentic Predictive Maintenance) ──────────────
+# Returns scenario-specific enterprise context data for the given fault type.
+# Each fault maps to a different enterprise system and agentic scenario:
+#   supply_chain         → ERP (SAP MM) — procurement, lead times, inventory
+#   workforce_scheduling → FSM (Maximo) — crew schedules, work order append
+#   operational_control  → Rig Control (Pason EDR) — rig state, pump status
+AGENT_CONTEXTS = {
+    "sand_ingress": {
+        "enterprise_source": "ERP_SAP_MM", "source_label": "SAP Materials Management",
+        "scenario": "supply_chain",
+        "well_bom": {
+            "part_description": "ESP Sand-Handler Assembly",
+            "series": "400", "stages": 100, "design_rate_bpd": 2000,
+            "material_spec": "Tungsten Carbide Radial Bearings",
+            "manufacturer": "Baker Hughes Centrilift",
+            "mat_doc_number": "MAT-4002-TC-100", "unit_cost_usd": 145000,
+        },
+        "inventory": {"storage_location_local": 0, "storage_location_midland_hub": 0,
+                      "manufacturer_available_stock": 1, "manufacturer_location": "Claremore, OK"},
+        "lead_times": {"standard_freight_days": 12, "air_freight_days": 7, "air_freight_premium_usd": 8500},
+        "daily_production_value_usd": 8500,
+    },
+    "motor_overheat": {
+        "enterprise_source": "ERP_SAP_MM", "source_label": "SAP Materials Management",
+        "scenario": "supply_chain",
+        "well_bom": {
+            "part_description": "ESP Motor Assembly — Class H Winding",
+            "series": "456", "hp": 200,
+            "material_spec": "Class H High-Temperature Insulation",
+            "manufacturer": "Baker Hughes Centrilift",
+            "mat_doc_number": "MTR-456-200HP-H", "unit_cost_usd": 62000,
+        },
+        "inventory": {"storage_location_local": 0, "storage_location_midland_hub": 1,
+                      "manufacturer_available_stock": 3, "manufacturer_location": "Houston, TX"},
+        "lead_times": {"standard_freight_days": 5, "air_freight_days": 2, "air_freight_premium_usd": 3200},
+        "daily_production_value_usd": 8500,
+    },
+    "gas_lock": {
+        "enterprise_source": "SCADA_LOCAL", "source_label": "Local SCADA/VFD Control",
+        "scenario": "software_command",
+        "available_commands": [
+            {"cmd": "vfd_freq_reduce_15pct", "label": "Reduce VFD Frequency 15%",
+             "effect": "Lowers intake pressure requirements — allows gas void to migrate up annulus",
+             "cost_usd": 0, "time_min": 1},
+            {"cmd": "annulus_valve_open", "label": "Open Casing Annulus Valve",
+             "effect": "Bleeds casing annulus gas, reducing GVF at pump intake",
+             "cost_usd": 0, "time_min": 2},
+        ],
+        "current_vfd_freq_hz": 52.0, "recommended_freq_hz": 44.2,
+    },
+    "thermal_runaway": {
+        "enterprise_source": "FSM_MAXIMO", "source_label": "IBM Maximo Field Service",
+        "scenario": "workforce_scheduling",
+        "site": "pad_bravo",
+        "upcoming_dispatches": [
+            {
+                "work_order_id": "WO-2026-0847", "crew_id": "CREW-BRAVO-B", "headcount": 2,
+                "scheduled_date": "Tomorrow", "scheduled_time_local": "14:00",
+                "primary_task": "Transmitter calibration — Well B-3",
+                "estimated_duration_hours": 2.0,
+                "certifications": ["compressor_operator", "h2s_safety"],
+                "available_capacity_hours": 2.5,
+            }
+        ],
+        "appended_task": {
+            "description": "Aerial fin-fan cooler flush — GLIFT-BRAVO-1",
+            "estimated_duration_hours": 0.75,
+            "required_certifications": ["compressor_operator"],
+            "parts_required": False, "parts_cost_usd": 0, "labor_cost_usd": 0,
+            "emergency_dispatch_cost_usd": 1800,
+        },
+    },
+    "bearing_wear": {
+        "enterprise_source": "FSM_MAXIMO", "source_label": "IBM Maximo Field Service",
+        "scenario": "workforce_scheduling",
+        "site": "pad_bravo",
+        "upcoming_dispatches": [
+            {
+                "work_order_id": "WO-2026-0851", "crew_id": "CREW-BRAVO-A", "headcount": 3,
+                "scheduled_date": "Day After Tomorrow", "scheduled_time_local": "09:00",
+                "primary_task": "Quarterly compressor inspection — All Units",
+                "estimated_duration_hours": 4.0,
+                "certifications": ["compressor_operator", "millwright", "h2s_safety"],
+                "available_capacity_hours": 3.0,
+            }
+        ],
+        "appended_task": {
+            "description": "Journal bearing replacement — GLIFT-BRAVO crankshaft",
+            "estimated_duration_hours": 3.0,
+            "required_certifications": ["millwright", "compressor_operator"],
+            "parts_required": True, "part_number": "ARJ-42-BEARING-KIT",
+            "parts_cost_usd": 8200, "parts_in_stock": True,
+            "emergency_dispatch_cost_usd": 22000,
+        },
+    },
+    "valve_failure": {
+        "enterprise_source": "FSM_MAXIMO", "source_label": "IBM Maximo Field Service",
+        "scenario": "emergency_dispatch",
+        "site": "pad_bravo", "upcoming_dispatches": [],
+        "emergency_crew": {
+            "crew_id": "CREW-EMERGENCY-A", "headcount": 2,
+            "est_arrival_hours": 1.5,
+            "certifications": ["compressor_operator", "h2s_safety"],
+            "callout_cost_usd": 3200,
+        },
+        "required_parts": {
+            "part_description": "Check Valve Disk Assembly",
+            "part_number": "CVD-1200-PSI-4IN",
+            "in_stock_local": True, "unit_cost_usd": 1800,
+        },
+    },
+    "valve_washout": {
+        "enterprise_source": "DRILLSYS_PASON_EDR", "source_label": "Pason Electronic Drilling Recorder",
+        "scenario": "operational_control", "local_query": True,
+        "rig_id": "RIG-42", "hole_depth_ft": 12450, "inclination_deg": 38.5,
+        "next_connection_min": 22,
+        "ecd_constraints": {"min_flow_gpm_hole_cleaning": 650, "current_total_flow_gpm": 700},
+        "pump_status": {
+            "MUD-RIG42-1": {"status": "active", "current_spm": 89, "output_gpm": 350,
+                            "volumetric_efficiency_pct": 81, "ve_trend": "declining"},
+            "MUD-RIG42-2": {"status": "active", "current_spm": 89, "output_gpm": 350,
+                            "volumetric_efficiency_pct": 95, "ve_trend": "stable"},
+            "MUD-RIG42-3": {"status": "standby", "ready": True, "output_gpm": 0},
+        },
+        "recommended_transition": {
+            "step_1": "Bring MUD-RIG42-3 online to 300 GPM",
+            "step_2": "Verify stable standpipe pressure (allow 60s)",
+            "step_3": "Reduce MUD-RIG42-1 to 50 GPM — maintenance mode",
+            "result": "Total flow maintained at 700 GPM. ECD stable.",
+        },
+    },
+    "pulsation_dampener_failure": {
+        "enterprise_source": "DRILLSYS_PASON_EDR", "source_label": "Pason Electronic Drilling Recorder",
+        "scenario": "emergency_stop", "local_query": True,
+        "rig_id": "RIG-42",
+        "immediate_action": "EMERGENCY STOP — Pump room personnel must evacuate immediately",
+        "pump_status": {
+            "MUD-RIG42-1": {"status": "active", "current_spm": 89, "output_gpm": 350},
+            "MUD-RIG42-2": {"status": "active", "current_spm": 89, "output_gpm": 350},
+            "MUD-RIG42-3": {"status": "standby", "ready": True, "output_gpm": 0},
+        },
+    },
+    "piston_seal_wear": {
+        "enterprise_source": "ERP_SAP_MM", "source_label": "SAP Materials Management",
+        "scenario": "supply_chain",
+        "well_bom": {
+            "part_description": "Triplex Pump Liner Seal Kit",
+            "material_spec": "Polyurethane Piston Cups + Liner O-Rings",
+            "manufacturer": "National Oilwell Varco",
+            "mat_doc_number": "NOV-SEAL-TK-7500", "unit_cost_usd": 3800,
+        },
+        "inventory": {"storage_location_local": 2, "storage_location_midland_hub": 8,
+                      "manufacturer_available_stock": 100},
+        "lead_times": {"standard_freight_days": 1, "air_freight_days": 0, "air_freight_premium_usd": 0},
+    },
+    "gearbox_bearing_spalling": {
+        "enterprise_source": "ERP_SAP_MM", "source_label": "SAP Materials Management",
+        "scenario": "supply_chain",
+        "well_bom": {
+            "part_description": "Top Drive Gearbox Bearing Kit",
+            "material_spec": "Tapered Roller Bearing Set — NOV 250T Top Drive",
+            "manufacturer": "National Oilwell Varco",
+            "mat_doc_number": "NOV-250T-BEAR-KIT", "unit_cost_usd": 28500,
+        },
+        "inventory": {"storage_location_local": 0, "storage_location_midland_hub": 0,
+                      "manufacturer_available_stock": 2, "manufacturer_location": "Houston, TX"},
+        "lead_times": {"standard_freight_days": 4, "air_freight_days": 1, "air_freight_premium_usd": 6000},
+        "next_planned_trip_hours": 18, "daily_rig_rate_usd": 45000,
+    },
+    "hydraulic_leak": {
+        "enterprise_source": "DRILLSYS_PASON_EDR", "source_label": "Pason Electronic Drilling Recorder",
+        "scenario": "operational_monitor", "local_query": True,
+        "rig_id": "RIG-42",
+        "hydraulic_system": {
+            "current_pressure_psi": 2940, "reservoir_level_pct": 78,
+            "leak_rate_psi_per_hr": 12, "estimated_hours_to_low_alarm": 3.6,
+        },
+        "spare_parts_on_rig": {
+            "hydraulic_hose_3000psi": 2, "jic_fittings_3000psi": 6, "hydraulic_fluid_gal": 15,
+        },
+    },
+}
+
+
+@app.get("/api/agent/context/{fault_type}")
+def get_agent_context(fault_type: str, asset_id: str = None):
+    """Return enterprise context data for the given fault type (Phase 4 Agent API)."""
+    context = AGENT_CONTEXTS.get(fault_type, {
+        "enterprise_source": "ERP_SAP_MM", "source_label": "SAP Materials Management",
+        "scenario": "general",
+        "message": f"No specific enterprise context configured for: {fault_type}",
+    })
+    return {"fault_type": fault_type, "asset_id": asset_id, "context": context}
+
+
+@app.post("/api/agent/recommend")
+def get_agent_recommend(
+    fault_type: str,
+    asset_id: str,
+    rul_minutes: float = 60.0,
+    is_pnr_exceeded: bool = False,
+):
+    """
+    Generate an AI recommendation using enterprise context + optional Gemma LLM.
+    Falls back to rule-based templates if Gemma is unavailable.
+    Always returns a structured recommendation regardless of LLM availability.
+    """
+    ctx = AGENT_CONTEXTS.get(fault_type, {})
+    scenario         = ctx.get("scenario", "general")
+    enterprise_source = ctx.get("enterprise_source", "ERP_SAP_MM")
+    source_label     = ctx.get("source_label", enterprise_source)
+
+    # ── Rule-based recommendation (always available, no GPU required) ─────────
+    if scenario == "supply_chain":
+        lead_std   = ctx.get("lead_times", {}).get("standard_freight_days", "unknown")
+        lead_air   = ctx.get("lead_times", {}).get("air_freight_days", "unknown")
+        air_prem   = ctx.get("lead_times", {}).get("air_freight_premium_usd", 0)
+        local_stk  = ctx.get("inventory", {}).get("storage_location_local", 0)
+        part_desc  = ctx.get("well_bom", {}).get("part_description", "Required Part")
+        unit_cost  = ctx.get("well_bom", {}).get("unit_cost_usd", 0)
+        daily_val  = ctx.get("daily_production_value_usd", 0)
+        rul_days   = round(rul_minutes / 60 / 24, 1)
+        if local_stk > 0:
+            recommendation = (f"✅ {part_desc} is in local inventory ({local_stk} unit). "
+                              f"Schedule replacement before predicted failure in {rul_days} days.")
+        elif isinstance(lead_std, (int, float)) and lead_std <= rul_days:
+            recommendation = (f"📦 {part_desc} requires ordering. Standard freight ({lead_std} days) "
+                              f"arrives before predicted failure ({rul_days} days). "
+                              f"Order now — unit cost ${unit_cost:,}. "
+                              f"Failure without order = {round(rul_days * daily_val):,}/day deferred production.")
+        else:
+            recommendation = (f"🚨 {part_desc} standard lead time ({lead_std}d) exceeds predicted failure "
+                              f"window ({rul_days}d). Air freight ({lead_air}d, +${air_prem:,}) required. "
+                              f"Order immediately — daily production at risk: ${daily_val:,}/day.")
+    elif scenario == "workforce_scheduling":
+        dispatches = ctx.get("upcoming_dispatches", [])
+        task       = ctx.get("appended_task", {})
+        task_desc  = task.get("description", "Maintenance task")
+        task_hrs   = task.get("estimated_duration_hours", 1)
+        emg_cost   = task.get("emergency_dispatch_cost_usd", 2000)
+        if dispatches:
+            d        = dispatches[0]
+            avail    = d.get("available_capacity_hours", 0)
+            rec_str  = "✅" if avail >= task_hrs else "⚠️"
+            recommendation = (f"{rec_str} Crew {d['crew_id']} ({d['headcount']} mechanics) is scheduled "
+                              f"at this site {d['scheduled_date']} at {d['scheduled_time_local']} for "
+                              f"'{d['primary_task']}' ({d['estimated_duration_hours']}h). "
+                              f"Available capacity: {avail}h. "
+                              f"Append '{task_desc}' ({task_hrs}h) to WO {d['work_order_id']} — "
+                              f"zero additional travel cost vs ${emg_cost:,} emergency dispatch.")
+        else:
+            recommendation = (f"📞 No crew scheduled at this site. Initiate emergency dispatch for "
+                              f"'{task_desc}'. Estimated cost: ${emg_cost:,}.")
+    elif scenario == "operational_control":
+        tr   = ctx.get("recommended_transition", {})
+        conn = ctx.get("next_connection_min", "unknown")
+        recommendation = (f"🔧 Controlled pump transition recommended. "
+                          f"{tr.get('step_1', 'Bring standby pump online')}. "
+                          f"{tr.get('result', 'Maintain ECD.')} "
+                          f"Rebuild failing pump fluid end at next connection stop (~{conn} min).")
+    elif scenario == "software_command":
+        cmds = ctx.get("available_commands", [])
+        if cmds:
+            c = cmds[0]
+            recommendation = (f"💻 SCADA command available: '{c['label']}'. "
+                              f"Effect: {c.get('effect', 'Stabilize fault condition.')} "
+                              f"Execution time: {c.get('time_min', 1)} minute(s). Cost: $0.")
+        else:
+            recommendation = "💻 SCADA control commands available. Execute VFD adjustment immediately."
+    elif scenario == "emergency_stop":
+        recommendation = ("🚨 EMERGENCY: Immediate pump shutdown required. "
+                          "Evacuate pump room personnel before any inspection. "
+                          "Inspect standpipe, manifold, and Kelly hose for pressure hammer damage.")
+    elif scenario == "operational_monitor":
+        hs  = ctx.get("hydraulic_system", {})
+        hrs = hs.get("estimated_hours_to_low_alarm", "N/A")
+        spares = ctx.get("spare_parts_on_rig", {})
+        recommendation = (f"🔍 Hydraulic leak detected. Estimated {hrs}h until Low alarm at current rate. "
+                          f"Spare hoses on rig: {spares.get('hydraulic_hose_3000psi', 0)}. "
+                          f"Locate and repair during next stand break to prevent quill lock loss.")
+    elif scenario == "emergency_dispatch":
+        crew = ctx.get("emergency_crew", {})
+        part = ctx.get("required_parts", {})
+        recommendation = (f"📞 Emergency dispatch required. Crew ETA: {crew.get('est_arrival_hours', '?')}h. "
+                          f"Part '{part.get('part_description', 'valve')}' — "
+                          f"{'in local stock' if part.get('in_stock_local') else 'NOT in stock'}.")
+    else:
+        recommendation = (f"ℹ️ Context queried from {source_label}. "
+                          f"Review enterprise data and select the appropriate resolution action below.")
+
+    # ── Optional Gemma LLM enhancement ───────────────────────────────────────
+    enhanced = False
+    try:
+        import requests as _req
+        prompt = (
+            f"You are an oil and gas operations AI assistant. "
+            f"GDC edge AI detected '{fault_type.replace('_', ' ')}' on asset {asset_id}. "
+            f"Predicted time to alarm: {rul_minutes:.0f} minutes. "
+            f"Enterprise system ({source_label}) query result: "
+            f"{json.dumps({k: v for k, v in ctx.items() if k not in ('pump_status',)}, default=str)[:600]}. "
+            f"In 2-3 concise sentences, confirm: {recommendation}"
+        )
+        resp = _req.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                  "options": {"num_predict": 120, "temperature": 0.3}},
+            timeout=8,
+        )
+        if resp.status_code == 200:
+            gemma_text = resp.json().get("response", "").strip()
+            if len(gemma_text) > 40:
+                recommendation = gemma_text
+                enhanced = True
+    except Exception as e:
+        log.debug(f"Gemma agent enhancement unavailable: {e}")
+
+    return {
+        "fault_type":         fault_type,
+        "asset_id":           asset_id,
+        "rul_minutes":        rul_minutes,
+        "enterprise_source":  enterprise_source,
+        "source_label":       source_label,
+        "scenario":           scenario,
+        "recommendation":     recommendation,
+        "enhanced_by_llm":    enhanced,
+        "context_summary":    {
+            k: v for k, v in ctx.items()
+            if k in ("inventory", "lead_times", "upcoming_dispatches",
+                     "recommended_transition", "hydraulic_system", "available_commands",
+                     "required_parts", "emergency_crew", "next_planned_trip_hours")
+        },
+    }
 
 
 # ── Fleet Financials Ledger ───────────────────────────────────────────────────
