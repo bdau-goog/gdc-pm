@@ -1,104 +1,170 @@
-# Next Session Starting Prompt
-## Copy and paste this entire block as the task to start the next session
+# Next Session Prompt — Phase 10
+
+## Context
+GDC Predictive Maintenance demo running on GKE Autopilot.
+- Live URL: http://35.188.3.97
+- Project: `gdc-pm-v2`, cluster: `gdc-edge-simulation`, namespace: `default`
+- Image: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+- Files to edit: `gdc-pm/gke/fault-trigger-ui/index.html` and `gdc-pm/gke/fault-trigger-ui/app.py`
+- After any change: `docker build`, `docker push`, `kubectl rollout restart deployment/fault-trigger-ui`
+
+## Go Directly to Act Mode
+
+Do NOT spend time in Plan Mode re-investigating. All bugs and their root causes are documented below. Implement all fixes, rebuild the image, redeploy, verify at the live URL, and document a new deployment status doc.
 
 ---
 
-Move to `~/gdc-pm`. Initialize as an expert in GCP, BigQuery, Vertex AI, GDC (Google Distributed Cloud), and Kubernetes/GKE.
+## Critical Design Flaw (Fix First)
 
-Also initialize as an expert in industrial edge computing, oil and gas upstream drilling, production, operations, equipment and equipment maintenance. You are an expert in machine monitoring and telemetry, predictive maintenance, and machine learning systems used to predict imminent equipment failures.
+### The Tier Badge Semantic Bug
 
-You are deeply familiar with MLOps, training-serving skew, model drift, retraining pipelines, XGBoost training and inference pipelines, and the architectural differences between cloud-based and edge-based inference for time-sensitive industrial applications.
+**Root cause:** `_wsSliderHealth` is used for two purposes that must be separated:
+1. The health score projected at the slider's chosen intervention time (used to tell the agent "how healthy will the asset be when I intervene")
+2. The *current* health score used to determine intervention urgency (EARLY / URGENT / CRITICAL)
 
-You are also familiar with O&G supply chain and logistics (ESP procurement lead times, custom stage sizing), field service management (FSM route optimization, truck roll costs), and drilling operations (ECD management, volumetric efficiency, NPT prevention).
+The tier badge must reflect urgency *right now* based on the asset's current health, not the projected health at the operator's chosen future intervention time.
 
----
+**Fix in `index.html`:**
+- Add a new variable `_wsCurrentHealth` (initialized to `null`). The poller sets this to the latest `health_score` returned from `/api/health-status/{asset_id}` on every poll, regardless of slider position.
+- `_wsSliderHealth` continues to represent health at the slider time (used for the Intervening marker position and as context for the agent recommendation).
+- Change every call to `getTier(_wsSliderHealth, fp)` that feeds the **tier badge display** to `getTier(_wsCurrentHealth ?? _wsSliderHealth, fp)`.
+- The agent `sendAgentMessage()` and `consultOperationsAgent()` should continue passing `_wsSliderHealth` (slider health) as `slider_health_score` to the backend — that is correct.
 
-## Project State
-
-This is a GKE-based predictive maintenance demo (`gdc-pm`) running on GKE Autopilot cluster `gdc-edge-simulation` in project `gdc-pm-v2`.
-
-- **UI:** http://35.188.3.97
-- **Grafana:** http://136.115.220.48
-
-**Read `docs/PHASE_7_DEPLOYMENT_STATUS.md` before starting.** It is the current baseline.
-
----
-
-## Current Live State (Post Phase 7)
-
-- 14 assets across 3 sites: Pad Alpha (6 ESPs), Pad Bravo (4 Gas Lift), Rig 42 (3 Mud Pumps + 1 Top Drive)
-- **Phase 5:** 4 XGBoost health-score models deployed (`esp_health.ubj`, `gas_lift_health.ubj`, `mud_pump_health.ubj`, `top_drive_health.ubj`), exponential decay training (k=3.5), RMSE <0.002
-- **Phase 6:** Bug-fix and UX pass (forecast curve physics, sensor routing, inline Plotly, SSE agent streaming, gemma3:12b)
-- **Phase 7:** Bug-fix and feature pass — all items below now live:
-  - ✅ Pad Charlie removed from simulator (was generating phantom events)
-  - ✅ Duplicate `injectFault()` and `updateIncidents()` consolidated
-  - ✅ `_currentForecastData` cleared on asset switch (no chart flicker)
-  - ✅ `/api/model/version` endpoint added (MLOps retrain button fixed)
-  - ✅ Ollama `gemma3:12b` keepalive background thread (no cold starts)
-  - ✅ `scripts/hard_reset_db.sh` added (hard reset tool)
-  - ✅ Intervention Slider now shows physical time units (min/hrs/days) with 5s live animation
-  - ✅ Plotly chart resizes automatically when Operations Workspace opens/closes
-  - ✅ AlloyDB truncated and reset — clean slate post-Pad Charlie
-
-### ⚠️ Known Gaps (Deferred to Phase 8)
-
-1. **`sendAgentMessage()` not streaming:** Follow-up chat messages use blocking HTTP. Backend `/api/agent/recommend-stream` needs `message` + `chat_history` params. Frontend `sendAgentMessage()` needs to consume SSE.
-
-2. **XGBoost models trained on old health-% ground truth:** Models were trained before the time-based slider was added. Ground truth labels are still in health-score space. Consider retraining with time-normalized labels in Phase 8 if the slider-to-health conversion introduces drift.
+**Why this fixes the observed symptoms:**
+- Moving slider left (intervening sooner when asset is still healthier in the future) no longer flips badge to CRITICAL — the badge reflects current health, which hasn't changed.
+- After one minute when poller fires, it updates `_wsCurrentHealth` from the server, which is correct.
+- Tier badge correctly shows EARLY → URGENT → CRITICAL as the fault degrades in real time, independent of where the operator positions the slider.
 
 ---
 
-## Cluster Access
+## Bug 1 — Stale Intervening Marker on Reset
 
-```bash
-gcloud container clusters get-credentials gdc-edge-simulation \
-  --region us-central1 --project gdc-pm-v2
-```
+**Symptom:** After clicking Reset (no active fault), the green "Intervening" vertical line still appears on the ML Forecast chart, and the ML Detection panel still shows a tier badge (EARLY) with timing values.
 
-## Build + Deploy Pattern (fault-trigger-ui only)
+**Root cause:** `showWorkspace()` / `_renderForecastTab()` does not clear the Intervening shape and the tier badge when `_wsActiveFault` is null.
 
-```bash
-cd /home/brian/gdc-pm/gke/fault-trigger-ui
-docker build --platform linux/amd64 \
-  -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest . && \
-docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest && \
-kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm && \
-kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=120s
-```
-
-## Hard Reset (clears all events, resets ID sequence)
-
-```bash
-bash scripts/hard_reset_db.sh --confirm
-```
-
-**Important:** Ask for explicit approval before running any build + deploy sequence.
+**Fix in `index.html`:**
+- In `showWorkspace()` (called on reset / fault clear): set `_sliderManuallySet = false`, clear `_wsCurrentHealth = null`, clear `_wsSliderHealth` to a sensible default (e.g. 1.0), and hide / remove the intervention slider panel.
+- In `_renderForecastTab()`: before adding the Intervening shape to `shapes[]`, guard with `if (_wsActiveFault && nowISO)`. If no active fault, skip the shape entirely.
+- Also guard the tier badge update: only update it if `_wsActiveFault` is set.
 
 ---
 
-## Doc Set (Current)
+## Bug 2 — Poller Overwrites Manual Slider Even with _sliderManuallySet=true
 
-```
-docs/
-├── ARCHITECTURE.md
-├── LESSONS_LEARNED.md
-├── NEXT_SESSION_PROMPT.md           ← This file
-├── PHASE_3_DEPLOYMENT_STATUS.md
-├── PHASE_3_1_DEPLOYMENT_STATUS.md
-├── PHASE_4_PLAN.md
-├── PHASE_4_1_DEPLOYMENT_STATUS.md
-├── PHASE_4_1_SENSOR_RETRAIN.md
-├── PHASE_4_2_DEPLOYMENT_STATUS.md
-├── PHASE_5_PLAN.md
-├── PHASE_6_PLAN.md
-├── PHASE_6_DEPLOYMENT_STATUS.md
-├── PHASE_7_DEPLOYMENT_STATUS.md     ← CURRENT BASELINE (read first)
-├── README.md
-├── VALUE_PROPOSITION.md
-├── WHY_GDC.md
-├── WHY_THESE_SCENARIOS.md
-├── rag_source/
-└── runbooks/DEPLOY_FROM_SCRATCH.md
-```
+**Symptom:** Operator drags the slider → badge changes to CRITICAL. After ~60s the poller fires and badge reverts to EARLY.
 
-Wait for instructions before proceeding.
+**Root cause:** The poller's health-status fetch calls code that sets `_wsSliderHealth` unconditionally when there is no active fault (the guard `if (!_sliderManuallySet)` is either absent or in the wrong branch).
+
+**Fix in `index.html`:**
+- The poller should ALWAYS update `_wsCurrentHealth` (current health from server) — this drives the tier badge.
+- The poller should update `_wsSliderHealth` ONLY when `!_sliderManuallySet` (slider not manually positioned).
+- The poller should also only update the slider DOM element's value when `!_sliderManuallySet`.
+- Confirm the `_sliderManuallySet` flag is reset to `false` in `showWorkspace()` when a new fault workspace opens (so that fresh fault injections start with auto-tracking).
+
+---
+
+## Bug 3 — Gas-Lock: Motor Current Selected as Primary Sensor Tab
+
+**Symptom:** On gas-lock fault injection, the "Motor Current ⚡" tab is auto-selected and shown as the primary sensor. Gas lock is driven by rising gas void fraction reducing intake *pressure* — the physically correct leading sensor is Intake Pressure (PSI drops toward 800 psi critical threshold).
+
+**Root cause:** In `app.py` FAULT_PHYSICS, `"primary_sensor": "amps"` for gas_lock.
+
+**Fix in `app.py`:**
+```python
+"gas_lock": {
+    "horizon_label": "Minutes",
+    "total_hours": 0.75,
+    "scada_alarm_health": 0.30,
+    "pnr_health": 0.12,
+    "scada_sensor": "psi",        # PSI drops below 800 psi critical threshold
+    "pnr_sensor": "temp",         # Winding temperature burnout at PNR
+    "primary_sensor": "psi",      # Intake Pressure is the causal leading sensor
+    "intervention_type": "operational_control",
+},
+```
+Also update the matching entry in `FAULT_PHYSICS_JS` in `index.html`.
+
+**Note on amps:** Motor Current (amps) does drop as gas void fraction rises (pump unloads), but it is a *lagging* secondary indicator. PSI is the causal first-mover for gas lock.
+
+---
+
+## Bug 4 — Gas-Lock SCADA Alarm Marker Renders After Curve Crosses Threshold
+
+**Symptom:** The red "SCADA Alarm in Xm" vertical line appears to the right of where the orange dotted projection curve actually crosses the red dashed SCADA threshold.
+
+**Root cause:** `ttf_time = now + timedelta(minutes=rul_minutes)` where `rul_minutes` = time until SCADA alarm from current health score. This is physically correct. However, the projection curve is drawn using an exponential decay that is anchored to `y_start` (current sensor value) and `y_failure` (full failure endpoint), with `y_crit` as the SCADA threshold *en route*. Because the exponential decay is computed over `ttf_total_min` (the full failure horizon), the curve visually crosses `y_crit` later than `rul_minutes` because the curve endpoint is `y_failure`, not `y_crit`.
+
+**Fix in `app.py` and the `_build_sensor` equivalent in `get_forecast_data`:**
+The exponential projection curve should be parameterized so that it crosses `y_crit` exactly at `t = rul_minutes`. Currently the curve uses:
+```python
+t_norm = t_arr / ttf_total_min  # normalized over FULL failure horizon
+```
+This means at `t = rul_minutes`, `t_norm = rul_minutes / ttf_total_min < 1.0`, and the exponential hasn't reached `y_crit` yet at that point on the curve.
+
+The fix: derive the curve so that `y_crit` is hit exactly at `t = rul_minutes`. Use a two-segment approach:
+- From `t=0` to `t=rul_minutes`: exponential decay from `y_start` to `y_crit`
+- From `t=rul_minutes` to `t=x_end`: continued exponential decay from `y_crit` to `y_failure`
+
+Or alternatively, re-scale the exponential so that `exp(k * rul_minutes/ttf_total_min) - 1) / (exp(k) - 1)` equals the normalized distance from `y_start` to `y_crit`.
+
+---
+
+## Feature: sendAgentMessage() SSE Streaming
+
+**Current state:** `sendAgentMessage()` calls `POST /api/agent/recommend` (blocking JSON response). `consultOperationsAgent()` already uses `POST /api/agent/recommend-stream` (SSE streaming, working).
+
+**Problem:** The agent chat messages entered by the operator (after the initial recommendation) use the blocking endpoint and don't support streaming, and don't pass `chat_history` to the streaming endpoint.
+
+**Fix in `app.py`:**
+Add `chat_history: str = None` parameter to `get_agent_recommend_stream()`. Parse it with `json.loads(chat_history)` if present. Pass the parsed history into the LLM prompt (same as the blocking endpoint does).
+
+**Fix in `index.html`:**
+Replace `sendAgentMessage()`'s fetch of `/api/agent/recommend` with the same SSE streaming loop already used in `consultOperationsAgent()`. Key differences from `consultOperationsAgent()`:
+- Pass `chat_history: JSON.stringify(_agentChatHistory.slice(-6))` in URLSearchParams
+- On `type === 'recommendation'`: append to chat log (same as now)
+- On `type === 'token'`: stream tokens into a teal-bordered streaming bubble (same pattern as `consultOperationsAgent()`)
+- On `type === 'done'`: push full streamed content to `_agentChatHistory`, re-enable send button
+
+---
+
+## Feature: Retrain Phase 5 XGBoost Models with Phase 7.1 Slider Data
+
+**Background:** The current models (`model_pump.json`, `model_esp.json`, `model_transformer.json`) are trained on synthetic health scores that follow a purely deterministic `1.0 - t_frac` curve. Phase 7.1 introduced the intervention slider which means operators can see and adjust perceived health. The models should be retrained to reflect that the health score progression can be modified by operator actions (intervention at a given health level).
+
+**What "slider data" means for training:** The training sequences should include examples where the health score is artificially held higher for some steps (simulating a partial recovery / intervention) then resumes degradation. This makes the model more robust to non-monotonic health score trajectories in real deployments.
+
+**Script:** `gdc-pm/scripts/retrain_edge_models.py`
+
+**Change needed in `generate_sequence()`:**
+With probability `p_intervention = 0.15`, after the sequence reaches a random health score between 0.3 and 0.7, insert a "partial intervention" plateau (health held constant for 5–15 steps with small noise) then resume degradation from that health level. This does NOT change the physics — it adds training diversity so the model doesn't assume strictly monotonic descent.
+
+After retraining, replace the `.json` model files and rebuild/redeploy the Docker image.
+
+---
+
+## Deployment Checklist for Next Session
+
+1. Make all code changes above in `index.html` and `app.py`
+2. Run a quick sanity check: `grep -n "_wsCurrentHealth" gdc-pm/gke/fault-trigger-ui/index.html` (should appear in poller, tier badge display, and showWorkspace)
+3. Build: `docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest gdc-pm/gke/fault-trigger-ui/`
+4. Push: `docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+5. Rollout: `kubectl rollout restart deployment/fault-trigger-ui -n default`
+6. Wait: `kubectl rollout status deployment/fault-trigger-ui -n default`
+7. Verify at http://35.188.3.97:
+   - Reset → no Intervening line, no tier badge
+   - Inject gas-lock → "Intake Pres." tab selected as primary
+   - SCADA alarm marker aligns with dotted curve crossing threshold
+   - Tier badge shows EARLY initially, transitions naturally as health degrades (not driven by slider position)
+   - Drag slider left/right → Intervening marker moves, tier badge does NOT change
+   - Agent chat messages stream character-by-character
+8. Create `docs/PHASE_10_DEPLOYMENT_STATUS.md` with the new image digest
+
+---
+
+## Files Changed Summary
+| File | Changes |
+|------|---------|
+| `gke/fault-trigger-ui/index.html` | Add `_wsCurrentHealth`, decouple tier from slider, fix reset clear, fix poller guard, update gas_lock in FAULT_PHYSICS_JS, refactor sendAgentMessage to SSE |
+| `gke/fault-trigger-ui/app.py` | Fix gas_lock FAULT_PHYSICS primary/scada sensor, fix alarm curve alignment, add chat_history to recommend-stream |
+| `scripts/retrain_edge_models.py` | Add partial-intervention plateau to generate_sequence(), retrain models |

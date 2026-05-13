@@ -496,11 +496,27 @@
 
     /* ── Operations Workspace — Bottom Panel ── */
     #ops-workspace {
-      flex-shrink: 0; height: 232px;
+      flex-shrink: 0; height: 300px;
       border-top: 2px solid rgba(30,144,255,0.3);
       display: none; flex-direction: column;
     }
     #ops-workspace.visible { display: flex; }
+
+    /* ── Ops Workspace Resize Handle (Phase 8) ── */
+    #ops-resize-handle {
+      display: none; flex-shrink: 0; height: 7px; cursor: ns-resize;
+      background: var(--border); position: relative;
+      align-items: center; justify-content: center;
+      transition: background 0.15s; border-top: 1px solid var(--border2);
+    }
+    #ops-resize-handle.visible { display: flex; }
+    #ops-resize-handle:hover { background: rgba(30,144,255,0.2); }
+    #ops-resize-handle::before {
+      content: ''; display: block; width: 32px; height: 3px; border-radius: 2px;
+      background: var(--muted); opacity: 0.5;
+    }
+    #ops-resize-handle.dragging { background: rgba(30,144,255,0.35); }
+
     .workspace-hdr {
       display: flex; align-items: center; gap: 8px; flex-shrink: 0;
       padding: 5px 14px; border-bottom: 1px solid var(--border);
@@ -545,6 +561,16 @@
     }
     #btn-consult-agent:hover { filter: brightness(1.15); }
     #btn-consult-agent:disabled { opacity: 0.45; cursor: default; filter: none; }
+    #btn-execute-action {
+      width: 100%; margin-top: 6px; padding: 6px;
+      border-radius: 6px; border: none;
+      background: linear-gradient(135deg, #1b5e20, #2e7d32);
+      color: #fff; font-size: 0.76rem; font-weight: 700;
+      cursor: pointer; transition: filter 0.15s; display: none;
+    }
+    #btn-execute-action:hover { filter: brightness(1.18); }
+    #btn-execute-action.visible { display: block; }
+    #btn-execute-action:disabled { opacity: 0.45; cursor: default; filter: none; }
 
     /* Right: Agent Chat */
     .ws-chat { display: flex; flex-direction: column; overflow: hidden; }
@@ -727,6 +753,9 @@
         </div>
       </div>
 
+      <!-- ── Ops Workspace Resize Handle (Phase 8) ── -->
+      <div id="ops-resize-handle" title="Drag to resize the operations workspace"></div>
+
       <!-- ── Operations Workspace (Phase 5.3) ── -->
       <div id="ops-workspace">
         <div class="workspace-hdr">
@@ -763,6 +792,9 @@
             </div>
             <button id="btn-consult-agent" onclick="consultAgent()" disabled>
               💬 Consult Operations Agent
+            </button>
+            <button id="btn-execute-action" onclick="resolveCurrentFault()" disabled>
+              ⚡ Execute Intervention Now
             </button>
           </div>
           <!-- Right: Agent Chat -->
@@ -1360,6 +1392,7 @@ function selectAsset(assetId) {
   document.getElementById('btn-asset-intel').classList.add('visible')
   // Phase 7.0: Clear stale cached forecast data on asset switch — prevents brief flicker
   _currentForecastData = null
+  _primaryTabSelected = false  // Phase 10: reset so primary tab auto-selects for new asset
   refreshPlot()
 }
 
@@ -1443,6 +1476,9 @@ async function resetNormal() {
   await fetch(`/api/cancel-degrade/${selectedAsset}`,{method:'POST'}).catch(()=>{})
   delete activeDegrades[selectedAsset]
   showToast(`↺ Reset ${selectedAsset} to normal`,'ok')
+  // Phase 10 Bug 1 fix: hide workspace + clear tier badge state on reset
+  hideWorkspace()
+  _wsCurrentHealth = null
   updateDegradeProgress(); updateFleetBar()
   setTimeout(()=>{ refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
 }
@@ -1509,6 +1545,7 @@ let _currentForecastData = null   // last JSON from /api/plot/forecast-data/
 let _forecastLoading     = false  // debounce guard
 
 // Update primary sensor badge on tabs (⚡ marks the most diagnostic tab)
+// Phase 10: Also auto-selects the primary tab once per fault workspace session
 function _updateSensorTabBadges(data) {
   document.querySelectorAll('.sensor-tab .primary-badge').forEach(b => b.remove())
   if (!data?.primary_sensor || !data.is_active) return
@@ -1520,9 +1557,15 @@ function _updateSensorTabBadges(data) {
     badge.textContent = '⚡'
     el.appendChild(badge)
   }
+  // Phase 10: Auto-select primary tab once per fault injection
+  if (!_primaryTabSelected && data.primary_sensor && data.primary_sensor !== selectedMetric) {
+    _primaryTabSelected = true
+    selectTab(data.primary_sensor)
+  }
 }
 
 // Render a single sensor tab using Plotly.react() — instant, no server call
+// Phase 9: Injects a "🛠 Planned Intervention" line linked to the slider position
 function _renderForecastTab(metric) {
   const data = _currentForecastData
   if (!data?.sensors) return
@@ -1534,6 +1577,36 @@ function _renderForecastTab(metric) {
     autosize: true,
     paper_bgcolor: '#0b0c10', plot_bgcolor: '#0f1318',
   })
+  // Phase 9: Add "Planned Intervention" line when workspace is open
+  // shapes[0] is always the NOW vertical line — use its x0 as the chart's "now" timestamp
+  if (_wsActiveFault && Array.isArray(sd.layout?.shapes) && sd.layout.shapes.length > 0) {
+    const nowISO   = sd.layout.shapes[0]?.x0
+    const sliderEl = document.getElementById('intervention-slider')
+    if (nowISO && sliderEl) {
+      const sliderMin = parseFloat(sliderEl.value)
+      if (!isNaN(sliderMin) && sliderMin >= 0) {
+        // Phase 9 fix: Python isoformat() has no timezone marker → JS parses it as LOCAL time.
+        // Appending Z forces UTC interpretation to match the server's chart timestamps.
+        const nowUtcMs    = new Date(nowISO.endsWith('Z') ? nowISO : nowISO + 'Z').getTime()
+        const isoMs       = nowUtcMs + sliderMin * 60 * 1000
+        // Strip Z from output so it matches the non-Z format of the chart's other timestamps
+        const interventionISO = new Date(isoMs).toISOString().replace(/\.\d{3}Z$/, '')
+        const iShape = {
+          type:'line', x0:interventionISO, x1:interventionISO,
+          y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(0,230,118,0.9)', width:2.5, dash:'dot'}
+        }
+        const iAnnot = {
+          x:interventionISO, y:0.55, xref:'x', yref:'paper',
+          text:'<b>🛠 Intervening</b>', showarrow:false, xanchor:'center',
+          font:{color:'#00e676', size:10, family:'JetBrains Mono'},
+          bgcolor:'rgba(0,230,118,0.15)', bordercolor:'rgba(0,230,118,0.5)', borderpad:3
+        }
+        layout.shapes      = [...(sd.layout.shapes      || []), iShape]
+        layout.annotations = [...(sd.layout.annotations || []), iAnnot]
+      }
+    }
+  }
   Plotly.react(chartDiv, sd.traces, layout, {displayModeBar: false, responsive: true})
 }
 
@@ -1584,15 +1657,17 @@ function closeFsPlot() {
   document.getElementById('fs-iframe').src = ''
 }
 
-// Slider user-grab guard (Phase 6.4 prep): prevents auto-tick overriding manual drag
-let _sliderUserHeld = false
+// Slider user-grab guard: prevents auto-tick overriding manual drag
+// _sliderManuallySet: once the user drags, the poller never overwrites the position
+let _sliderUserHeld    = false
+let _sliderManuallySet = false   // Phase 9: latches true on first manual drag, resets on showWorkspace
 document.addEventListener('DOMContentLoaded', () => {
   const sl = document.getElementById('intervention-slider')
   if (sl) {
-    sl.addEventListener('mousedown', () => { _sliderUserHeld = true })
-    sl.addEventListener('touchstart', () => { _sliderUserHeld = true })
-    sl.addEventListener('mouseup', () => { setTimeout(() => { _sliderUserHeld = false }, 1000) })
-    sl.addEventListener('touchend', () => { setTimeout(() => { _sliderUserHeld = false }, 1000) })
+    sl.addEventListener('mousedown', () => { _sliderUserHeld = true; _sliderManuallySet = true })
+    sl.addEventListener('touchstart', () => { _sliderUserHeld = true; _sliderManuallySet = true })
+    sl.addEventListener('mouseup', () => { setTimeout(() => { _sliderUserHeld = false }, 500) })
+    sl.addEventListener('touchend', () => { setTimeout(() => { _sliderUserHeld = false }, 500) })
   }
 })
 
@@ -1794,7 +1869,56 @@ async function openDispatch(eventId) {
   document.getElementById('dispatch-modal').classList.add('open')
 }
 
+// ── Phase 9: Fault Resolution via Operations Workspace ───────────────────────
+// resolveFromAgent: core resolution function — cancels fault, restores telemetry,
+// acknowledges the event in the DB, and refreshes all UI panels + savings ticker.
+async function resolveFromAgent(assetId, actionLabel, costIncurred) {
+  // 1. Acknowledge most recent unacknowledged fault event for this asset
+  const ev = recentEvents.find(e => e.asset_id === assetId && !e.acknowledged
+    && e.failure_type && e.failure_type !== 'normal')
+  if (ev) {
+    await fetch(`/api/acknowledge/${ev.id}`, {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        operator: 'ops', resolution_action: actionLabel, cost_incurred: costIncurred || 0
+      })
+    }).catch(()=>{})
+  }
+  // 2. Cancel degradation + restore normal telemetry
+  await fetch(`/api/cancel-degrade/${assetId}`, {method:'POST'}).catch(()=>{})
+  await fetch('/api/inject-fault', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({asset_id:assetId, fault_type:'normal', count:5})
+  }).catch(()=>{})
+  delete activeDegrades[assetId]
+  // 3. Close workspace and refresh all data
+  hideWorkspace()
+  updateDegradeProgress(); updateFleetBar()
+  await Promise.all([refreshEvents(), refreshStatus(), refreshSavings(), refreshLedger()])
+  setTimeout(() => refreshPlot(), 1500)
+}
+
+// resolveCurrentFault: Called from "⚡ Execute Intervention Now" button
+// Uses current workspace state (_wsActiveFault, _wsSliderHealth) to determine tier/cost
+async function resolveCurrentFault() {
+  const assetId = _wsActiveAsset, fault = _wsActiveFault
+  if (!assetId || !fault) return
+  const fp   = FAULT_PHYSICS_JS[fault] || {}
+  const tier = getTier(_wsSliderHealth, fp)
+  const cost = COST_INCURRED_BY_TIER[fault]?.[tier] || 0
+  const tierLabels = {
+    early:'SCADA early intervention', urgent:'Urgent field response',
+    critical:'Emergency procedure', post_pnr:'Workover recovery dispatch'
+  }
+  const actionLabel = `${tierLabels[tier]||'Operational intervention'} via Operations Workspace`
+  showToast(`⚡ Executing ${fp.intervention_type?.replace(/_/g,' ')||'intervention'} on ${assetId}…`, 'pipeline', 0)
+  await _sleep(1500)
+  showToast(`✅ Intervention executed — ${assetId} fault cleared, telemetry restored`, 'ok', 6000)
+  await resolveFromAgent(assetId, actionLabel, cost)
+}
+
 // ── Simulated Control Execution (Phase 4 — Closed-Loop Demo) ─────────────────
+// Phase 9: Both execution functions now fully resolve the fault
 async function executeRigControl(assetId, faultType) {
   const steps = [
     `🔧 Connecting to Pason EDR — Rig 42 control network…`,
@@ -1802,18 +1926,23 @@ async function executeRigControl(assetId, faultType) {
     `📊 Standpipe pressure stable — ECD nominal…`,
     `✅ MUD-RIG42-1 reduced to 50 GPM (maintenance mode). Total flow: 700 GPM maintained.`,
   ]
-  for (let i = 0; i < steps.length; i++) {
-    showToast(steps[i], 'pipeline', 0)
-    await _sleep(1200)
-  }
-  showToast(`✅ Rig Control command executed — ECD maintained, pump transition complete`, 'ok', 6000)
+  for (const s of steps) { showToast(s, 'pipeline', 0); await _sleep(1200) }
+  showToast(`✅ Rig Control command executed — ECD maintained, fault cleared`, 'ok', 6000)
+  const fp   = FAULT_PHYSICS_JS[_wsActiveFault || faultType] || {}
+  const tier = getTier(_wsSliderHealth, fp)
+  const cost = COST_INCURRED_BY_TIER[_wsActiveFault || faultType]?.[tier] || 0
+  await resolveFromAgent(assetId, 'Pump transition via Pason EDR rig control', cost)
 }
 
 async function executeSCADACommand(assetId, cmd, label) {
   showToast(`💻 Issuing SCADA command to ${assetId}: "${label}"…`, 'pipeline', 0)
   await _sleep(1500)
   const now = new Date().toLocaleTimeString('en-US',{hour12:false})
-  showToast(`✅ SCADA confirmed — "${label}" applied to ${assetId} at ${now} UTC`, 'ok', 6000)
+  showToast(`✅ SCADA confirmed — "${label}" applied at ${now} UTC — fault cleared`, 'ok', 6000)
+  const fp   = FAULT_PHYSICS_JS[_wsActiveFault] || {}
+  const tier = getTier(_wsSliderHealth, fp)
+  const cost = COST_INCURRED_BY_TIER[_wsActiveFault]?.[tier] || 0
+  await resolveFromAgent(assetId, label, cost)
 }
 function closeModal() { document.getElementById('dispatch-modal').classList.remove('open') }
 async function acknowledgeDispatch() {
@@ -2217,8 +2346,10 @@ const COST_INCURRED_BY_TIER = {
 // ── Workspace State ───────────────────────────────────────────────────────────
 let _wsActiveFault     = null
 let _wsActiveAsset     = null
-let _wsSliderHealth    = 0.75   // current slider position (0.0–1.0)
+let _wsSliderHealth    = 0.75   // slider position health (0.0–1.0) — used for intervention timing
+let _wsCurrentHealth   = null   // latest health_score from server poller — drives tier badge only
 let _agentChatHistory  = []
+let _primaryTabSelected = false  // Phase 10: auto-select primary tab once per fault injection
 
 // ── Phase 7.1: Time-Based Slider State ───────────────────────────────────────
 // The slider moves in physical time units (minutes) rather than abstract health %.
@@ -2252,8 +2383,9 @@ function _startDegradePoller(assetId) {
         _wsHorizonLabel = d.horizon_label || 'Hours'
         const sliderEl  = document.getElementById('intervention-slider')
         if (sliderEl) {
-          sliderEl.max = Math.ceil(_wsTTFMinutes)
-          if (!_sliderUserHeld) {
+          // Phase 10: Always update _wsCurrentHealth — drives tier badge independent of slider
+          _wsCurrentHealth = d.health_score != null ? d.health_score : _wsCurrentHealth
+          if (!_sliderUserHeld && !_sliderManuallySet) {
             // Thumb follows live TTF — animates leftward as fault progresses
             sliderEl.value = Math.ceil(_wsTTFMinutes)
             const fp = FAULT_PHYSICS_JS[_wsActiveFault]
@@ -2262,8 +2394,9 @@ function _startDegradePoller(assetId) {
                 ? d.health_score
                 : _wsTTFMinutes / (fp.total_hours * 60)
             }
-            updateWorkspace()
           }
+          // Phase 10: Always update workspace so tier badge reflects _wsCurrentHealth
+          updateWorkspace()
         }
       }
     } catch(e) {}
@@ -2311,6 +2444,8 @@ function onSliderInput(rawVal) {
     _wsSliderHealth = sliderMin / 100.0
   }
   updateWorkspace()
+  // Phase 9: Update planned intervention line on chart as slider moves
+  if (_currentForecastData) _renderForecastTab(selectedMetric)
 }
 
 // ── Main workspace update (instant, no API call) ──────────────────────────────
@@ -2323,9 +2458,12 @@ function updateWorkspace() {
   const ttFail  = Math.max(0, hs * fp.total_hours)
   const ttScada = Math.max(0, (hs - fp.scada_alarm_health) * fp.total_hours)
   const ttPnr   = Math.max(0, (hs - fp.pnr_health) * fp.total_hours)
-  const tier    = getTier(hs, fp)
-  const badge   = getTierBadge(tier)
-  const tierCss = tier === 'post_pnr' ? 'recovery' : tier
+  // Phase 10: Tier BADGE uses current health from server — independent of slider position
+  // Slider position health (hs) is still used for physics calculations and costs
+  const tier     = getTier(hs, fp)                      // slider-position tier: for costs
+  const tierDisp = getTier(_wsCurrentHealth ?? hs, fp)  // current health tier: for badge
+  const badge    = getTierBadge(tierDisp)
+  const tierCss  = tierDisp === 'post_pnr' ? 'recovery' : tierDisp
 
   // ── Slider header ─────────────────────────────────────────────────────────
   const tierEl = document.getElementById('slider-tier-badge')
@@ -2362,10 +2500,11 @@ function updateWorkspace() {
   }
   setTxt('ws-health-display', `Health ${Math.round(hs * 100)}%`)
 
-  // Enable consult button
+  // Enable consult + execute buttons
   const btn = document.getElementById('btn-consult-agent')
   if (btn) btn.disabled = false
-  // Phase 6.3: inline Plotly — no iframe to update; chart refreshes on next poll cycle
+  const execBtn = document.getElementById('btn-execute-action')
+  if (execBtn) { execBtn.disabled = false; execBtn.classList.add('visible') }
 }
 
 // ── Show / hide workspace ─────────────────────────────────────────────────────
@@ -2382,7 +2521,10 @@ function showWorkspace(assetId, faultType) {
   const initTTF = fp.total_hours * 60.0
   _wsTTFMinutes   = initTTF
   _wsHorizonLabel = fp.horizon_label
-  _wsSliderHealth = 0.75
+  _wsSliderHealth    = 0.75
+  _wsCurrentHealth   = null    // Phase 10: reset — poller will populate on first poll
+  _sliderManuallySet = false   // Phase 9: reset so poller can auto-animate until user drags
+  _primaryTabSelected = false  // Phase 10: reset so primary tab auto-selects for new fault
   const sliderEl = document.getElementById('intervention-slider')
   if (sliderEl) {
     sliderEl.min   = 0
@@ -2391,6 +2533,7 @@ function showWorkspace(assetId, faultType) {
   }
 
   document.getElementById('intervention-slider-wrap')?.classList.add('visible')
+  document.getElementById('ops-resize-handle')?.classList.add('visible')
   document.getElementById('ops-workspace')?.classList.add('visible')
 
   // Phase 7.2: Plotly resize so the chart fills the newly reduced available height
@@ -2421,6 +2564,7 @@ function hideWorkspace() {
   if (_wsDegradePoller) { clearInterval(_wsDegradePoller); _wsDegradePoller = null }
   _wsActiveFault = null; _wsActiveAsset = null
   document.getElementById('intervention-slider-wrap')?.classList.remove('visible')
+  document.getElementById('ops-resize-handle')?.classList.remove('visible')
   document.getElementById('ops-workspace')?.classList.remove('visible')
   // Phase 7.2: Plotly resize to reclaim the extra height
   setTimeout(() => {
@@ -2585,7 +2729,7 @@ function selectQuickReply(text) {
   sendAgentMessage()
 }
 
-// ── Send a text message ───────────────────────────────────────────────────────
+// ── Send a text message (Phase 10: SSE streaming, passes chat_history) ────────
 async function sendAgentMessage() {
   const input = document.getElementById('agent-input')
   const text  = (input?.value || '').trim()
@@ -2600,21 +2744,68 @@ async function sendAgentMessage() {
   document.getElementById('agent-send-btn').disabled = true
   document.getElementById('btn-consult-agent').disabled = true
 
+  // Animated typing indicator (same pattern as consultAgent)
+  const typingEl = document.createElement('div')
+  typingEl.className = 'chat-msg agent'
+  typingEl.id = '_agent_send_typing'
+  typingEl.innerHTML = `<span style="letter-spacing:3px;animation:blink 1.2s ease-in-out infinite">● ● ●</span>`
+  const chatLog = document.getElementById('agent-chat-log')
+  if (chatLog) { chatLog.appendChild(typingEl); chatLog.scrollTop = chatLog.scrollHeight }
+
+  let llmStreamDiv = null
+  let gotResponse  = false
+
   try {
     const params = new URLSearchParams({
       fault_type: fault, asset_id: asset,
       slider_health_score: _wsSliderHealth.toFixed(4),
       chat_history: JSON.stringify(_agentChatHistory.slice(-6)),
     })
-    const res  = await fetch('/api/agent/recommend?' + params, {method:'POST'})
-    if (!res.ok) throw new Error(await res.text())
-    const data = await res.json()
-    appendChatMessage('agent', data.recommendation)
-    _agentChatHistory.push({role:'assistant', content:data.recommendation})
-    const fp   = FAULT_PHYSICS_JS[fault] || {}
-    showQuickReplies(fp.intervention_type, getTier(_wsSliderHealth, fp))
+    const response = await fetch('/api/agent/recommend-stream?' + params, {method: 'POST'})
+    if (!response.ok) throw new Error(await response.text())
+
+    const reader  = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+
+    while (true) {
+      const {done, value} = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, {stream: true})
+      const lines = buf.split('\n'); buf = lines.pop()
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const ev = JSON.parse(line.slice(6))
+          if (ev.type === 'recommendation') {
+            document.getElementById('_agent_send_typing')?.remove()
+            gotResponse = true
+            appendChatMessage('agent', ev.text)
+            _agentChatHistory.push({role:'assistant', content: ev.text})
+          } else if (ev.type === 'token' && ev.text) {
+            if (!llmStreamDiv) {
+              llmStreamDiv = document.createElement('div')
+              llmStreamDiv.className = 'chat-msg agent'
+              llmStreamDiv.style.borderColor = 'rgba(0,188,212,0.35)'
+              llmStreamDiv.style.background  = 'rgba(0,188,212,0.04)'
+              if (chatLog) chatLog.appendChild(llmStreamDiv)
+            }
+            llmStreamDiv.textContent += ev.text
+            if (chatLog) chatLog.scrollTop = chatLog.scrollHeight
+          } else if (ev.type === 'done') {
+            if (llmStreamDiv?.textContent)
+              _agentChatHistory.push({role:'assistant', content: llmStreamDiv.textContent})
+            const fp = FAULT_PHYSICS_JS[fault] || {}
+            showQuickReplies(fp.intervention_type, getTier(_wsSliderHealth, fp))
+            break
+          }
+        } catch(_) {}
+      }
+    }
   } catch(e) {
-    appendChatMessage('agent', `⚠ ${e.message}`)
+    document.getElementById('_agent_send_typing')?.remove()
+    if (!gotResponse) appendChatMessage('agent', `⚠ ${e.message}`)
   } finally {
     document.getElementById('agent-send-btn').disabled = false
     document.getElementById('btn-consult-agent').disabled = false
@@ -2662,6 +2853,41 @@ async function injectFault() {
     } catch(e) { showToast('Error: '+e.message,'error') }
   }
 }
+// ── Phase 8: Ops Workspace Resize Handle drag logic ──────────────────────────
+// Dragging up expands the workspace (taller), dragging down shrinks it.
+// Releases `Plotly.relayout` on mouseup to resize the chart cleanly.
+;(function initOpsResizeHandle() {
+  const handle = document.getElementById('ops-resize-handle')
+  const ws     = document.getElementById('ops-workspace')
+  if (!handle || !ws) return
+  let _y0 = 0, _h0 = 0, _dragging = false
+
+  handle.addEventListener('mousedown', e => {
+    _y0 = e.clientY
+    _h0 = ws.getBoundingClientRect().height
+    _dragging = true
+    handle.classList.add('dragging')
+    document.body.style.userSelect = 'none'
+    document.body.style.cursor     = 'ns-resize'
+    e.preventDefault()
+  })
+  document.addEventListener('mousemove', e => {
+    if (!_dragging) return
+    const delta = _y0 - e.clientY  // drag up = positive = expand workspace
+    const newH  = Math.max(100, Math.min(560, _h0 + delta))
+    ws.style.height = newH + 'px'
+  })
+  document.addEventListener('mouseup', () => {
+    if (!_dragging) return
+    _dragging = false
+    handle.classList.remove('dragging')
+    document.body.style.userSelect = ''
+    document.body.style.cursor     = ''
+    // Resize chart to fill new available height
+    const c = document.getElementById('forecast-chart')
+    if (c && typeof Plotly !== 'undefined') Plotly.relayout(c, {autosize: true})
+  })
+})()
 // ════════ END OPERATIONS WORKSPACE ═══════════════════════════════════════════
 </script>
 </body>

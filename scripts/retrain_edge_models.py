@@ -330,6 +330,28 @@ def generate_sequence(
     temp_clean = np.maximum(temp_clean, 1.0)
     vib_clean  = np.maximum(vib_clean,  0.01)
 
+    # ── Health Score label (computed early so plateau can reference it) ────────
+    # Directly derived from the degradation fraction so the model learns to map
+    # sensor state → health score.  This is deliberately deterministic (no noise
+    # on the label) — the sensor noise is the training challenge.
+    health_score = (1.0 - t_frac).astype(np.float32)
+
+    # ── Phase 10: Partial-intervention plateau (15% probability) ───────────────
+    # Simulates operator intervention that temporarily holds health at one level
+    # before degradation resumes. Makes the model robust to non-monotonic health
+    # score trajectories that occur in real deployments with operator actions.
+    if rng.random() < 0.15:
+        iv_idx = int(rng.integers(STEPS // 4, int(STEPS * 0.85)))
+        iv_health = float(health_score[iv_idx])
+        if 0.30 <= iv_health <= 0.70:
+            iv_len = int(rng.integers(5, 16))
+            iv_end = min(iv_idx + iv_len, STEPS)
+            # Hold sensors and health score at intervention level during plateau
+            health_score[iv_idx:iv_end] = iv_health
+            psi_clean[iv_idx:iv_end]  = psi_clean[iv_idx]
+            temp_clean[iv_idx:iv_end] = temp_clean[iv_idx]
+            vib_clean[iv_idx:iv_end]  = vib_clean[iv_idx]
+
     # ── Add edge-calibrated noise ──────────────────────────────────────────────
     psi_seq  = psi_clean  + rng.uniform(
         -psi_clean  * PSI_NOISE_BASE,
@@ -348,12 +370,6 @@ def generate_sequence(
     dpsi_dt  = _rolling_slopes(psi_seq,  SLOPE_WINDOW) * READINGS_PER_MIN
     dtemp_dt = _rolling_slopes(temp_seq, SLOPE_WINDOW) * READINGS_PER_MIN
     dvib_dt  = _rolling_slopes(vib_seq,  SLOPE_WINDOW) * READINGS_PER_MIN
-
-    # ── Health Score label ─────────────────────────────────────────────────────
-    # Directly derived from the degradation fraction so the model learns to map
-    # sensor state → health score.  This is deliberately deterministic (no noise
-    # on the label) — the sensor noise is the training challenge.
-    health_score = (1.0 - t_frac).astype(np.float32)
 
     # ── 4th sensor (ESP: motor_amps, Mud Pump: spm) ───────────────────────────
     s4_key = ("amps_end" if "amps_end" in fp

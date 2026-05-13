@@ -620,9 +620,9 @@ FAULT_PHYSICS = {
         "total_hours": 0.75,          # 45 min
         "scada_alarm_health": 0.30,
         "pnr_health": 0.12,
-        "scada_sensor": "amps",       # SCADA fires on Motor Current underload
-        "pnr_sensor": "temp",         # PNR is winding temperature burnout
-        "primary_sensor": "amps",
+        "scada_sensor": "psi",        # PSI drops below 800 psi critical threshold
+        "pnr_sensor": "temp",         # Winding temperature burnout at PNR
+        "primary_sensor": "psi",      # Intake Pressure is the causal leading sensor
         "intervention_type": "operational_control",
     },
     "pulsation_dampener_failure": {
@@ -1818,11 +1818,20 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
             y_failure = max(y_crit * 0.45, 1.0)  # 55% below alarm threshold at full failure
         else:
             y_failure = y_crit * 1.80              # 80% above alarm threshold at full failure
-        # Exponential decay: f(t) = y_start + (y_failure - y_start) * (1 - exp(-k*t/T))
-        # k=3.5 matches Phase 5 training curve; T = total_hours*60 so curve reaches ~97%
-        # of y_failure by t=T. No clamp — smoothly continues past SCADA and PNR levels.
-        frac       = t_arr / max(ttf_total_min, 1.0)
-        forecast_y = y_start + (y_failure - y_start) * (1.0 - np.exp(-3.5 * frac))
+        # Phase 10 Bug 4 fix: Two-segment exponential so the SCADA alarm vertical marker
+        # aligns exactly where the dotted curve crosses y_crit.
+        # Segment 1 [0 → rul_minutes]: y_start → y_crit using (exp(k*t/T1)-1)/(exp(k)-1)
+        # Segment 2 [rul_minutes → ttf_total_min]: y_crit → y_failure
+        # At t=rul_minutes the curve equals y_crit exactly (denominator normalises to 1).
+        _k    = 3.5
+        _expk = np.exp(_k) - 1.0
+        _rm   = max(float(rul_minutes), 0.01)
+        _seg1 = t_arr <= _rm
+        _seg2 = ~_seg1
+        forecast_y          = np.empty(len(t_arr))
+        forecast_y[_seg1]   = y_start + (y_crit - y_start) * (np.exp(_k * t_arr[_seg1] / _rm) - 1.0) / _expk
+        _remain             = max(ttf_total_min - _rm, 1.0)
+        forecast_y[_seg2]   = y_crit + (y_failure - y_crit) * (np.exp(_k * (t_arr[_seg2] - _rm) / _remain) - 1.0) / _expk
     else:
         forecast_y = np.full(len(future_times), y_start)
 
@@ -2366,6 +2375,7 @@ def get_agent_recommend_stream(
     slider_health_score: float = None,
     rul_minutes: float = None,
     is_pnr_exceeded: bool = False,
+    chat_history: str = None,   # Phase 10: JSON string [{role, content}] for multi-turn chat
 ):
     """
     Phase 6.2 — SSE streaming version of /api/agent/recommend.
@@ -2433,14 +2443,29 @@ def get_agent_recommend_stream(
     else:
         rule_rec = f"ℹ️ Context from {source_label}. Review enterprise data and select action."
 
+    # ── Parse chat history for multi-turn context (Phase 10) ──────────────────
+    _history = []
+    if chat_history:
+        try:
+            _parsed = json.loads(chat_history)
+            if isinstance(_parsed, list):
+                _history = _parsed
+        except Exception:
+            pass
+
     # ── Tight LLM system prompt (<150 words) ──────────────────────────────────
     fault_label = fault_type.replace("_", " ")
     tier = "PAST PNR" if is_pnr_exceeded else ("CRITICAL" if rul_minutes < 15 else ("URGENT" if rul_minutes < 60 else "EARLY"))
+    _history_txt = ""
+    if _history:
+        _hist_lines = "\n".join(f"{h['role'].upper()}: {h.get('content','')[:200]}" for h in _history[-4:])
+        _history_txt = f"\nCONVERSATION:\n{_hist_lines}\n"
     llm_prompt = (
         f"You are GDC Ops Agent, an oil and gas predictive maintenance assistant. "
         f"Be concise — respond in exactly 2 sentences.\n\n"
         f"FAULT: {fault_label} on {asset_id}. Tier: {tier}. Time to SCADA alarm: {rul_minutes:.0f} minutes.\n"
-        f"ENTERPRISE DATA ({source_label}): {rule_rec}\n\n"
+        f"ENTERPRISE DATA ({source_label}): {rule_rec}"
+        f"{_history_txt}\n"
         f"In 2 sentences: (1) confirm the immediate action, (2) state the specific next step. "
         f"No preamble. No repetition."
     )
@@ -2740,14 +2765,37 @@ def get_forecast_data(asset_id: str):
         if rul_minutes is not None and rul_minutes < 580:
             ttf_total_min = fp_total_h * 60.0 if _fp else max(rul_minutes*3.0, 60.0)
             y_failure = max(y_crit*0.45, 1.0) if crit_dir == "below" else y_crit*1.80
-            frac    = t_arr / max(ttf_total_min, 1.0)
-            proj_y  = (y_start + (y_failure - y_start) * (1.0 - np.exp(-3.5 * frac))).tolist()
+            # Phase 10 Bug 4 fix: two-segment exponential — SCADA marker aligns exactly
+            _k2 = 3.5; _expk2 = np.exp(_k2) - 1.0; _rm2 = max(float(rul_minutes), 0.01)
+            _s1 = t_arr <= _rm2; _s2 = ~_s1
+            _py = np.empty(len(t_arr))
+            _py[_s1] = y_start + (y_crit - y_start) * (np.exp(_k2 * t_arr[_s1] / _rm2) - 1.0) / _expk2
+            _py[_s2] = y_crit  + (y_failure - y_crit) * (np.exp(_k2 * (t_arr[_s2] - _rm2) / max(ttf_total_min - _rm2, 1.0)) - 1.0) / _expk2
+            proj_y  = _py.tolist()
         else:
             proj_y = [y_start] * len(future_times)
 
         traces.append({"type": "scatter", "x": [t.isoformat() for t in future_times],
                        "y": proj_y, "mode": "lines", "name": "ML RUL Projection",
                        "line": {"color": "#ff8c00" if rul_minutes else "#00e676", "width": 2.5, "dash": "dot"}})
+
+        # Confidence cone: widens 4% → 18% of projected range (matches Phase 5 Plotly iframe cone)
+        _proj_arr   = np.array(proj_y)
+        _proj_range = abs(_proj_arr[-1] - y_start) if rul_minutes is not None else abs(y_crit - y_start) * 0.1
+        _cone_frac  = np.linspace(0.04, 0.18, len(future_times))
+        noise       = _cone_frac * max(_proj_range, abs(y_start) * 0.05)
+        upper_y     = (_proj_arr + noise).tolist()
+        lower_y     = (_proj_arr - noise).tolist()
+        cone_rgba   = "255,140,0" if rul_minutes else "0,230,118"
+        x_fwd       = [t.isoformat() for t in future_times]
+        traces.append({"type": "scatter",
+                       "x": x_fwd + x_fwd[::-1],
+                       "y": upper_y + lower_y[::-1],
+                       "fill": "toself",
+                       "fillcolor": f"rgba({cone_rgba}, 0.08)",
+                       "line": {"color": "rgba(255,255,255,0)"},
+                       "name": "Confidence Band",
+                       "hoverinfo": "skip"})
 
         if show_scada:
             traces.append({"type": "scatter",
