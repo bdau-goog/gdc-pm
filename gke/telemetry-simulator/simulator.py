@@ -1,8 +1,8 @@
 """
 gke/telemetry-simulator/simulator.py
 
-Continuously generates realistic telemetry for all 20 Upstream O&G assets
-across 4 sites and publishes readings to RabbitMQ.
+Continuously generates realistic telemetry for all 14 Upstream O&G assets
+across 3 sites and publishes readings to RabbitMQ.
 
 Asset classes and their sensor meanings:
   esp        — Electrical Submersible Pump (Downhole)
@@ -22,10 +22,9 @@ Asset classes and their sensor meanings:
                temp_f = Gearbox Oil Temp (130–165°F)
                vibration = Gearbox Vibration (1.8–3.8 mm/s)
 
-Fleet: 4 sites × 4–6 assets each = 20 monitored assets (pure-pad architecture)
+Fleet: 3 sites, 14 assets (pure-pad architecture)
   Pad Alpha   — 6 ESPs (pure ESP production pad)
   Pad Bravo   — 4 Gas Lift Compressors (pure gas lift production pad)
-  Pad Charlie — 6 ESPs (pure ESP production pad)
   Rig 42      — 3 Mud Pumps + 1 Top Drive (drilling rig)
 
 Environment Variables:
@@ -68,7 +67,7 @@ FAULT_TRIGGER_URL  = os.environ.get(
     "http://fault-trigger-ui.gdc-pm.svc.cluster.local/api/degrade-status",
 )
 
-# ── Asset Fleet (4 sites, 20 assets) ─────────────────────────────────────────
+# ── Asset Fleet (3 sites, 14 assets) ─────────────────────────────────────────
 # Pure-pad architecture: each pad uses a single artificial lift method.
 # Each entry: (asset_id, asset_class, site)
 ASSET_REGISTRY = [
@@ -84,13 +83,6 @@ ASSET_REGISTRY = [
     ("GLIFT-BRAVO-2",  "gas_lift", "pad_bravo"),
     ("GLIFT-BRAVO-3",  "gas_lift", "pad_bravo"),
     ("GLIFT-BRAVO-4",  "gas_lift", "pad_bravo"),
-    # ── Pad Charlie — Pure ESP Production Pad (6 ESPs) ────────────────────────
-    ("ESP-CHARLIE-1",  "esp",      "pad_charlie"),
-    ("ESP-CHARLIE-2",  "esp",      "pad_charlie"),
-    ("ESP-CHARLIE-3",  "esp",      "pad_charlie"),
-    ("ESP-CHARLIE-4",  "esp",      "pad_charlie"),
-    ("ESP-CHARLIE-5",  "esp",      "pad_charlie"),
-    ("ESP-CHARLIE-6",  "esp",      "pad_charlie"),
     # ── Rig 42 — Drilling Rig ─────────────────────────────────────────────────
     ("MUD-RIG42-1",    "mud_pump", "rig_42"),
     ("MUD-RIG42-2",    "mud_pump", "rig_42"),
@@ -376,7 +368,7 @@ def publish(channel, reading: dict) -> None:
 # ── Main Loop ─────────────────────────────────────────────────────────────────
 def run() -> None:
     log.info(f"Telemetry Simulator starting. Fleet: {len(ASSET_REGISTRY)} assets (pure-pad)")
-    log.info(f"  Sites: Pad Alpha (6 ESPs), Pad Bravo (4 Gas Lifts), Pad Charlie (6 ESPs), Rig 42 (4)")
+    log.info(f"  Sites: Pad Alpha (6 ESPs), Pad Bravo (4 Gas Lifts), Rig 42 (4 assets)")
     log.info(f"  Publishing to {RABBITMQ_HOST} every {TELEMETRY_INTERVAL}s per asset")
 
     conn    = None

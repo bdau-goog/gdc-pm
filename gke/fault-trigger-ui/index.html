@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GDC-PM — O&G Operations Command</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <!-- Phase 6.3: Inline Plotly.js for instant tab switching (no iframe reload) -->
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
   <style>
     :root {
       --bg: #0b0c10; --surf: #0f1318; --surf2: #141b22; --surf3: #1a2330;
@@ -299,14 +301,19 @@
       cursor: pointer; display: none;
     }
     #btn-expand:hover { color: var(--text2); }
-    #plot-iframe-wrap { flex: 1; min-height: 0; position: relative; background: var(--bg); }
-    #plot-iframe { width: 100%; height: 100%; border: none; display: none; }
+    /* Phase 6.3: Inline Plotly chart container — replaces iframe */
+    #plot-iframe-wrap { flex: 1; min-height: 0; position: relative; background: var(--bg); overflow: hidden; }
+    #forecast-chart   { width: 100%; height: 100%; }
     #plot-placeholder {
       position: absolute; inset: 0; display: flex; flex-direction: column;
       align-items: center; justify-content: center; gap: 8px; color: var(--muted);
+      z-index: 2; pointer-events: none;
     }
+    #plot-placeholder.hidden { display: none; }
     #plot-placeholder .ph-icon { font-size: 38px; opacity: 0.35; }
     #plot-placeholder .ph-text { font-size: 0.74rem; text-align: center; line-height: 1.6; }
+    /* Primary sensor tab badge (Phase 6.3) */
+    .sensor-tab .primary-badge { font-size: 0.55rem; margin-left: 3px; color: #ff8c00; vertical-align: middle; }
 
     /* Scenario shortcuts at bottom of inject panel */
     details summary { font-size: 0.63rem; color: var(--muted); cursor: pointer; list-style: none; margin-top: 8px; }
@@ -451,6 +458,136 @@
     .econ-summary { margin-top: 10px; padding: 8px 11px; border-radius: 6px;
                     background: rgba(0,230,118,0.06); border: 1px solid rgba(0,230,118,0.22);
                     font-size: 0.7rem; color: var(--green); font-weight: 600; }
+
+    /* ── Operations Workspace — Intervention Slider (Phase 5.3) ── */
+    #intervention-slider-wrap {
+      flex-shrink: 0; padding: 6px 16px 5px;
+      background: var(--surf2); border-top: 1px solid var(--border);
+      display: none;
+    }
+    #intervention-slider-wrap.visible { display: block; }
+    .slider-top-row {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 0.61rem; color: var(--muted); margin-bottom: 2px;
+    }
+    .slider-tier-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 1px 9px;
+      border-radius: 10px; border: 1px solid; transition: all 0.3s;
+    }
+    .slider-tier-badge.early    { color: #00e676; border-color: #00e676; background: rgba(0,230,118,0.1); }
+    .slider-tier-badge.urgent   { color: #ffb300; border-color: #ffb300; background: rgba(255,179,0,0.1); }
+    .slider-tier-badge.critical { color: #f44336; border-color: #f44336; background: rgba(244,67,54,0.1); }
+    .slider-tier-badge.recovery { color: #ce93d8; border-color: #ce93d8; background: rgba(206,147,216,0.1); }
+    #intervention-slider {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 4px; border-radius: 2px;
+      background: var(--border2); outline: none; cursor: pointer;
+      margin: 3px 0 3px;
+    }
+    #intervention-slider::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+      background: var(--blue); cursor: pointer; border: 2px solid var(--bg);
+      box-shadow: 0 0 6px rgba(30,144,255,0.55);
+    }
+    .slider-physics-row {
+      display: flex; gap: 16px; font-size: 0.6rem; color: var(--muted); flex-wrap: wrap;
+    }
+    .slider-physics-row span { font-family: var(--mono); color: var(--text2); }
+
+    /* ── Operations Workspace — Bottom Panel ── */
+    #ops-workspace {
+      flex-shrink: 0; height: 232px;
+      border-top: 2px solid rgba(30,144,255,0.3);
+      display: none; flex-direction: column;
+    }
+    #ops-workspace.visible { display: flex; }
+    .workspace-hdr {
+      display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      padding: 5px 14px; border-bottom: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(21,101,192,0.12), rgba(13,71,161,0.08));
+      font-size: 0.64rem; font-weight: 700; letter-spacing: 0.07em;
+      color: #5a8fc0; text-transform: uppercase;
+    }
+    .ws-asset-badge {
+      font-family: var(--mono); font-size: 0.7rem; color: var(--blue);
+      padding: 1px 7px; border-radius: 7px;
+      background: rgba(30,144,255,0.12); border: 1px solid rgba(30,144,255,0.3);
+    }
+    .ws-fault-badge {
+      font-size: 0.65rem; padding: 1px 7px; border-radius: 7px;
+      background: rgba(255,109,0,0.1); border: 1px solid rgba(255,109,0,0.3);
+      color: var(--orange);
+    }
+    .workspace-body {
+      flex: 1; min-height: 0;
+      display: grid; grid-template-columns: 310px 1fr; overflow: hidden;
+    }
+
+    /* Left: Calculator */
+    .ws-calc {
+      border-right: 1px solid var(--border);
+      padding: 9px 13px; overflow-y: auto; display: flex; flex-direction: column; gap: 0;
+    }
+    .calc-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; }
+    .calc-lbl  { color: var(--muted); font-size: 0.65rem; white-space: nowrap; }
+    .calc-val  { font-family: var(--mono); font-weight: 700; font-size: 0.74rem; }
+    .calc-divider { grid-column: 1/-1; border-top: 1px solid var(--border); margin: 4px 0 3px; }
+    .calc-cost-avoided  { color: var(--green); }
+    .calc-cost-incurred { color: var(--orange); }
+    .calc-net-positive  { color: var(--green); font-size: 0.82rem; }
+    .calc-net-negative  { color: var(--red);   font-size: 0.82rem; }
+    #btn-consult-agent {
+      width: 100%; margin-top: 8px; padding: 6px;
+      border-radius: 6px; border: none;
+      background: linear-gradient(135deg, #1565c0, #0d47a1);
+      color: #fff; font-size: 0.76rem; font-weight: 700;
+      cursor: pointer; transition: filter 0.15s;
+    }
+    #btn-consult-agent:hover { filter: brightness(1.15); }
+    #btn-consult-agent:disabled { opacity: 0.45; cursor: default; filter: none; }
+
+    /* Right: Agent Chat */
+    .ws-chat { display: flex; flex-direction: column; overflow: hidden; }
+    #agent-chat-log {
+      flex: 1; overflow-y: auto; padding: 8px 12px;
+      display: flex; flex-direction: column; gap: 5px;
+    }
+    .chat-msg {
+      max-width: 92%; border-radius: 8px; padding: 6px 10px;
+      font-size: 0.71rem; line-height: 1.55;
+    }
+    .chat-msg.agent  { align-self: flex-start; background: var(--surf2); border: 1px solid var(--border); color: var(--text2); }
+    .chat-msg.user   { align-self: flex-end; background: rgba(30,144,255,0.15); border: 1px solid rgba(30,144,255,0.3); color: var(--text); }
+    .chat-msg.system { align-self: center; color: var(--muted); font-size: 0.63rem; font-style: italic; background: none; border: none; padding: 2px 0; }
+    .chat-quick-replies {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      padding: 0 12px 4px; flex-shrink: 0;
+    }
+    .qr-btn {
+      font-size: 0.63rem; padding: 2px 8px; border-radius: 9px;
+      border: 1px solid rgba(30,144,255,0.4); background: rgba(30,144,255,0.07);
+      color: var(--blue); cursor: pointer; transition: all 0.15s; white-space: nowrap;
+    }
+    .qr-btn:hover { background: rgba(30,144,255,0.2); }
+    .chat-input-row {
+      display: flex; gap: 6px; padding: 5px 10px;
+      border-top: 1px solid var(--border); flex-shrink: 0;
+    }
+    #agent-input {
+      flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; color: var(--text); padding: 5px 10px;
+      font-size: 0.73rem; font-family: var(--font); outline: none;
+    }
+    #agent-input:focus { border-color: var(--blue); }
+    #agent-input::placeholder { color: var(--muted); }
+    #agent-send-btn {
+      padding: 5px 14px; border-radius: 6px; border: none;
+      background: var(--blue); color: #fff; font-size: 0.73rem;
+      font-weight: 700; cursor: pointer; transition: filter 0.15s;
+    }
+    #agent-send-btn:hover { filter: brightness(1.15); }
+    #agent-send-btn:disabled { opacity: 0.4; cursor: default; filter: none; }
+    .agent-typing { color: var(--muted); font-size: 0.65rem; font-style: italic; padding: 0 12px 3px; flex-shrink: 0; min-height: 18px; }
   </style>
 </head>
 <body>
@@ -483,12 +620,8 @@
     </div>
   </div>
 
-  <!-- ── Active Incidents Panel ── -->
-  <div id="incidents-panel">
-    <div class="incidents-hdr">
-      🔴 ACTIVE INCIDENTS — Dispatch Required
-      <button class="clear-btn" onclick="clearDispatch()">✕ Clear All Work Orders</button>
-    </div>
+  <!-- Active Incidents Panel — Phase 5.3: hidden; superseded by Operations Workspace -->
+  <div id="incidents-panel" style="display:none!important">
     <div id="incidents-list"></div>
   </div>
 
@@ -560,8 +693,7 @@
             <div class="sensor-tab" id="tab-sensor4" style="display:none">—</div>
           </div>
           <span class="plot-asset-lbl" id="plot-asset-lbl">— select an asset</span>
-          <button id="btn-diagnose-chart" onclick="diagnoseFault()">⚠ Diagnose ▶</button>
-          <button id="btn-retrain" onclick="triggerRetrain()">☁ Retrain via Vertex AI</button>
+          <button id="btn-diagnose-chart" onclick="openWorkspace()">⚙ Workspace ▶</button>
           <button id="btn-asset-intel" onclick="openAssetIntel()">ℹ Asset Intel</button>
           <button id="btn-expand" onclick="expandPlot()">⤢</button>
         </div>
@@ -570,13 +702,85 @@
             <div class="ph-icon">🛢</div>
             <div class="ph-text">
               Select an asset from the Fleet Bar above<br>to view its ML Predictive Forecast<br>
-              <span style="color:var(--muted);font-size:0.62rem">XGBoost RUL Regressor · Time-to-Failure Projection</span>
+              <span style="color:var(--muted);font-size:0.62rem">Health Score Model · Physical Timeline · SCADA→PNR→Failure</span>
             </div>
           </div>
-          <iframe id="plot-iframe" src=""></iframe>
+          <!-- Phase 6.3: Inline Plotly chart — fills the container, no iframe needed -->
+          <div id="forecast-chart"></div>
         </div>
       </div>
-    </div>
+
+      <!-- ── Intervention Slider (Phase 5.3) ── -->
+      <div id="intervention-slider-wrap">
+        <div class="slider-top-row">
+          <span>🔍 ML Detection</span>
+          <span id="slider-tier-badge" class="slider-tier-badge early">🟢 EARLY</span>
+          <span>💀 Failure</span>
+        </div>
+        <input type="range" id="intervention-slider" min="0" max="100" value="75"
+               oninput="onSliderInput(this.value)">
+        <div class="slider-physics-row">
+          <div>SCADA Alarm: <span id="sp-scada">—</span></div>
+          <div>PNR: <span id="sp-pnr">—</span></div>
+          <div>Failure: <span id="sp-fail">—</span></div>
+          <div>Horizon: <span id="sp-horizon">—</span></div>
+        </div>
+      </div>
+
+      <!-- ── Operations Workspace (Phase 5.3) ── -->
+      <div id="ops-workspace">
+        <div class="workspace-hdr">
+          ⚙ Operations Workspace
+          <span class="ws-asset-badge" id="ws-asset-lbl">—</span>
+          <span class="ws-fault-badge" id="ws-fault-lbl">—</span>
+          <span style="margin-left:auto;font-size:0.6rem;color:var(--muted);text-transform:none;font-weight:400;" id="ws-health-display">—</span>
+        </div>
+        <div class="workspace-body">
+          <!-- Left: Physics & Economics Calculator -->
+          <div class="ws-calc">
+            <div class="calc-grid">
+              <span class="calc-lbl">Intervening at:</span>
+              <span class="calc-val" id="calc-intervene-at">—</span>
+              <span class="calc-lbl">Tier:</span>
+              <span class="calc-val" id="calc-tier">—</span>
+              <div class="calc-divider"></div>
+              <span class="calc-lbl">Time to SCADA:</span>
+              <span class="calc-val" id="calc-scada">—</span>
+              <span class="calc-lbl">Time to PNR:</span>
+              <span class="calc-val" id="calc-pnr">—</span>
+              <span class="calc-lbl">Time to Failure:</span>
+              <span class="calc-val" id="calc-fail">—</span>
+              <div class="calc-divider"></div>
+              <span class="calc-lbl">Required Action:</span>
+              <span class="calc-val" id="calc-action-type">—</span>
+              <span class="calc-lbl">Cost Avoided:</span>
+              <span class="calc-val calc-cost-avoided" id="calc-cost-avoided">$—</span>
+              <span class="calc-lbl">Cost Incurred:</span>
+              <span class="calc-val calc-cost-incurred" id="calc-cost-incurred">$—</span>
+              <div class="calc-divider"></div>
+              <span class="calc-lbl">Net Savings:</span>
+              <span class="calc-val" id="calc-net">$—</span>
+            </div>
+            <button id="btn-consult-agent" onclick="consultAgent()" disabled>
+              💬 Consult Operations Agent
+            </button>
+          </div>
+          <!-- Right: Agent Chat -->
+          <div class="ws-chat">
+            <div id="agent-chat-log">
+              <div class="chat-msg system">Select a fault and adjust the slider to explore intervention timing.</div>
+            </div>
+            <div class="chat-quick-replies" id="agent-quick-replies"></div>
+            <div class="chat-input-row">
+              <input id="agent-input" type="text" placeholder="Ask the Operations Agent…"
+                     onkeydown="if(event.key==='Enter')sendAgentMessage()">
+              <button id="agent-send-btn" onclick="sendAgentMessage()" disabled>Send</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- right-panel -->
 
   </div><!-- .main-row -->
   </div><!-- #tab-operations -->
@@ -1103,28 +1307,9 @@ function renderEventLog() {
   }).join('')
 }
 
-function updateIncidents() {
-  dispatchQueue = recentEvents.filter(ev => {
-    const sev = getSeverity(ev.predicted_label)
-    return !ev.acknowledged && (sev==='critical'||sev==='warning')
-  })
-  const panel = document.getElementById('incidents-panel')
-  const list  = document.getElementById('incidents-list')
-  if (dispatchQueue.length === 0) { panel.classList.remove('visible'); return }
-  panel.classList.add('visible')
-  list.innerHTML = dispatchQueue.slice(0,8).map(ev => {
-    const lbl = ev.predicted_label || 'unknown'
-    const sev = getSeverity(lbl)
-    const short = ASSET_META[ev.asset_id]?.label || ev.asset_id
-    const faultLabel = FAULT_META[lbl]?.label || lbl
-    return `<div class="incident-row" onclick="selectAsset('${ev.asset_id}'); openDispatch(${ev.id})">
-      <span class="inc-sev">${sev==='critical'?'🔴':'⚠'}</span>
-      <span class="inc-asset">${ev.asset_id}</span>
-      <span class="inc-fault">${faultLabel}</span>
-      <button class="inc-diagnose" onclick="event.stopPropagation(); selectAsset('${ev.asset_id}'); openDispatch(${ev.id})">Diagnose ▶</button>
-    </div>`
-  }).join('')
-}
+// updateIncidents — single canonical definition (Phase 7.0 cleanup):
+// The first definition was removed; the full version with FAILED badges
+// is at the bottom of the file near the chart diagnose button section.
 
 // ────────── ASSET SELECTION ───────────────────────────────────────────────────
 function selectAsset(assetId) {
@@ -1173,6 +1358,8 @@ function selectAsset(assetId) {
   document.getElementById('plot-asset-lbl').textContent = '— ' + assetId
   document.getElementById('btn-expand').style.display = 'inline-block'
   document.getElementById('btn-asset-intel').classList.add('visible')
+  // Phase 7.0: Clear stale cached forecast data on asset switch — prevents brief flicker
+  _currentForecastData = null
   refreshPlot()
 }
 
@@ -1246,34 +1433,8 @@ function onModeChange() {
 }
 
 // ────────── INJECT / DEGRADE ──────────────────────────────────────────────────
-async function injectFault() {
-  if (!selectedAsset) { showToast('Select an asset first','error'); return }
-  if (!selectedFault)  { showToast('Select a fault type','error');  return }
-  const mode = document.querySelector('input[name="imode"]:checked')?.value || 'instant'
-  const fm = FAULT_META[selectedFault]
-  if (mode==='gradual' && fm.gradual) {
-    // Duration is fixed at 3600s — matches model training trajectory length.
-    // The ramp completes then holds at fault state until operator resolves.
-    const FIXED_DURATION = 3600
-    try {
-      const r = await fetch('/api/inject/degrade',{method:'POST',headers:{'Content-Type':'application/json'},
-                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,duration_seconds:FIXED_DURATION})})
-      if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
-      showToast(`▶ ${fm.label} — gradual degradation started (holds until resolved)`,'ok')
-      activeDegrades[selectedAsset]={running:true,fault_type:selectedFault,step:0,steps:Math.floor(FIXED_DURATION/5)}
-      updateDegradeProgress(); updateFleetBar()
-    } catch(e) { showToast('Error: '+e.message,'error') }
-  } else {
-    const burst = parseInt(document.getElementById('burst-count').value || '3')
-    try {
-      const r = await fetch('/api/inject-fault',{method:'POST',headers:{'Content-Type':'application/json'},
-                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,count:burst})})
-      if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
-      showToast(`✅ Injected ${burst}× ${fm.label}`,'ok')
-      setTimeout(()=>{ refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
-    } catch(e) { showToast('Error: '+e.message,'error') }
-  }
-}
+// Phase 7.0 cleanup: single canonical injectFault() defined below near workspace section.
+// This comment replaces the first (dead) definition that was overridden by the second.
 
 async function resetNormal() {
   if (!selectedAsset) return
@@ -1324,26 +1485,93 @@ function updateDegradeProgress() {
 }
 
 // ────────── SENSOR TABS ───────────────────────────────────────────────────────
+// Phase 6.3: selectTab uses Plotly.react() for INSTANT tab switching — no server call.
+// The cached _currentForecastData holds all 4 sensor traces from a single API call.
 function selectTab(metric) {
   selectedMetric = metric
-  document.querySelectorAll('.sensor-tab').forEach(t=>t.classList.remove('active'))
-  // 'amps' and 'spm' map to the single 4th sensor tab element (tab-sensor4)
+  document.querySelectorAll('.sensor-tab').forEach(t => t.classList.remove('active'))
   const tabEl = (metric === 'amps' || metric === 'spm')
     ? document.getElementById('tab-sensor4')
     : document.getElementById(`tab-${metric}`)
   if (tabEl) tabEl.classList.add('active')
-  if (selectedAsset) refreshPlot()
-}
-
-// ────────── PLOTLY FORECAST ───────────────────────────────────────────────────
-function refreshPlot() {
   if (!selectedAsset) return
-  const iframe = document.getElementById('plot-iframe')
-  iframe.style.display = 'block'
-  document.getElementById('plot-placeholder').style.display = 'none'
-  iframe.src = `/api/plot/forecast/${selectedAsset}?metric=${selectedMetric}&cb=${Date.now()}`
+  // If we have cached forecast data, switch instantly via Plotly.react (no round-trip)
+  if (_currentForecastData && _currentForecastData.sensors?.[metric]) {
+    _renderForecastTab(metric)
+  } else {
+    refreshPlot()  // fallback: full reload (first load or cache miss)
+  }
 }
 
+// ── Phase 6.3: Inline Plotly forecast — replaces iframe ──────────────────────
+// Global forecast state
+let _currentForecastData = null   // last JSON from /api/plot/forecast-data/
+let _forecastLoading     = false  // debounce guard
+
+// Update primary sensor badge on tabs (⚡ marks the most diagnostic tab)
+function _updateSensorTabBadges(data) {
+  document.querySelectorAll('.sensor-tab .primary-badge').forEach(b => b.remove())
+  if (!data?.primary_sensor || !data.is_active) return
+  const tabMap = {psi:'tab-psi', temp:'tab-temp', vib:'tab-vib', amps:'tab-sensor4', spm:'tab-sensor4'}
+  const el = document.getElementById(tabMap[data.primary_sensor])
+  if (el && !el.querySelector('.primary-badge')) {
+    const badge = document.createElement('span')
+    badge.className = 'primary-badge'
+    badge.textContent = '⚡'
+    el.appendChild(badge)
+  }
+}
+
+// Render a single sensor tab using Plotly.react() — instant, no server call
+function _renderForecastTab(metric) {
+  const data = _currentForecastData
+  if (!data?.sensors) return
+  const sd = data.sensors[metric] || data.sensors['psi']
+  if (!sd) return
+  const chartDiv = document.getElementById('forecast-chart')
+  if (!chartDiv) return
+  const layout = Object.assign({}, sd.layout, {
+    autosize: true,
+    paper_bgcolor: '#0b0c10', plot_bgcolor: '#0f1318',
+  })
+  Plotly.react(chartDiv, sd.traces, layout, {displayModeBar: false, responsive: true})
+}
+
+// Main plot refresh — fetches all 4 sensor tabs in one call, then renders current metric
+async function refreshPlot() {
+  if (!selectedAsset) return
+  if (_forecastLoading) return
+  _forecastLoading = true
+  document.getElementById('plot-placeholder').classList.add('hidden')
+  try {
+    const data = await fetch(`/api/plot/forecast-data/${selectedAsset}`).then(r => r.json())
+    if (!data || data.no_data || !data.sensors || Object.keys(data.sensors).length === 0) {
+      document.getElementById('plot-placeholder').classList.remove('hidden')
+      return
+    }
+    _currentForecastData = data
+    _updateSensorTabBadges(data)
+    _renderForecastTab(selectedMetric)
+    // Update workspace diagnostics if a fault is active
+    if (data.is_active && data.fault_type && _wsActiveAsset === selectedAsset) {
+      // Phase 7.1: Only update health score — the degrade-status 5s poller
+      // owns slider.value and slider.max for the time-based units. Don't
+      // fight it by setting sliderEl.value here.
+      if (!_sliderUserHeld) {
+        _wsSliderHealth = data.health_score != null ? data.health_score : _wsSliderHealth
+        updateWorkspace()
+      }
+    }
+  } catch(e) {
+    console.warn('forecast-data err', e)
+    // Fallback: render using legacy iframe for compatibility
+    document.getElementById('plot-placeholder').classList.remove('hidden')
+  } finally {
+    _forecastLoading = false
+  }
+}
+
+// Fullscreen still uses the HTML endpoint (simple iframe, separate window)
 function expandPlot() {
   if (!selectedAsset) return
   const fs = document.getElementById('fs-plot')
@@ -1355,6 +1583,18 @@ function closeFsPlot() {
   document.getElementById('fs-plot').classList.remove('open')
   document.getElementById('fs-iframe').src = ''
 }
+
+// Slider user-grab guard (Phase 6.4 prep): prevents auto-tick overriding manual drag
+let _sliderUserHeld = false
+document.addEventListener('DOMContentLoaded', () => {
+  const sl = document.getElementById('intervention-slider')
+  if (sl) {
+    sl.addEventListener('mousedown', () => { _sliderUserHeld = true })
+    sl.addEventListener('touchstart', () => { _sliderUserHeld = true })
+    sl.addEventListener('mouseup', () => { setTimeout(() => { _sliderUserHeld = false }, 1000) })
+    sl.addEventListener('touchend', () => { setTimeout(() => { _sliderUserHeld = false }, 1000) })
+  }
+})
 
 // ────────── SCENARIOS ─────────────────────────────────────────────────────────
 async function buildScenarioButtons() {
@@ -1935,6 +2175,494 @@ function updateIncidents() {
 
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'){closeModal();closeFsPlot();closeAssetIntel()} })
 document.addEventListener('DOMContentLoaded', () => { init(); initSplitter() })
+
+// ════════ OPERATIONS WORKSPACE (Phase 5.3) ════════════════════════════════════
+
+// ── FAULT_PHYSICS_JS — mirrors app.py FAULT_PHYSICS ──────────────────────────
+const FAULT_PHYSICS_JS = {
+  sand_ingress:              {horizon_label:'Days',    total_hours:336,   scada_alarm_health:0.15, pnr_health:0.05, intervention_type:'supply_chain'},
+  piston_seal_wear:          {horizon_label:'Days',    total_hours:96,    scada_alarm_health:0.20, pnr_health:0.08, intervention_type:'maintenance_scheduling'},
+  gearbox_bearing_spalling:  {horizon_label:'Hours',   total_hours:10,    scada_alarm_health:0.25, pnr_health:0.10, intervention_type:'maintenance_scheduling'},
+  motor_overheat:            {horizon_label:'Hours',   total_hours:4,     scada_alarm_health:0.25, pnr_health:0.10, intervention_type:'operational_control'},
+  thermal_runaway:           {horizon_label:'Hours',   total_hours:72,    scada_alarm_health:0.20, pnr_health:0.07, intervention_type:'maintenance_scheduling'},
+  valve_washout:             {horizon_label:'Hours',   total_hours:10,    scada_alarm_health:0.25, pnr_health:0.10, intervention_type:'maintenance_scheduling'},
+  hydraulic_leak:            {horizon_label:'Hours',   total_hours:6,     scada_alarm_health:0.25, pnr_health:0.10, intervention_type:'operational_control'},
+  bearing_wear:              {horizon_label:'Hours',   total_hours:16,    scada_alarm_health:0.20, pnr_health:0.08, intervention_type:'maintenance_scheduling'},
+  gas_lock:                  {horizon_label:'Minutes', total_hours:0.75,  scada_alarm_health:0.30, pnr_health:0.12, intervention_type:'operational_control'},
+  pulsation_dampener_failure:{horizon_label:'Minutes', total_hours:0.083, scada_alarm_health:0.50, pnr_health:0.25, intervention_type:'emergency_shutdown'},
+  valve_failure:             {horizon_label:'Minutes', total_hours:0.25,  scada_alarm_health:0.40, pnr_health:0.15, intervention_type:'operational_control'},
+}
+
+const REMEDIATION_COSTS_JS = {
+  gas_lock:150000, sand_ingress:85000, motor_overheat:200000,
+  valve_failure:42500, thermal_runaway:150000, bearing_wear:85000,
+  pulsation_dampener_failure:500000, valve_washout:52500,
+  piston_seal_wear:15000, gearbox_bearing_spalling:120000, hydraulic_leak:8000,
+}
+
+const COST_INCURRED_BY_TIER = {
+  gas_lock:                  {early:2500,  urgent:8000,   critical:15000, post_pnr:150000},
+  sand_ingress:              {early:5000,  urgent:25000,  critical:35000, post_pnr:85000},
+  motor_overheat:            {early:3000,  urgent:12000,  critical:20000, post_pnr:200000},
+  valve_failure:             {early:3000,  urgent:10000,  critical:18000, post_pnr:42500},
+  thermal_runaway:           {early:4000,  urgent:15000,  critical:25000, post_pnr:150000},
+  bearing_wear:              {early:5000,  urgent:20000,  critical:40000, post_pnr:85000},
+  pulsation_dampener_failure:{early:15000, urgent:50000,  critical:75000, post_pnr:500000},
+  valve_washout:             {early:5000,  urgent:18000,  critical:30000, post_pnr:52500},
+  piston_seal_wear:          {early:2500,  urgent:8000,   critical:15000, post_pnr:15000},
+  gearbox_bearing_spalling:  {early:8000,  urgent:30000,  critical:55000, post_pnr:120000},
+  hydraulic_leak:            {early:1500,  urgent:5000,   critical:8000,  post_pnr:8000},
+}
+
+// ── Workspace State ───────────────────────────────────────────────────────────
+let _wsActiveFault     = null
+let _wsActiveAsset     = null
+let _wsSliderHealth    = 0.75   // current slider position (0.0–1.0)
+let _agentChatHistory  = []
+
+// ── Phase 7.1: Time-Based Slider State ───────────────────────────────────────
+// The slider moves in physical time units (minutes) rather than abstract health %.
+// _wsTTFMinutes = total time to failure in minutes — drives slider.max
+// _wsDegradePoller = 5s interval polling /api/degrade-status/{asset_id}
+let _wsTTFMinutes    = null   // total minutes to failure (from degrade-status API)
+let _wsHorizonLabel  = 'Hours'
+let _wsDegradePoller = null   // setInterval handle; cleared in hideWorkspace()
+
+// Format minutes into human-readable string matched to horizon label
+function fmtSliderVal(minutes, hlabel) {
+  if (minutes === null || minutes === undefined || isNaN(minutes) || minutes < 0) return '—'
+  if (hlabel === 'Days' || minutes >= 1440) {
+    const d = minutes / 1440
+    return d < 1 ? `${(d * 24).toFixed(1)} hrs` : `${d.toFixed(1)} days`
+  }
+  if (hlabel === 'Minutes' || minutes < 60) return `${Math.round(minutes)} min`
+  const h = Math.floor(minutes / 60), m = Math.round(minutes % 60)
+  return m ? `${h}h ${m}m` : `${h}h`
+}
+
+// Start 5s degrade-status poller for the given asset (Phase 7.1)
+function _startDegradePoller(assetId) {
+  if (_wsDegradePoller) clearInterval(_wsDegradePoller)
+  _wsDegradePoller = setInterval(async () => {
+    if (!_wsActiveAsset) { clearInterval(_wsDegradePoller); _wsDegradePoller = null; return }
+    try {
+      const d = await fetch(`/api/degrade-status/${assetId}`).then(r => r.json())
+      if (d.is_active && d.time_to_failure_minutes != null) {
+        _wsTTFMinutes   = Math.max(0, d.time_to_failure_minutes)
+        _wsHorizonLabel = d.horizon_label || 'Hours'
+        const sliderEl  = document.getElementById('intervention-slider')
+        if (sliderEl) {
+          sliderEl.max = Math.ceil(_wsTTFMinutes)
+          if (!_sliderUserHeld) {
+            // Thumb follows live TTF — animates leftward as fault progresses
+            sliderEl.value = Math.ceil(_wsTTFMinutes)
+            const fp = FAULT_PHYSICS_JS[_wsActiveFault]
+            if (fp && fp.total_hours > 0) {
+              _wsSliderHealth = d.health_score != null
+                ? d.health_score
+                : _wsTTFMinutes / (fp.total_hours * 60)
+            }
+            updateWorkspace()
+          }
+        }
+      }
+    } catch(e) {}
+  }, 5000)
+}
+
+// ── Utilities ─────────────────────────────────────────────────────────────────
+function fmtPhysTime(hours, hlabel) {
+  if (hours === null || hours === undefined || isNaN(hours)) return '—'
+  if (hlabel === 'Days' || hours >= 24) {
+    const d = hours / 24
+    const dInt = Math.floor(d), hRem = Math.floor((d % 1) * 24)
+    return hRem ? `${dInt}d ${hRem}h` : `${d.toFixed(1)} days`
+  }
+  if (hlabel === 'Minutes' || hours < 1.0) return `${Math.round(hours * 60)} min`
+  const h = Math.floor(hours), m = Math.floor((hours % 1) * 60)
+  return m ? `${h}h ${m}m` : `${h}h`
+}
+
+function getTier(hs, fp) {
+  if (!fp) return 'early'
+  if (hs <= fp.pnr_health)               return 'post_pnr'
+  if (hs <= fp.scada_alarm_health)        return 'critical'
+  if (hs <= fp.scada_alarm_health * 1.5)  return 'urgent'
+  return 'early'
+}
+
+function getTierBadge(tier) {
+  return {early:'🟢 EARLY', urgent:'🟡 URGENT', critical:'🔴 CRITICAL', post_pnr:'🛠 RECOVERY'}[tier] || '—'
+}
+
+// ── Slider input handler (Phase 7.1: time-based) ─────────────────────────────
+// rawVal is now in MINUTES (0 = intervene now, max = don't intervene = let fail)
+// Convert to health score via physics: health ≈ slider_minutes / total_failure_minutes
+function onSliderInput(rawVal) {
+  const sliderMin = parseFloat(rawVal)
+  const fp = _wsActiveFault ? FAULT_PHYSICS_JS[_wsActiveFault] : null
+  if (fp && fp.total_hours > 0 && _wsTTFMinutes != null && _wsTTFMinutes > 0) {
+    // Health score is proportional: minutes_remaining / total_failure_minutes
+    _wsSliderHealth = Math.max(0, Math.min(1.0, sliderMin / (_wsTTFMinutes)))
+  } else if (fp && fp.total_hours > 0) {
+    // Fallback: use FAULT_PHYSICS total_hours
+    _wsSliderHealth = Math.max(0, Math.min(1.0, sliderMin / (fp.total_hours * 60.0)))
+  } else {
+    _wsSliderHealth = sliderMin / 100.0
+  }
+  updateWorkspace()
+}
+
+// ── Main workspace update (instant, no API call) ──────────────────────────────
+function updateWorkspace() {
+  const fault = _wsActiveFault
+  const fp    = fault ? FAULT_PHYSICS_JS[fault] : null
+  const hs    = _wsSliderHealth
+  if (!fp) return
+
+  const ttFail  = Math.max(0, hs * fp.total_hours)
+  const ttScada = Math.max(0, (hs - fp.scada_alarm_health) * fp.total_hours)
+  const ttPnr   = Math.max(0, (hs - fp.pnr_health) * fp.total_hours)
+  const tier    = getTier(hs, fp)
+  const badge   = getTierBadge(tier)
+  const tierCss = tier === 'post_pnr' ? 'recovery' : tier
+
+  // ── Slider header ─────────────────────────────────────────────────────────
+  const tierEl = document.getElementById('slider-tier-badge')
+  if (tierEl) { tierEl.textContent = badge; tierEl.className = 'slider-tier-badge ' + tierCss }
+
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  setTxt('sp-scada',   ttScada > 0 ? fmtPhysTime(ttScada, fp.horizon_label) : 'Past alarm')
+  setTxt('sp-pnr',     ttPnr   > 0 ? fmtPhysTime(ttPnr,   fp.horizon_label) : 'Past PNR')
+  setTxt('sp-fail',    fmtPhysTime(ttFail, fp.horizon_label))
+  setTxt('sp-horizon', fp.horizon_label)
+
+  // ── Calculator ────────────────────────────────────────────────────────────
+  const tierScale    = {early:1.0, urgent:0.75, critical:0.40, post_pnr:0.15}[tier] || 0.5
+  const costAvoided  = Math.round((REMEDIATION_COSTS_JS[fault] || 0) * tierScale)
+  const costIncurred = COST_INCURRED_BY_TIER[fault]?.[tier] || 0
+  const netSavings   = costAvoided - costIncurred
+
+  // Phase 7.1: Display physical time remaining at slider position instead of Health %
+  const _sliderEl = document.getElementById('intervention-slider')
+  const _sliderTimeMin = _sliderEl ? parseFloat(_sliderEl.value) : (hs * fp.total_hours * 60.0)
+  setTxt('calc-intervene-at', `Intervening in ${fmtSliderVal(_sliderTimeMin, fp.horizon_label)}`)
+  setTxt('calc-tier',         badge)
+  setTxt('calc-scada',  ttScada > 0 ? fmtPhysTime(ttScada, fp.horizon_label) : '⚠ Past alarm')
+  setTxt('calc-pnr',    ttPnr   > 0 ? fmtPhysTime(ttPnr,   fp.horizon_label) : '⚠ Past PNR')
+  setTxt('calc-fail',   fmtPhysTime(ttFail, fp.horizon_label))
+  setTxt('calc-action-type', fp.intervention_type.replace(/_/g, ' '))
+  setTxt('calc-cost-avoided',  '$' + costAvoided.toLocaleString())
+  setTxt('calc-cost-incurred', '$' + costIncurred.toLocaleString())
+
+  const netEl = document.getElementById('calc-net')
+  if (netEl) {
+    netEl.textContent = (netSavings >= 0 ? '+$' : '-$') + Math.abs(netSavings).toLocaleString()
+    netEl.className   = 'calc-val ' + (netSavings >= 0 ? 'calc-net-positive' : 'calc-net-negative')
+  }
+  setTxt('ws-health-display', `Health ${Math.round(hs * 100)}%`)
+
+  // Enable consult button
+  const btn = document.getElementById('btn-consult-agent')
+  if (btn) btn.disabled = false
+  // Phase 6.3: inline Plotly — no iframe to update; chart refreshes on next poll cycle
+}
+
+// ── Show / hide workspace ─────────────────────────────────────────────────────
+function showWorkspace(assetId, faultType) {
+  _wsActiveFault    = faultType
+  _wsActiveAsset    = assetId
+  _agentChatHistory = []
+
+  const fp = FAULT_PHYSICS_JS[faultType]
+  if (!fp) { showToast(`⚠ No physics data for ${faultType}`, 'info'); return }
+
+  // Phase 7.1: Initialize slider range from FAULT_PHYSICS total_hours
+  // max = total_hours * 60 minutes (full physical failure horizon)
+  const initTTF = fp.total_hours * 60.0
+  _wsTTFMinutes   = initTTF
+  _wsHorizonLabel = fp.horizon_label
+  _wsSliderHealth = 0.75
+  const sliderEl = document.getElementById('intervention-slider')
+  if (sliderEl) {
+    sliderEl.min   = 0
+    sliderEl.max   = Math.ceil(initTTF)
+    sliderEl.value = Math.ceil(initTTF * 0.75)  // start at 75% of TTF
+  }
+
+  document.getElementById('intervention-slider-wrap')?.classList.add('visible')
+  document.getElementById('ops-workspace')?.classList.add('visible')
+
+  // Phase 7.2: Plotly resize so the chart fills the newly reduced available height
+  setTimeout(() => {
+    const c = document.getElementById('forecast-chart')
+    if (c && typeof Plotly !== 'undefined') Plotly.relayout(c, {autosize: true})
+  }, 100)
+
+  const setTxt = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v }
+  setTxt('ws-asset-lbl',  assetId)
+  setTxt('ws-fault-lbl',  FAULT_META[faultType]?.label || faultType)
+
+  // Reset chat
+  const chatLog = document.getElementById('agent-chat-log')
+  if (chatLog) chatLog.innerHTML = `<div class="chat-msg system">⚙ <strong>${FAULT_META[faultType]?.label || faultType}</strong> detected on <strong>${assetId}</strong>.<br>Drag the slider to explore intervention timing, then click <strong>Consult Operations Agent</strong>.</div>`
+  document.getElementById('agent-quick-replies').innerHTML = ''
+  document.getElementById('agent-input').value = ''
+  document.getElementById('agent-send-btn').disabled = true
+
+  updateWorkspace()
+
+  // Phase 7.1: Start 5s poller to animate slider leftward as fault progresses
+  _startDegradePoller(assetId)
+}
+
+function hideWorkspace() {
+  // Phase 7.1: Stop the degrade-status poller
+  if (_wsDegradePoller) { clearInterval(_wsDegradePoller); _wsDegradePoller = null }
+  _wsActiveFault = null; _wsActiveAsset = null
+  document.getElementById('intervention-slider-wrap')?.classList.remove('visible')
+  document.getElementById('ops-workspace')?.classList.remove('visible')
+  // Phase 7.2: Plotly resize to reclaim the extra height
+  setTimeout(() => {
+    const c = document.getElementById('forecast-chart')
+    if (c && typeof Plotly !== 'undefined') Plotly.relayout(c, {autosize: true})
+  }, 100)
+}
+
+// ── "⚙ Workspace ▶" button ───────────────────────────────────────────────────
+async function openWorkspace() {
+  const assetId = selectedAsset
+  if (!assetId) { showToast('⚠ Select an asset first', 'info'); return }
+
+  // Priority 1: active degrade record (most reliable)
+  let faultType = activeDegrades[assetId]?.fault_type
+
+  // Priority 2: recent event log
+  if (!faultType) {
+    const ev = recentEvents.find(e => e.asset_id === assetId && e.failure_type && e.failure_type !== 'normal')
+    faultType = ev?.failure_type || ev?.predicted_label
+  }
+
+  // Priority 3: live API call
+  if (!faultType || faultType === 'normal') {
+    try {
+      const d = await fetch('/api/degrade-status').then(r => r.json())
+      faultType = d.active?.[assetId]?.fault_type
+    } catch(e) {}
+  }
+
+  if (!faultType || faultType === 'normal' || !FAULT_PHYSICS_JS[faultType]) {
+    showToast('⚠ No active fault on ' + assetId + ' — inject a fault first', 'info')
+    return
+  }
+  showWorkspace(assetId, faultType)
+}
+
+// ── Consult Operations Agent (Phase 6.5: SSE streaming) ──────────────────────
+// Uses /api/agent/recommend-stream — returns rule-based recommendation immediately,
+// then streams LLM tokens as they arrive. No full-response wait.
+// Animated typing indicator (●●●) replaces the old blocking "Consulting…" button state.
+async function consultAgent() {
+  const fault = _wsActiveFault, asset = _wsActiveAsset
+  if (!fault || !asset) return
+
+  const btn = document.getElementById('btn-consult-agent')
+  if (btn) btn.disabled = true
+
+  const fp   = FAULT_PHYSICS_JS[fault] || {}
+  const tier = getTier(_wsSliderHealth, fp)
+  appendChatMessage('user', `Health ${Math.round(_wsSliderHealth * 100)}% — ${getTierBadge(tier)}`)
+
+  // Phase 6.5: animated typing indicator instead of blocking "Consulting…" button text
+  const typingEl = document.createElement('div')
+  typingEl.className = 'chat-msg agent'
+  typingEl.id = '_agent_typing'
+  typingEl.innerHTML = `<span style="letter-spacing:3px;animation:blink 1.2s ease-in-out infinite">● ● ●</span>`
+  const chatLog = document.getElementById('agent-chat-log')
+  if (chatLog) { chatLog.appendChild(typingEl); chatLog.scrollTop = chatLog.scrollHeight }
+
+  let llmStreamDiv = null
+  let gotResponse  = false
+
+  try {
+    const params = new URLSearchParams({
+      fault_type: fault, asset_id: asset,
+      slider_health_score: _wsSliderHealth.toFixed(4),
+    })
+    const response = await fetch('/api/agent/recommend-stream?' + params, {method: 'POST'})
+    if (!response.ok) throw new Error(await response.text())
+
+    const reader  = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+
+    while (true) {
+      const {done, value} = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, {stream: true})
+      const lines = buf.split('\n'); buf = lines.pop()
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue
+        try {
+          const ev = JSON.parse(line.slice(6))
+          if (ev.type === 'recommendation') {
+            // Phase 6.5: remove typing indicator, show rule-based recommendation immediately
+            document.getElementById('_agent_typing')?.remove()
+            gotResponse = true
+            appendChatMessage('agent', ev.text)
+            _agentChatHistory.push(
+              {role:'user',      content:`Health ${Math.round(_wsSliderHealth*100)}%, tier ${getTierBadge(tier)}`},
+              {role:'assistant', content: ev.text},
+            )
+          } else if (ev.type === 'token' && ev.text) {
+            // Append LLM tokens to a streaming bubble (teal border = AI-enhanced)
+            if (!llmStreamDiv) {
+              llmStreamDiv = document.createElement('div')
+              llmStreamDiv.className = 'chat-msg agent'
+              llmStreamDiv.style.borderColor = 'rgba(0,188,212,0.35)'
+              llmStreamDiv.style.background  = 'rgba(0,188,212,0.04)'
+              if (chatLog) chatLog.appendChild(llmStreamDiv)
+            }
+            llmStreamDiv.textContent += ev.text
+            if (chatLog) chatLog.scrollTop = chatLog.scrollHeight
+          } else if (ev.type === 'done') {
+            if (llmStreamDiv?.textContent)
+              _agentChatHistory.push({role:'assistant', content: llmStreamDiv.textContent})
+            break
+          }
+        } catch(_) {}
+      }
+    }
+
+    showQuickReplies(fp.intervention_type, tier)
+    document.getElementById('agent-send-btn').disabled = false
+  } catch(e) {
+    document.getElementById('_agent_typing')?.remove()
+    if (!gotResponse) appendChatMessage('agent', `⚠ Agent unavailable: ${e.message}`)
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💬 Consult Operations Agent' }
+  }
+}
+
+// ── Quick-reply button sets ───────────────────────────────────────────────────
+function showQuickReplies(interventionType, tier) {
+  const qrMap = {
+    supply_chain: {
+      early:    ['✅ Generate Purchase Order', '⏳ Monitor — not yet', '📋 Show lead time'],
+      urgent:   ['🚨 Order air freight', '📦 Standard freight', '🔍 Check inventory'],
+      critical: ['🚨 Emergency order now', '📞 Call supplier'],
+      post_pnr: ['🛠 Request workover crew', '📞 Emergency procurement'],
+    },
+    maintenance_scheduling: {
+      early:    ['✅ Append to existing WO', '📅 Schedule new visit', '⏳ Continue monitoring'],
+      urgent:   ['🚛 Dispatch crew now', '📋 Append to WO', '⏰ Schedule tomorrow'],
+      critical: ['🚨 Emergency dispatch', '⚙ Reduce load now'],
+      post_pnr: ['🚨 Emergency crew now', '🔴 Shutdown required'],
+    },
+    operational_control: {
+      early:    ['⚙ Execute SCADA command', '⏳ Monitor — not yet', '📋 Log observation'],
+      urgent:   ['⚙ Execute now', '⚠ Alert field engineer'],
+      critical: ['🔴 Execute emergency cmd', '📞 Page engineer'],
+      post_pnr: ['🛑 Emergency shutdown', '📞 Well control'],
+    },
+    emergency_shutdown: {
+      early:    ['🛑 Stop pumps now', '📞 Page safety officer'],
+      urgent:   ['🛑 STOP PUMPS NOW'],
+      critical: ['🛑 STOP PUMPS NOW'],
+      post_pnr: ['🛑 Assess damage'],
+    },
+  }
+  const replies = qrMap[interventionType]?.[tier] || ['✅ Proceed', '⏳ Monitor', '❌ Dismiss']
+  document.getElementById('agent-quick-replies').innerHTML = replies
+    .map(r => `<button class="qr-btn" onclick="selectQuickReply('${r.replace(/'/g,"&#39;")}')">${r}</button>`)
+    .join('')
+}
+
+function selectQuickReply(text) {
+  document.getElementById('agent-quick-replies').innerHTML = ''
+  document.getElementById('agent-input').value = text
+  sendAgentMessage()
+}
+
+// ── Send a text message ───────────────────────────────────────────────────────
+async function sendAgentMessage() {
+  const input = document.getElementById('agent-input')
+  const text  = (input?.value || '').trim()
+  if (!text) return
+  input.value = ''
+
+  const fault = _wsActiveFault, asset = _wsActiveAsset
+  if (!fault || !asset) return
+
+  appendChatMessage('user', text)
+  _agentChatHistory.push({role:'user', content:text})
+  document.getElementById('agent-send-btn').disabled = true
+  document.getElementById('btn-consult-agent').disabled = true
+
+  try {
+    const params = new URLSearchParams({
+      fault_type: fault, asset_id: asset,
+      slider_health_score: _wsSliderHealth.toFixed(4),
+      chat_history: JSON.stringify(_agentChatHistory.slice(-6)),
+    })
+    const res  = await fetch('/api/agent/recommend?' + params, {method:'POST'})
+    if (!res.ok) throw new Error(await res.text())
+    const data = await res.json()
+    appendChatMessage('agent', data.recommendation)
+    _agentChatHistory.push({role:'assistant', content:data.recommendation})
+    const fp   = FAULT_PHYSICS_JS[fault] || {}
+    showQuickReplies(fp.intervention_type, getTier(_wsSliderHealth, fp))
+  } catch(e) {
+    appendChatMessage('agent', `⚠ ${e.message}`)
+  } finally {
+    document.getElementById('agent-send-btn').disabled = false
+    document.getElementById('btn-consult-agent').disabled = false
+  }
+}
+
+function appendChatMessage(role, text) {
+  const log = document.getElementById('agent-chat-log')
+  if (!log) return
+  const div = document.createElement('div')
+  div.className = `chat-msg ${role}`
+  div.textContent = text
+  log.appendChild(div)
+  log.scrollTop = log.scrollHeight
+}
+
+// ── Fault Injection — canonical single definition ────────────────────────────
+// Phase 7.0 cleanup: Gradual faults auto-open the Operations Workspace after 1.2s.
+// Instant burst faults schedule a plot/event/status refresh after 3s.
+async function injectFault() {
+  if (!selectedAsset) { showToast('Select an asset first','error'); return }
+  if (!selectedFault)  { showToast('Select a fault type','error');  return }
+  const mode = document.querySelector('input[name="imode"]:checked')?.value || 'instant'
+  const fm   = FAULT_META[selectedFault]
+  if (mode === 'gradual' && fm?.gradual) {
+    const FIXED_DURATION = 3600
+    try {
+      const r = await fetch('/api/inject/degrade',{method:'POST',headers:{'Content-Type':'application/json'},
+                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,duration_seconds:FIXED_DURATION})})
+      if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
+      showToast(`▶ ${fm.label} — gradual degradation started`,'ok')
+      activeDegrades[selectedAsset]={running:true,fault_type:selectedFault,step:0,steps:Math.floor(FIXED_DURATION/5)}
+      updateDegradeProgress(); updateFleetBar()
+      // Auto-open Operations Workspace for gradual faults
+      setTimeout(() => showWorkspace(selectedAsset, selectedFault), 1200)
+    } catch(e) { showToast('Error: '+e.message,'error') }
+  } else {
+    const burst = parseInt(document.getElementById('burst-count').value || '3')
+    try {
+      const r = await fetch('/api/inject-fault',{method:'POST',headers:{'Content-Type':'application/json'},
+                             body:JSON.stringify({asset_id:selectedAsset,fault_type:selectedFault,count:burst})})
+      if (!r.ok) { const e=await r.json(); showToast(`Error: ${e.detail}`,'error'); return }
+      showToast(`✅ Injected ${burst}× ${fm.label}`,'ok')
+      setTimeout(()=>{ refreshPlot(); refreshEvents(); refreshStatus() }, 3000)
+    } catch(e) { showToast('Error: '+e.message,'error') }
+  }
+}
+// ════════ END OPERATIONS WORKSPACE ═══════════════════════════════════════════
 </script>
 </body>
 </html>

@@ -36,11 +36,35 @@ Always apply these techniques to minimize context token consumption from verbose
 - For `git diff`: use `--stat` first; only expand to full diff for specific files when needed
 - For log files: always use `tail -n 50` not `cat`
 
-## 2. TASK HANDOFF PATTERN
-When a task is approaching context limits (>400K tokens used):
-1. Write a `docs/PHASE_N_DEPLOYMENT_STATUS.md` capturing: what was built, what is deployed, exact commands to complete remaining work, and test verification steps
-2. Write a `scripts/deploy-phaseN.sh` that wraps all remaining deployment steps using the token-conservation patterns above
-3. State a crisp 1–2 sentence brief for the next task that an AI can execute cleanly in a fresh context
+## 2. SESSION HANDOFF PROTOCOL — MANDATORY
+When the user asks for a "handoff summary", or when a task is completing and context is >60%, perform ALL of the following steps before calling `attempt_completion`:
+
+### Step 1 — Write deployment status document
+Create or update `docs/PHASE_N_DEPLOYMENT_STATUS.md` (use the next sequential phase number) with:
+- Date, live URLs, deployed image digests
+- Every significant decision made this session with rationale
+- All files changed and what changed in each
+- Current application state (fleet config, API endpoints, model versions, DB state)
+- Known gaps / deferred items with clear descriptions
+
+### Step 2 — Update NEXT_SESSION_PROMPT.md
+Overwrite `docs/NEXT_SESSION_PROMPT.md` so a new AI session can read it and immediately understand:
+- Project identity (domain expert persona to adopt)
+- Live state (URLs, cluster, what's deployed)
+- Current baseline doc (`docs/PHASE_N_DEPLOYMENT_STATUS.md`)
+- Known gaps
+- Build + deploy commands
+- "Wait for instructions before proceeding" footer
+
+### Step 3 — Git commit
+Run:
+```bash
+cd /home/brian/gdc-pm && git add -A && git commit -m "Phase N complete: [one-line summary]"
+```
+Use a meaningful commit message that summarizes what was built or fixed.
+
+### Step 4 — Confirm handoff in attempt_completion
+State in the completion message that the handoff doc was written and committed.
 
 ## 3. DEPLOYMENT SCRIPTS
 All deployment scripts for this project use the pattern in `scripts/deploy-phase2.sh`.

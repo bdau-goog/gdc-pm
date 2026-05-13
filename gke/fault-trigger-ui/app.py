@@ -26,7 +26,7 @@ import pika
 import psycopg2
 import psycopg2.extras
 from fastapi import FastAPI, HTTPException, BackgroundTasks
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -51,64 +51,86 @@ ROUTING_KEY   = "sensor.reading"
 MODELS_DIR    = Path("/app/models")
 
 OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.local:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma:2b")
+# Phase 6.2: Reduced to gemma3:12b for faster demo response time.
+# gemma:2b was too small; gemma3:27b is too slow. 12b hits the sweet spot.
+# Override via OLLAMA_MODEL env var if a different model is pulled.
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:12b")
 
-# ── RUL Model Registries (Task 3 — dual-version for MLOps demo) ───────────────
-# V1: original models trained on clean 5-minute interval data (intentionally drifted)
-# V2: retrained models matched to 5-second edge noise profile (stable, calibrated)
-# The active version is controlled at runtime via /api/model/version endpoints.
-RUL_MODELS_V1: dict = {}   # {asset_class: xgb.Booster} — loaded from *_rul.ubj
-RUL_MODELS_V2: dict = {}   # {asset_class: xgb.Booster} — loaded from *_rul_v2.ubj
-_active_model_version: str = "v2"   # default: V2 edge-calibrated (stable, correct scale)
-                                     # V1 available via /api/model/version for MLOps drift demo
+# ── Health Score Model Registry (Phase 5.1) ───────────────────────────────────
+# Single edge-calibrated XGBoost Health Score model per asset class.
+# Predicts health_score (1.0 = perfect, 0.0 = destroyed) from 6- or 8-feature
+# sensor + slope vectors.  Replaces the V1/V2 RUL dual-model MLOps demo.
+# Models trained by scripts/retrain_edge_models.py with exponential k=3.5 curve.
+HEALTH_MODELS: dict = {}   # {asset_class: xgb.Booster} — loaded from *_health.ubj
 
-# ── RUL Smoothing Buffer ──────────────────────────────────────────────────────
+# ── Health Score Smoothing Buffer ─────────────────────────────────────────────
 # Exponential-weighted rolling average of recent predictions per asset —
 # smooths out individual noisy XGBoost predictions without masking real trends.
 from collections import deque
-import statistics as _stats
-RUL_HISTORY: dict = {}   # {asset_id: deque(maxlen=10)}
+HEALTH_HISTORY: dict = {}  # {asset_id: deque(maxlen=10)}
 
 
-def load_rul_models() -> None:
+def load_health_models() -> None:
     """
-    Load both V1 and V2 XGBoost RUL regressors from the models directory at startup.
-
-    V1 (*_rul.ubj):    original cloud-trained models — deliberately drifted for demo
-    V2 (*_rul_v2.ubj): edge-calibrated retrained models — should be stable at inference
+    Load Phase 5.1 XGBoost Health Score models from the models directory at startup.
+    Each asset class has one model: {asset_class}_health.ubj
+    Predicts health_score 1.0 (nominal) → 0.0 (destroyed).
     """
     try:
         import xgboost as xgb
         for asset_class in ("esp", "gas_lift", "mud_pump", "top_drive"):
-            # ── V1 — original (drifted) ────────────────────────────────────────
-            v1_path = MODELS_DIR / f"{asset_class}_rul.ubj"
-            if v1_path.exists():
+            path = MODELS_DIR / f"{asset_class}_health.ubj"
+            if path.exists():
                 b = xgb.Booster()
-                b.load_model(str(v1_path))
-                RUL_MODELS_V1[asset_class] = b
-                log.info(f"✅ Loaded V1 model: {asset_class}  ({v1_path.stat().st_size//1024} KB)")
+                b.load_model(str(path))
+                HEALTH_MODELS[asset_class] = b
+                log.info(f"✅ Loaded health model: {asset_class}  ({path.stat().st_size//1024} KB)")
             else:
-                log.warning(f"⚠️  V1 model not found: {v1_path}")
-
-            # ── V2 — edge-calibrated (stable) ─────────────────────────────────
-            v2_path = MODELS_DIR / f"{asset_class}_rul_v2.ubj"
-            if v2_path.exists():
-                b = xgb.Booster()
-                b.load_model(str(v2_path))
-                RUL_MODELS_V2[asset_class] = b
-                log.info(f"✅ Loaded V2 model: {asset_class}  ({v2_path.stat().st_size//1024} KB)")
-            else:
-                log.info(f"ℹ️  V2 model not yet available: {v2_path} (run scripts/retrain_edge_models.py)")
-
-        log.info(f"Model registry: V1={list(RUL_MODELS_V1.keys())}  V2={list(RUL_MODELS_V2.keys())}")
-        log.info(f"Active version on startup: {_active_model_version.upper()}")
+                # Fall back to legacy V2 RUL model if health model not yet built
+                legacy = MODELS_DIR / f"{asset_class}_rul_v2.ubj"
+                if legacy.exists():
+                    log.warning(f"⚠️  {path.name} not found — legacy {legacy.name} present but "
+                                f"not loaded (run scripts/retrain_edge_models.py for Phase 5.1 models)")
+                else:
+                    log.warning(f"⚠️  No model found for {asset_class} — predictions will use fallback")
+        log.info(f"Health model registry: {list(HEALTH_MODELS.keys())}")
     except ImportError:
-        log.warning("xgboost not available — RUL predictions will use geometric fallback")
+        log.warning("xgboost not available — health predictions will use geometric fallback")
     except Exception as e:
-        log.error(f"Error loading RUL models: {e}")
+        log.error(f"Error loading health models: {e}")
 
 
-load_rul_models()
+load_health_models()
+
+
+# ── Phase 7.4: Ollama Model Warm-Up ───────────────────────────────────────────
+# Prevents gemma3:12b from cold-starting after >10 minutes of inactivity on GKE.
+# Sends a minimal dummy completion request at startup then every 5 minutes.
+# Runs in a daemon thread so it does not block the FastAPI startup sequence.
+def _ollama_keepalive() -> None:
+    """Background ping to prevent Ollama model cold-start during demos."""
+    import requests as _req
+    time.sleep(15)  # Wait 15s for the container to fully initialize before first ping
+    while True:
+        try:
+            resp = _req.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": "ping", "stream": False,
+                      "options": {"num_predict": 1, "temperature": 0.0}},
+                timeout=30,
+            )
+            if resp.status_code == 200:
+                log.debug(f"🔥 Ollama keepalive OK — model {OLLAMA_MODEL} is warm")
+            else:
+                log.debug(f"Ollama keepalive: HTTP {resp.status_code}")
+        except Exception as e:
+            log.debug(f"Ollama keepalive ping failed (non-fatal): {e}")
+        time.sleep(300)  # Ping every 5 minutes
+
+
+threading.Thread(target=_ollama_keepalive, daemon=True, name="ollama-keepalive").start()
+log.info(f"🔥 Ollama keepalive thread started — model: {OLLAMA_MODEL}, interval: 5min")
+
 
 # ── Asset Fleet ────────────────────────────────────────────────────────────────
 # Pure-pad architecture: each pad uses a single artificial lift method.
@@ -487,6 +509,142 @@ REMEDIATION_COSTS = {
     "piston_seal_wear":            15000,  # Seal kit + 8h maintenance
     "gearbox_bearing_spalling":   120000,  # Gearbox repair + drilling halt
     "hydraulic_leak":               8000,  # Hydraulic repair + drilling delay
+}
+
+# ── Fault Physics Configuration (Phase 5.2 / Phase 6.1) ──────────────────────
+# Maps each fault type to its physical time horizon and SCADA/PNR health thresholds.
+# The health score model is time-agnostic — FAULT_PHYSICS is the UI layer that
+# converts health_score (0.0–1.0) → physical time remaining for each fault.
+#
+# INVARIANT:  scada_alarm_health > pnr_health > 0.0   (always)
+# This guarantees: time_to_scada < time_to_pnr < time_to_failure (always correct)
+# So the chart sequence ML Detection → SCADA Alarm → PNR → Failure is ALWAYS right.
+#
+# Phase 6.1 additions:
+#   scada_sensor  — the sensor tab that shows the SCADA alarm threshold line
+#   pnr_sensor    — the sensor tab that shows the PNR vertical marker
+#   primary_sensor — the most important tab to inspect first (highlighted in UI)
+# Sensor key → metric name mapping used by /api/plot/forecast/:
+#   "amps"     → Motor Current (ESP only)
+#   "temp"     → Winding / Fluid / Gearbox Temperature
+#   "vib"      → Vibration
+#   "psi"      → Intake / Discharge / Hydraulic Pressure
+# Only the matching tab receives threshold annotations — showing a SCADA or PNR
+# marker on a non-causal sensor is physically wrong and confuses operators.
+FAULT_PHYSICS = {
+    # ── Long Horizon (Days) — Supply Chain / Workover ─────────────────────────
+    "sand_ingress": {
+        "horizon_label": "Days",
+        "total_hours": 336,           # 14 days
+        "scada_alarm_health": 0.15,   # Fires at 85% degraded (Day 11.9)
+        "pnr_health": 0.05,           # Irreversible at 95% degraded (Day 13.3)
+        "scada_sensor": "vib",        # Vibration high alarm from impeller erosion
+        "pnr_sensor": "vib",          # Vibration also drives PNR (impellers destroyed)
+        "primary_sensor": "vib",
+        "intervention_type": "supply_chain",
+    },
+    "piston_seal_wear": {
+        "horizon_label": "Days",
+        "total_hours": 96,            # 4 days
+        "scada_alarm_health": 0.20,
+        "pnr_health": 0.08,
+        "scada_sensor": "psi",        # Pressure drop (leaking past seal)
+        "pnr_sensor": "vib",          # Vibration as piston wipes
+        "primary_sensor": "psi",
+        "intervention_type": "maintenance_scheduling",
+    },
+    "gearbox_bearing_spalling": {
+        "horizon_label": "Hours",
+        "total_hours": 10,
+        "scada_alarm_health": 0.25,
+        "pnr_health": 0.10,
+        "scada_sensor": "vib",        # Vibration high alarm (bearing roughness)
+        "pnr_sensor": "temp",         # Thermal runaway as bearing seizes
+        "primary_sensor": "vib",
+        "intervention_type": "maintenance_scheduling",
+    },
+    # ── Medium Horizon (Hours) — Crew Dispatch ────────────────────────────────
+    "motor_overheat": {
+        "horizon_label": "Hours",
+        "total_hours": 4,
+        "scada_alarm_health": 0.25,
+        "pnr_health": 0.10,
+        "scada_sensor": "temp",       # Temperature high alarm
+        "pnr_sensor": "temp",         # Temperature drives insulation failure
+        "primary_sensor": "temp",
+        "intervention_type": "operational_control",
+    },
+    "thermal_runaway": {
+        "horizon_label": "Hours",
+        "total_hours": 72,
+        "scada_alarm_health": 0.20,
+        "pnr_health": 0.07,
+        "scada_sensor": "temp",       # Temp high alarm (cylinder overheating)
+        "pnr_sensor": "temp",         # Winding temp burnout / seizure
+        "primary_sensor": "temp",
+        "intervention_type": "maintenance_scheduling",
+    },
+    "valve_washout": {
+        "horizon_label": "Hours",
+        "total_hours": 10,
+        "scada_alarm_health": 0.25,
+        "pnr_health": 0.10,
+        "scada_sensor": "psi",        # Pressure drop (valve leaking)
+        "pnr_sensor": "psi",          # Pressure / valve seat destroyed
+        "primary_sensor": "psi",
+        "intervention_type": "maintenance_scheduling",
+    },
+    "hydraulic_leak": {
+        "horizon_label": "Hours",
+        "total_hours": 6,
+        "scada_alarm_health": 0.25,
+        "pnr_health": 0.10,
+        "scada_sensor": "psi",        # Pressure drop (fluid loss)
+        "pnr_sensor": "psi",          # Pressure / loss of prime
+        "primary_sensor": "psi",
+        "intervention_type": "operational_control",
+    },
+    "bearing_wear": {
+        "horizon_label": "Hours",
+        "total_hours": 16,
+        "scada_alarm_health": 0.20,
+        "pnr_health": 0.08,
+        "scada_sensor": "vib",        # Vibration high alarm (bearing roughness)
+        "pnr_sensor": "temp",         # Thermal runaway as bearing seizes
+        "primary_sensor": "vib",
+        "intervention_type": "maintenance_scheduling",
+    },
+    # ── Short Horizon (Minutes) — Automated/SCADA Control ────────────────────
+    "gas_lock": {
+        "horizon_label": "Minutes",
+        "total_hours": 0.75,          # 45 min
+        "scada_alarm_health": 0.30,
+        "pnr_health": 0.12,
+        "scada_sensor": "amps",       # SCADA fires on Motor Current underload
+        "pnr_sensor": "temp",         # PNR is winding temperature burnout
+        "primary_sensor": "amps",
+        "intervention_type": "operational_control",
+    },
+    "pulsation_dampener_failure": {
+        "horizon_label": "Minutes",
+        "total_hours": 0.083,         # 5 min — catastrophic / emergency
+        "scada_alarm_health": 0.50,
+        "pnr_health": 0.25,
+        "scada_sensor": "psi",        # Pressure spike (bladder rupture)
+        "pnr_sensor": "psi",          # Pressure / pipe rupture risk
+        "primary_sensor": "psi",
+        "intervention_type": "emergency_shutdown",
+    },
+    "valve_failure": {
+        "horizon_label": "Minutes",
+        "total_hours": 0.25,          # 15 min
+        "scada_alarm_health": 0.40,
+        "pnr_health": 0.15,
+        "scada_sensor": "psi",        # Pressure drop (check valve failed open)
+        "pnr_sensor": "psi",          # Pressure / valve destroyed
+        "primary_sensor": "psi",
+        "intervention_type": "operational_control",
+    },
 }
 
 # ── Demo Scenarios ─────────────────────────────────────────────────────────────
@@ -922,9 +1080,9 @@ def cancel_degrade(asset_id: str):
     # terminates both and lets the simulator resume normal readings.
     active_degrades[asset_id]["running"] = False
     active_degrades.pop(asset_id, None)
-    # Clear the RUL smoothing buffer so stale predictions don't bleed into
+    # Clear the health score smoothing buffer so stale predictions don't bleed into
     # the next injection cycle on the same asset.
-    RUL_HISTORY.pop(asset_id, None)
+    HEALTH_HISTORY.pop(asset_id, None)
     log.info(f"Cancelled / reset fault injection for {asset_id}")
     return {"status": "cancelled", "asset": asset_id}
 
@@ -1038,7 +1196,7 @@ def acknowledge_event(event_id: int, req: AcknowledgeRequest):
         if asset_id and asset_id in active_degrades:
             active_degrades[asset_id]["running"] = False
             active_degrades.pop(asset_id, None)
-            RUL_HISTORY.pop(asset_id, None)
+            HEALTH_HISTORY.pop(asset_id, None)
             log.info(f"Auto-cancelled fault injection for {asset_id} on acknowledgement")
         log.info(f"Acknowledged event {event_id} | asset={asset_id} | fault={fault_key} | cost_avoided=${cost:,}")
         return {"status": "acknowledged", "event_id": event_id,
@@ -1087,51 +1245,68 @@ def clear_dispatch():
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
 
 
-# ── Model Version Swap (Task 3 — MLOps demo) ──────────────────────────────────
+# ── Health Models Status (Phase 5.2) ──────────────────────────────────────────
+@app.get("/api/model/status")
+def get_model_status():
+    """Return Phase 5.1 health model registry status."""
+    return {
+        "phase": "5.1",
+        "model_type": "health_score",
+        "models_loaded": list(HEALTH_MODELS.keys()),
+        "models_dir": str(MODELS_DIR),
+        "fault_physics": {k: {"total_hours": v["total_hours"],
+                              "horizon_label": v["horizon_label"],
+                              "intervention_type": v["intervention_type"]}
+                          for k, v in FAULT_PHYSICS.items()},
+    }
+
+
 class ModelVersionRequest(BaseModel):
     version: str   # "v1" or "v2"
-
-
-@app.get("/api/model/version")
-def get_model_version():
-    """Return the currently active RUL model version and registry sizes."""
-    return {
-        "active_version": _active_model_version,
-        "v1_loaded": list(RUL_MODELS_V1.keys()),
-        "v2_loaded": list(RUL_MODELS_V2.keys()),
-    }
 
 
 @app.post("/api/model/version")
 def set_model_version(req: ModelVersionRequest):
     """
-    Switch the active RUL model version between V1 (drifted) and V2 (calibrated).
-    Called by the frontend after the simulated Vertex AI retraining pipeline completes.
+    MLOps demo endpoint — simulates switching between model versions.
+    Clears the EWA health-score smoothing buffers so the next inference
+    cycle starts fresh (no stale predictions bleeding through).
+
+    In the real GDC pipeline this would trigger an edge model swap via
+    the GDC Edge Registry; here it resets the in-memory HEALTH_HISTORY
+    to produce an immediate observable change in the UI.
+
+    version: "v1" (legacy, noisier) | "v2" (retrained, stable)
     """
-    global _active_model_version
     if req.version not in ("v1", "v2"):
-        raise HTTPException(status_code=400, detail="version must be 'v1' or 'v2'")
-    if req.version == "v2" and not RUL_MODELS_V2:
-        raise HTTPException(
-            status_code=503,
-            detail="V2 models not yet loaded — run scripts/retrain_edge_models.py and rebuild container",
-        )
-    prev = _active_model_version
-    _active_model_version = req.version
-    # Clear smoothing buffers so the new model's predictions start fresh
-    RUL_HISTORY.clear()
-    log.info(f"🔄 Model swapped: {prev.upper()} → {req.version.upper()} | "
-             f"V1 assets={list(RUL_MODELS_V1.keys())} | V2 assets={list(RUL_MODELS_V2.keys())}")
+        raise HTTPException(status_code=400, detail=f"Unknown model version: {req.version}. Use 'v1' or 'v2'.")
+    # Clear EWA smoothing buffers — forces fresh prediction on next poll cycle
+    HEALTH_HISTORY.clear()
+    log.info(f"🔄 Model version switched to {req.version} — HEALTH_HISTORY cleared")
     return {
-        "status": "swapped",
-        "previous_version": prev,
-        "active_version": _active_model_version,
+        "status": "switched",
+        "version": req.version,
         "message": (
-            f"Now using V2 edge-calibrated models — RUL predictions will stabilise"
-            if req.version == "v2" else
-            f"Reverted to V1 cloud-trained models (training-serving skew demo mode)"
+            f"Edge model set to {req.version}. "
+            f"EWA health-score buffers cleared — next inference cycle uses clean baseline."
         ),
     }
+
+
+# ── Fault-Physics API (Phase 5.2) ──────────────────────────────────────────────
+@app.get("/api/fault-physics")
+def get_fault_physics():
+    """Return FAULT_PHYSICS config for all fault modes — used by the Copilot Workspace."""
+    return {"fault_physics": FAULT_PHYSICS}
+
+
+@app.get("/api/fault-physics/{fault_type}")
+def get_fault_physics_for(fault_type: str):
+    """Return FAULT_PHYSICS config for a single fault type."""
+    fp = FAULT_PHYSICS.get(fault_type)
+    if not fp:
+        raise HTTPException(status_code=404, detail=f"No FAULT_PHYSICS entry for: {fault_type}")
+    return {"fault_type": fault_type, "physics": fp}
 
 
 # ── RUL-Tiered Resolution Actions Endpoint (Task 6) ──────────────────────────
@@ -1354,6 +1529,13 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     fault_fraction = fault_count / max(len(recent_labels), 1)
     # A gradual injection in progress (or held at fault) also justifies running RUL
     classifier_active = (fault_fraction > 0.20) or is_degrading
+    # Phase 5.2: pre-initialize health score + FAULT_PHYSICS vars at function scope
+    # so they're accessible in the timeline section below even if try block raises.
+    _health_score = None   # health_score from HEALTH_MODELS predict (1.0 → 0.0)
+    _fp           = {}     # FAULT_PHYSICS entry for current fault type
+    _fp_pnr_hs    = 0.05   # pnr_health threshold (default)
+    _fp_total_h   = 1.0    # total_hours (default)
+    _fp_hlabel    = "Hours"  # horizon_label (default)
 
     if len(rows) >= 8 and classifier_active:
         try:
@@ -1428,88 +1610,87 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
                 ds4_dt  = (float(np.polyfit(t_s4, s4_w, 1)[0]) * READINGS_PER_MIN
                            if len(s4_w) >= 6 else 0.0)
 
-            # ── XGBoost Regressor predict — version-aware ─────────────────────
-            rul_raw    = None
-            _registry  = RUL_MODELS_V2 if _active_model_version == "v2" else RUL_MODELS_V1
-            rul_model  = _registry.get(asset_class)
-            if rul_model is not None:
+            # ── Phase 5.2: Health Score predict via HEALTH_MODELS ─────────────
+            # Detects fault type early here so FAULT_PHYSICS can scale the
+            # health_score prediction to physical time (Days / Hours / Minutes).
+            _fp_fault_type = (
+                active_degrades.get(asset_id, {}).get("fault_type")
+                or next(
+                    ((r.get("failure_type") or "").lower()
+                     for r in rows
+                     if (r.get("failure_type") or "").lower() not in ("normal", "")),
+                    None,
+                )
+            )
+            _fp = FAULT_PHYSICS.get(_fp_fault_type, {}) if _fp_fault_type else {}
+            _fp_total_h  = _fp.get("total_hours",        1.0)
+            _fp_scada_hs = _fp.get("scada_alarm_health", 0.15)
+            _fp_pnr_hs   = _fp.get("pnr_health",         0.05)
+            _fp_hlabel   = _fp.get("horizon_label",      "Hours")
+
+            health_model = HEALTH_MODELS.get(asset_class)
+            _hs_raw = None
+            if health_model is not None:
                 import xgboost as xgb
-                # ESP and Mud Pump use 8-feature vectors (motor_amps/spm added Phase 4.1)
-                # Gas Lift and Top Drive remain at 6 features (unchanged)
                 if asset_class == "esp":
                     feature_row = np.array([[last_psi, last_temp, last_vib, last_s4,
                                              dpsi_dt, dtemp_dt, dvib_dt, ds4_dt]])
-                    fn = ["psi", "temp_f", "vibration", "motor_amps",
-                          "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
+                    fn = ["psi","temp_f","vibration","motor_amps",
+                          "dpsi_dt","dtemp_dt","dvib_dt","damps_dt"]
                 elif asset_class == "mud_pump":
                     feature_row = np.array([[last_psi, last_temp, last_vib, last_s4,
                                              dpsi_dt, dtemp_dt, dvib_dt, ds4_dt]])
-                    fn = ["psi", "temp_f", "vibration", "spm",
-                          "dpsi_dt", "dtemp_dt", "dvib_dt", "dspm_dt"]
+                    fn = ["psi","temp_f","vibration","spm",
+                          "dpsi_dt","dtemp_dt","dvib_dt","dspm_dt"]
                 else:
                     feature_row = np.array([[last_psi, last_temp, last_vib,
                                              dpsi_dt, dtemp_dt, dvib_dt]])
-                    fn = ["psi", "temp_f", "vibration", "dpsi_dt", "dtemp_dt", "dvib_dt"]
-                dmat    = xgb.DMatrix(feature_row, feature_names=fn)
-                rul_raw = float(rul_model.predict(dmat)[0])
-                rul_raw = max(0.0, min(rul_raw, 600.0))
-                log.debug(f"XGBoost RUL raw={rul_raw:.1f}m  asset={asset_id} ({len(fn)}f)  "
-                          f"psi={last_psi:.0f}  dpsi={dpsi_dt:.3f}/min  "
-                          f"temp={last_temp:.1f}  vib={last_vib:.3f}  s4={last_s4:.1f}")
+                    fn = ["psi","temp_f","vibration","dpsi_dt","dtemp_dt","dvib_dt"]
+                _hs_raw = max(0.0, min(1.0,
+                    float(health_model.predict(xgb.DMatrix(feature_row, feature_names=fn))[0])
+                ))
+                log.debug(f"Health raw={_hs_raw:.4f} asset={asset_id} "
+                          f"fault={_fp_fault_type} psi={last_psi:.0f} vib={last_vib:.3f}")
             else:
-                # ── Geometric fallback when model file not present ─────────────
-                log.warning(f"No RUL model for {asset_class} — using geometric fallback")
-                if n_w >= 6:
-                    slope_psi  = float(np.polyfit(t_w, psi_w,  1)[0])
-                    slope_temp = float(np.polyfit(t_w, temp_w, 1)[0])
-                    slope_vib  = float(np.polyfit(t_w, vib_w,  1)[0])
+                # Geometric fallback: normalize sensor deviation to pseudo-health
+                log.warning(f"No health model for {asset_class} — using sensor fallback")
+                if n_w >= 2:
+                    _dev = abs(float(y_vals[-1]) - y_crit) / max(abs(
+                        asset_meta.get("nominal_psi" if metric == "psi" else
+                                       "nominal_temp_f" if metric == "temp" else "nominal_vib",
+                                       y_crit) - y_crit), 1.0)
+                    _hs_raw = max(0.0, min(1.0, _dev))
                 else:
-                    slope_psi = slope_temp = slope_vib = 0.0
-                sensor_now   = last_psi  if metric == "psi"  else last_temp if metric == "temp" else last_vib
-                sensor_slope = slope_psi if metric == "psi"  else slope_temp if metric == "temp" else slope_vib
-                if crit_dir == "below" and sensor_slope < -0.001:
-                    gap = sensor_now - y_crit
-                    if gap > 0:
-                        rul_raw = (gap / abs(sensor_slope)) * 5.0 / 60.0
-                elif crit_dir == "above" and sensor_slope > 0.001:
-                    gap = y_crit - sensor_now
-                    if gap > 0:
-                        rul_raw = (gap / abs(sensor_slope)) * 5.0 / 60.0
-                if rul_raw is None:
-                    total_range = abs(asset_meta.get(
-                        "nominal_psi" if metric == "psi" else
-                        "nominal_temp_f" if metric == "temp" else "nominal_vib",
-                        y_crit * 0.8) - y_crit)
-                    gap = abs(sensor_now - y_crit)
-                    if (crit_dir == "below" and sensor_now <= y_crit) or \
-                       (crit_dir == "above" and sensor_now >= y_crit):
-                        rul_raw = 0.0
-                    elif total_range > 0:
-                        rul_raw = min(30.0, gap / total_range * 60.0)
-                    else:
-                        rul_raw = 30.0
-                rul_raw = max(0.0, min(rul_raw, 600.0))
+                    _hs_raw = 0.5
 
-            # ── Exponential-weighted smoothing buffer (10 readings, ~100s) ───────
-            # Prevents a single noisy XGBoost prediction from flipping the display.
-            if rul_raw is not None:
-                if asset_id not in RUL_HISTORY:
-                    RUL_HISTORY[asset_id] = deque(maxlen=10)
-                RUL_HISTORY[asset_id].append(rul_raw)
-                hist    = list(RUL_HISTORY[asset_id])
+            # ── EWA smoothing (10 readings, ~100s window) ─────────────────────
+            if _hs_raw is not None:
+                if asset_id not in HEALTH_HISTORY:
+                    HEALTH_HISTORY[asset_id] = deque(maxlen=10)
+                HEALTH_HISTORY[asset_id].append(_hs_raw)
+                hist    = list(HEALTH_HISTORY[asset_id])
                 n_hist  = len(hist)
                 weights = np.array([0.75 ** (n_hist - 1 - i) for i in range(n_hist)])
-                rul_minutes = float(np.average(hist, weights=weights))
+                _health_score = float(np.average(hist, weights=weights))
 
-                if rul_minutes < 60:
+                # Convert health_score → rul_minutes for chart marker backward compat
+                # rul_minutes = time until SCADA alarm threshold is crossed
+                _ttscada_h = max(0.0, (_health_score - _fp_scada_hs) * _fp_total_h)
+                rul_minutes = _ttscada_h * 60.0  # minutes until SCADA alarm
+
+                # Status text reflects health score + FAULT_PHYSICS tier
+                if _health_score <= _fp_pnr_hs:
                     status_color = "#f44336"
-                    status_text  = f"⚡ ALARM IN {int(rul_minutes)}m — sensor threshold approaching"
-                elif rul_minutes < 180:
+                    status_text  = f"🔴 PAST PNR — Health {_health_score:.0%}"
+                elif _health_score <= _fp_scada_hs:
                     status_color = "#ff6d00"
-                    status_text  = f"⚠ DEGRADATION DETECTED — alarm in {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+                    status_text  = f"⚠ SCADA ALARM ZONE — Health {_health_score:.0%}"
+                elif _health_score < 0.70:
+                    status_color = "#ffb300"
+                    status_text  = f"⚡ DEGRADATION — Health {_health_score:.0%}"
                 else:
                     status_color = "#ffb300"
-                    status_text  = f"⚡ DEGRADATION TREND — alarm in {int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+                    status_text  = f"⚡ EARLY FAULT DETECTED — Health {_health_score:.0%}"
                 forecast_color = "#ff8c00"
 
         except Exception as e:
@@ -1520,6 +1701,18 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
 
     if rul_minutes is None:
         status_color = forecast_color  # green for nominal
+
+    # ── Phase 6.1: Sensor Routing — only annotate causal sensor tabs ──────────
+    # _fp already has scada_sensor / pnr_sensor / primary_sensor added in Phase 6.1.
+    # Show SCADA alarm threshold + "Alarm in Xm" marker ONLY on the tab that drives
+    # the SCADA alarm for this fault. Show PNR marker ONLY on the PNR-causal tab.
+    # If no FAULT_PHYSICS entry (nominal / unknown fault), show annotations on all
+    # tabs for backward compatibility.
+    _fp_scada_sensor = _fp.get("scada_sensor") if _fp else None
+    _fp_pnr_sensor   = _fp.get("pnr_sensor")   if _fp else None
+    _fp_primary      = _fp.get("primary_sensor") if _fp else None
+    _show_scada_annotations = (not _fp_scada_sensor) or (metric == _fp_scada_sensor)
+    _show_pnr_annotation    = (not _fp_pnr_sensor)   or (metric == _fp_pnr_sensor)
 
     # ── Task 5: PNR & Asset Failure State Detection ───────────────────────────
     # Compute ONCE here — shared by chart overlays and compare_cloud section.
@@ -1561,15 +1754,34 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     y_start = float(np.median(y_vals[-5:]))
     y_end   = y_crit * 0.98 if crit_dir == "below" else y_crit * 1.02
 
-    # ── Pre-compute ALL key event times BEFORE sizing the x-axis ─────────────
-    # This guarantees every vertical marker is always inside the visible range.
+    # ── Phase 5.2: Physical timeline from health score via FAULT_PHYSICS ──────
+    # ttf_time = SCADA alarm time  (now + time_to_scada  from health score)
+    # pnr_t    = PNR time          (now + time_to_pnr    from health score)
+    # INVARIANT: ttf_time < pnr_t because scada_alarm_health > pnr_health (always)
+    # This guarantees: ML Detection → SCADA Alarm → PNR → Failure SEQUENCE IS CORRECT
     ttf_time      = (now + timedelta(minutes=rul_minutes)) if (rul_minutes is not None and rul_minutes > 0) else None
     pnr_t         = None
     _pnr_m_final  = 0
-    if classifier_active and fault_onset and detected_fault_type:
-        _pnr_m_final  = PNR_MINUTES.get(detected_fault_type, 0)
+    _pnr_label    = ""
+    if _health_score is not None and _fp:
+        # Phase 5.2: PNR from FAULT_PHYSICS pnr_health threshold
+        # ALWAYS after ttf_time (SCADA alarm) because pnr_health < scada_alarm_health
+        _ttpnr_h = max(0.0, (_health_score - _fp_pnr_hs) * _fp_total_h)
+        if _ttpnr_h > 0:
+            pnr_t = now + timedelta(hours=_ttpnr_h)
+            _pnr_m_final = int(_ttpnr_h * 60)
+            if _fp_hlabel == "Days":
+                _pnr_label = f"T+{_ttpnr_h/24:.1f}d"
+            elif _fp_hlabel == "Minutes":
+                _pnr_label = f"T+{_ttpnr_h*60:.0f}m"
+            else:
+                _pnr_label = f"T+{_ttpnr_h:.1f}h"
+    elif classifier_active and fault_onset and detected_fault_type:
+        # Fallback: legacy clock-based PNR if no FAULT_PHYSICS entry
+        _pnr_m_final = PNR_MINUTES.get(detected_fault_type, 0)
         if _pnr_m_final > 0:
             pnr_t = fault_onset + timedelta(minutes=_pnr_m_final)
+        _pnr_label = f"T+{_pnr_m_final}m"
 
     # X-axis end: sized to show alarm and PNR times clearly.
     # PNR only extends the axis if it's within 60 minutes — avoids 2-hour wide charts
@@ -1588,12 +1800,29 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     future_times = [now + timedelta(minutes=i) for i in range(1, horizon_min + 1)]
     t_arr        = np.array(range(1, len(future_times) + 1), dtype=float)
 
-    # ML projection: linear ramp from y_start → y_end over rul_minutes, flat after.
-    # The orange line shows WHERE THE MODEL SAYS THE SENSOR IS HEADING — it is the
-    # ML prediction trajectory, not a continuation of observed slope.
+    # ── Bug 1 Fix (Phase 6.1): Exponential decay — NO CLAMPING AT SCADA THRESHOLD ──
+    # Previously used np.clip(t/rul_minutes, 0, 1) which caused the dotted line to go
+    # FLAT at y_end (the SCADA threshold level) for the remainder of the x-axis.
+    # Physically wrong: the asset does not stabilise when a SCADA alarm fires — it
+    # continues degrading through the PNR and on to full failure.
+    #
+    # Fix: use a smooth exponential curve (k=3.5, matching the Phase 5 training curve)
+    # over the FULL failure horizon (total_hours from FAULT_PHYSICS), not just rul_minutes.
+    # The line crosses y_crit (SCADA threshold) en-route to y_failure (asset destroyed).
+    # No np.clip — the curve never plateaus.
     if rul_minutes is not None and rul_minutes < 580:
-        frac       = np.clip(t_arr / max(rul_minutes, 0.5), 0.0, 1.0)
-        forecast_y = y_start + (y_end - y_start) * frac
+        # Total time-to-failure from FAULT_PHYSICS (always longer than rul_minutes)
+        ttf_total_min = (_fp_total_h * 60.0) if _fp else max(rul_minutes * 3.0, 60.0)
+        # y_failure: where the sensor ends up at health=0 (well past the SCADA threshold)
+        if crit_dir == "below":
+            y_failure = max(y_crit * 0.45, 1.0)  # 55% below alarm threshold at full failure
+        else:
+            y_failure = y_crit * 1.80              # 80% above alarm threshold at full failure
+        # Exponential decay: f(t) = y_start + (y_failure - y_start) * (1 - exp(-k*t/T))
+        # k=3.5 matches Phase 5 training curve; T = total_hours*60 so curve reaches ~97%
+        # of y_failure by t=T. No clamp — smoothly continues past SCADA and PNR levels.
+        frac       = t_arr / max(ttf_total_min, 1.0)
+        forecast_y = y_start + (y_failure - y_start) * (1.0 - np.exp(-3.5 * frac))
     else:
         forecast_y = np.full(len(future_times), y_start)
 
@@ -1632,14 +1861,16 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     ))
 
     # 4. Alarm threshold — dashed red horizontal
-    # This is the sensor threshold — when crossed, the SCADA alarm would trigger.
-    # Our ML model predicts how long until this threshold is reached.
-    fig.add_trace(go.Scatter(
-        x=[times[0], future_times[-1]], y=[y_crit, y_crit],
-        mode="lines", name="Alarm Threshold",
-        line=dict(color="#f44336", width=1.5, dash="dash"),
-        hoverinfo="skip",
-    ))
+    # Phase 6.1 fix: only draw on the SCADA-causal sensor tab.
+    # e.g. for gas_lock: SCADA fires on Motor Current underload → only on "amps" tab.
+    # Showing this line on the PSI or Vibration tab is physically misleading.
+    if _show_scada_annotations:
+        fig.add_trace(go.Scatter(
+            x=[times[0], future_times[-1]], y=[y_crit, y_crit],
+            mode="lines", name="SCADA Alarm Threshold",
+            line=dict(color="#f44336", width=1.5, dash="dash"),
+            hoverinfo="skip",
+        ))
 
     # ── Chart title ───────────────────────────────────────────────────────────
     _title_text = (
@@ -1684,9 +1915,13 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
             borderpad=10, borderwidth=1,
         )
 
-    # ── Vertical Marker 1: ML Predicted Failure Time ── BRIGHT RED ────────────
-    # Color: #ff1744 (distinct from PNR orange).  Label at y=0.97 (top row).
-    if ttf_time is not None:
+    # ── Vertical Marker 1: ML Predicted SCADA Alarm Time ── BRIGHT RED ────────
+    # Phase 6.1 fix: only shown on the scada_sensor tab.
+    # The alarm fires when the SPECIFIC causal sensor crosses its threshold.
+    # Showing "Alarm in Xm" on a non-SCADA tab (e.g., vib tab for gas_lock
+    # where SCADA fires on amps) would imply the alarm fires based on vibration,
+    # which is wrong. Only the amps tab shows this marker for gas_lock.
+    if ttf_time is not None and _show_scada_annotations:
         _lbl = f"{int(rul_minutes)}m" if rul_minutes < 60 else f"{int(rul_minutes//60)}h {int(rul_minutes%60)}m"
         fig.add_shape(
             type="line", x0=ttf_time, x1=ttf_time, y0=0, y1=1,
@@ -1695,16 +1930,18 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         )
         fig.add_annotation(
             x=ttf_time, y=0.97, xref="x", yref="paper",
-            text=f"<b>⚡ Alarm in {_lbl}</b>",
+            text=f"<b>⚡ SCADA Alarm in {_lbl}</b>",
             showarrow=False, xanchor="center",
             font=dict(color="#ff1744", size=11, family="JetBrains Mono"),
             bgcolor="rgba(255,23,68,0.15)", bordercolor="rgba(255,23,68,0.5)", borderpad=4,
         )
 
     # ── Vertical Marker 2: Point of No Return ── ORANGE ───────────────────────
-    # Color: #ff6d00 (distinct orange, not same red as alarm marker).
-    # Staggered below alarm label. Skipped for PNR=0 faults (instantaneous).
-    if pnr_t is not None and classifier_active:
+    # Phase 6.1 fix: only shown on the pnr_sensor tab.
+    # For gearbox_bearing_spalling: PNR fires on temperature (seize) → only shown
+    # on the Temp tab. Showing it on the Vibration tab would imply PNR is
+    # vibration-based, which is physically wrong.
+    if pnr_t is not None and classifier_active and _show_pnr_annotation:
         fig.add_shape(
             type="line", x0=pnr_t, x1=pnr_t, y0=0, y1=1,
             xref="x", yref="paper",
@@ -1712,7 +1949,7 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         )
         fig.add_annotation(
             x=pnr_t, y=0.81, xref="x", yref="paper",
-            text=f"<b>⛔ PNR T+{_pnr_m_final}m</b>",
+            text=f"<b>⛔ PNR {_pnr_label}</b>",
             showarrow=False, xanchor="center",
             font=dict(color="#ff6d00", size=11, family="JetBrains Mono"),
             bgcolor="rgba(255,109,0,0.15)", bordercolor="rgba(255,109,0,0.5)", borderpad=4,
@@ -1960,14 +2197,40 @@ def get_agent_context(fault_type: str, asset_id: str = None):
 def get_agent_recommend(
     fault_type: str,
     asset_id: str,
-    rul_minutes: float = 60.0,
+    slider_health_score: float = None,  # Phase 5.2: Intervention Slider position (0.0–1.0)
+    rul_minutes: float = None,           # Backward compat — derived from slider if absent
     is_pnr_exceeded: bool = False,
+    chat_history: list = None,           # Phase 5.2: multi-turn [{role, content}]
 ):
     """
-    Generate an AI recommendation using enterprise context + optional Gemma LLM.
+    Phase 5.2 — Health-score-aware agentic recommendation.
+
+    Accepts `slider_health_score` (0.0–1.0) from the Intervention Slider to provide
+    context-aware recommendations based on WHERE the operator places the slider.
+    Intervention tier (EARLY/URGENT/CRITICAL/RECOVERY) is computed from health score
+    vs FAULT_PHYSICS thresholds.  Multi-turn conversation supported via chat_history.
+
     Falls back to rule-based templates if Gemma is unavailable.
-    Always returns a structured recommendation regardless of LLM availability.
     """
+    # ── Resolve health score and rul_minutes ──────────────────────────────────
+    fp        = FAULT_PHYSICS.get(fault_type, {})
+    fp_total  = fp.get("total_hours",        1.0)
+    fp_scada  = fp.get("scada_alarm_health", 0.15)
+    fp_pnr    = fp.get("pnr_health",         0.05)
+    fp_itype  = fp.get("intervention_type",  "maintenance_scheduling")
+    fp_hlabel = fp.get("horizon_label",      "Hours")
+
+    # Derive rul_minutes from slider_health_score if provided
+    if slider_health_score is not None:
+        _hs = max(0.0, min(1.0, slider_health_score))
+        _ttscada_h = max(0.0, (_hs - fp_scada) * fp_total)
+        rul_minutes = _ttscada_h * 60.0
+        is_pnr_exceeded = is_pnr_exceeded or (_hs <= fp_pnr)
+    elif rul_minutes is None:
+        rul_minutes = 60.0  # default
+    else:
+        _hs = None
+
     ctx = AGENT_CONTEXTS.get(fault_type, {})
     scenario         = ctx.get("scenario", "general")
     enterprise_source = ctx.get("enterprise_source", "ERP_SAP_MM")
@@ -2095,6 +2358,136 @@ def get_agent_recommend(
     }
 
 
+# ── Phase 6.2: SSE Streaming Agent Endpoint ───────────────────────────────────
+@app.post("/api/agent/recommend-stream")
+def get_agent_recommend_stream(
+    fault_type: str,
+    asset_id: str,
+    slider_health_score: float = None,
+    rul_minutes: float = None,
+    is_pnr_exceeded: bool = False,
+):
+    """
+    Phase 6.2 — SSE streaming version of /api/agent/recommend.
+
+    SSE event format:
+      data: {"type":"recommendation","text":"...","scenario":"...","source":"..."}  — immediate rule-based
+      data: {"type":"token","text":"..."}   — streaming LLM tokens (if Ollama available)
+      data: {"type":"done"}                 — stream complete
+
+    The frontend (Phase 6.5) connects with EventSource, shows the rule-based
+    recommendation immediately, then appends LLM tokens as they stream in.
+    No full-response wait — first token appears within ~500ms.
+
+    Prompt is tightened to <150 words to maximise speed on gemma3:12b.
+    """
+    # ── Compute rule-based recommendation synchronously (same logic as /api/agent/recommend)
+    fp        = FAULT_PHYSICS.get(fault_type, {})
+    fp_total  = fp.get("total_hours",        1.0)
+    fp_scada  = fp.get("scada_alarm_health", 0.15)
+    fp_pnr    = fp.get("pnr_health",         0.05)
+
+    if slider_health_score is not None:
+        _hs = max(0.0, min(1.0, slider_health_score))
+        _ttscada_h = max(0.0, (_hs - fp_scada) * fp_total)
+        rul_minutes = _ttscada_h * 60.0
+        is_pnr_exceeded = is_pnr_exceeded or (_hs <= fp_pnr)
+    elif rul_minutes is None:
+        rul_minutes = 60.0
+
+    ctx              = AGENT_CONTEXTS.get(fault_type, {})
+    scenario         = ctx.get("scenario", "general")
+    source_label     = ctx.get("source_label", ctx.get("enterprise_source", "ERP_SAP_MM"))
+
+    # Rule-based recommendation (same logic as blocking endpoint, abbreviated)
+    if scenario == "supply_chain":
+        lead_std  = ctx.get("lead_times", {}).get("standard_freight_days", "?")
+        local_stk = ctx.get("inventory", {}).get("storage_location_local", 0)
+        part_desc = ctx.get("well_bom", {}).get("part_description", "Part")
+        rul_days  = round(rul_minutes / 60 / 24, 1)
+        if local_stk > 0:
+            rule_rec = f"✅ {part_desc} in local stock. Schedule replacement before failure in {rul_days}d."
+        elif isinstance(lead_std, (int, float)) and lead_std <= rul_days:
+            rule_rec = f"📦 Order {part_desc} now — standard freight {lead_std}d arrives before failure ({rul_days}d)."
+        else:
+            air_d   = ctx.get("lead_times", {}).get("air_freight_days", "?")
+            air_usd = ctx.get("lead_times", {}).get("air_freight_premium_usd", 0)
+            rule_rec = f"🚨 Air freight required. Standard lead {lead_std}d > failure window {rul_days}d. Air: {air_d}d, +${air_usd:,}."
+    elif scenario == "workforce_scheduling":
+        dispatches = ctx.get("upcoming_dispatches", [])
+        task       = ctx.get("appended_task", {})
+        if dispatches:
+            d = dispatches[0]
+            rule_rec = f"✅ Append '{task.get('description','task')}' ({task.get('estimated_duration_hours',1)}h) to WO {d['work_order_id']} — zero travel vs ${task.get('emergency_dispatch_cost_usd',0):,} callout."
+        else:
+            rule_rec = f"📞 No crew on site. Emergency dispatch required. Cost: ${task.get('emergency_dispatch_cost_usd',0):,}."
+    elif scenario in ("operational_control",):
+        tr  = ctx.get("recommended_transition", {})
+        rule_rec = f"🔧 {tr.get('step_1','Bring backup pump online')}. {tr.get('result','ECD maintained.')} Fix pump at next connection stop (~{ctx.get('next_connection_min','?')}min)."
+    elif scenario == "software_command":
+        cmds = ctx.get("available_commands", [])
+        c    = cmds[0] if cmds else {}
+        rule_rec = f"💻 Execute SCADA: '{c.get('label','VFD adjust')}'. Effect: {c.get('effect','Stabilise fault.')} Time: {c.get('time_min',1)}min. Cost: $0."
+    elif scenario in ("emergency_stop", "emergency_dispatch"):
+        rule_rec = "🚨 EMERGENCY: Immediate shutdown. Evacuate area. Assess for pipe damage."
+    else:
+        rule_rec = f"ℹ️ Context from {source_label}. Review enterprise data and select action."
+
+    # ── Tight LLM system prompt (<150 words) ──────────────────────────────────
+    fault_label = fault_type.replace("_", " ")
+    tier = "PAST PNR" if is_pnr_exceeded else ("CRITICAL" if rul_minutes < 15 else ("URGENT" if rul_minutes < 60 else "EARLY"))
+    llm_prompt = (
+        f"You are GDC Ops Agent, an oil and gas predictive maintenance assistant. "
+        f"Be concise — respond in exactly 2 sentences.\n\n"
+        f"FAULT: {fault_label} on {asset_id}. Tier: {tier}. Time to SCADA alarm: {rul_minutes:.0f} minutes.\n"
+        f"ENTERPRISE DATA ({source_label}): {rule_rec}\n\n"
+        f"In 2 sentences: (1) confirm the immediate action, (2) state the specific next step. "
+        f"No preamble. No repetition."
+    )
+
+    def _sse_generator():
+        # Event 1: Rule-based recommendation (immediate, no LLM latency)
+        yield f"data: {json.dumps({'type': 'recommendation', 'text': rule_rec, 'scenario': scenario, 'source': source_label, 'tier': tier, 'rul_minutes': round(rul_minutes, 1)})}\n\n"
+
+        # Event 2+: Stream LLM tokens if Ollama available
+        try:
+            import requests as _req
+            resp = _req.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": llm_prompt, "stream": True,
+                      "options": {"num_predict": 100, "temperature": 0.2, "top_p": 0.9}},
+                stream=True,
+                timeout=25,
+            )
+            if resp.status_code == 200:
+                for line in resp.iter_lines():
+                    if not line:
+                        continue
+                    try:
+                        chunk = json.loads(line)
+                        token = chunk.get("response", "")
+                        if token:
+                            yield f"data: {json.dumps({'type': 'token', 'text': token})}\n\n"
+                        if chunk.get("done"):
+                            break
+                    except json.JSONDecodeError:
+                        continue
+        except Exception as e:
+            log.debug(f"SSE agent stream error (non-fatal): {e}")
+
+        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+    return StreamingResponse(
+        _sse_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control":   "no-cache",
+            "X-Accel-Buffering": "no",    # Disable nginx proxy buffering
+            "Connection":      "keep-alive",
+        },
+    )
+
+
 # ── Fleet Financials Ledger ───────────────────────────────────────────────────
 @app.get("/api/ledger")
 def get_ledger(limit: int = 200):
@@ -2122,6 +2515,305 @@ def get_ledger(limit: int = 200):
     except Exception as e:
         log.error(f"ledger error: {e}")
         raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+# ── Phase 6.4: Per-Asset Live Degrade Status ──────────────────────────────────
+@app.get("/api/degrade-status/{asset_id}")
+def get_degrade_status_for_asset(asset_id: str):
+    """
+    Phase 6.4: Per-asset live health status for the Intervention Slider polling loop.
+    Returns current health_score converted to physical time units via FAULT_PHYSICS.
+    The frontend polls this every 5s to animate the slider leftward as time ticks down.
+
+    Returns:
+        is_active        — whether a fault is currently being simulated
+        health_score     — current smoothed EWA health (1.0=perfect → 0.0=destroyed)
+        time_to_scada_minutes  — minutes until SCADA alarm threshold crossed
+        time_to_pnr_minutes    — minutes until Point of No Return
+        time_to_failure_minutes — total remaining minutes to health=0
+        horizon_label    — "Minutes" | "Hours" | "Days" (physical unit label)
+        scada_sensor / pnr_sensor / primary_sensor — for tab routing
+    """
+    import numpy as np
+    dg         = active_degrades.get(asset_id, {})
+    fault_type = dg.get("fault_type")
+    is_active  = bool(dg)
+
+    if not is_active or not fault_type:
+        return {
+            "asset_id": asset_id, "is_active": False,
+            "fault_type": None, "health_score": 1.0,
+            "time_to_scada_minutes": None, "time_to_pnr_minutes": None,
+            "time_to_failure_minutes": None, "horizon_label": None,
+            "scada_sensor": None, "pnr_sensor": None, "primary_sensor": None,
+        }
+
+    # Smoothed health score from EWA buffer (same formula as forecast endpoint)
+    hist = list(HEALTH_HISTORY.get(asset_id, []))
+    if hist:
+        n       = len(hist)
+        weights = np.array([0.75 ** (n - 1 - i) for i in range(n)])
+        health_score = float(np.average(hist, weights=weights))
+    else:
+        health_score = 1.0  # no readings yet — assume nominal
+
+    fp          = FAULT_PHYSICS.get(fault_type, {})
+    fp_total_h  = fp.get("total_hours",        1.0)
+    fp_scada_hs = fp.get("scada_alarm_health", 0.15)
+    fp_pnr_hs   = fp.get("pnr_health",         0.05)
+    fp_hlabel   = fp.get("horizon_label",       "Hours")
+
+    # Time to SCADA alarm = (health − scada_threshold) × total_hours × 60
+    ttscada_min = round(max(0.0, (health_score - fp_scada_hs) * fp_total_h) * 60.0, 1)
+    # Time to PNR = (health − pnr_threshold) × total_hours × 60
+    ttpnr_min   = round(max(0.0, (health_score - fp_pnr_hs)   * fp_total_h) * 60.0, 1)
+    # Total time to failure = health × total_hours × 60 (health → 0 at full failure)
+    ttf_min     = round(health_score * fp_total_h * 60.0, 1)
+
+    return {
+        "asset_id": asset_id, "is_active": True,
+        "fault_type": fault_type,
+        "health_score": round(health_score, 4),
+        "time_to_scada_minutes": ttscada_min,
+        "time_to_pnr_minutes":   ttpnr_min,
+        "time_to_failure_minutes": ttf_min,
+        "horizon_label": fp_hlabel,
+        "scada_sensor":   fp.get("scada_sensor"),
+        "pnr_sensor":     fp.get("pnr_sensor"),
+        "primary_sensor": fp.get("primary_sensor"),
+    }
+
+
+# ── Phase 6.3: JSON Forecast Data Endpoint ────────────────────────────────────
+@app.get("/api/plot/forecast-data/{asset_id}")
+def get_forecast_data(asset_id: str):
+    """
+    Phase 6.3: Returns JSON Plotly traces for ALL sensor tabs in a single call.
+    Runs ML inference once, computes per-sensor projections, and returns structured
+    Plotly data that the frontend consumes via Plotly.react() for instant tab switching.
+
+    Response shape:
+      {
+        "asset_id": ..., "fault_type": ..., "health_score": ...,
+        "time_to_scada_minutes": ..., "time_to_pnr_minutes": ...,
+        "scada_sensor": ..., "pnr_sensor": ..., "primary_sensor": ...,
+        "sensors": {
+          "psi":  { "traces": [...], "layout": {...}, "is_scada": bool, "is_pnr": bool },
+          "temp": { ... }, "vib": { ... }, "amps": { ... }   # amps/spm for ESP/mud_pump only
+        }
+      }
+    """
+    from datetime import timedelta
+    import numpy as np
+
+    if asset_id not in ASSET_REGISTRY:
+        raise HTTPException(status_code=404, detail=f"Unknown asset: {asset_id}")
+
+    asset_meta  = ASSET_REGISTRY[asset_id]
+    asset_class = asset_meta["asset_class"]
+    _s4c        = SENSOR4_CONFIG.get(asset_class)
+
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT event_time, psi, temp_f, vibration, motor_amps, spm,
+                       failure_type, predicted_label
+                FROM telemetry_events
+                WHERE asset_id = %s AND event_time > NOW() - INTERVAL '10 minutes'
+                ORDER BY event_time ASC
+                """,
+                (asset_id,),
+            )
+            rows = cur.fetchall()
+        conn.close()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+    if not rows:
+        return {"asset_id": asset_id, "is_active": False, "sensors": {}, "no_data": True}
+
+    times  = [r["event_time"].replace(tzinfo=None) if getattr(r["event_time"], "tzinfo", None)
+              else r["event_time"] for r in rows]
+    psi_v  = np.array([float(r["psi"])       for r in rows])
+    temp_v = np.array([float(r["temp_f"])    for r in rows])
+    vib_v  = np.array([float(r["vibration"]) for r in rows])
+    now    = times[-1]
+
+    # Detect active fault / FAULT_PHYSICS
+    _deg_state    = active_degrades.get(asset_id, {})
+    is_degrading  = _deg_state.get("running", False) or _deg_state.get("held", False)
+    recent_labels = [str(r.get("predicted_label") or "normal").lower() for r in rows[-10:]]
+    fault_fraction = sum(1 for l in recent_labels if l not in ("normal", "")) / max(len(recent_labels), 1)
+    classifier_active = (fault_fraction > 0.20) or is_degrading
+
+    _fp_fault_type = (
+        _deg_state.get("fault_type") or
+        next(((r.get("failure_type") or "").lower() for r in rows
+              if (r.get("failure_type") or "").lower() not in ("normal", "")), None)
+    )
+    _fp = FAULT_PHYSICS.get(_fp_fault_type, {}) if _fp_fault_type else {}
+
+    # Run ML inference once to get health score
+    health_score    = None
+    rul_minutes     = None
+    pnr_minutes_rem = None
+    ttf_minutes     = None
+
+    if len(rows) >= 8 and classifier_active:
+        try:
+            fault_mask = np.array([(r.get("failure_type") or "").lower() not in ("normal", "") for r in rows])
+            fault_idx  = np.where(fault_mask)[0]
+            psi_w  = psi_v[fault_idx] if len(fault_idx) >= 6 else psi_v[-min(60,len(psi_v)):]
+            temp_w = temp_v[fault_idx] if len(fault_idx) >= 6 else temp_v[-min(60,len(temp_v)):]
+            vib_w  = vib_v[fault_idx] if len(fault_idx) >= 6 else vib_v[-min(60,len(vib_v)):]
+            t_w = np.arange(len(psi_w), dtype=np.float64)
+            n_w = len(t_w)
+            RPM = 12.0
+            last_psi  = float(np.median(psi_w[-min(8,n_w):]))
+            last_temp = float(np.median(temp_w[-min(8,n_w):]))
+            last_vib  = float(np.median(vib_w[-min(8,n_w):]))
+            dpsi_dt   = float(np.polyfit(t_w, psi_w,  1)[0]) * RPM if n_w >= 6 else 0.0
+            dtemp_dt  = float(np.polyfit(t_w, temp_w, 1)[0]) * RPM if n_w >= 6 else 0.0
+            dvib_dt   = float(np.polyfit(t_w, vib_w,  1)[0]) * RPM if n_w >= 6 else 0.0
+            last_s4 = ds4_dt = 0.0
+            if _s4c and asset_class in ("esp", "mud_pump"):
+                s4_all = np.array([float(r.get(_s4c["key"]) or _s4c["nominal"]) for r in rows])
+                s4_w   = s4_all[fault_idx] if len(fault_idx) >= 6 else s4_all[-min(60,len(s4_all)):]
+                last_s4 = float(np.median(s4_w[-min(8,len(s4_w)):]))
+                ds4_dt  = float(np.polyfit(np.arange(len(s4_w),dtype=float),s4_w,1)[0])*RPM if len(s4_w)>=6 else 0.0
+            health_model = HEALTH_MODELS.get(asset_class)
+            if health_model:
+                import xgboost as xgb
+                if asset_class == "esp":
+                    frow = np.array([[last_psi,last_temp,last_vib,last_s4,dpsi_dt,dtemp_dt,dvib_dt,ds4_dt]])
+                    fn   = ["psi","temp_f","vibration","motor_amps","dpsi_dt","dtemp_dt","dvib_dt","damps_dt"]
+                elif asset_class == "mud_pump":
+                    frow = np.array([[last_psi,last_temp,last_vib,last_s4,dpsi_dt,dtemp_dt,dvib_dt,ds4_dt]])
+                    fn   = ["psi","temp_f","vibration","spm","dpsi_dt","dtemp_dt","dvib_dt","dspm_dt"]
+                else:
+                    frow = np.array([[last_psi,last_temp,last_vib,dpsi_dt,dtemp_dt,dvib_dt]])
+                    fn   = ["psi","temp_f","vibration","dpsi_dt","dtemp_dt","dvib_dt"]
+                _hs_raw = max(0.0,min(1.0,float(health_model.predict(xgb.DMatrix(frow,feature_names=fn))[0])))
+                if asset_id not in HEALTH_HISTORY:
+                    HEALTH_HISTORY[asset_id] = deque(maxlen=10)
+                HEALTH_HISTORY[asset_id].append(_hs_raw)
+                hist    = list(HEALTH_HISTORY[asset_id])
+                n_hist  = len(hist)
+                weights = np.array([0.75 ** (n_hist-1-i) for i in range(n_hist)])
+                health_score = float(np.average(hist, weights=weights))
+                fp_total_h   = _fp.get("total_hours", 1.0)
+                fp_scada_hs  = _fp.get("scada_alarm_health", 0.15)
+                fp_pnr_hs    = _fp.get("pnr_health", 0.05)
+                rul_minutes     = round(max(0.0,(health_score-fp_scada_hs)*fp_total_h)*60.0, 1)
+                pnr_minutes_rem = round(max(0.0,(health_score-fp_pnr_hs)*fp_total_h)*60.0, 1)
+                ttf_minutes     = round(health_score*fp_total_h*60.0, 1)
+        except Exception as e:
+            log.warning(f"forecast-data ML inference error for {asset_id}: {e}")
+
+    # Build per-sensor trace data
+    fp_scada_sensor = _fp.get("scada_sensor")
+    fp_pnr_sensor   = _fp.get("pnr_sensor")
+    fp_primary      = _fp.get("primary_sensor")
+    fp_total_h      = _fp.get("total_hours", 1.0)
+    fp_hlabel       = _fp.get("horizon_label", "Hours")
+
+    ttf_time  = (now + timedelta(minutes=rul_minutes)) if rul_minutes is not None else None
+    pnr_t     = (now + timedelta(minutes=pnr_minutes_rem)) if pnr_minutes_rem is not None else None
+
+    horizon_min  = max(42, int((rul_minutes or 0) + 10)) if rul_minutes else 42
+    future_times = [now + timedelta(minutes=i) for i in range(1, horizon_min + 1)]
+    t_arr        = np.array(range(1, len(future_times) + 1), dtype=float)
+
+    def _build_sensor(metric, y_vals, y_crit, crit_dir, y_label):
+        """Build Plotly trace list and layout dict for one sensor tab."""
+        y_start  = float(np.median(y_vals[-5:])) if len(y_vals) >= 5 else float(y_vals[-1])
+        show_scada = (not fp_scada_sensor) or (metric == fp_scada_sensor)
+        show_pnr   = (not fp_pnr_sensor)   or (metric == fp_pnr_sensor)
+
+        traces = [
+            {"type": "scatter", "x": [t.isoformat() for t in times], "y": y_vals.tolist(),
+             "mode": "lines", "name": "Live Telemetry",
+             "line": {"color": "#1e90ff", "width": 2.5}},
+        ]
+        if rul_minutes is not None and rul_minutes < 580:
+            ttf_total_min = fp_total_h * 60.0 if _fp else max(rul_minutes*3.0, 60.0)
+            y_failure = max(y_crit*0.45, 1.0) if crit_dir == "below" else y_crit*1.80
+            frac    = t_arr / max(ttf_total_min, 1.0)
+            proj_y  = (y_start + (y_failure - y_start) * (1.0 - np.exp(-3.5 * frac))).tolist()
+        else:
+            proj_y = [y_start] * len(future_times)
+
+        traces.append({"type": "scatter", "x": [t.isoformat() for t in future_times],
+                       "y": proj_y, "mode": "lines", "name": "ML RUL Projection",
+                       "line": {"color": "#ff8c00" if rul_minutes else "#00e676", "width": 2.5, "dash": "dot"}})
+
+        if show_scada:
+            traces.append({"type": "scatter",
+                           "x": [times[0].isoformat(), future_times[-1].isoformat()],
+                           "y": [y_crit, y_crit], "mode": "lines",
+                           "name": "SCADA Alarm Threshold",
+                           "line": {"color": "#f44336", "width": 1.5, "dash": "dash"},
+                           "hoverinfo": "skip"})
+
+        shapes = [{"type":"line","x0":now.isoformat(),"x1":now.isoformat(),"y0":0,"y1":1,
+                   "xref":"x","yref":"paper","line":{"color":"#5a6a7a","width":1.5,"dash":"dot"}}]
+        annotations = [{"x":now.isoformat(),"y":1.0,"xref":"x","yref":"paper","text":"NOW",
+                        "showarrow":False,"xanchor":"right","xshift":-5,"yanchor":"bottom",
+                        "font":{"color":"#5a6a7a","size":10,"family":"JetBrains Mono"}}]
+
+        if ttf_time and show_scada and rul_minutes:
+            lbl = f"{int(rul_minutes)}m" if rul_minutes<60 else f"{int(rul_minutes//60)}h {int(rul_minutes%60)}m"
+            shapes.append({"type":"line","x0":ttf_time.isoformat(),"x1":ttf_time.isoformat(),
+                           "y0":0,"y1":1,"xref":"x","yref":"paper",
+                           "line":{"color":"rgba(255,23,68,0.95)","width":3,"dash":"solid"}})
+            annotations.append({"x":ttf_time.isoformat(),"y":0.97,"xref":"x","yref":"paper",
+                                 "text":f"<b>⚡ SCADA Alarm in {lbl}</b>","showarrow":False,
+                                 "xanchor":"center","font":{"color":"#ff1744","size":11,"family":"JetBrains Mono"},
+                                 "bgcolor":"rgba(255,23,68,0.15)","bordercolor":"rgba(255,23,68,0.5)","borderpad":4})
+        if pnr_t and show_pnr and classifier_active:
+            shapes.append({"type":"line","x0":pnr_t.isoformat(),"x1":pnr_t.isoformat(),
+                           "y0":0,"y1":1,"xref":"x","yref":"paper",
+                           "line":{"color":"rgba(255,109,0,0.95)","width":3,"dash":"solid"}})
+            annotations.append({"x":pnr_t.isoformat(),"y":0.81,"xref":"x","yref":"paper",
+                                 "text":f"<b>⛔ PNR</b>","showarrow":False,"xanchor":"center",
+                                 "font":{"color":"#ff6d00","size":11,"family":"JetBrains Mono"},
+                                 "bgcolor":"rgba(255,109,0,0.15)","bordercolor":"rgba(255,109,0,0.5)","borderpad":4})
+
+        layout = {"paper_bgcolor":"#0b0c10","plot_bgcolor":"#0f1318",
+                  "font":{"color":"#e0e0e0","family":"Inter, sans-serif","size":11},
+                  "margin":{"l":55,"r":20,"t":50,"b":40},
+                  "xaxis":{"title":"Time (UTC)","gridcolor":"#1e2a38","zeroline":False},
+                  "yaxis":{"title":y_label,"gridcolor":"#1e2a38","zeroline":False},
+                  "shapes": shapes, "annotations": annotations,
+                  "showlegend": True,
+                  "legend":{"orientation":"h","yanchor":"bottom","y":1.02,"xanchor":"right","x":1}}
+        return {"traces": traces, "layout": layout,
+                "is_scada": show_scada, "is_pnr": show_pnr,
+                "is_primary": metric == fp_primary}
+
+    sensors = {
+        "psi":  _build_sensor("psi",  psi_v,  asset_meta["crit_psi"],  asset_meta["psi_crit_dir"],
+                               asset_meta.get("psi_label",  "Pressure (PSI)")),
+        "temp": _build_sensor("temp", temp_v, asset_meta["crit_temp"], asset_meta["temp_crit_dir"],
+                               asset_meta.get("temp_label", "Temperature (°F)")),
+        "vib":  _build_sensor("vib",  vib_v,  asset_meta["crit_vib"],  asset_meta["vib_crit_dir"],
+                               asset_meta.get("vib_label",  "Vibration (mm/s)")),
+    }
+    if _s4c:
+        s4_v = np.array([float(r.get(_s4c["key"]) or _s4c["nominal"]) for r in rows])
+        s4_metric = "amps" if asset_class == "esp" else "spm"
+        sensors[s4_metric] = _build_sensor(s4_metric, s4_v, _s4c["crit"], _s4c["crit_dir"], _s4c["label"])
+
+    return {
+        "asset_id": asset_id, "is_active": classifier_active,
+        "fault_type": _fp_fault_type, "health_score": round(health_score, 4) if health_score else None,
+        "time_to_scada_minutes": rul_minutes, "time_to_pnr_minutes": pnr_minutes_rem,
+        "time_to_failure_minutes": ttf_minutes, "horizon_label": fp_hlabel,
+        "scada_sensor": fp_scada_sensor, "pnr_sensor": fp_pnr_sensor, "primary_sensor": fp_primary,
+        "sensors": sensors,
+    }
 
 
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────
