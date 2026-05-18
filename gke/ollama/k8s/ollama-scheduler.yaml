@@ -1,0 +1,152 @@
+---
+# ============================================================================
+# Ollama Scheduler — Automated Stand-Up / Stand-Down CronJobs
+#
+# Saves L4 GPU costs by scaling the ollama deployment to 0 replicas at 6 PM
+# UTC and back to 1 replica at 6 AM UTC (Mon–Fri only for stand-up).
+#
+# TIMEZONE NOTE: All schedules are UTC.
+#   - If your working hours are in US/Eastern (UTC-4 summer, UTC-5 winter):
+#       Stand-up:   0 10 * * 1-5  (6 AM ET summer)  or  0 11 * * 1-5  (winter)
+#       Stand-down: 0 22 * * *    (6 PM ET summer)   or  0 23 * * *    (winter)
+#   - Adjust the schedule fields below as needed.
+#
+# COST IMPACT: An L4 GPU node in GKE costs roughly $0.60–$0.70/hr.
+#   Running only 9 AM–6 PM weekdays (9 hours × 5 days = 45 hrs/week) vs 24/7
+#   reduces monthly GPU cost from ~$500 to ~$110. (~78% savings)
+#
+# HOW IT WORKS:
+#   GKE Cluster Autoscaler watches GPU node utilization. When ollama is
+#   scaled to 0, no pod requests the nvidia.com/gpu resource, and the
+#   Autoscaler deletes the L4 node ~10 minutes later (billing stops).
+#   When scaled back to 1, Autoscaler provisions a new L4 node in ~2-3 min.
+#
+# APPLY:
+#   kubectl apply -f gke/ollama/k8s/ollama-scheduler.yaml
+# ============================================================================
+
+# ── RBAC: ServiceAccount, Role, RoleBinding ──────────────────────────────────
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: ollama-scheduler
+  namespace: gdc-pm
+  labels:
+    app: ollama-scheduler
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: ollama-scaler
+  namespace: gdc-pm
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "deployments/scale"]
+    verbs: ["get", "patch", "update"]
+    resourceNames: ["ollama"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: ollama-scheduler-scaler
+  namespace: gdc-pm
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: ollama-scaler
+subjects:
+  - kind: ServiceAccount
+    name: ollama-scheduler
+    namespace: gdc-pm
+
+---
+# ── STAND-UP: Scale ollama to 1 replica at 6 AM UTC, Mon–Fri ──────────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ollama-stand-up
+  namespace: gdc-pm
+  labels:
+    app: ollama-scheduler
+    action: stand-up
+spec:
+  schedule: "0 6 * * 1-5"   # 6:00 AM UTC, Monday through Friday
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ollama-scheduler
+        spec:
+          serviceAccountName: ollama-scheduler
+          restartPolicy: OnFailure
+          containers:
+            - name: scaler
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC') — Standing UP ollama deployment (replicas=1)"
+                  kubectl scale deployment ollama -n gdc-pm --replicas=1
+                  echo "✅ ollama scaled to 1 replica. GKE Autoscaler will provision L4 node (~2-3 min)."
+                  echo "   Ollama will be ready for gemma4:27b inference once readiness probe passes."
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "32Mi"
+                limits:
+                  cpu: "100m"
+                  memory: "64Mi"
+
+---
+# ── STAND-DOWN: Scale ollama to 0 replicas at 6 PM UTC, every day ─────────
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: ollama-stand-down
+  namespace: gdc-pm
+  labels:
+    app: ollama-scheduler
+    action: stand-down
+spec:
+  schedule: "0 18 * * *"   # 6:00 PM UTC, every day (incl. weekends, just in case)
+  timeZone: "UTC"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: ollama-scheduler
+        spec:
+          serviceAccountName: ollama-scheduler
+          restartPolicy: OnFailure
+          containers:
+            - name: scaler
+              image: bitnami/kubectl:latest
+              imagePullPolicy: IfNotPresent
+              command:
+                - sh
+                - -c
+                - |
+                  echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC') — Standing DOWN ollama deployment (replicas=0)"
+                  kubectl scale deployment ollama -n gdc-pm --replicas=0
+                  echo "✅ ollama scaled to 0 replicas."
+                  echo "   GKE Autoscaler will remove the L4 GPU node in ~10 min (billing stops)."
+              resources:
+                requests:
+                  cpu: "50m"
+                  memory: "32Mi"
+                limits:
+                  cpu: "100m"
+                  memory: "64Mi"

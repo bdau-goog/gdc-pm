@@ -1,19 +1,25 @@
 ---
 # ============================================================================
 # Ollama LLM Inference Server
-# GPU-accelerated pod running Gemma 2B for disconnected Edge AI RAG pipeline.
+# GPU-accelerated pod running Gemma 4:27B for disconnected Edge AI RAG pipeline.
+#
+# Phase 14 upgrade: gemma:2b (A2) → gemma4:27b (L4).
+# L4 has 24GB VRAM — sufficient for gemma4:27b at Q4_K_M quantization (~17GB).
 #
 # Portable design — works on GKE AND GDC Software-Only:
 #   - PVC uses the cluster's default StorageClass (no GKE-specific class).
 #   - GPU scheduling uses only the standard nvidia.com/gpu resource request.
-#     The GKE-specific cloud.google.com/gke-accelerator label is NOT used.
 #     On GDC Software-Only, install the NVIDIA GPU Operator; it will label
 #     GPU nodes with nvidia.com/gpu.present="true" automatically.
-#   - If you want to pin to a specific GPU node pool, add a nodeSelector:
-#       nvidia.com/gpu.present: "true"
-#     or whatever label your cluster admin applied to GPU nodes.
-#   - Init container pulls gemma:2b before the main server starts.
-#   - Readiness probe gates traffic until Ollama is ready to serve.
+#
+# STORAGE NOTE: gemma4:27b Q4_K_M model is ~15GB. This PVC requests 50Gi.
+#   If upgrading from an existing 10Gi PVC, resize or delete/recreate:
+#     kubectl patch pvc ollama-models-pvc -n gdc-pm -p '{"spec":{"resources":{"requests":{"storage":"50Gi"}}}}'
+#   (only works if the StorageClass supports volume expansion)
+#
+# SCHEDULER NOTE: The ollama-scheduler.yaml CronJobs manage automatic
+#   stand-up (6 AM UTC Mon–Fri) and stand-down (6 PM UTC daily) to avoid
+#   L4 GPU charges during off-hours.
 # ============================================================================
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -25,11 +31,10 @@ spec:
     - ReadWriteOnce
   # No storageClassName set — uses the cluster's default StorageClass.
   # On GKE this will be "standard-rwo" (GCE PD).
-  # On GDC Software-Only set this to your provisioned StorageClass, e.g.:
-  #   storageClassName: local-storage
+  # On GDC Software-Only set this to your provisioned StorageClass.
   resources:
     requests:
-      storage: 10Gi
+      storage: 50Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -48,53 +53,49 @@ spec:
       labels:
         app: ollama
     spec:
-      # GKE Autopilot requires cloud.google.com/gke-accelerator to be set
-      # when requesting nvidia.com/gpu resources (enforced by Warden webhook).
-      # Using NVIDIA A2 (10GB VRAM, Ampere, sufficient for gemma:2b ~2GB).
-      # For GDC Software-Only, comment out this nodeSelector and use:
-      #   nvidia.com/gpu.present: "true"  (set by NVIDIA GPU Operator)
+      # GKE: target L4 GPU node pool (24GB VRAM, Ada Lovelace architecture).
+      # L4 handles gemma4:27b Q4_K_M (~17GB VRAM) with 7GB headroom for context.
+      # For GDC Software-Only with A100s, comment out this nodeSelector entirely.
       nodeSelector:
-        cloud.google.com/gke-accelerator: nvidia-a2
+        cloud.google.com/gke-accelerator: nvidia-l4
       tolerations:
         - key: "nvidia.com/gpu"
           operator: "Exists"
           effect: "NoSchedule"
 
       # ── Init container: pull model before the server starts ───────────────
-      # INTERNET ACCESS REQUIRED: This init container pulls gemma:2b (~1.5GB)
-      # from the Ollama registry (https://registry.ollama.ai) at first startup.
-      # The model is persisted to the PVC so subsequent restarts skip the pull.
+      # gemma4:27b Q4_K_M is ~15GB — first pull takes 5–15 minutes depending
+      # on network. Model is persisted to PVC; subsequent restarts skip pull.
       #
-      # For GDC Software-Only air-gapped deployments (no internet access):
-      # Option A — Pre-pull via PVC: on a connected node, kubectl exec into a
-      #            temporary Ollama pod, run `ollama pull gemma:2b`, then bind
-      #            the same PVC to this deployment.
-      # Option B — Custom image: build an image FROM ollama/ollama:0.3.12,
-      #            run `ollama pull gemma:2b` in the Dockerfile (requires net
-      #            at build time), then push to your local registry. Remove
-      #            this init container entirely and set OLLAMA_MODELS in
-      #            the main container to the baked-in path.
-      # Option C — Local model registry: use a VLAN-accessible OCI/Ollama
-      #            registry mirror pre-loaded with gemma:2b.
+      # For air-gapped GDC Software-Only deployments, see options in the
+      # original ollama.yaml comments (pre-pull via PVC, custom image, etc.).
       initContainers:
         - name: pull-model
-          image: ollama/ollama:0.3.12
+          image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
           command:
             - sh
             - -c
             - |
-              # Skip pull if model already exists on the PVC (subsequent restarts)
-              if ollama list 2>/dev/null | grep -q "gemma:2b"; then
-                echo "✅ gemma:2b already present on PVC — skipping pull"
+              # Skip pull if model already exists on the PVC
+              if ollama list 2>/dev/null | grep -q "gemma4:27b"; then
+                echo "✅ gemma4:27b already present on PVC — skipping pull"
                 exit 0
               fi
               echo "Starting Ollama server temporarily to pull model..."
               ollama serve &
               OLLAMA_PID=$!
-              sleep 5
-              echo "Pulling gemma:2b model..."
-              ollama pull gemma:2b
-              echo "✅ Model pulled — stopping temporary server"
+              # Wait for server to be ready
+              for i in $(seq 1 30); do
+                if curl -sf http://localhost:11434/api/tags > /dev/null 2>&1; then
+                  echo "Server ready after ${i}s"
+                  break
+                fi
+                sleep 2
+              done
+              echo "Pulling gemma4:27b (Q4_K_M, ~15GB) — this may take several minutes..."
+              ollama pull gemma4:27b
+              echo "✅ Model pulled successfully — stopping temporary server"
               kill $OLLAMA_PID
               wait $OLLAMA_PID 2>/dev/null || true
           env:
@@ -102,43 +103,51 @@ spec:
               value: /root/.ollama
           resources:
             requests:
-              memory: "512Mi"
-              cpu: "250m"
+              memory: "2Gi"
+              cpu: "500m"
             limits:
-              memory: "4Gi"
+              memory: "8Gi"
           volumeMounts:
             - name: ollama-models
               mountPath: /root/.ollama
 
       containers:
         - name: ollama
-          image: ollama/ollama:0.3.12
+          image: ollama/ollama:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 11434
               name: http
           env:
             - name: OLLAMA_MODELS
               value: /root/.ollama
+            # Keep context window large enough for multi-turn RAG conversations
+            - name: OLLAMA_NUM_CTX
+              value: "8192"
+            # L4 has tensor cores — enable flash attention for faster inference
+            - name: OLLAMA_FLASH_ATTENTION
+              value: "1"
           resources:
             requests:
-              memory: "4Gi"
-              cpu: "1000m"
+              memory: "12Gi"
+              cpu: "4000m"
               nvidia.com/gpu: 1
             limits:
-              memory: "8Gi"
+              memory: "26Gi"
+              cpu: "8000m"
               nvidia.com/gpu: 1
           readinessProbe:
             httpGet:
               path: /api/tags
               port: 11434
-            initialDelaySeconds: 10
+            initialDelaySeconds: 15
             periodSeconds: 10
-            failureThreshold: 6
+            failureThreshold: 12   # Allow up to 2 min for model to be ready
           livenessProbe:
             httpGet:
               path: /api/tags
               port: 11434
-            initialDelaySeconds: 60
+            initialDelaySeconds: 90
             periodSeconds: 30
             failureThreshold: 3
           volumeMounts:

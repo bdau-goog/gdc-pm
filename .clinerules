@@ -1,82 +1,27 @@
-# GDC-PM Project — Cline Rules
-# Applied automatically to every task in this workspace.
+# Cline Rules for gdc-pm project
 
-## 1. TOKEN CONSERVATION — COMMAND OUTPUT
-Always apply these techniques to minimize context token consumption from verbose CLI output:
+## Engineering Decision-Making
+- State technical positions clearly and defend them. Do not immediately defer or present excessive alternatives when a clear best answer exists.
+- If the user pushes back or asks a clarifying question, it is NOT a signal to abandon the recommendation — evaluate the substance of the pushback and either update the position with reasoning or hold it.
+- Avoid listing 3+ options when one option is clearly superior. Pick the best option, explain why briefly, and proceed.
 
-### Docker builds and pushes
-- ALWAYS use `docker build --quiet` and `docker push --quiet`
-- For builds that may fail, redirect to a log file and tail only on error:
-  ```bash
-  docker build --quiet -t "$IMAGE" "$DIR" > /tmp/build-$(basename $DIR).log 2>&1 \
-    && echo "✅ Build OK: $IMAGE" \
-    || { echo "❌ Build FAILED:"; tail -20 /tmp/build-$(basename $DIR).log; exit 1; }
-  ```
-- Never run raw `docker build` or `docker push` interactively in a tool call.
+## Planning Efficiency
+- Use ASCII wireframes, tables, and short structured lists to validate designs before writing code. These are cheaper to revise than 500-line implementations.
+- Do not enter Act Mode and write large files until the layout and feature set have been explicitly approved by the user.
+- When a plan spans multiple files, write a short implementation checklist and get agreement on the sequence before starting.
 
-### kubectl output
-- Use `--output=name` for apply/create to suppress full YAML echo
-- For logs: ALWAYS use `--tail=20` (max) unless debugging a specific error
-- For rollout status: safe as-is (already concise)
-- For exec SQL: pipe through `tail -5` unless specifically checking for errors
+## O&G Domain Realism
+- All scenarios, sensor ranges, fault physics, and unstructured data (mud logs, lab reports, shift notes) must be physically realistic for upstream oil & gas operations (drilling, completion, production).
+- Do not invent sensor values, fluid properties, or operational procedures that an O&G professional would immediately recognize as wrong.
+- Cite the relevant standard or physical principle when introducing a new fault scenario or sensor interpretation.
 
-### pip install / npm install
-- Never run these interactively inside a tool call if they'll appear in output
-- Wrap in `> /dev/null 2>&1 && echo "✅ Done"` or inside Dockerfiles (not echoed back)
+## Code Quality
+- The current stack is FastAPI (Python) + vanilla HTML/JS. Vue.js via CDN is approved for the UI layer.
+- Do not introduce build-pipeline dependencies (npm, webpack, React JSX) into the fault-trigger-ui container without explicit discussion and approval.
+- Preserve the existing XGBoost health score models (*.ubj files). They are correct and validated. Do not retrain without an explicit reason.
+- The existing /api/* endpoints must remain backward-compatible unless we explicitly agree to break them.
 
-### Long-running commands
-- Background with `& PID=$!`, do other tool calls, then `wait $PID` with exit check
-- Alternative: write to a script file, execute with output redirected:
-  ```bash
-  bash /tmp/script.sh > /tmp/script.log 2>&1; tail -10 /tmp/script.log
-  ```
-
-### grep / find / large file reads
-- Always add `| head -50` or `| head -100` to commands that might return large output
-- For `git diff`: use `--stat` first; only expand to full diff for specific files when needed
-- For log files: always use `tail -n 50` not `cat`
-
-## 2. SESSION HANDOFF PROTOCOL — MANDATORY
-When the user asks for a "handoff summary", or when a task is completing and context is >60%, perform ALL of the following steps before calling `attempt_completion`:
-
-### Step 1 — Write deployment status document
-Create or update `docs/PHASE_N_DEPLOYMENT_STATUS.md` (use the next sequential phase number) with:
-- Date, live URLs, deployed image digests
-- Every significant decision made this session with rationale
-- All files changed and what changed in each
-- Current application state (fleet config, API endpoints, model versions, DB state)
-- Known gaps / deferred items with clear descriptions
-
-### Step 2 — Update NEXT_SESSION_PROMPT.md
-Overwrite `docs/NEXT_SESSION_PROMPT.md` so a new AI session can read it and immediately understand:
-- Project identity (domain expert persona to adopt)
-- Live state (URLs, cluster, what's deployed)
-- Current baseline doc (`docs/PHASE_N_DEPLOYMENT_STATUS.md`)
-- Known gaps
-- Build + deploy commands
-- "Wait for instructions before proceeding" footer
-
-### Step 3 — Git commit
-Run:
-```bash
-cd /home/brian/gdc-pm && git add -A && git commit -m "Phase N complete: [one-line summary]"
-```
-Use a meaningful commit message that summarizes what was built or fixed.
-
-### Step 4 — Confirm handoff in attempt_completion
-State in the completion message that the handoff doc was written and committed.
-
-## 3. DEPLOYMENT SCRIPTS
-All deployment scripts for this project use the pattern in `scripts/deploy-phase2.sh`.
-Key conventions:
-- One script deploys everything for a phase
-- `--quiet` on all Docker commands
-- Output redirected to `/tmp/*.log`, only tail on failure
-- Final summary table printed to stdout
-
-## 4. GDC-PM PROJECT CONTEXT
-- Namespace: `gdc-pm` on cluster `gdc-edge-simulation` (GKE Autopilot, project `gdc-pm-v2`, region `us-central1`)
-- Image registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/`
-- AlloyDB DB: `grid_reliability` on service `alloydb-omni.gdc-pm.svc.cluster.local`
-- The cluster is currently GKE Autopilot — `terraform/gke.tf` must NOT be applied (would destroy the cluster)
-- Phase 2 code is complete but not yet deployed — see `docs/PHASE_2_DEPLOYMENT_STATUS.md`
+## Deployment Constraint
+- `terraform/gke.tf` must NOT be applied — it would destroy the live cluster.
+- All demo changes go into gke/fault-trigger-ui/index.html and gke/fault-trigger-ui/app.py.
+- After changes: docker build → docker push → kubectl rollout restart.

@@ -54,7 +54,7 @@ OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.
 # Phase 6.2: Reduced to gemma3:12b for faster demo response time.
 # gemma:2b was too small; gemma3:27b is too slow. 12b hits the sweet spot.
 # Override via OLLAMA_MODEL env var if a different model is pulled.
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:12b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:27b")
 
 # ── Health Score Model Registry (Phase 5.1) ───────────────────────────────────
 # Single edge-calibrated XGBoost Health Score model per asset class.
@@ -510,6 +510,300 @@ REMEDIATION_COSTS = {
     "gearbox_bearing_spalling":   120000,  # Gearbox repair + drilling halt
     "hydraulic_leak":               8000,  # Hydraulic repair + drilling delay
 }
+
+# ── Financial Justifications Registry (Phase 12 — Self-Justifying Demo) ──────
+# Itemized cost breakdowns for each fault type.  Surfaces in-app when a user
+# clicks "[ ⓘ Justify ]" next to a financial figure to address stakeholder
+# objections.  Sources: SPE papers, OEM price lists, IADC survey data,
+# Wood Mackenzie O&G cost index, API recommended practices.
+FINANCIAL_JUSTIFICATIONS = {
+    "gas_lock": {
+        "fault_label": "Gas Lock — ESP",
+        "capital_at_risk_usd": 150000,
+        "early_intervention_usd": 2500,
+        "unmitigated_impact": {
+            "basis": "Full ESP pull-and-replace workover. Impeller stall causes catastrophic heat buildup; motor winding damage is irreversible once temperature exceeds Class H limit (180°C). Workover is required to retrieve and replace the entire ESP string.",
+            "line_items": [
+                {"label": "ESP pump string — impeller stages, diffusers, head/base", "usd": 44000, "note": "Baker Hughes Centrilift 400 Series, 100-stage tungsten carbide trim; 2024 list price"},
+                {"label": "ESP motor — 200 HP, 456 series, Class H insulation", "usd": 31000, "note": "Class H required for high water-cut, high-temp applications"},
+                {"label": "Production cable — 1\" flat FlatPak, ~3,000 ft", "usd": 9500, "note": "Cable must be replaced when motor windings fail due to thermal arc"},
+                {"label": "Workover rig — 3 days × $14,000/day (WTX 2024 spot rate)", "usd": 42000, "note": "400 HP rig for 10,000+ ft well; includes rig-up/down, kill fluid, BOP"},
+                {"label": "Wireline, perforating, wellbore cleanout", "usd": 8500, "note": "Required to clean sand/debris before re-run; standard post-workover procedure"},
+                {"label": "Deferred production — 4 days × 300 BPD × $76/bbl net-back", "usd": 11600, "note": "Net-back after royalties and LOE; production constrained during workover + restart ramp"},
+                {"label": "Supervision, safety standby, consumables", "usd": 3400, "note": "Company man + safety observer day rates; kill fluid, tubing thread compound"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "SCADA VFD frequency reduction from 52 Hz to 44 Hz for 4–6 hours allows gas void to migrate up the casing annulus. Zero equipment cost; cost is deferred production at reduced rate plus operator time.",
+            "line_items": [
+                {"label": "Deferred production — 5h at 15% reduced rate", "usd": 700, "note": "300 BPD × 15% reduction × 5h/24h × $76/bbl net-back ≈ $714"},
+                {"label": "SCADA operator time — 4h monitoring and logging", "usd": 900, "note": "Operator labor at $225/hr fully-loaded rate (benefits, overhead)"},
+                {"label": "Shift documentation and management notification", "usd": 900, "note": "Compliance reporting; PSM tracking for process upset event"},
+            ]
+        },
+        "methodology": "Capital at risk represents the total unmitigated cost if the fault proceeds to impeller stall. Early intervention cost represents the deferred production and labor cost of the SCADA frequency reduction. Net impact is the difference — the maximum value GDC edge AI detection preserves. ROI of early detection: 60:1.",
+        "references": ["SPE-174536-MS: ESP Performance and Failure Analysis", "Baker Hughes Centrilift Price List (2024)", "IADC WellCap Permian Basin Rig Rate Survey Q4 2024", "Wood Mackenzie: Permian Basin LOE Data 2023"]
+    },
+    "sand_ingress": {
+        "fault_label": "Sand Ingress — ESP",
+        "capital_at_risk_usd": 85000,
+        "early_intervention_usd": 5000,
+        "unmitigated_impact": {
+            "basis": "Full ESP workover with sand-handler assembly replacement. Abrasive sand erodes tungsten carbide impeller stages over 14 days. By PNR, 30–50% of impeller stages are destroyed; a workover with equipment replacement is unavoidable.",
+            "line_items": [
+                {"label": "ESP sand-handler assembly — 100-stage TC radial bearings", "usd": 32000, "note": "Baker Hughes MAT-4002-TC-100; TC radial bearings at $320/stage (list price)"},
+                {"label": "Workover rig — 4 days × $14,000/day", "usd": 56000, "note": "Days include rig-up, pull, inspect, sand control installation, re-run"},
+                {"label": "Sand control screen / gravel pack equipment", "usd": 8000, "note": "Slotted liner or resin-coated gravel pack to prevent recurrence; per API 11S3"},
+                {"label": "Deferred production — 5 days × 300 BPD × $76/bbl", "usd": 14250, "note": "5 days including rig move, kill, pull, replace, perforate, restart, ramp-up"},
+                {"label": "Wellbore cleanout, kill fluid, wireline", "usd": 6500, "note": "Required to remove sand accumulation above perforations before re-run"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "20% pump rate reduction via SCADA slows sand influx. Fluid sampling to confirm sand concentration. 14-day advance notice allows standard freight procurement (12 days) vs. air freight ($8,500 premium).",
+            "line_items": [
+                {"label": "Deferred production — 3 days at 20% reduced rate", "usd": 1370, "note": "300 BPD × 20% reduction × 3 days × $76/bbl net-back"},
+                {"label": "Fluid sampling and lab analysis (BS&W, particle size)", "usd": 1200, "note": "Core Laboratories / Intertek: sand concentration, particle size distribution"},
+                {"label": "SCADA monitoring and production engineering review", "usd": 2430, "note": "Production engineer 8h review + documentation at $303/hr (SPE salary data 2024)"},
+            ]
+        },
+        "methodology": "Sand erosion progresses exponentially. GDC detects the early vibration signature 14 days ahead of SCADA alarm. Standard freight (12 days) is sufficient if ordered today; emergency air freight ($8,500 premium) is required if detection is delayed. Capital at risk reflects total workover cost including the time value of deferred production.",
+        "references": ["API RP 11S3: Recommended Practice for ESP Systems", "Baker Hughes Centrilift: Sand Handling Design Guide", "SPE-181193: Sand Management in ESP Wells", "Core Laboratories: Formation Sand Analysis Methods"]
+    },
+    "motor_overheat": {
+        "fault_label": "Motor Over-Temperature — ESP",
+        "capital_at_risk_usd": 200000,
+        "early_intervention_usd": 3000,
+        "unmitigated_impact": {
+            "basis": "Class H winding insulation failure. At >280°F, insulation breakdown causes a phase-to-ground fault. This destroys the motor, production cable, and typically the seal section. Well is killed and a full workover required.",
+            "line_items": [
+                {"label": "ESP motor replacement — 200HP Class H, 456 series", "usd": 62000, "note": "Baker Hughes MTR-456-200HP-H; Class H insulation rated to 300°F continuous; 2024 list"},
+                {"label": "ESP seal section (protector) replacement", "usd": 18500, "note": "Motor burnout commonly damages seal section O-rings; replaced per BH recommendation"},
+                {"label": "Production cable — 3,000 ft FlatPak, full replacement", "usd": 9500, "note": "Phase-to-ground fault destroys cable insulation; full string replacement required"},
+                {"label": "Workover rig — 4 days × $14,000/day", "usd": 56000, "note": "Pull + replace + test; 4 days includes rig-up/down and restart to stable production"},
+                {"label": "Deferred production — 5 days × 300 BPD × $76/bbl", "usd": 14250, "note": "Production loss during rig work plus ESP restart and ramp-up period"},
+                {"label": "Wireline, kill fluid, surface cable inspection", "usd": 11500, "note": "Phase fault may arc to surface splice; complete cable log required before re-run"},
+                {"label": "Engineering review, RCA, water cut analysis", "usd": 4800, "note": "Required post-failure per PSM program; includes water cut remediation study"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "15% load reduction via VFD from 55 Hz to 47 Hz reduces motor current from 81A to ~69A, lowering winding temperature by 15–22°F. Preserves insulation life and allows time for engineering review.",
+            "line_items": [
+                {"label": "Deferred production — 4h at 15% reduced rate", "usd": 570, "note": "300 BPD × 15% × 4h/24h × $76/bbl; minimal impact during assessment period"},
+                {"label": "Field engineer VFD adjustment and monitoring", "usd": 1800, "note": "2h on-site field engineer at $450/hr (travel + labor for VFD verification)"},
+                {"label": "VFD calibration verification and compliance documentation", "usd": 630, "note": "Electrical tech 1.5h + process upset log entry (PSM requirement)"},
+            ]
+        },
+        "methodology": "At 67% water cut, downhole motor cooling is severely degraded. GDC thermal model detects winding temp trending toward Class H limit 18 hours ahead of SCADA alarm at 280°F. Early VFD intervention costs ~$3,000; unmitigated failure costs $200,000. ROI: 66:1.",
+        "references": ["Baker Hughes: ESP Motor Thermal Design Manual", "SPE-68094: Effect of Water Cut on ESP Motor Temperature", "API RP 11S2: Electrical Submersible Pump Motor Recommended Practice", "IEEE 1068: IEEE Guide for Winding Insulation Thermal Ratings"]
+    },
+    "thermal_runaway": {
+        "fault_label": "Thermal Runaway — Gas Lift Compressor",
+        "capital_at_risk_usd": 150000,
+        "early_intervention_usd": 200,
+        "unmitigated_impact": {
+            "basis": "Cylinder head seizure or catastrophic gasket failure. When discharge temperature exceeds 250°F (Ariel JGP cylinder design limit), piston rings and cylinder liner distort. Seizure can occur within 20–40 minutes after cooling circuit failure.",
+            "line_items": [
+                {"label": "Cylinder head and liner replacement — 2 cylinders", "usd": 38000, "note": "Ariel JGP: $19,000/cylinder head assembly (valve deck, head gasket, cooling jacket)"},
+                {"label": "Piston ring and rod packing replacement", "usd": 14500, "note": "Thermal distortion damages piston rings; Ariel OEM parts per cylinder"},
+                {"label": "Compressor rebuild labor — 5 days × 3 mechanics", "usd": 42000, "note": "Certified Ariel techs at $2,800/day each; field OEM service rates, Permian Basin 2024"},
+                {"label": "Crane and heavy rigging for cylinder removal", "usd": 8500, "note": "Required for cylinder head removal on 1200HP frame; routine crane day rate"},
+                {"label": "Deferred production — 8 days × 180 BPD × $76/bbl", "usd": 43680, "note": "Pad Bravo gas lift production loss; 180 BPD net from 4 wells"},
+                {"label": "Emergency parts expediting and air freight", "usd": 3320, "note": "Overnight air freight from Ariel Manufacturing, Mount Vernon OH"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Fin-fan cooler chemical flush appended to tomorrow's already-scheduled crew visit (WO-2026-0847). CREW-BRAVO-B is on-site for transmitter calibration; 45-minute cooler flush added at zero incremental travel cost.",
+            "line_items": [
+                {"label": "Citric acid descaling solution — 3 gallons", "usd": 279, "note": "Industrial-grade citric acid at $93/gal; standard fin-fan cleaning chemical"},
+                {"label": "Incremental labor — 0.75h appended to existing work order", "usd": 0, "note": "Zero travel cost as crew is already on-site. Incremental labor included in existing WO budget."},
+                {"label": "Emergency dispatch cost avoided entirely", "usd": -1800, "note": "Scheduling to existing dispatch avoids $1,800 emergency callout fee"},
+            ]
+        },
+        "methodology": "The fin-fan cooler PM was 8 months overdue (Ariel-recommended interval: 6 months). A crew was already scheduled on-site, making the cost of early intervention essentially the cost of chemicals only. GDC identifies the overdue PM from Maximo records and correlates it with the rising discharge temperature trend to generate this zero-cost recommendation.",
+        "references": ["Ariel Corporation JGP Series: Cylinder Thermal Limits & Maintenance Manual", "GMRC: Gas Machinery Research Council — Compressor Maintenance Best Practices", "API 618: Reciprocating Compressors for Petroleum, Chemical, and Gas Services", "IBM Maximo PM: Interval Optimization for Gas Compression"]
+    },
+    "bearing_wear": {
+        "fault_label": "Journal Bearing Wear — Gas Lift Compressor",
+        "capital_at_risk_usd": 85000,
+        "early_intervention_usd": 8200,
+        "unmitigated_impact": {
+            "basis": "Crankshaft journal bearing spalling progressing to crankshaft scoring. Once ISO 10816-6 vibration velocity exceeds 12 mm/s, bearing race failure accelerates. Crankshaft scoring requires full compressor disassembly and crankshaft grinding or replacement.",
+            "line_items": [
+                {"label": "Journal bearing set replacement (4 bearings, post-seizure)", "usd": 8200, "note": "ARJ-42-BEARING-KIT: main + connecting rod bearings for 2-throw Ariel frame; OEM kit"},
+                {"label": "Crankshaft re-grind or replacement (scoring assumed)", "usd": 28000, "note": "Crankshaft grinding $8,000–$12,000; crankshaft replacement $24,000–$32,000 (seizure assumed)"},
+                {"label": "Compressor rebuild labor — 4 days × 2 specialists", "usd": 22400, "note": "Ariel-certified millwright team at $2,800/day each; includes alignment verification"},
+                {"label": "Oil flush and particle analysis post-repair", "usd": 2400, "note": "Full lube system flush + particle count to confirm no debris before restart"},
+                {"label": "Deferred production — 5 days × 180 BPD × $76/bbl", "usd": 16800, "note": "4-well gas lift production loss during compressor downtime"},
+                {"label": "Crane, rigging, and facilities", "usd": 7200, "note": "Required for crankcase access; crane day rate × 2 days"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Planned bearing replacement appended to existing quarterly dispatch (CREW-BRAVO-A, WO-2026-0851). Bearing kit confirmed in local stock. Zero incremental travel. 3 additional hours added to scheduled work order.",
+            "line_items": [
+                {"label": "Bearing kit — ARJ-42-BEARING-KIT (local stock, confirmed)", "usd": 8200, "note": "OEM Ariel journal bearing set; confirmed in local inventory for same-day installation"},
+                {"label": "Incremental labor on scheduled work order", "usd": 0, "note": "Zero incremental labor cost: crew on-site for quarterly inspection; 3h added to existing WO"},
+                {"label": "Oil change and analysis post-replacement", "usd": 480, "note": "10 quarts synthetic compressor oil + particle count verification"},
+            ]
+        },
+        "methodology": "BPFI spectral peak 40% above ISO 10816-6 alert threshold, combined with 4× increase in oil ferrous debris (48 ppm vs 12 ppm baseline), provides high-confidence bearing wear prediction 16+ hours ahead of SCADA alarm. Crew was already scheduled on-site; intervention cost is essentially parts-only ($8,200) vs $85,000 if crankshaft scores.",
+        "references": ["ISO 10816-6: Vibration Severity for Reciprocating Machines", "GMRC: Journal Bearing Failure Modes in Natural Gas Compressors", "Ariel Corporation: Compressor Bearing Maintenance Technical Bulletin TB-004", "ASTM D7690: Spectroscopic Metal Analysis for Wear Debris"]
+    },
+    "valve_failure": {
+        "fault_label": "Check Valve Failure — Gas Lift Compressor",
+        "capital_at_risk_usd": 42500,
+        "early_intervention_usd": 5000,
+        "unmitigated_impact": {
+            "basis": "Check valve disk fracture allows complete reversal of gas flow through compressor. Reverse flow at full discharge pressure damages compressor internals within seconds. Valve replacement plus mandatory internal inspection required.",
+            "line_items": [
+                {"label": "Check valve disk assemblies × 2 (replace as pair per API 618)", "usd": 3600, "note": "CVD-1200-PSI-4IN at $1,800 each; API 618 requires replacing valve manifolds in matched pairs"},
+                {"label": "Compressor internal inspection — pistons, cylinders, valves", "usd": 12000, "note": "Mandatory post-backflow event per Ariel service bulletin: disassemble, measure, replace worn parts"},
+                {"label": "Compressor rebuild labor — 2 days × 2 mechanics", "usd": 11200, "note": "Ariel-certified techs at $2,800/day each; includes post-repair functional test"},
+                {"label": "Deferred production — 3 days × 180 BPD × $76/bbl", "usd": 10260, "note": "4-well Pad Bravo production affected while compressor is offline"},
+                {"label": "Emergency dispatch — after-hours compressor technicians", "usd": 5440, "note": "Emergency after-hours call-out: $3,200 callout fee + $1,120 travel allowance × 2 techs"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Controlled shutdown before valve fracture. Replacement valve is in local inventory. Replacement takes 4 hours by on-call crew during daylight shift at standard rates.",
+            "line_items": [
+                {"label": "Replacement check valve disk (local warehouse stock)", "usd": 1800, "note": "CVD-1200-PSI-4IN at $1,800; confirmed in local inventory — no freight required"},
+                {"label": "Field crew valve replacement labor — 4h daylight shift", "usd": 2800, "note": "Compressor operator 4h at $700/hr including safety standby; standard day rate"},
+                {"label": "Pressure test and restart supervision", "usd": 400, "note": "Production technician 2h; pressure test per API 618 before restart"},
+            ]
+        },
+        "methodology": "The discharge pressure historian shows 42 PSI cyclic amplitude (5× normal <8 PSI) at 1.8 Hz — diagnostic signature of valve disk flutter/chattering. SCADA shows normal mean pressure; no SCADA alarm fires. GDC detects the oscillation signature 15 minutes before disk fracture. Controlled shutdown and scheduled replacement: $5,000. Post-fracture emergency repair: $42,500.",
+        "references": ["API 618: Reciprocating Compressors for Petroleum Gas Industry Service", "Ariel Corporation: Check Valve Inspection and Replacement Technical Bulletin", "SPE-124560: Compressor Valve Failure Analysis and Prevention"]
+    },
+    "valve_washout": {
+        "fault_label": "Valve Seat Washout — Triplex Mud Pump",
+        "capital_at_risk_usd": 52500,
+        "early_intervention_usd": 5000,
+        "unmitigated_impact": {
+            "basis": "Complete fluid end rebuild required once valve seat erodes through seat pocket. At 81% VE (vs. 95% nominal) and declining, continued operation risks suction valve failure causing fluid end body damage beyond the valve seats.",
+            "line_items": [
+                {"label": "Valve seats, inserts, and poppets — fluid end rebuild kit", "usd": 8500, "note": "NOV TWS 7500: valve seat kit × 3 cylinders; NOV OEM pricing, Permian Basin 2024"},
+                {"label": "Piston liners and piston assemblies × 3", "usd": 12000, "note": "Erosion damage to liner bore from inefficient valve; replaced as part of fluid end rebuild per NOV manual"},
+                {"label": "Fluid end rebuild labor — NOV certified technician", "usd": 9600, "note": "NOV field service tech: 8h × $1,200/hr (fluid end specialist day rate, WTX 2024)"},
+                {"label": "Rig flat time — 8h fluid end rebuild × $45,000/day rig rate", "usd": 15000, "note": "Rig rate + spread: $45,000/day WTX land rig; 8 hours unplanned = $15,000"},
+                {"label": "Standpipe pressure test before restart (API 7-1)", "usd": 2400, "note": "Required post-rebuild per API 7-1 before returning to drilling operations"},
+                {"label": "Possible hole condition check if circulation lost", "usd": 5000, "note": "If pump failure causes undetected loss of circulation; wireline depth verification"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Controlled pump transition to standby MUD-RIG42-3 at next connection (22 minutes). MUD-RIG42-1 reduced to maintenance mode. Fluid end valve seat rebuild performed during planned connection stop at standard rates, not emergency call-out.",
+            "line_items": [
+                {"label": "Valve seat rebuild kit — 3 cylinders (scheduled repair)", "usd": 3600, "note": "Valve seats only; liner replacement deferred as liner bore not yet damaged"},
+                {"label": "NOV technician — scheduled fluid end inspection 4h", "usd": 4800, "note": "Scheduled during connection window; standard rate, no emergency premium"},
+                {"label": "Pump transition supervision (30 min)", "usd": 675, "note": "Company man supervision + driller coordination at rig spread rate"},
+                {"label": "Emergency call-out premium avoided", "usd": -4075, "note": "Scheduled vs emergency: avoids 2× labor rate on emergency after-hours call-out"},
+            ]
+        },
+        "methodology": "Declining VE (81% vs. 95% nominal), rising SPM compensation (+6 from baseline), and fluid end inspection 460 ft past interval confirm valve erosion with high confidence. Transition to standby pump is a 3-minute, low-risk procedure preserving ECD stability. Repair at next connection: $5,000. Emergency full rebuild: $52,500.",
+        "references": ["API Spec 7-1: Rotary Drill Stem Elements", "NOV TWS 7500 Triplex Pump: Maintenance and Service Manual", "SPE-185969: Mud Pump Reliability and Maintenance Optimization", "IADC WellCap: Pump VE Monitoring and Management"]
+    },
+    "pulsation_dampener_failure": {
+        "fault_label": "Pulsation Dampener Bladder Rupture — Mud Pump",
+        "capital_at_risk_usd": 500000,
+        "early_intervention_usd": 15000,
+        "unmitigated_impact": {
+            "basis": "Bladder rupture produces pressure hammer (water hammer) that can rupture standpipe, kelly hose, or iron manifold. Pipe rupture at 5,000 PSI is a high-energy event with personnel injury risk, mandatory HSE investigation, regulatory notification, and potential well control incident. Industry fatalities have occurred from this failure mode.",
+            "line_items": [
+                {"label": "Standpipe and manifold full inspection / replacement", "usd": 65000, "note": "Full 4\" high-pressure standpipe inspection per API 16C; replacement if hammer damage detected"},
+                {"label": "Kelly hose replacement — 4\" 5,000 PSI rated", "usd": 18000, "note": "High-pressure rotary hose replacement if pressure hammer causes flex fatigue at connections"},
+                {"label": "Dampener bladder replacement — both units", "usd": 12000, "note": "Replace both dampeners per NOV recommendation: $6,000/unit for TWS 7500 dampener kit"},
+                {"label": "Unplanned rig stop — 18h flat time × $45,000/day", "usd": 33750, "note": "Rig spread idle while standpipe system is inspected; mandatory before drilling resumes"},
+                {"label": "Third-party pipe inspection (MT, UT, pressure test)", "usd": 22000, "note": "Mandatory NDT per API 5DP after high-pressure hammer event; third-party inspector required"},
+                {"label": "Regulatory notification and incident investigation", "usd": 15000, "note": "HSE investigation, documentation, and regulatory filing (BSEE/state) — minimum cost estimate"},
+                {"label": "Personnel injury liability — statistical industry average", "usd": 180000, "note": "Actuarial cost from IADC recorded high-pressure event injury statistics (2019-2023)"},
+                {"label": "Well control contingency if wellbore pressure control compromised", "usd": 154250, "note": "Kill weight mud, BOP test, pump-and-dump if wellbore pressure control compromised during event"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Immediate 30% pump stroke reduction to reduce line pressure, plus dampener isolation. Bladder integrity inspection can be performed safely at reduced rate. Proactive replacement before failure.",
+            "line_items": [
+                {"label": "Dampener bladder kit — proactive replacement", "usd": 6000, "note": "NOV dampener kit: $6,000 proactive replacement before catastrophic failure"},
+                {"label": "Pump rate reduction — 2h at reduced rate", "usd": 3750, "note": "$45,000/day rig rate × 2h planned stop + fluid system rebalancing time"},
+                {"label": "Crew inspection and replacement labor", "usd": 5250, "note": "Derrickman + motorman: 3h × 2 crew at rig labor rates; standard maintenance procedure"},
+            ]
+        },
+        "methodology": "Pulsation dampener failure has PNR = 0 minutes — there is no safe intervention window after bladder rupture. The entire capital value of this scenario is in early detection. GDC identifies the bladder integrity signature from pressure oscillation patterns before rupture. Capital at risk includes the full liability profile of a high-pressure pipe rupture event including statistical injury liability.",
+        "references": ["API RP 16C: Choke and Kill Equipment", "NOV TWS Series Pulsation Dampener: Maintenance Manual", "IADC HSE Case: Standpipe Fatigue Failure Reports (2019-2023)", "OSHA 1910.119: Process Safety Management — High-Energy Hazards"]
+    },
+    "gearbox_bearing_spalling": {
+        "fault_label": "Gearbox Bearing Spalling — Top Drive",
+        "capital_at_risk_usd": 120000,
+        "early_intervention_usd": 28500,
+        "unmitigated_impact": {
+            "basis": "Active bearing race spalling confirmed by oil analysis (64 ppm Fe, alarm at 50 ppm) and torque oscillation. Bearing seizure would require crane removal of top drive from derrick, full gearbox disassembly, and mandatory crownblock inspection.",
+            "line_items": [
+                {"label": "Tapered roller bearing set — NOV 250T top drive", "usd": 28500, "note": "NOV-250T-BEAR-KIT; OEM tapered roller bearing set with inner/outer races, retainers; Houston 2024"},
+                {"label": "Gearbox disassembly and reassembly labor", "usd": 24000, "note": "NOV field service: 3 mechanics × 2 days × $4,000/day (gearbox specialist rate)"},
+                {"label": "Crane hire — top drive removal and reinstallation", "usd": 18500, "note": "Grove 160-ton crane + operator: day rate × 2 days for remove/reinstall + rigging"},
+                {"label": "Drilling halt — 18h flat time × $45,000/day rig rate", "usd": 33750, "note": "$45,000/day rig spread × 18h; drilling halted while top drive is removed and rebuilt"},
+                {"label": "Crown block and derrick inspection (mandatory post-removal)", "usd": 8500, "note": "Required per NOV after top drive removal: crown block and traveling equipment inspection"},
+                {"label": "Lube oil flush and system decontamination", "usd": 6750, "note": "Full gearbox lube system flush to remove bearing debris; 3 oil changes + particle analysis"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Bearing kit ordered on standard freight (4 days from Houston); replacement scheduled for next planned trip in 18 hours. Replacement during planned trip stop is non-productive time (NPT) that occurs regardless; zero incremental rig cost.",
+            "line_items": [
+                {"label": "Bearing kit — NOV-250T-BEAR-KIT (standard freight, 4 days)", "usd": 28500, "note": "Order immediately; arrives before next planned trip from Houston. No air freight required."},
+                {"label": "Replacement labor during planned trip — 4h", "usd": 0, "note": "Scheduled during planned trip NPT; zero incremental rig cost"},
+                {"label": "Air freight premium saved by ordering now", "usd": -6000, "note": "Standard freight vs air freight saves $6,000; available only with early detection"},
+                {"label": "Temporary monitoring sensor (until replacement)", "usd": 850, "note": "Piezo mount-on sensor for interim monitoring at 85% RPM for 18h"},
+            ]
+        },
+        "methodology": "Oil analysis flagged this bearing 48 hours ago (64 ppm Fe, alarm 50 ppm); without GDC AI fusion, this data point was not correlated with the EDR torque oscillation data. GDC fuses oil analysis + torque oscillation + vibration frequency to confirm active spalling. The window to replace during a planned trip (18h away) is the key opportunity — after which seizure requires emergency crane removal at 4.2× the cost.",
+        "references": ["NOV 250T Top Drive Gearbox: Service and Maintenance Manual", "ASTM D7690: Wear Debris Analysis in Lubricating Oils", "ISO 10816-3: Vibration for Industrial Machines with Power > 15 kW", "SPE-185321: Predictive Maintenance for Top Drive Systems"]
+    },
+    "piston_seal_wear": {
+        "fault_label": "Liner Seal Wear — Triplex Mud Pump",
+        "capital_at_risk_usd": 15000,
+        "early_intervention_usd": 3800,
+        "unmitigated_impact": {
+            "basis": "Piston-liner bypass causes fluid end temperature rise and discharge pressure decline. If seal wear continues past the critical threshold, the cylinder liner bore is damaged, requiring full bore replacement in addition to the piston assembly.",
+            "line_items": [
+                {"label": "Piston assembly with seals × 3 cylinders", "usd": 4200, "note": "NOV complete piston assemblies: $1,400 each for TWS 7500; includes piston, cups, backup rings"},
+                {"label": "Cylinder liner replacement × 3 (bore damage assumed at PNR)", "usd": 6000, "note": "Chrome-alloy liners: $2,000 each; preventable with early seal replacement before bore wear"},
+                {"label": "Fluid end rebuild labor — emergency call-out", "usd": 3600, "note": "NOV field tech 3h × $1,200/hr; emergency after-hours rate vs. standard scheduled rate"},
+                {"label": "Rig flat time — 4h repair", "usd": 1200, "note": "$45,000/day × 4h unplanned stop for emergency fluid end rebuild"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Seal kit is in local inventory (2 kits confirmed). Replacement is performed at the next planned connection stop. Connection stops are non-productive time; zero incremental rig cost.",
+            "line_items": [
+                {"label": "Liner seal kit — NOV-SEAL-TK-7500 (confirmed in local stock)", "usd": 3800, "note": "Polyurethane piston cups + liner O-rings; 2 kits confirmed on-site at $1,900 each"},
+                {"label": "Replacement during connection stop (NPT)", "usd": 0, "note": "Connection stops are planned NPT; seal replacement is standard connection procedure"},
+                {"label": "Post-replacement pressure test", "usd": 0, "note": "Standard rig procedure during connection; no incremental cost"},
+            ]
+        },
+        "methodology": "Fluid end temperature 57°F above nominal and declining discharge pressure at 2,840 ft past the seal replacement interval are textbook piston-liner bypass signatures. Parts are on-site. This is a $3,800 parts-only fix now vs a $15,000 emergency rebuild if the liner bore is damaged.",
+        "references": ["NOV TWS 7500 Liner and Piston Seal: Replacement Manual", "SPE-185969: Mud Pump Reliability and Maintenance Optimization", "API Spec 7-1: Rotary Drill Stem Elements", "Pason EDR: Pump Efficiency Monitoring Best Practices"]
+    },
+    "hydraulic_leak": {
+        "fault_label": "Hydraulic System Leak — Top Drive",
+        "capital_at_risk_usd": 8000,
+        "early_intervention_usd": 2040,
+        "unmitigated_impact": {
+            "basis": "Hydraulic fluid loss below the system low alarm (2,500 PSI) causes loss of torque capacity on the top drive. At minimum torque, the top drive cannot provide required back-reaming torque for directional work, requiring rotary table backup and an unplanned drilling stop.",
+            "line_items": [
+                {"label": "Hydraulic hose replacement at identified leak section", "usd": 1800, "note": "3,000 PSI rated hydraulic hose with JIC fittings; standard rig hose replacement"},
+                {"label": "Hydraulic fluid — 8 gallons to refill reservoir", "usd": 480, "note": "AW68 hydraulic fluid at $60/gal; reservoir from 78% to 100% fill plus system prime"},
+                {"label": "Hydraulics technician — pressure test and documentation", "usd": 1200, "note": "Certified tech 2h pressure test + documentation; required before top drive resumed"},
+                {"label": "Rig flat time — 3h unplanned stop × $45,000/day", "usd": 5625, "note": "$45,000/day rig spread × 3h for emergency repair + 30-minute pressure test"},
+            ]
+        },
+        "early_intervention": {
+            "basis": "Leak located and patched at next stand break (24 minutes). Spare hoses and fittings are on the rig floor. Repair takes 45 minutes during a planned connection stop — non-productive time regardless.",
+            "line_items": [
+                {"label": "Hydraulic hose from rig floor spares inventory", "usd": 1800, "note": "Using existing rig floor spare; replace spare inventory kit cost after repair"},
+                {"label": "Hydraulic fluid top-up — 4 gallons", "usd": 240, "note": "Partial top-up during patch; remaining supply adequate for patch + test"},
+            ]
+        },
+        "methodology": "GDC calculated a precise 0.4 gal/hr leak rate by fusing the rig floor maintenance log (3× top-up records, not in SCADA) with the hydraulic pressure trend. SCADA pressure at 2,940 PSI — no alarm. GDC predicts low alarm in 3.6 hours. Repair during next stand break costs $2,040 in materials vs $8,000 in emergency repair cost and rig flat time.",
+        "references": ["Parker Hannifin: High Pressure Hydraulic Hose Selection Guide", "NOV 250T Top Drive: Hydraulic System Maintenance Manual", "IADC: Rig Floor Hydraulic Systems Safety and Maintenance", "API RP 7G: Drill Stem Design and Operating Limits"]
+    },
+}
+
 
 # ── Fault Physics Configuration (Phase 5.2 / Phase 6.1) ──────────────────────
 # Maps each fault type to its physical time horizon and SCADA/PNR health thresholds.
@@ -2368,7 +2662,9 @@ def get_agent_recommend(
 
 
 # ── Phase 6.2: SSE Streaming Agent Endpoint ───────────────────────────────────
-@app.post("/api/agent/recommend-stream")
+# NOTE: Must be GET, not POST — EventSource (SSE) always issues a GET request.
+# All parameters are passed as query string parameters.
+@app.get("/api/agent/recommend-stream")
 def get_agent_recommend_stream(
     fault_type: str,
     asset_id: str,
@@ -2453,22 +2749,50 @@ def get_agent_recommend_stream(
         except Exception:
             pass
 
-    # ── Tight LLM system prompt (<150 words) ──────────────────────────────────
+    # ── LLM system prompt — two modes ─────────────────────────────────────────
+    # Initial consult (no history): constrained to "action + next step" for demo speed.
+    # Follow-up questions (history present): open-ended domain expert mode so the agent
+    # can answer explanatory/technical questions rather than repeating action templates.
     fault_label = fault_type.replace("_", " ")
     tier = "PAST PNR" if is_pnr_exceeded else ("CRITICAL" if rul_minutes < 15 else ("URGENT" if rul_minutes < 60 else "EARLY"))
     _history_txt = ""
     if _history:
-        _hist_lines = "\n".join(f"{h['role'].upper()}: {h.get('content','')[:200]}" for h in _history[-4:])
+        _hist_lines = "\n".join(f"{h['role'].upper()}: {h.get('content','')[:200]}" for h in _history[-6:])
         _history_txt = f"\nCONVERSATION:\n{_hist_lines}\n"
-    llm_prompt = (
-        f"You are GDC Ops Agent, an oil and gas predictive maintenance assistant. "
-        f"Be concise — respond in exactly 2 sentences.\n\n"
-        f"FAULT: {fault_label} on {asset_id}. Tier: {tier}. Time to SCADA alarm: {rul_minutes:.0f} minutes.\n"
-        f"ENTERPRISE DATA ({source_label}): {rule_rec}"
-        f"{_history_txt}\n"
-        f"In 2 sentences: (1) confirm the immediate action, (2) state the specific next step. "
-        f"No preamble. No repetition."
-    )
+
+    fault_desc = FAULT_PROFILES.get(fault_type, {}).get("description", fault_label)
+    asset_class_name = ASSET_REGISTRY.get(asset_id, {}).get("asset_type", "equipment")
+
+    _gemma_finding = GEMMA_FINDINGS.get(fault_type, "")
+
+    if _history:
+        # Follow-up question mode: give the model full domain context to answer freely,
+        # including the pre-canned GEMMA_FINDINGS as ground-truth sensor context so
+        # the model doesn't need to hallucinate domain knowledge.
+        llm_prompt = (
+            f"You are GDC Ops Agent, a senior oil and gas predictive maintenance engineer embedded "
+            f"on a Google Distributed Cloud edge system.\n\n"
+            f"ACTIVE FAULT: {fault_label} on {asset_id} ({asset_class_name})\n"
+            f"FAULT PHYSICS: {fault_desc}\n"
+            f"CURRENT STATUS: Tier {tier}. SCADA alarm predicted in {rul_minutes:.0f} minutes ({round(rul_minutes/60,1)}h). "
+            f"Asset class: {ASSET_REGISTRY.get(asset_id, {}).get('asset_class','').upper()}\n"
+            f"SENSOR INTELLIGENCE: {_gemma_finding}\n"
+            f"ENTERPRISE ACTION RECOMMENDED: {rule_rec}\n"
+            f"{_history_txt}\n"
+            f"Answer the operator's latest question with technical precision using upstream O&G terminology. "
+            f"Reference specific sensor values and fault physics above. Do not add preamble."
+        )
+    else:
+        # Initial consult: constrained 2-sentence action summary
+        llm_prompt = (
+            f"You are GDC Ops Agent, an oil and gas predictive maintenance assistant. "
+            f"Be concise — respond in exactly 2 sentences.\n\n"
+            f"FAULT: {fault_label} on {asset_id}. Tier: {tier}. Time to SCADA alarm: {rul_minutes:.0f} minutes.\n"
+            f"SENSOR CONTEXT: {_gemma_finding}\n"
+            f"ENTERPRISE DATA ({source_label}): {rule_rec}\n"
+            f"In 2 sentences: (1) confirm the immediate action, (2) state the specific next step. "
+            f"No preamble. No repetition."
+        )
 
     def _sse_generator():
         # Event 1: Rule-based recommendation (immediate, no LLM latency)
@@ -2747,9 +3071,15 @@ def get_forecast_data(asset_id: str):
     ttf_time  = (now + timedelta(minutes=rul_minutes)) if rul_minutes is not None else None
     pnr_t     = (now + timedelta(minutes=pnr_minutes_rem)) if pnr_minutes_rem is not None else None
 
-    horizon_min  = max(42, int((rul_minutes or 0) + 10)) if rul_minutes else 42
-    future_times = [now + timedelta(minutes=i) for i in range(1, horizon_min + 1)]
-    t_arr        = np.array(range(1, len(future_times) + 1), dtype=float)
+    # Display window: full RUL + 30% buffer, no artificial cap.
+    # For very long horizons we downsample the time array to ≤500 points so the
+    # browser renders quickly while the exponential curve shape is preserved.
+    _raw_horizon = max(60, int((rul_minutes or 0) * 1.3 + 60)) if rul_minutes else 60
+    horizon_min  = _raw_horizon
+    _n_points    = min(500, horizon_min)   # never more than 500 Plotly points
+    _step        = max(1, horizon_min // _n_points)
+    future_times = [now + timedelta(minutes=i) for i in range(_step, horizon_min + 1, _step)]
+    t_arr        = np.array([i for i in range(_step, horizon_min + 1, _step)], dtype=float)
 
     def _build_sensor(metric, y_vals, y_crit, crit_dir, y_label):
         """Build Plotly trace list and layout dict for one sensor tab."""
@@ -2762,11 +3092,17 @@ def get_forecast_data(asset_id: str):
              "mode": "lines", "name": "Live Telemetry",
              "line": {"color": "#1e90ff", "width": 2.5}},
         ]
-        if rul_minutes is not None and rul_minutes < 580:
+        # Note: removed the `rul_minutes < 580` cap — Days faults have rul_minutes ~11k
+        # and were silently getting a flat line. Now all active projections render.
+        if rul_minutes is not None and rul_minutes > 0:
             ttf_total_min = fp_total_h * 60.0 if _fp else max(rul_minutes*3.0, 60.0)
             y_failure = max(y_crit*0.45, 1.0) if crit_dir == "below" else y_crit*1.80
-            # Phase 10 Bug 4 fix: two-segment exponential — SCADA marker aligns exactly
-            _k2 = 3.5; _expk2 = np.exp(_k2) - 1.0; _rm2 = max(float(rul_minutes), 0.01)
+            # Phase 11 fix: horizon-aware k so curve shows visible rise on all time scales.
+            # Days (k=1.8): gradual rise visible from day 1 — physically correct for sand ingress.
+            # Hours (k=3.0): moderate curve — shows acceleration in final third.
+            # Minutes (k=4.5): steep hockey-stick — mirrors rapid failure physics.
+            _k2 = 1.8 if fp_hlabel == "Days" else (3.0 if fp_hlabel == "Hours" else 4.5)
+            _expk2 = np.exp(_k2) - 1.0; _rm2 = max(float(rul_minutes), 0.01)
             _s1 = t_arr <= _rm2; _s2 = ~_s1
             _py = np.empty(len(t_arr))
             _py[_s1] = y_start + (y_crit - y_start) * (np.exp(_k2 * t_arr[_s1] / _rm2) - 1.0) / _expk2
@@ -2862,6 +3198,565 @@ def get_forecast_data(asset_id: str):
         "scada_sensor": fp_scada_sensor, "pnr_sensor": fp_pnr_sensor, "primary_sensor": fp_primary,
         "sensors": sensors,
     }
+
+
+# ── Phase 11: Multi-Modal Demo Endpoints ─────────────────────────────────────
+# New endpoints supporting the Two-Tier UI:
+#   /api/kpis              — Per-site production/drilling KPIs with fault degradation
+#   /api/intelligence-feed — Pre-vetted unstructured O&G data per fault type
+#   /api/mlops/status      — Simulated WAN + edge model health for MLOps indicator
+#   /api/horizon           — Active AI predictions sorted by urgency (dashboard Tier 1)
+#   /api/agent/hitl-approve — Human-in-the-Loop action approval
+
+SITE_KPI_BASE = {
+    "pad_alpha": {
+        "label": "Pad Alpha", "type": "ESP Production",
+        "production_boed": 1842, "water_cut_pct": 28.4,
+        "gor_scf_bbl": 1104, "wellhead_pressure_psi": 245, "uptime_pct": 100.0,
+    },
+    "pad_bravo": {
+        "label": "Pad Bravo", "type": "Gas Lift Production",
+        "production_boed": 720, "inj_gas_mmscfd": 1.8,
+        "lift_efficiency_pct": 78, "wellhead_pressure_psi": 312, "uptime_pct": 100.0,
+    },
+    "rig_42": {
+        "label": "Rig 42", "type": "Drilling",
+        "rop_ft_per_hr": 68, "depth_ft_md": 11240,
+        "wob_klbs": 22, "mud_weight_ppg": 11.4, "uptime_pct": 100.0,
+    },
+}
+
+INTELLIGENCE_FEED = {
+    "sand_ingress": [
+        {
+            "id": "si_1", "type": "lab_report", "source": "Daily Well Test Report",
+            "ts_label": "08:00 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "BS&W: 0.41% ↑  ·  Salinity: 34,200 ppm ↑  ·  Sand: 1.2 mg/100mL ↑",
+            "ai_relevance": "Sand concentration trend correlated with 3% vibration increase — early-stage impeller erosion confirmed",
+            "detail": (
+                "API RP 13C fluid sample — ESP-ALPHA-2 / Well A-2\n"
+                "· Basic Sediment & Water (BS&W): 0.41% (vs 0.28% seven days ago, trending up)\n"
+                "· Chloride concentration: 20,800 mg/L (baseline: 17,400 mg/L)\n"
+                "· Salinity: 34,200 ppm (up 17% in 7 days)\n"
+                "· Sand content (ASTM D4807 centrifuge): 1.2 mg/100mL (3-day consecutive increase)\n"
+                "· Sample note: 'Trace gritty residue observed in sample bottle' — Lab Tech J. Rivera\n"
+                "· SCADA: Intake PSI, motor current, and vibration all within normal alarm limits."
+            ),
+        },
+        {
+            "id": "si_2", "type": "erp_check", "source": "SAP MM — Inventory Query",
+            "ts_label": "query just now", "icon": "📦", "is_anomaly": True,
+            "headline": "ESP Sand-Handler Assembly — Stock: 0 local · 0 hub · 1 @ factory (12-day lead)",
+            "ai_relevance": "12-day lead time requires immediate order if 14-day failure window is correct",
+            "detail": (
+                "SAP Materials Management — MPN: MAT-4002-TC-100\n"
+                "· Part: Baker Hughes Centrilift 400-Series ESP Assembly, 100-stage TC Radial Bearings\n"
+                "· Design rate: 2,000 BPD @ 55 Hz  |  Unit cost: $145,000\n"
+                "· Pad Alpha local stock: 0  |  Midland hub stock: 0\n"
+                "· Manufacturer stock: 1 unit @ Claremore, OK\n"
+                "· Standard freight lead time: 12 days  |  Air freight: 7 days (+$8,500)\n"
+                "· ⚠ Lead time EXCEEDS failure window if order is delayed beyond today."
+            ),
+        },
+        {
+            "id": "si_3", "type": "shift_notes", "source": "Shift Handover — Night Tour",
+            "ts_label": "06:00 shift handover", "icon": "📋", "is_anomaly": False,
+            "headline": "\"Minor vibration noted on A-2 during last connection\"",
+            "ai_relevance": "Operator-observed vibration change confirms AI trend — unstructured confirmation of early degradation",
+            "detail": (
+                "Shift Handover Notes — Pad Alpha Night Tour Pusher: R. Mendoza\n"
+                "· ESP-ALPHA-2: Minor vibration noted during makeup of last downhole connection at ~0315h\n"
+                "· 'Subtle but noticeable increase vs. last week — worth watching.'\n"
+                "· No SCADA alarms. Production rate normal at 318 BPD. All other wells normal.\n"
+                "· Note: These handover notes are NOT accessible to SCADA-only systems."
+            ),
+        },
+    ],
+    "motor_overheat": [
+        {
+            "id": "moh_1", "type": "lab_report", "source": "Daily Well Test Report",
+            "ts_label": "08:00 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "Water Cut: 67% ↑↑  (was 48% thirty days ago — rapid increase)",
+            "ai_relevance": "67% water cut degrades motor cooling; combined with +0.8°F/hr temp slope, insulation failure within 18h",
+            "detail": (
+                "API RP 19C fluid sample — ESP-ALPHA-4 / Well A-4\n"
+                "· Water cut: 67% (was 48% last month; sharp increase)\n"
+                "· Gross liquid rate: 580 BPD  |  Oil rate: 191 BPD  |  GOR: 890 scf/bbl (stable)\n"
+                "· Note by Field Tech M. Garza: 'Sharply higher water cut on A-4. High water fraction reduces motor cooling effectiveness in downhole ESP installations.'\n"
+                "· SCADA: Motor winding temp 198°F (nominal) — NO ALARM.\n"
+                "· ⚠ High water cut degrades heat transfer coefficient past motor, accelerating thermal stress on Class H winding insulation."
+            ),
+        },
+        {
+            "id": "moh_2", "type": "power_report", "source": "VFD Surface Power Monitor",
+            "ts_label": "continuous — last 4h", "icon": "⚡", "is_anomaly": True,
+            "headline": "Power factor: 0.78 ↓  (nominal 0.85)  ·  Motor current rising +2.1A/hr",
+            "ai_relevance": "Overcurrent + declining PF confirms thermal degradation of winding insulation",
+            "detail": (
+                "VFD surface panel power logger — ESP-ALPHA-4\n"
+                "· Motor current: 81.2A (nominal: 75A; rising at +2.1A/hr)\n"
+                "· Power factor: 0.78 (nominal: 0.85) — insulation stress signature\n"
+                "· VFD frequency: 55 Hz (unchanged)\n"
+                "· Analysis: Overcurrent consistent with rising winding resistance due to thermal degradation\n"
+                "· SCADA alarm at 280°F. Current: 198°F. GDC AI projects crossing in ~18h."
+            ),
+        },
+    ],
+    "thermal_runaway": [
+        {
+            "id": "tr_1", "type": "process_data", "source": "Cooling Water System — Process Historian",
+            "ts_label": "last 6 hours trending", "icon": "🌡", "is_anomaly": True,
+            "headline": "Fin-fan delta-T: 50°F ↑  (nominal 35°F)  ·  Discharge trend: +2.1°F/hr",
+            "ai_relevance": "Delta-T excess of 43% combined with discharge temp trend confirms cooling circuit degradation",
+            "detail": (
+                "Cooling water system — GLIFT-BRAVO-1 cylinder jacket\n"
+                "· Cooling water inlet: 98°F  |  outlet: 148°F  |  delta-T: 50°F\n"
+                "· Design delta-T: 35°F  |  Deviation: +43%\n"
+                "· Discharge temp trend: +2.1°F/hr over last 6 hours\n"
+                "· Current discharge temp: 187°F  |  SCADA alarm: 230°F  |  Projected alarm crossing: ~8h\n"
+                "· Interpretation: Fin-fan cooler partially plugged — airflow restriction\n"
+                "· SCADA: All readings within alarm limits. No existing alert."
+            ),
+        },
+        {
+            "id": "tr_2", "type": "maintenance_record", "source": "IBM Maximo — PM Record",
+            "ts_label": "record retrieved", "icon": "🔧", "is_anomaly": True,
+            "headline": "Fin-fan cooler cleaning — OVERDUE 8 months  (last: 14mo ago, interval: 6mo)",
+            "ai_relevance": "Overdue PM combined with process data confirms preventable fault — crew already on site tomorrow",
+            "detail": (
+                "Maximo Preventive Maintenance Record — GLIFT-BRAVO-1\n"
+                "· Asset: Aerial fin-fan cooler (Ariel Corporation tube-and-fin HEX)\n"
+                "· Last cleaning WO: WO-PM-0194, completed 14 months ago\n"
+                "· PM interval: 6 months (per Ariel service manual)  |  Overdue by: 8 months\n"
+                "· CREW-BRAVO-B scheduled on-site tomorrow at 14:00 for transmitter calibration (2h, available cap: 2.5h)\n"
+                "· Cost to append to tomorrow's WO: $0  |  Emergency dispatch cost: $1,800"
+            ),
+        },
+    ],
+    "valve_failure": [
+        {
+            "id": "vf_1", "type": "maintenance_record", "source": "IBM Maximo — Asset Service History",
+            "ts_label": "record retrieved", "icon": "🔧", "is_anomaly": True,
+            "headline": "Check valve replacement — OVERDUE 6 months  (H2S accelerated corrosion site)",
+            "ai_relevance": "Overdue maintenance + H2S environment + chattering signature confirms imminent valve disk failure",
+            "detail": (
+                "Maximo Asset Service Record — GLIFT-BRAVO-1 check valve\n"
+                "· Last replacement WO: WO-2024-1840, completed 18 months ago\n"
+                "· Recommended replacement interval: 12 months (elevated for H2S service)\n"
+                "· Gas composition: H2S: 1,240 ppm (sour service) — accelerates valve corrosion\n"
+                "· Part in local inventory: 1× CVD-1200-PSI-4IN @ $1,800\n"
+                "· ⚠ Valve chattering signature detected in discharge pressure historian"
+            ),
+        },
+        {
+            "id": "vf_2", "type": "process_data", "source": "Discharge Pressure Historian",
+            "ts_label": "last 2 hours", "icon": "📊", "is_anomaly": True,
+            "headline": "Cyclic ΔP: 42 psi amplitude  (nominal <8 psi)  ·  Valve chatter signature",
+            "ai_relevance": "42-psi cyclic amplitude is 5× normal — mean pressure normal so SCADA completely misses this",
+            "detail": (
+                "Discharge pressure historian — GLIFT-BRAVO-1\n"
+                "· Cyclic pressure variation: 42 psi peak-to-peak (nominal: <8 psi)\n"
+                "· Frequency: 1.8 Hz — consistent with valve disk flutter/chatter\n"
+                "· Mean discharge pressure: 978 psi (within normal range — NO SCADA ALARM)\n"
+                "· GDC AI: This oscillation is diagnostic for valve disk cracking. SCADA misses it because mean pressure is normal.\n"
+                "· Failure mode: Disk fracture → sudden compressor backflow within minutes."
+            ),
+        },
+    ],
+    "bearing_wear": [
+        {
+            "id": "bw_1", "type": "vibration_report", "source": "Online Vibration Analysis — ISO 10816",
+            "ts_label": "continuous monitoring", "icon": "〰", "is_anomaly": True,
+            "headline": "BPFI spectral peak: 0.42g ↑  (ISO alert: 0.30g)  ·  Trend: +0.08g/week",
+            "ai_relevance": "Bearing defect frequency detected weeks before SCADA overall vibration alarm fires",
+            "detail": (
+                "Vibration analysis — GLIFT-BRAVO-3 crankshaft bearing\n"
+                "· Bearing defect frequency (BPFI inner race): peak at 3× running frequency\n"
+                "· Current amplitude: 0.42g  |  ISO 10816-6 alert threshold: 0.30g\n"
+                "· Trend: +0.08g/week over last 4 weeks\n"
+                "· Overall vibration: 7.8 mm/s RMS  |  SCADA alarm: 12 mm/s (not triggered)\n"
+                "· ⚠ SCADA monitors overall vibration only. GDC AI isolates the BPFI spectral signature before overall amplitude alarms."
+            ),
+        },
+        {
+            "id": "bw_2", "type": "lab_report", "source": "Lube Oil Sample Analysis — Maximo Lab",
+            "ts_label": "sample 3 days ago", "icon": "🧪", "is_anomaly": True,
+            "headline": "Iron content: 48 ppm ↑  (was 12 ppm 90 days ago)  ·  Ferrous wear trend",
+            "ai_relevance": "4× increase in ferrous debris confirms active bearing wear — combined with spectral BPFI, failure within 16h",
+            "detail": (
+                "Spectroscopic oil analysis — GLIFT-BRAVO-3 crankcase (Maximo WO-PM-0334)\n"
+                "· Iron (Fe): 48 ppm ↑ (normal wear: <20 ppm; was 12 ppm 90 days ago)\n"
+                "· Chromium (Cr): 4 ppm (bearing cage alloy)\n"
+                "· Particle count >10μm: 1,840/mL (ISO cleanliness 18/16/13)\n"
+                "· Lab comment: 'Significant increase in ferrous debris. Recommend bearing inspection within 30 days.'\n"
+                "· ⚠ Sample arrived today. This data is NOT accessible to SCADA."
+            ),
+        },
+    ],
+    "valve_washout": [
+        {
+            "id": "vw_1", "type": "edr_log", "source": "Pason EDR — Driller's Log",
+            "ts_label": "0342h driller entry", "icon": "📋", "is_anomaly": True,
+            "headline": "\"Standpipe -180 PSI over 90 min. Increased to 95 SPM to compensate.\"",
+            "ai_relevance": "Rising SPM to compensate for declining standpipe pressure = VE loss = valve seat erosion",
+            "detail": (
+                "Pason EDR — Rig 42 Driller's Log  |  Driller: T. Wakefield\n"
+                "· Time: 0342h  |  Depth: 11,240 ft MD  |  Formation: 8½″ hole section\n"
+                "· 'Standpipe pressure declined 180 PSI over last 90 minutes while maintaining 89 SPM.'\n"
+                "· 'Had to increase Pump #1 to 95 SPM to maintain target 700 GPM circulating rate.'\n"
+                "· 'Pump #2 stable at 89 SPM. Pump #3 on standby.'\n"
+                "· ⚠ SCADA monitors pressure and SPM numerically but does NOT correlate rising SPM with declining VE — that pattern requires AI."
+            ),
+        },
+        {
+            "id": "vw_2", "type": "mud_report", "source": "Morning Mud Report — 06:00",
+            "ts_label": "06:00 mud report", "icon": "🪣", "is_anomaly": True,
+            "headline": "Pump #1 VE: 81% ↓  (nominal 95%)  ·  Flow deficit: -38 GPM vs target",
+            "ai_relevance": "VE 81% vs nominal 95% confirms valve leakage — ECD margin shrinking",
+            "detail": (
+                "Morning Mud Engineer Report — Rig 42  |  Mud Engineer: S. Okonkwo\n"
+                "· Target circulating rate: 700 GPM (ECD management at 11,240 ft)\n"
+                "· MUD-RIG42-1 VE: 81%  |  Requires 95 SPM (nominal 89 SPM at 95% VE)\n"
+                "· MUD-RIG42-2 VE: 95% (stable)  |  MUD-RIG42-3: standby\n"
+                "· ECD minimum for hole cleaning: 650 GPM. Currently 700 GPM. Margin: 50 GPM.\n"
+                "· If VE continues declining, hole cleaning becomes compromised before SCADA alarms."
+            ),
+        },
+        {
+            "id": "vw_3", "type": "maintenance_record", "source": "Fluid End Inspection Log",
+            "ts_label": "maintenance record", "icon": "🔧", "is_anomaly": False,
+            "headline": "Last valve inspection at 14,200 ft  ·  Current 11,240 ft  ·  OVERDUE 460 ft",
+            "ai_relevance": "Maintenance interval exceeded aligns precisely with declining VE — confirms valve erosion",
+            "detail": (
+                "MUD-RIG42-1 Fluid End Inspection History\n"
+                "· Last inspection: 14,200 ft MD (WO-FE-0128)\n"
+                "· Current depth: 11,240 ft MD  |  Footage since inspection: 2,960 ft\n"
+                "· Standard interval: 2,500 ft (per NOV pump manual)  |  Overdue by: 460 ft\n"
+                "· Mud type: 11.4 ppg OBM. Corrosion risk: moderate.\n"
+                "· Next connection window: ~22 minutes."
+            ),
+        },
+    ],
+    "pulsation_dampener_failure": [
+        {
+            "id": "pdf_1", "type": "emergency_alert", "source": "Pason EDR — Real-Time Alarm",
+            "ts_label": "REAL-TIME", "icon": "🚨", "is_anomaly": True,
+            "headline": "PRESSURE SPIKE: 5,200 PSI (rated: 5,000 PSI)  ·  Pressure hammer detected",
+            "ai_relevance": "EMERGENCY — bladder rupture confirmed — PNR = 0 minutes",
+            "detail": (
+                "EMERGENCY — Pason EDR Real-Time Alert — Rig 42\n"
+                "· Standpipe pressure peaked at 5,200 PSI (rated working pressure: 5,000 PSI)\n"
+                "· Pressure hammer amplitude: ±420 PSI in last 30 seconds\n"
+                "· SPM oscillation: ±28 SPM (nominal: ±3 SPM)\n"
+                "· Pressure cycle frequency: 3.2 Hz — consistent with bladder rupture\n"
+                "· ⛔ IMMEDIATE HAZARD: Standpipe or Kelly hose rupture risk"
+            ),
+        },
+    ],
+    "piston_seal_wear": [
+        {
+            "id": "psw_1", "type": "process_data", "source": "Fluid End Temperature Monitor",
+            "ts_label": "continuous trend", "icon": "🌡", "is_anomaly": True,
+            "headline": "Fluid end temp: 162°F ↑  (nominal 105°F)  ·  Rising +8°F/hr",
+            "ai_relevance": "Temperature rise of 57°F above nominal + pressure decline = piston-liner seal bypass confirmed",
+            "detail": (
+                "MUD-RIG42-2 fluid end temperature historian\n"
+                "· Current: 162°F  |  Nominal: 105°F  |  SCADA alarm: 180°F\n"
+                "· Temperature trend: +8°F/hr over last 4 hours\n"
+                "· Discharge pressure: 2,620 PSI (slight decline)  |  SPM: 91 (nominal 89)\n"
+                "· Root cause: Piston-liner seal wear generates frictional heat and allows fluid bypass\n"
+                "· SCADA alarm projected in ~2.5h at current rate."
+            ),
+        },
+        {
+            "id": "psw_2", "type": "maintenance_record", "source": "Liner Seal Change Log",
+            "ts_label": "maintenance record", "icon": "🔧", "is_anomaly": False,
+            "headline": "Liner seal last changed at 8,400 ft  ·  Current 11,240 ft  ·  OVERDUE 340 ft",
+            "ai_relevance": "Overdue seal interval aligns precisely with thermal signature — confirms seal degradation not liner damage",
+            "detail": (
+                "MUD-RIG42-2 Liner Seal Replacement History\n"
+                "· Last seal change: 8,400 ft MD (WO-FE-0124)\n"
+                "· Current depth: 11,240 ft MD  |  Footage on current seals: 2,840 ft\n"
+                "· Standard interval: 2,500 ft (per NOV pump manual)  |  Overdue: 340 ft\n"
+                "· Parts on-site: 2× NOV-SEAL-TK-7500 kits @ $3,800 each (✅ in stock)\n"
+                "· Replacement time: ~4 hours  |  Can be scheduled — no emergency dispatch required."
+            ),
+        },
+    ],
+    "gearbox_bearing_spalling": [
+        {
+            "id": "gbs_1", "type": "lab_report", "source": "Spectroscopic Oil Analysis — NOV",
+            "ts_label": "results 2 days ago", "icon": "🧪", "is_anomaly": True,
+            "headline": "Iron: 64 ppm ↑↑  (alarm: 50 ppm)  ·  Particle count: 22,400/mL",
+            "ai_relevance": "Oil analysis flagged this 48h ago — AI fusion with EDR torque signature confirms active spalling",
+            "detail": (
+                "Spectroscopic oil analysis — NOV 250T Top Drive gearbox (Maximo WO-PM-0341)\n"
+                "· Iron (Fe): 64 ppm ↑↑ (was 18 ppm 90 days ago; alarm: 50 ppm)\n"
+                "· Chromium (Cr): 8 ppm (bearing cage alloy confirms bearing origin)\n"
+                "· Particle count >4μm: 22,400/mL (ISO cleanliness 20/18/15 — severe)\n"
+                "· Lab comment: 'URGENT: Ferrous debris exceeds alarm threshold. Bearing race failure imminent. Remove from service.'\n"
+                "· ⚠ This sample was logged in Maximo 48 hours ago — no SCADA alert was generated."
+            ),
+        },
+        {
+            "id": "gbs_2", "type": "edr_log", "source": "Pason EDR — Torque Oscillation Log",
+            "ts_label": "last 4 hours", "icon": "🔄", "is_anomaly": True,
+            "headline": "Torque oscillation: ±3,200 ft-lb  (nominal ±800 ft-lb)  ·  @ 95 RPM",
+            "ai_relevance": "Oscillatory torque at 95 RPM consistent with BPFI at 48 Hz — bearing seizure before next trip",
+            "detail": (
+                "EDR torque historian — TOPDRIVE-RIG42-1\n"
+                "· Running speed: 95 RPM  |  WOB: 22 klbs\n"
+                "· Peak-to-peak torque variation: ±3,200 ft-lb (nominal: ±800 ft-lb)\n"
+                "· Gearbox vibration (ISO 10816-3): 0.65g @ 48 Hz — Zone C (excessive)\n"
+                "· Next planned trip: ~18 hours away at 11,800 ft TD\n"
+                "· ⚠ At current deterioration rate, bearing seizure is projected before next trip."
+            ),
+        },
+    ],
+    "hydraulic_leak": [
+        {
+            "id": "hl_1", "type": "rig_log", "source": "Rig Floor Maintenance Log",
+            "ts_label": "this tour (18h)", "icon": "📋", "is_anomaly": True,
+            "headline": "Hydraulic fluid top-up ×3 this tour  ·  3.2 gallons added  ·  Leak not located",
+            "ai_relevance": "AI calculates leak rate by fusing rig log top-up volumes with pressure trend — impossible from sensor data alone",
+            "detail": (
+                "Rig Floor Maintenance Log — TOPDRIVE-RIG42-1 (Current Tour)\n"
+                "· 0215h: Added 0.8 gal hydraulic fluid\n"
+                "· 0640h: Added 1.2 gal hydraulic fluid\n"
+                "· 1105h: Added 1.2 gal hydraulic fluid\n"
+                "· Total added this tour: 3.2 gallons over 18 hours\n"
+                "· Note by Derrickman K. Thompson: 'Slow leak somewhere between swivel and TDS body. Visible sheen on Kelly bushing. Not yet pinpointed.'\n"
+                "· ⚠ This log is in the paper rig report ONLY — not connected to SCADA."
+            ),
+        },
+        {
+            "id": "hl_2", "type": "process_data", "source": "Hydraulic System Pressure Monitor",
+            "ts_label": "continuous trend", "icon": "💧", "is_anomaly": True,
+            "headline": "Reservoir: 78% ↓  ·  Leak rate: 0.4 gal/hr  ·  Est. 3.6h to Low alarm",
+            "ai_relevance": "Precise leak rate calculated from log + pressure fusion — SCADA pressure alone shows no alarm",
+            "detail": (
+                "Hydraulic system monitor — TOPDRIVE-RIG42-1\n"
+                "· Reservoir level: 78%  |  At start of tour: 100%\n"
+                "· System pressure: 2,940 PSI  |  Low alarm: 2,500 PSI\n"
+                "· Calculated leak rate: 0.4 gal/hr\n"
+                "· Estimated time to Low alarm: ~3.6 hours\n"
+                "· Spare parts on rig: 2× hoses (3,000 PSI), 6× JIC fittings, 15 gal fluid\n"
+                "· SCADA status: Pressure at 2,940 PSI — NO ALARM ACTIVE."
+            ),
+        },
+    ],
+}
+
+GEMMA_FINDINGS = {
+    "sand_ingress": (
+        "🤖 Gemma: Correlating 3-day BS&W trend (+0.41%), salinity increase (+17%), and shift handover note with 1.2 mm/s vibration slope — "
+        "high confidence (94%) sand ingress is underway. SCADA will not alarm for ~14 days."
+    ),
+    "motor_overheat": (
+        "🤖 Gemma: 67% water cut combined with +2.1A/hr motor current slope exceeds ESP thermal model tolerance. "
+        "Winding insulation failure projected in 18h. SCADA alarm not until 280°F."
+    ),
+    "thermal_runaway": (
+        "🤖 Gemma: Fin-fan delta-T 43% above design combined with overdue PM (14 months vs 6-month interval) confirms cooling circuit degradation. "
+        "Discharge temp will cross SCADA alarm in ~8h. Crew already scheduled on-site tomorrow."
+    ),
+    "valve_failure": (
+        "🤖 Gemma: 42-psi cyclic amplitude (5× normal) in discharge pressure combined with overdue valve replacement (18mo vs 12mo) and H2S service conditions — "
+        "valve disk fracture is imminent within 15 minutes. SCADA shows normal mean pressure."
+    ),
+    "bearing_wear": (
+        "🤖 Gemma: BPFI spectral peak 40% above ISO alert threshold plus 4× increase in oil ferrous debris confirms active bearing race spalling. "
+        "SCADA overall vibration alarm not triggered. Failure within 16h if not addressed."
+    ),
+    "valve_washout": (
+        "🤖 Gemma: Rising SPM compensation (+6 from nominal) correlated with overdue fluid end inspection (460 ft past interval) and declining VE (81% vs 95%) — "
+        "valve seat erosion confirmed. Fluid end inspection recommended at next connection in ~22 minutes."
+    ),
+    "pulsation_dampener_failure": (
+        "🤖 Gemma: ⛔ EMERGENCY. Pressure hammer amplitude ±420 PSI at 3.2 Hz with ±28 SPM oscillation — "
+        "bladder rupture confirmed. Stop pumps immediately. Evacuate pump room."
+    ),
+    "piston_seal_wear": (
+        "🤖 Gemma: Fluid end temperature 57°F above nominal and rising at +8°F/hr, 340 ft past seal replacement interval — "
+        "piston-liner seal bypass confirmed. Parts in stock on-site. Schedule during next planned stop."
+    ),
+    "gearbox_bearing_spalling": (
+        "🤖 Gemma: Oil analysis (64 ppm Fe, 2 days old, not actioned) combined with ±3,200 ft-lb torque oscillation and 0.65g vibration at BPFI frequency — "
+        "bearing race is actively spalling. Seizure projected before next planned trip in 18h."
+    ),
+    "hydraulic_leak": (
+        "🤖 Gemma: Calculating 0.4 gal/hr leak rate from rig log top-up records + pressure trend. "
+        "Reservoir will reach Low alarm in ~3.6h. Repair materials on rig floor — locate leak during next stand break."
+    ),
+    "gas_lock": (
+        "🤖 Gemma: Intake PSI declining at -18 PSI/min below 1,000 PSI threshold — gas void fraction increasing in pump intake. "
+        "VFD frequency reduction available via SCADA. Act within 25 minutes before pump stall."
+    ),
+}
+
+
+@app.get("/api/kpis")
+def get_site_kpis():
+    """Live site KPIs with fault-driven degradation applied."""
+    import copy
+    import numpy as np
+    kpis = copy.deepcopy(SITE_KPI_BASE)
+    for asset_id, dg in active_degrades.items():
+        if not dg:
+            continue
+        meta = ASSET_REGISTRY.get(asset_id, {})
+        site = meta.get("site")
+        hist = list(HEALTH_HISTORY.get(asset_id, []))
+        health = 1.0
+        if hist:
+            n = len(hist)
+            weights = np.array([0.75 ** (n - 1 - i) for i in range(n)])
+            health = float(np.average(hist, weights=weights))
+        degradation = max(0.0, 1.0 - health)
+        if site == "pad_alpha" and meta.get("asset_class") == "esp":
+            kpis["pad_alpha"]["production_boed"] = max(0, round(
+                SITE_KPI_BASE["pad_alpha"]["production_boed"] * (1 - degradation * 0.18)))
+            kpis["pad_alpha"]["uptime_pct"] = round(max(60.0, 100.0 - degradation * 15), 1)
+        elif site == "pad_bravo" and meta.get("asset_class") == "gas_lift":
+            kpis["pad_bravo"]["production_boed"] = max(0, round(
+                SITE_KPI_BASE["pad_bravo"]["production_boed"] * (1 - degradation * 0.28)))
+            kpis["pad_bravo"]["uptime_pct"] = round(max(60.0, 100.0 - degradation * 20), 1)
+        elif site == "rig_42":
+            if meta.get("asset_class") == "mud_pump":
+                kpis["rig_42"]["rop_ft_per_hr"] = max(0, round(
+                    SITE_KPI_BASE["rig_42"]["rop_ft_per_hr"] * (1 - degradation * 0.45), 1))
+            kpis["rig_42"]["uptime_pct"] = round(max(60.0, 100.0 - degradation * 25), 1)
+    return {"kpis": kpis, "ts": datetime.utcnow().isoformat() + "Z"}
+
+
+@app.get("/api/intelligence-feed/{asset_id}")
+def get_intelligence_feed(asset_id: str, fault_type: str = None):
+    """Return pre-vetted unstructured data feed items for a fault type + asset combination."""
+    if not fault_type:
+        fault_type = (active_degrades.get(asset_id) or {}).get("fault_type")
+    items = INTELLIGENCE_FEED.get(fault_type, [])
+    finding = GEMMA_FINDINGS.get(fault_type, "")
+    return {
+        "asset_id": asset_id,
+        "fault_type": fault_type,
+        "items": items,
+        "gemma_finding": finding,
+    }
+
+
+@app.get("/api/mlops/status")
+def get_mlops_status():
+    """Simulated WAN + edge model status for the MLOps indicator on the dashboard."""
+    import random
+    active_count = len([d for d in active_degrades.values() if d])
+    wan_bw = round(random.uniform(0.8, 2.4), 1)
+    wan_state = "degraded" if wan_bw < 1.2 else "intermittent" if wan_bw < 1.8 else "stable"
+    return {
+        "wan_bandwidth_mbps": wan_bw,
+        "wan_state": wan_state,
+        "edge_compute_pct": min(95, 38 + active_count * 12 + random.randint(-3, 3)),
+        "models_loaded": list(HEALTH_MODELS.keys()),
+        "model_drift_detected": False,
+        "last_cloud_sync": "2026-05-13T14:30:00Z",
+        "ollama_model": OLLAMA_MODEL,
+        "inference_latency_ms": random.randint(28, 95),
+        "ts": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@app.get("/api/horizon")
+def get_horizon_alerts():
+    """Active AI predictions sorted by time urgency for Tier-1 dashboard."""
+    import numpy as np
+    alerts = []
+    for asset_id, dg in active_degrades.items():
+        if not dg:
+            continue
+        meta = ASSET_REGISTRY.get(asset_id, {})
+        fault_type = dg.get("fault_type")
+        if not fault_type:
+            continue
+        hist = list(HEALTH_HISTORY.get(asset_id, []))
+        health_score = 1.0
+        if hist:
+            n = len(hist)
+            weights = np.array([0.75 ** (n - 1 - i) for i in range(n)])
+            health_score = float(np.average(hist, weights=weights))
+        fp = FAULT_PHYSICS.get(fault_type, {})
+        fp_total_h = fp.get("total_hours", 1.0)
+        fp_scada_hs = fp.get("scada_alarm_health", 0.15)
+        fp_hlabel = fp.get("horizon_label", "Hours")
+        ttscada_min = round(max(0.0, (health_score - fp_scada_hs) * fp_total_h) * 60.0, 1)
+        alerts.append({
+            "asset_id": asset_id,
+            "site": meta.get("site"),
+            "asset_type": meta.get("asset_type"),
+            "fault_type": fault_type,
+            "fault_label": FAULT_PROFILES.get(fault_type, {}).get("label", fault_type),
+            "fault_color": FAULT_PROFILES.get(fault_type, {}).get("color", "#ff6d00"),
+            "health_score": round(health_score, 4),
+            "time_to_scada_minutes": ttscada_min,
+            "horizon_label": fp_hlabel,
+            "intervention_type": fp.get("intervention_type", "maintenance_scheduling"),
+        })
+    alerts.sort(key=lambda x: x["time_to_scada_minutes"])
+    return {"alerts": alerts, "ts": datetime.utcnow().isoformat() + "Z"}
+
+
+class HitlApproveRequest(BaseModel):
+    asset_id: str
+    fault_type: str
+    action_taken: str
+    cost_incurred: Optional[float] = 0
+
+
+@app.post("/api/agent/hitl-approve")
+def hitl_approve(req: HitlApproveRequest):
+    """
+    Human-in-the-Loop approval endpoint.
+    Stops the fault simulation, records the intervention, and returns the outcome card.
+    """
+    # Stop any active degrade/hold thread for this asset
+    if req.asset_id in active_degrades:
+        active_degrades[req.asset_id]["running"] = False
+        active_degrades.pop(req.asset_id, None)
+        HEALTH_HISTORY.pop(req.asset_id, None)
+    cost_avoided = REMEDIATION_COSTS.get(req.fault_type, 0)
+    fault_label  = FAULT_PROFILES.get(req.fault_type, {}).get("label", req.fault_type)
+    fp = FAULT_PHYSICS.get(req.fault_type, {})
+    intervention_type = fp.get("intervention_type", "maintenance_scheduling")
+    outcome_msgs = {
+        "supply_chain": f"SAP Purchase Order submitted. Part lead time per logistics — production protected.",
+        "maintenance_scheduling": f"Maximo Work Order updated. Crew dispatch amended — zero additional travel cost.",
+        "operational_control": f"Rig pump transition executed. Drilling operations continuous. ECD stable.",
+        "emergency_shutdown": f"Emergency stop confirmed. Area cleared. Damage assessment initiated.",
+    }
+    log.info(f"HITL approved: {req.fault_type} on {req.asset_id} | cost_avoided=${cost_avoided:,}")
+    return {
+        "status": "approved",
+        "asset_id": req.asset_id,
+        "fault_type": req.fault_type,
+        "fault_label": fault_label,
+        "action_taken": req.action_taken,
+        "cost_avoided": cost_avoided,
+        "cost_incurred": req.cost_incurred,
+        "net_savings": cost_avoided - req.cost_incurred,
+        "outcome_message": outcome_msgs.get(intervention_type, "Intervention recorded."),
+    }
+
+
+# ── Phase 12: Financial Justification Endpoint ───────────────────────────────
+@app.get("/api/financial-justification/{fault_type}")
+def get_financial_justification(fault_type: str):
+    """
+    Return itemized financial justification for a fault type.
+    Surfaced in the 'Self-Justifying Demo' feature — supports objection handling
+    by showing the engineering-based cost breakdown behind every financial figure.
+    """
+    justification = FINANCIAL_JUSTIFICATIONS.get(fault_type)
+    if not justification:
+        raise HTTPException(status_code=404, detail=f"No justification data for: {fault_type}")
+    return {"fault_type": fault_type, "justification": justification}
 
 
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────

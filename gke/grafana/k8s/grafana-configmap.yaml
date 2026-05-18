@@ -52,8 +52,16 @@ data:
 
 ---
 # ============================================================================
-# Grafana — GDC-PM O&G Predictive Maintenance Dashboard JSON
-# Phase 4.2 — fully aligned to ESP / Gas Lift / Mud Pump / Top Drive schema
+# Grafana — GDC-PM O&G SCADA / Telemetry Monitoring Dashboard
+# Phase 13.1 — Fixes: asset dropdown, hidden legends, SCADA-only alarm log,
+#              maxDataPoints limiting, Edge AI Detection Timeline renamed.
+#
+# NARRATIVE: This is a well-designed, functional reactive SCADA monitoring view.
+# The "Asset" dropdown lets the operator focus on any single asset.
+# The sensor charts show the full 12-hour shift window with hard alarm limits.
+# The SCADA Breach Log at the bottom fires ONLY when hard thresholds are crossed.
+# During early-stage fault development — when the GDC Edge AI is already
+# predicting failure — THIS DASHBOARD SHOWS NOTHING WRONG.
 # ============================================================================
 apiVersion: v1
 kind: ConfigMap
@@ -63,70 +71,83 @@ metadata:
 data:
   gdc-pm-dashboard.json: |
     {
-      "title": "GDC-PM — O&G Predictive Maintenance",
+      "title": "GDC-PM — O&G Asset Telemetry Monitor",
       "uid": "gdc-pm-main",
-      "tags": ["gdc", "predictive-maintenance", "oil-gas", "esp", "mud-pump"],
+      "tags": ["gdc", "scada", "telemetry", "oil-gas"],
       "timezone": "browser",
-      "refresh": "5s",
-      "time": { "from": "now-30m", "to": "now" },
+      "refresh": "10s",
+      "time": { "from": "now-2h", "to": "now" },
+      "templating": {
+        "list": [
+          {
+            "name": "asset",
+            "label": "Asset",
+            "type": "query",
+            "datasource": "AlloyDB-Omni",
+            "query": "SELECT DISTINCT asset_id FROM telemetry_events ORDER BY 1",
+            "definition": "SELECT DISTINCT asset_id FROM telemetry_events ORDER BY 1",
+            "refresh": 2,
+            "includeAll": true,
+            "allValue": "All",
+            "multi": false,
+            "regex": "",
+            "sort": 1,
+            "hide": 0,
+            "current": {},
+            "options": []
+          }
+        ]
+      },
+      "annotations": {
+        "list": [
+          {
+            "name": "SCADA Critical Alarms",
+            "datasource": "AlloyDB-Omni",
+            "enable": true,
+            "hide": false,
+            "iconColor": "red",
+            "rawQuery": "SELECT event_time AS time, asset_id || ': ' || predicted_label AS text FROM telemetry_events WHERE predicted_label IN ('gas_lock','valve_failure','pulsation_dampener_failure') AND event_time > NOW() - INTERVAL '12 hours' ORDER BY event_time",
+            "showIn": 0,
+            "titleFormat": "SCADA ALARM"
+          }
+        ]
+      },
       "panels": [
 
         {
-          "id": 20,
-          "type": "table",
-          "title": "🚨  Active Alerts — Unacknowledged Faults (Last Hour)",
-          "description": "ML-detected faults not yet acknowledged by an operator. ESP gas_lock and Mud Pump dampener failures are immediate emergencies.",
-          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 7 },
-          "options": {
-            "sortBy": [{ "desc": true, "displayName": "event_time" }],
-            "cellHeight": "sm",
-            "footer": { "show": false }
-          },
-          "fieldConfig": {
-            "defaults": { "custom": { "displayMode": "auto", "inspect": false } },
-            "overrides": [
-              { "matcher": { "id": "byName", "options": "event_time" },
-                "properties": [{ "id": "displayName", "value": "Time" }, { "id": "custom.width", "value": 130 }] },
-              { "matcher": { "id": "byName", "options": "asset_id" },
-                "properties": [{ "id": "displayName", "value": "Asset" }, { "id": "custom.width", "value": 160 }] },
-              { "matcher": { "id": "byName", "options": "predicted_label" },
-                "properties": [
-                  { "id": "displayName", "value": "ML Fault" },
-                  { "id": "custom.width", "value": 200 },
-                  { "id": "custom.displayMode", "value": "color-background" },
-                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } }
-                ]},
-              { "matcher": { "id": "byName", "options": "confidence" },
-                "properties": [{ "id": "displayName", "value": "Confidence" }, { "id": "unit", "value": "percentunit" }, { "id": "custom.width", "value": 100 }] },
-              { "matcher": { "id": "byName", "options": "psi" },
-                "properties": [{ "id": "displayName", "value": "PSI" }, { "id": "custom.width", "value": 80 }] },
-              { "matcher": { "id": "byName", "options": "temp_f" },
-                "properties": [{ "id": "displayName", "value": "Temp °F" }, { "id": "custom.width", "value": 80 }] },
-              { "matcher": { "id": "byName", "options": "vibration" },
-                "properties": [{ "id": "displayName", "value": "Vib mm/s" }, { "id": "custom.width", "value": 80 }] },
-              { "matcher": { "id": "byName", "options": "motor_amps" },
-                "properties": [{ "id": "displayName", "value": "Amps" }, { "id": "custom.width", "value": 70 }] },
-              { "matcher": { "id": "byName", "options": "spm" },
-                "properties": [{ "id": "displayName", "value": "SPM" }, { "id": "custom.width", "value": 70 }] },
-              { "matcher": { "id": "byName", "options": "recommended_action" },
-                "properties": [{ "id": "displayName", "value": "Recommended Action" }] }
-            ]
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time, asset_id, predicted_label, ROUND(confidence::numeric, 3) AS confidence, psi, temp_f, vibration, motor_amps, spm, recommended_action FROM telemetry_events WHERE acknowledged = FALSE AND predicted_label != 'normal' AND event_time > NOW() - INTERVAL '1 hour' ORDER BY event_time DESC LIMIT 40",
-              "format": "table"
-            }
-          ]
+          "id": 1,
+          "type": "row",
+          "title": "Fleet Status",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 0, "w": 24, "h": 1 }
         },
 
         {
           "id": 21,
           "type": "stat",
-          "title": "🔴  Critical Faults (30m)",
-          "description": "gas_lock · valve_failure · pulsation_dampener_failure",
-          "gridPos": { "x": 0, "y": 7, "w": 4, "h": 4 },
+          "title": "Active Assets (10m)",
+          "description": "Assets reporting telemetry in the last 10 minutes.",
+          "gridPos": { "x": 0, "y": 1, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "short",
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red", "value": null },
+                { "color": "orange", "value": 8 },
+                { "color": "green", "value": 12 }
+              ]}
+            }
+          },
+          "targets": [{ "datasource": "AlloyDB-Omni", "rawSql": "SELECT COUNT(DISTINCT asset_id) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '10 minutes'", "format": "table" }]
+        },
+
+        {
+          "id": 22,
+          "type": "stat",
+          "title": "SCADA Hard-Limit Alarms (1h)",
+          "description": "Count of readings where sensor values physically crossed a hard SCADA alarm threshold (PSI, temp, vibration limits) in the last hour. This is what a traditional monitoring system would catch. Zero = normal operations from SCADA's perspective.",
+          "gridPos": { "x": 4, "y": 1, "w": 4, "h": 4 },
           "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
             "defaults": {
@@ -134,49 +155,22 @@ data:
               "thresholds": { "mode": "absolute", "steps": [
                 { "color": "green", "value": null },
                 { "color": "red", "value": 1 }
-              ]},
-              "mappings": []
-            }
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('gas_lock','valve_failure','pulsation_dampener_failure') AND event_time > NOW() - INTERVAL '30 minutes'",
-              "format": "table"
-            }
-          ]
-        },
-
-        {
-          "id": 22,
-          "type": "stat",
-          "title": "🟠  Warnings (30m)",
-          "description": "sand_ingress · motor_overheat · thermal_runaway · bearing_wear · valve_washout · piston_seal_wear · gearbox_bearing_spalling · hydraulic_leak",
-          "gridPos": { "x": 4, "y": 7, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "area", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
-          "fieldConfig": {
-            "defaults": {
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null },
-                { "color": "orange", "value": 1 }
               ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE predicted_label IN ('sand_ingress','motor_overheat','thermal_runaway','bearing_wear','valve_washout','piston_seal_wear','gearbox_bearing_spalling','hydraulic_leak') AND event_time > NOW() - INTERVAL '30 minutes'",
-              "format": "table"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT COUNT(*) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '1 hour' AND ((asset_id LIKE 'ESP-%' AND (psi < 800 OR psi > 1850 OR temp_f > 230 OR motor_amps > 105 OR motor_amps < 45 OR vibration > 10)) OR (asset_id LIKE 'GLIFT-%' AND (psi < 600 OR psi > 1200 OR temp_f > 230 OR vibration > 10)) OR (asset_id LIKE 'MUD-%' AND (psi < 1800 OR psi > 3800 OR spm > 120 OR spm < 60 OR vibration > 10)) OR (asset_id LIKE 'TOPDRIVE-%' AND (temp_f > 230 OR vibration > 10)))",
+            "format": "table"
+          }]
         },
 
         {
           "id": 23,
           "type": "stat",
-          "title": "⏱  Mins Since Last Critical",
-          "description": "Time since last gas_lock, valve_failure, or dampener rupture. Green >3h, red <15m.",
-          "gridPos": { "x": 8, "y": 7, "w": 4, "h": 4 },
+          "title": "Time Since Last Hard Alarm",
+          "description": "Minutes since last SCADA hard-threshold breach across the fleet. Green = >3 hours (healthy). Red = <15 minutes (active emergency).",
+          "gridPos": { "x": 8, "y": 1, "w": 4, "h": 4 },
           "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "fieldConfig": {
             "defaults": {
@@ -190,382 +184,370 @@ data:
               ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(event_time)))/60 AS value FROM telemetry_events WHERE predicted_label IN ('gas_lock','valve_failure','pulsation_dampener_failure')",
-              "format": "table"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT EXTRACT(EPOCH FROM (NOW() - MAX(event_time)))/60 AS value FROM telemetry_events WHERE (asset_id LIKE 'ESP-%' AND (psi < 800 OR psi > 1850 OR temp_f > 230 OR motor_amps > 105 OR motor_amps < 45 OR vibration > 10)) OR (asset_id LIKE 'GLIFT-%' AND (psi < 600 OR psi > 1200 OR temp_f > 230 OR vibration > 10)) OR (asset_id LIKE 'MUD-%' AND (psi < 1800 OR psi > 3800 OR spm > 120 OR spm < 60 OR vibration > 10)) OR (asset_id LIKE 'TOPDRIVE-%' AND (temp_f > 230 OR vibration > 10))",
+            "format": "table"
+          }]
         },
 
         {
           "id": 24,
           "type": "stat",
-          "title": "🛢  Active Assets (5m)",
-          "description": "Assets with at least one telemetry row in the last 5 minutes.",
-          "gridPos": { "x": 12, "y": 7, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Avg ESP Intake Pressure",
+          "description": "Mean PSI across all ESP assets in last 10 min. Nominal 1,200–1,600 PSI. SCADA LOW alarm fires at 800 PSI.",
+          "gridPos": { "x": 12, "y": 1, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["mean"] } },
           "fieldConfig": {
             "defaults": {
+              "unit": "pressurepsi",
+              "decimals": 0,
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red",   "value": null },
-                { "color": "orange","value": 5 },
-                { "color": "green", "value": 10 }
+                { "color": "red",    "value": null },
+                { "color": "orange", "value": 800 },
+                { "color": "green",  "value": 1100 },
+                { "color": "yellow", "value": 1700 },
+                { "color": "red",    "value": 1850 }
               ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(DISTINCT asset_id) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '5 minutes'",
-              "format": "table"
-            }
-          ]
+          "targets": [{ "datasource": "AlloyDB-Omni", "rawSql": "SELECT AVG(psi) AS value FROM telemetry_events WHERE asset_id LIKE 'ESP-%' AND event_time > NOW() - INTERVAL '10 minutes'", "format": "table" }]
         },
 
         {
           "id": 25,
           "type": "stat",
-          "title": "Unacknowledged Alerts",
-          "gridPos": { "x": 16, "y": 7, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Avg Gas Lift Discharge P",
+          "description": "Mean PSI across Gas Lift assets. Nominal 940–1,060 PSI. SCADA LOW at 600 PSI.",
+          "gridPos": { "x": 16, "y": 1, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["mean"] } },
           "fieldConfig": {
             "defaults": {
+              "unit": "pressurepsi",
+              "decimals": 0,
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null },
-                { "color": "yellow", "value": 1 },
-                { "color": "red", "value": 5 }
+                { "color": "red",    "value": null },
+                { "color": "orange", "value": 600 },
+                { "color": "green",  "value": 850 },
+                { "color": "yellow", "value": 1100 },
+                { "color": "red",    "value": 1200 }
               ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT COUNT(*) as value FROM telemetry_events WHERE acknowledged = FALSE AND predicted_label != 'normal' AND event_time > NOW() - INTERVAL '1 hour'",
-              "format": "table"
-            }
-          ]
+          "targets": [{ "datasource": "AlloyDB-Omni", "rawSql": "SELECT AVG(psi) AS value FROM telemetry_events WHERE asset_id LIKE 'GLIFT-%' AND event_time > NOW() - INTERVAL '10 minutes'", "format": "table" }]
         },
 
         {
           "id": 26,
           "type": "stat",
-          "title": "Anomaly Rate (30m)",
-          "gridPos": { "x": 20, "y": 7, "w": 4, "h": 4 },
-          "options": { "colorMode": "background", "graphMode": "none", "textMode": "auto", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Avg Mud Pump Discharge P",
+          "description": "Mean PSI across Mud Pump assets. Nominal 2,550–3,150 PSI. SCADA HIGH at 3,800 PSI.",
+          "gridPos": { "x": 20, "y": 1, "w": 4, "h": 4 },
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["mean"] } },
           "fieldConfig": {
             "defaults": {
-              "unit": "percent",
-              "decimals": 1,
+              "unit": "pressurepsi",
+              "decimals": 0,
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green",  "value": null },
-                { "color": "yellow", "value": 15 },
-                { "color": "red",    "value": 30 }
+                { "color": "red",    "value": null },
+                { "color": "orange", "value": 1800 },
+                { "color": "green",  "value": 2400 },
+                { "color": "yellow", "value": 3300 },
+                { "color": "red",    "value": 3800 }
               ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT ROUND(100.0 * SUM(CASE WHEN predicted_label != 'normal' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 1) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '30 minutes'",
-              "format": "table"
-            }
-          ]
+          "targets": [{ "datasource": "AlloyDB-Omni", "rawSql": "SELECT AVG(psi) AS value FROM telemetry_events WHERE asset_id LIKE 'MUD-%' AND event_time > NOW() - INTERVAL '10 minutes'", "format": "table" }]
         },
 
         {
-          "id": 9,
-          "type": "state-timeline",
-          "title": "Fleet Health Timeline — ESP · Gas Lift · Mud Pump · Top Drive",
-          "description": "Green=Normal · Orange=Warning · Red=Critical. Covers all 15 O&G assets.",
-          "gridPos": { "x": 0, "y": 11, "w": 24, "h": 7 },
-          "options": {
-            "mergeValues": true,
-            "showValue": "never",
-            "alignValue": "left",
-            "rowHeight": 0.9,
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "custom": { "lineWidth": 0, "fillOpacity": 85 },
-              "mappings": [
-                { "type": "value", "options": { "2": { "text": "Warning",  "color": "#FF9100", "index": 0 } } },
-                { "type": "value", "options": { "3": { "text": "Critical", "color": "#FF1744", "index": 1 } } }
-              ],
-              "thresholds": { "mode": "absolute", "steps": [ { "color": "#00BFA5", "value": null } ] }
-            }
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, CASE predicted_label WHEN 'gas_lock'                   THEN 3 WHEN 'valve_failure'              THEN 3 WHEN 'pulsation_dampener_failure' THEN 3 WHEN 'sand_ingress'               THEN 2 WHEN 'motor_overheat'             THEN 2 WHEN 'thermal_runaway'            THEN 2 WHEN 'bearing_wear'               THEN 2 WHEN 'valve_washout'              THEN 2 WHEN 'piston_seal_wear'           THEN 2 WHEN 'gearbox_bearing_spalling'   THEN 2 WHEN 'hydraulic_leak'             THEN 2 ELSE NULL END AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND predicted_label != 'normal' ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "id": 2,
+          "type": "row",
+          "title": "Pressure",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 }
         },
 
         {
           "id": 5,
           "type": "timeseries",
           "title": "ESP Intake Pressure (PSI)",
-          "description": "Nominal 1,200–1,600 PSI. Below 800 PSI → Gas Lock risk. Above 1,800 PSI → check valves.",
-          "gridPos": { "x": 0, "y": 18, "w": 8, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "description": "Nominal 1,200–1,600 PSI.  ▼ SCADA LOW alarm: 800 PSI (Gas Lock).  ▲ SCADA HIGH alarm: 1,850 PSI. A gradual declining slope — the gas lock precursor the Edge AI detects — sits well above the 800 PSI threshold and looks completely normal on this chart.",
+          "gridPos": { "x": 0, "y": 6, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "none" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "pressurepsi",
+              "custom": { "lineWidth": 2, "fillOpacity": 6, "thresholdsStyle": { "mode": "line" } },
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red", "value": null }, { "color": "green", "value": 800 }, { "color": "yellow", "value": 1700 }, { "color": "red", "value": 1850 }
-              ]},
-              "custom": { "thresholdsStyle": { "mode": "line" } }
+                { "color": "red",    "value": null },
+                { "color": "green",  "value": 800 },
+                { "color": "green",  "value": 1100 },
+                { "color": "yellow", "value": 1700 },
+                { "color": "red",    "value": 1850 }
+              ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
         },
 
         {
           "id": 31,
           "type": "timeseries",
           "title": "Gas Lift Discharge Pressure (PSI)",
-          "description": "Nominal 940–1,060 PSI. Below 600 PSI → Check Valve Failure. Drop rate signals valve seat wear.",
-          "gridPos": { "x": 8, "y": 18, "w": 8, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "description": "Nominal 940–1,060 PSI.  ▼ SCADA LOW alarm: 600 PSI (Check Valve Failure). A slow rate-of-decline of −2 PSI/hr — the valve washout signature — is visible in this 12-hour view but sits far above the 600 PSI alarm limit. Hover to identify individual assets.",
+          "gridPos": { "x": 12, "y": 6, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "none" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "pressurepsi",
+              "custom": { "lineWidth": 2, "fillOpacity": 6, "thresholdsStyle": { "mode": "line" } },
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red", "value": null }, { "color": "green", "value": 600 }, { "color": "yellow", "value": 1100 }, { "color": "red", "value": 1200 }
-              ]},
-              "custom": { "thresholdsStyle": { "mode": "line" } }
+                { "color": "red",    "value": null },
+                { "color": "green",  "value": 600 },
+                { "color": "green",  "value": 900 },
+                { "color": "yellow", "value": 1100 },
+                { "color": "red",    "value": 1200 }
+              ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
         },
 
         {
-          "id": 32,
-          "type": "timeseries",
-          "title": "Mud Pump Discharge Pressure (PSI)",
-          "description": "Nominal 2,550–3,150 PSI. High pressure spikes → Dampener Rupture. Slow decline → Valve Washout.",
-          "gridPos": { "x": 16, "y": 18, "w": 8, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "pressurepsi",
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red", "value": null }, { "color": "green", "value": 1800 }, { "color": "yellow", "value": 3300 }, { "color": "red", "value": 3800 }
-              ]},
-              "custom": { "thresholdsStyle": { "mode": "line" } }
-            }
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'MUD-%' GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
-        },
-
-        {
-          "id": 6,
-          "type": "timeseries",
-          "title": "Temperature °F — All Assets",
-          "description": "ESP winding 180–220°F · Gas Lift 140–178°F · Mud Pump fluid 90–120°F · Top Drive gearbox 130–165°F",
-          "gridPos": { "x": 0, "y": 26, "w": 12, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "fahrenheit",
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null }, { "color": "yellow", "value": 180 }, { "color": "red", "value": 230 }
-              ]},
-              "custom": { "lineWidth": 1, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } }
-            }
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(temp_f) AS value FROM telemetry_events WHERE $__timeFilter(event_time) GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "id": 3,
+          "type": "row",
+          "title": "Vibration & Temperature",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 15, "w": 24, "h": 1 }
         },
 
         {
           "id": 7,
           "type": "timeseries",
-          "title": "Vibration mm/s — All Assets",
-          "description": "ESP vib 0.8–2.0 mm/s · Gas Lift 1.0–2.5 · Mud Pump 2.5–4.5 · Top Drive 1.8–3.8. Rising vib = earliest fault precursor.",
-          "gridPos": { "x": 12, "y": 26, "w": 12, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "title": "Vibration (mm/s) — All Asset Types",
+          "description": "Nominal ranges: ESP 0.8–2.0  ·  Gas Lift 1.0–2.5  ·  Mud Pump 2.5–4.5  ·  Top Drive 1.8–3.8.  ▲ SCADA HIGH alarm: 10.0 mm/s fleet-wide. A +0.05 mm/s/hour bearing wear slope is invisible here — it won't reach 10.0 mm/s for weeks. Hover to identify asset. Use Asset dropdown to isolate a single line.",
+          "gridPos": { "x": 0, "y": 16, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "velocityms",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
               "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null }, { "color": "yellow", "value": 5.0 }, { "color": "red", "value": 10.0 }
-              ]},
-              "custom": { "lineWidth": 1, "fillOpacity": 8, "thresholdsStyle": { "mode": "line" } }
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 5.0 },
+                { "color": "red",    "value": 10.0 }
+              ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 6,
+          "type": "timeseries",
+          "title": "Temperature (°F) — All Asset Types",
+          "description": "Nominal ranges: ESP winding 180–220°F  ·  Gas Lift 140–178°F  ·  Mud Pump fluid 90–120°F  ·  Top Drive gearbox 130–165°F.  ▲ SCADA HIGH alarm: 230°F fleet-wide. A slow thermal climb (+1°F/hr from Motor Overheat or Thermal Runaway) has 50+ hours before breaching this threshold.",
+          "gridPos": { "x": 12, "y": 16, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "fahrenheit",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 180 },
+                { "color": "red",    "value": 230 }
+              ]}
             }
-          ]
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(temp_f) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 4,
+          "type": "row",
+          "title": "Electrical & Mechanical",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 25, "w": 24, "h": 1 }
         },
 
         {
           "id": 29,
           "type": "timeseries",
           "title": "Motor Current — ESP Assets (A)",
-          "description": "Nominal 60–90 A. Overcurrent >105 A → Motor Overheat. Undercurrent <45 A → Gas Lock or Sand Erosion impeller loss.",
-          "gridPos": { "x": 0, "y": 34, "w": 12, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "description": "Nominal 60–90 A.  ▲ SCADA HIGH: >105 A (Motor Overheat).  ▼ SCADA LOW: <45 A (Gas Lock or sand impeller erosion). A moderate current drop from 82 A to 74 A combined with rising vibration is the early Gas Lock precursor — no single SCADA threshold is breached.",
+          "gridPos": { "x": 0, "y": 26, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "none" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "amp",
+              "custom": { "lineWidth": 2, "fillOpacity": 8, "thresholdsStyle": { "mode": "line" } },
               "thresholds": { "mode": "absolute", "steps": [
                 { "color": "red",    "value": null },
                 { "color": "green",  "value": 45 },
+                { "color": "green",  "value": 55 },
                 { "color": "yellow", "value": 95 },
                 { "color": "red",    "value": 105 }
-              ]},
-              "custom": { "lineWidth": 1, "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } }
+              ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(motor_amps) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' AND motor_amps IS NOT NULL GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(motor_amps) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' AND ('All' = '$asset' OR asset_id = '$asset') AND motor_amps IS NOT NULL GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
         },
 
         {
           "id": 30,
           "type": "timeseries",
           "title": "Stroke Rate — Mud Pump Assets (SPM)",
-          "description": "Nominal 75–100 SPM. Erratic / chaotic SPM → Pulsation Dampener Rupture (emergency). Declining SPM → Valve Washout or Seal Wear.",
-          "gridPos": { "x": 12, "y": 34, "w": 12, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "description": "Nominal 75–100 SPM.  ▲ SCADA HIGH: >120 SPM.  ▼ SCADA LOW: <60 SPM. A gradual SPM decline from 92 to 84 SPM combined with rising discharge pressure indicates Valve Seat Washout — no SCADA threshold is breached at this stage.",
+          "gridPos": { "x": 12, "y": 26, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "none" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
           "fieldConfig": {
             "defaults": {
               "unit": "short",
-              "custom": { "lineWidth": 1, "fillOpacity": 10, "thresholdsStyle": { "mode": "line" } },
+              "custom": { "lineWidth": 2, "fillOpacity": 8, "thresholdsStyle": { "mode": "line" } },
               "thresholds": { "mode": "absolute", "steps": [
                 { "color": "red",    "value": null },
                 { "color": "green",  "value": 60 },
-                { "color": "yellow", "value": 110 },
+                { "color": "green",  "value": 70 },
+                { "color": "yellow", "value": 105 },
                 { "color": "red",    "value": 120 }
               ]}
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, AVG(spm) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'MUD-%' AND spm IS NOT NULL GROUP BY event_time, asset_id ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(spm) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'MUD-%' AND ('All' = '$asset' OR asset_id = '$asset') AND spm IS NOT NULL GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
         },
 
         {
-          "id": 10,
-          "type": "timeseries",
-          "title": "ML Confidence — Failure Predictions Only",
-          "description": "Confidence when the XGBoost model scores a non-normal prediction. Rising confidence = escalating certainty. V2 edge-calibrated model produces tighter, more stable trajectories than V1.",
-          "gridPos": { "x": 0, "y": 42, "w": 12, "h": 8 },
-          "options": { "tooltip": { "mode": "multi" }, "legend": { "displayMode": "list", "placement": "bottom" } },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "percentunit",
-              "min": 0, "max": 1,
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "#FFD600", "value": null }, { "color": "#FF9100", "value": 0.7 }, { "color": "#FF1744", "value": 0.9 }
-              ]},
-              "custom": { "lineWidth": 2, "fillOpacity": 15, "thresholdsStyle": { "mode": "line+area" } }
-            }
-          },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time AS time, asset_id AS metric, confidence AS value FROM telemetry_events WHERE predicted_label != 'normal' AND $__timeFilter(event_time) ORDER BY event_time",
-              "format": "time_series"
-            }
-          ]
+          "id": 50,
+          "type": "row",
+          "title": "⚡ Edge AI vs SCADA",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 35, "w": 24, "h": 1 }
         },
 
         {
-          "id": 11,
-          "type": "timeseries",
-          "title": "Anomaly Rate % — Hourly Trend (24h)",
-          "description": "% of all scored readings flagged as failures per hour. Normally near 0%. Spikes = active fault injection or real degradation.",
-          "gridPos": { "x": 12, "y": 42, "w": 12, "h": 8 },
-          "options": { "tooltip": { "mode": "single" }, "legend": { "displayMode": "list", "placement": "bottom" } },
+          "id": 9,
+          "type": "state-timeline",
+          "title": "⚡ GDC Edge AI Detection Timeline",
+          "description": "This panel shows what the GDC XGBoost model has detected — multi-variable fault precursors scored in real-time at the edge. Orange = Warning-level prediction. Red = Critical prediction. Compare this to the SCADA Breach Log below: the AI detections appear hours or days before the SCADA log would contain a single entry.",
+          "gridPos": { "x": 0, "y": 36, "w": 24, "h": 10 },
+          "maxDataPoints": 200,
+          "options": {
+            "mergeValues": true,
+            "showValue": "auto",
+            "alignValue": "left",
+            "rowHeight": 0.9,
+            "tooltip": { "mode": "single" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
           "fieldConfig": {
             "defaults": {
-              "unit": "percent",
-              "min": 0,
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green", "value": null }, { "color": "yellow", "value": 15 }, { "color": "red", "value": 30 }
-              ]},
-              "custom": { "lineWidth": 2, "fillOpacity": 20, "thresholdsStyle": { "mode": "line" } }
+              "custom": { "lineWidth": 0, "fillOpacity": 85 },
+              "mappings": [
+                { "type": "value", "options": { "2": { "text": "AI Warning",  "color": "#FF9100", "index": 0 } } },
+                { "type": "value", "options": { "3": { "text": "AI Critical", "color": "#FF1744", "index": 1 } } }
+              ],
+              "thresholds": { "mode": "absolute", "steps": [ { "color": "#00BFA5", "value": null } ] }
             }
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT date_trunc('hour', event_time) AS time, 'Anomaly Rate' AS metric, ROUND(100.0 * SUM(CASE WHEN predicted_label != 'normal' THEN 1 ELSE 0 END) / NULLIF(COUNT(*), 0), 2) AS value FROM telemetry_events WHERE event_time > NOW() - INTERVAL '24 hours' GROUP BY 1 ORDER BY 1",
-              "format": "time_series"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, MAX(CASE predicted_label WHEN 'gas_lock' THEN 3 WHEN 'valve_failure' THEN 3 WHEN 'pulsation_dampener_failure' THEN 3 WHEN 'sand_ingress' THEN 2 WHEN 'motor_overheat' THEN 2 WHEN 'thermal_runaway' THEN 2 WHEN 'bearing_wear' THEN 2 WHEN 'valve_washout' THEN 2 WHEN 'piston_seal_wear' THEN 2 WHEN 'gearbox_bearing_spalling' THEN 2 WHEN 'hydraulic_leak' THEN 2 ELSE NULL END) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND predicted_label != 'normal' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
         },
 
         {
           "id": 8,
           "type": "table",
-          "title": "Recent ML Detections — Full Log",
-          "description": "All telemetry events with ML predictions. Includes motor_amps (ESP) and spm (Mud Pump).",
-          "gridPos": { "x": 0, "y": 50, "w": 24, "h": 8 },
-          "options": { "sortBy": [{ "desc": true, "displayName": "event_time" }], "cellHeight": "sm" },
+          "title": "🔴 SCADA Hard-Threshold Breach Log",
+          "description": "This table shows ONLY the events where sensor values physically crossed a hard SCADA alarm limit — what a traditional monitoring system would actually generate as alarms. During normal and early-stage fault development (when the Edge AI timeline above is already populated), this table is empty. That is the point: by the time this log fills up, the corrective maintenance window is already compressed.",
+          "gridPos": { "x": 0, "y": 43, "w": 24, "h": 9 },
+          "options": {
+            "sortBy": [{ "desc": true, "displayName": "Time" }],
+            "cellHeight": "sm",
+            "footer": { "show": false }
+          },
           "fieldConfig": {
-            "defaults": {},
+            "defaults": { "custom": { "displayMode": "auto", "inspect": false } },
             "overrides": [
-              { "matcher": { "id": "byName", "options": "predicted_label" },
+              { "matcher": { "id": "byName", "options": "event_time" },
+                "properties": [{ "id": "displayName", "value": "Time" }, { "id": "custom.width", "value": 150 }] },
+              { "matcher": { "id": "byName", "options": "asset_id" },
+                "properties": [{ "id": "displayName", "value": "Asset" }, { "id": "custom.width", "value": 150 }] },
+              { "matcher": { "id": "byName", "options": "alarm_type" },
                 "properties": [
+                  { "id": "displayName", "value": "Threshold Breached" },
+                  { "id": "custom.width", "value": 220 },
                   { "id": "custom.displayMode", "value": "color-background" },
-                  { "id": "custom.width", "value": 180 },
-                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "red", "value": 1 }] } }
+                  { "id": "thresholds", "value": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] } }
                 ]},
-              { "matcher": { "id": "byName", "options": "confidence" },
-                "properties": [{ "id": "unit", "value": "percentunit" }, { "id": "custom.width", "value": 90 }] }
+              { "matcher": { "id": "byName", "options": "psi" },
+                "properties": [{ "id": "displayName", "value": "PSI" }, { "id": "custom.width", "value": 75 }] },
+              { "matcher": { "id": "byName", "options": "temp_f" },
+                "properties": [{ "id": "displayName", "value": "Temp °F" }, { "id": "custom.width", "value": 75 }] },
+              { "matcher": { "id": "byName", "options": "vibration" },
+                "properties": [{ "id": "displayName", "value": "Vib mm/s" }, { "id": "custom.width", "value": 80 }] },
+              { "matcher": { "id": "byName", "options": "motor_amps" },
+                "properties": [{ "id": "displayName", "value": "Amps" }, { "id": "custom.width", "value": 65 }] },
+              { "matcher": { "id": "byName", "options": "spm" },
+                "properties": [{ "id": "displayName", "value": "SPM" }, { "id": "custom.width", "value": 65 }] }
             ]
           },
-          "targets": [
-            {
-              "datasource": "AlloyDB-Omni",
-              "rawSql": "SELECT event_time, asset_id, psi, temp_f, vibration, motor_amps, spm, predicted_label, ROUND(confidence::numeric, 3) AS confidence, acknowledged FROM telemetry_events WHERE $__timeFilter(event_time) ORDER BY event_time DESC LIMIT 75",
-              "format": "table"
-            }
-          ]
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT event_time, asset_id, CASE WHEN asset_id LIKE 'ESP-%' AND psi < 800 THEN 'ESP PSI LOW (<800) — Gas Lock' WHEN asset_id LIKE 'ESP-%' AND psi > 1850 THEN 'ESP PSI HIGH (>1850)' WHEN asset_id LIKE 'ESP-%' AND motor_amps < 45 THEN 'ESP AMPS LOW (<45A) — Undercurrent' WHEN asset_id LIKE 'ESP-%' AND motor_amps > 105 THEN 'ESP AMPS HIGH (>105A) — Overcurrent' WHEN asset_id LIKE 'GLIFT-%' AND psi < 600 THEN 'GasLift PSI LOW (<600) — Valve Failure' WHEN asset_id LIKE 'GLIFT-%' AND psi > 1200 THEN 'GasLift PSI HIGH (>1200)' WHEN asset_id LIKE 'MUD-%' AND psi < 1800 THEN 'MudPump PSI LOW (<1800)' WHEN asset_id LIKE 'MUD-%' AND psi > 3800 THEN 'MudPump PSI HIGH (>3800) — Rupture Risk' WHEN asset_id LIKE 'MUD-%' AND spm < 60 THEN 'MudPump SPM LOW (<60) — Stall' WHEN asset_id LIKE 'MUD-%' AND spm > 120 THEN 'MudPump SPM HIGH (>120) — Runaway' WHEN temp_f > 230 THEN 'TEMP HIGH (>230°F) — Thermal Alarm' WHEN vibration > 10 THEN 'VIB HIGH (>10 mm/s) — Vibration Alarm' ELSE 'Threshold Breach' END AS alarm_type, psi, temp_f, vibration, motor_amps, spm FROM telemetry_events WHERE $__timeFilter(event_time) AND ('All' = '$asset' OR asset_id = '$asset') AND ((asset_id LIKE 'ESP-%' AND (psi < 800 OR psi > 1850 OR temp_f > 230 OR motor_amps > 105 OR motor_amps < 45 OR vibration > 10)) OR (asset_id LIKE 'GLIFT-%' AND (psi < 600 OR psi > 1200 OR temp_f > 230 OR vibration > 10)) OR (asset_id LIKE 'MUD-%' AND (psi < 1800 OR psi > 3800 OR spm > 120 OR spm < 60 OR vibration > 10)) OR (asset_id LIKE 'TOPDRIVE-%' AND (temp_f > 230 OR vibration > 10))) ORDER BY event_time DESC LIMIT 50",
+            "format": "table"
+          }]
         }
 
       ],

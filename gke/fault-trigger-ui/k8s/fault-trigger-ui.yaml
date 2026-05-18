@@ -63,13 +63,19 @@ spec:
                 secretKeyRef:
                   name: alloydb-secret
                   key: password
+            # LLM model name — must match what is loaded in the ollama pod.
+            # Phase 14: upgraded from gemma:2b to gemma4:27b (NVIDIA L4).
+            - name: OLLAMA_MODEL
+              value: "gemma4:27b"
+            - name: GRAFANA_URL
+              value: "http://136.115.220.48"
           resources:
             requests:
-              cpu: "100m"
-              memory: "128Mi"
+              cpu: "250m"
+              memory: "512Mi"
             limits:
-              cpu: "500m"
-              memory: "256Mi"
+              cpu: "1000m"
+              memory: "1Gi"
           readinessProbe:
             httpGet:
               path: /api/assets
