@@ -253,6 +253,102 @@
     .fin-kpi-lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;font-weight:700;margin-bottom:6px}
     .fin-kpi-val{font-size:1.3rem;font-weight:700;font-family:var(--mono)}
 
+    /* ══ Phase 15 — Dual-Reality Fleet UI ══ */
+
+    /* KPI Banner */
+    .kpi-banner{display:flex;align-items:center;gap:0;padding:0 16px;height:38px;flex-shrink:0;background:var(--surf2);border-bottom:1px solid var(--border)}
+    .kpi-item{display:flex;align-items:center;gap:10px;padding:0 18px}
+    .kpi-val{font-family:var(--mono);font-size:1.0rem;font-weight:700;color:var(--text2)}
+    .kpi-val.ka{color:var(--orange)}
+    .kpi-val.kg{color:var(--green)}
+    .kpi-val.ks{color:var(--g-green)}
+    .kpi-lbl{font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600}
+    .kpi-sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+
+    /* Fleet Canvas Layout */
+    .fleet-canvas-layout{flex:1;min-height:0;display:flex;overflow:hidden}
+    .fleet-canvas{flex:1;min-width:0;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+
+    /* Site Zones */
+    .site-zone{border:1px solid var(--border);border-radius:10px;background:var(--surf);padding:12px 14px;transition:border-color 0.2s;flex-shrink:0}
+    .site-zone.has-alert{border-color:rgba(255,109,0,0.4);box-shadow:0 0 12px rgba(255,109,0,0.07)}
+    .zone-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .zone-icon{font-size:18px}
+    .zone-name{font-size:0.88rem;font-weight:700;color:var(--text2)}
+    .zone-type{font-size:0.62rem;color:var(--muted)}
+    .zone-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);margin-left:auto;transition:all 0.4s;flex-shrink:0}
+    .zone-dot.active{background:var(--orange);box-shadow:0 0 6px var(--orange);animation:pulse-warn 1.5s ease-in-out infinite}
+    .zone-kpis{display:flex;gap:14px;font-family:var(--mono);font-size:0.67rem;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
+    .zone-kpis .zk-ok{color:var(--green)}
+
+    /* Asset Nodes */
+    .asset-nodes{display:flex;flex-wrap:wrap;gap:10px}
+    .asset-node{position:relative;width:54px;height:54px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
+    .asset-node:hover{transform:scale(1.12);filter:brightness(1.2)}
+    .esp-node{border-color:rgba(0,230,118,0.45);background:rgba(0,230,118,0.06)}
+    .esp-node:hover{border-color:#00e676;background:rgba(0,230,118,0.13)}
+    .glift-node{border-color:rgba(30,144,255,0.45);background:rgba(30,144,255,0.06)}
+    .glift-node:hover{border-color:#1e90ff;background:rgba(30,144,255,0.13)}
+    .rig-node{border-color:rgba(206,147,216,0.45);background:rgba(206,147,216,0.06)}
+    .rig-node:hover{border-color:#ce93d8;background:rgba(206,147,216,0.13)}
+    .asset-node.active{border-color:var(--orange)!important;background:rgba(255,109,0,0.12)!important;box-shadow:0 0 14px rgba(255,109,0,0.28)}
+    .node-label{font-family:var(--mono);font-size:0.57rem;font-weight:700;color:var(--text2);text-align:center;line-height:1.2;pointer-events:none}
+    .node-pulse-ring{position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--orange);opacity:0;animation:node-pulse 2s ease-in-out infinite;pointer-events:none}
+    @keyframes node-pulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:0.55;transform:scale(1.08)}}
+
+    /* Canvas Legend */
+    .canvas-legend{display:flex;align-items:center;gap:12px;padding:4px 2px 0;flex-wrap:wrap}
+    .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
+    .canvas-legend span{font-size:0.6rem;color:var(--muted)}
+
+    /* Activity Stream */
+    .activity-stream{width:340px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+    .activity-list{flex:1;overflow-y:auto}
+    .activity-row{display:flex;align-items:center;gap:7px;padding:6px 11px;border-bottom:1px solid rgba(30,42,56,0.6);cursor:pointer;transition:background 0.12s;min-height:34px}
+    .activity-row:hover{background:var(--surf2)}
+    .activity-row.act-alert{background:rgba(255,109,0,0.04);border-left:2px solid rgba(255,109,0,0.45)}
+    .act-icon{font-size:12px;flex-shrink:0}
+    .act-text{flex:1;font-size:0.65rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+    .act-time{font-family:var(--mono);font-size:0.56rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+
+    /* Asset Context Menu */
+    .asset-ctx-menu{position:fixed;z-index:1000;background:rgba(18,24,32,0.98);border:1px solid var(--border2);border-radius:8px;min-width:280px;max-width:320px;box-shadow:0 10px 36px rgba(0,0,0,0.72);backdrop-filter:blur(10px)}
+    .ctx-hdr{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border)}
+    .ctx-asset-id{font-family:var(--mono);font-size:0.85rem;font-weight:700;color:var(--blue)}
+    .ctx-asset-type{font-size:0.62rem;color:var(--muted);flex:1}
+    .ctx-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px}
+    .ctx-close:hover{color:var(--text)}
+    .ctx-fault-row{display:flex;align-items:center;gap:8px;padding:8px 14px;cursor:pointer;transition:background 0.12s}
+    .ctx-fault-row:hover{background:rgba(255,255,255,0.04)}
+    .ctx-fault-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+    .ctx-fault-name{font-size:0.72rem;color:var(--text2);flex:1;font-weight:500}
+    .ctx-fault-risk{font-family:var(--mono);font-size:0.6rem;color:var(--g-yellow);font-weight:600}
+    .ctx-info-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:4px;width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.12s;padding:0}
+    .ctx-info-btn:hover{border-color:var(--blue);color:var(--blue)}
+    .ctx-info-btn.active{border-color:var(--blue);color:var(--blue);background:rgba(30,144,255,0.1)}
+    .ctx-fault-tooltip{margin:2px 10px 8px;background:rgba(30,144,255,0.06);border:1px solid rgba(30,144,255,0.2);border-radius:6px;padding:10px 12px}
+    .ctx-tt-name{font-size:0.7rem;font-weight:700;color:var(--blue);margin-bottom:5px}
+    .ctx-tt-desc{font-size:0.64rem;color:var(--text2);line-height:1.5;margin-bottom:5px}
+    .ctx-tt-row{font-size:0.6rem;color:var(--muted);margin-top:3px}
+    .ctx-tt-row strong{color:var(--g-yellow)}
+    .ctx-footer{padding:8px 10px;border-top:1px solid var(--border)}
+    .ctx-dashboard-btn{width:100%;padding:6px;border-radius:6px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);font-size:0.68rem;cursor:pointer;transition:all 0.12s}
+    .ctx-dashboard-btn:hover{border-color:var(--blue);color:var(--blue)}
+    .ctx-overlay{position:fixed;inset:0;z-index:999}
+
+    /* SCADA vs AI contrast banner (deep dive) */
+    .scada-vs-ai{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+    .sva-panel{border-radius:6px;padding:8px 10px}
+    .sva-scada{background:rgba(0,230,118,0.04);border:1px solid rgba(0,230,118,0.18)}
+    .sva-ai{background:rgba(255,109,0,0.06);border:1px solid rgba(255,109,0,0.3)}
+    .sva-ai.pulsing{animation:ai-glow 2s ease-in-out infinite}
+    @keyframes ai-glow{0%,100%{border-color:rgba(255,109,0,0.3)}50%{border-color:rgba(255,109,0,0.72)}}
+    .sva-lbl{font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:3px}
+    .sva-lbl.scada-lbl{color:rgba(0,230,118,0.7)}
+    .sva-lbl.ai-lbl{color:rgba(255,109,0,0.8)}
+    .sva-status{font-size:0.82rem;font-weight:700;line-height:1.2}
+    .sva-sub{font-size:0.58rem;color:var(--muted);margin-top:2px;line-height:1.3}
+
     /* ── Telemetry Tab ── */
     #grafana-iframe{width:100%;height:100%;border:none}
     .grafana-fallback{display:flex;position:absolute;inset:0;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--bg);color:var(--muted)}
@@ -315,12 +411,212 @@
         </div>
       </div>
 
-      <!-- ── DASHBOARD VIEW ── -->
+      <!-- ── DASHBOARD VIEW — Phase 15 Dual-Reality Layout ── -->
       <div v-if="currentView === 'dashboard'" class="dashboard-view">
-        <div class="dash-content">
 
-          <!-- LEFT: Fleet Overview (360px) -->
-          <div class="fleet-section">
+        <!-- KPI Banner -->
+        <div class="kpi-banner">
+          <div class="kpi-item">
+            <span class="kpi-val">{{ Object.keys(ASSET_META).length }}</span>
+            <span class="kpi-lbl">Assets Online</span>
+          </div>
+          <div class="kpi-sep"></div>
+          <div class="kpi-item">
+            <span class="kpi-val" :class="{ka: horizonAlerts.length > 0}">{{ horizonAlerts.length }}</span>
+            <span class="kpi-lbl">⚡ AI Detections</span>
+          </div>
+          <div class="kpi-sep"></div>
+          <div class="kpi-item">
+            <span class="kpi-val kg">0</span>
+            <span class="kpi-lbl">SCADA Alarms</span>
+          </div>
+          <div class="kpi-sep"></div>
+          <div class="kpi-item">
+            <span class="kpi-val ks">${{ totalSaved.toLocaleString() }}</span>
+            <span class="kpi-lbl">Savings Protected</span>
+          </div>
+          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:4px">
+            <button @click="resetAllFaults"
+                    style="font-size:0.6rem;padding:2px 9px;border-radius:6px;border:1px solid rgba(244,67,54,0.35);background:rgba(244,67,54,0.06);color:var(--red);cursor:pointer"
+                    onmouseover="this.style.background='rgba(244,67,54,0.15)'" onmouseout="this.style.background='rgba(244,67,54,0.06)'">♻ Reset All</button>
+          </div>
+        </div>
+
+        <!-- Fleet Canvas + Activity Stream -->
+        <div class="fleet-canvas-layout">
+
+          <!-- LEFT: 2D Spatial Fleet Map -->
+          <div class="fleet-canvas">
+
+            <!-- PAD ALPHA -->
+            <div class="site-zone" :class="{'has-alert': hasAlert('pad_alpha')}">
+              <div class="zone-header">
+                <span class="zone-icon">🛢</span>
+                <span class="zone-name">Pad Alpha</span>
+                <span class="zone-type">ESP Production</span>
+                <span class="zone-dot" :class="{active: hasAlert('pad_alpha')}"></span>
+              </div>
+              <div class="zone-kpis" v-if="kpis.pad_alpha">
+                <span>{{ kpis.pad_alpha.production_boed.toLocaleString() }} BOE/d</span>
+                <span :class="{'zk-ok': kpis.pad_alpha.uptime_pct >= 99}">↑ {{ kpis.pad_alpha.uptime_pct }}%</span>
+                <span>WC {{ kpis.pad_alpha.water_cut_pct }}%</span>
+                <span>WHP 245 PSI</span>
+              </div>
+              <div class="asset-nodes">
+                <div v-for="assetId in SITES.pad_alpha.assets" :key="assetId"
+                     class="asset-node esp-node"
+                     :class="{active: isAssetActive(assetId)}"
+                     @click.stop="showAssetContextMenu($event, assetId)"
+                     :title="'Click to inspect ' + assetId">
+                  <span class="node-label">{{ ASSET_META[assetId].label }}</span>
+                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- PAD BRAVO -->
+            <div class="site-zone" :class="{'has-alert': hasAlert('pad_bravo')}">
+              <div class="zone-header">
+                <span class="zone-icon">🛢</span>
+                <span class="zone-name">Pad Bravo</span>
+                <span class="zone-type">Gas Lift Production</span>
+                <span class="zone-dot" :class="{active: hasAlert('pad_bravo')}"></span>
+              </div>
+              <div class="zone-kpis" v-if="kpis.pad_bravo">
+                <span>{{ kpis.pad_bravo.production_boed.toLocaleString() }} BOE/d</span>
+                <span :class="{'zk-ok': kpis.pad_bravo.uptime_pct >= 99}">↑ {{ kpis.pad_bravo.uptime_pct }}%</span>
+                <span>Inj. {{ kpis.pad_bravo.inj_gas_mmscfd }} MMscfd</span>
+                <span>WHP 312 PSI</span>
+              </div>
+              <div class="asset-nodes">
+                <div v-for="assetId in SITES.pad_bravo.assets" :key="assetId"
+                     class="asset-node glift-node"
+                     :class="{active: isAssetActive(assetId)}"
+                     @click.stop="showAssetContextMenu($event, assetId)"
+                     :title="'Click to inspect ' + assetId">
+                  <span class="node-label">{{ ASSET_META[assetId].label }}</span>
+                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- RIG 42 -->
+            <div class="site-zone" :class="{'has-alert': hasAlert('rig_42')}">
+              <div class="zone-header">
+                <span class="zone-icon">🏗</span>
+                <span class="zone-name">Rig 42</span>
+                <span class="zone-type">Drilling</span>
+                <span class="zone-dot" :class="{active: hasAlert('rig_42')}"></span>
+              </div>
+              <div class="zone-kpis" v-if="kpis.rig_42">
+                <span>{{ kpis.rig_42.rop_ft_per_hr }} ft/hr ROP</span>
+                <span :class="{'zk-ok': kpis.rig_42.uptime_pct >= 99}">↑ {{ kpis.rig_42.uptime_pct }}%</span>
+                <span>{{ kpis.rig_42.depth_ft_md.toLocaleString() }} ft MD</span>
+                <span>{{ kpis.rig_42.mud_weight_ppg }} ppg</span>
+              </div>
+              <div class="asset-nodes">
+                <div v-for="assetId in SITES.rig_42.assets" :key="assetId"
+                     class="asset-node rig-node"
+                     :class="{active: isAssetActive(assetId)}"
+                     @click.stop="showAssetContextMenu($event, assetId)"
+                     :title="'Click to inspect ' + assetId">
+                  <span class="node-label">{{ ASSET_META[assetId].label }}</span>
+                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Canvas Legend -->
+            <div class="canvas-legend">
+              <span class="leg-dot" style="background:#00e676"></span><span>ESP</span>
+              <span class="leg-dot" style="background:#1e90ff"></span><span>Gas Lift</span>
+              <span class="leg-dot" style="background:#ce93d8"></span><span>Drilling</span>
+              <span class="leg-dot" style="background:#ff6d00"></span><span>AI Alert Active</span>
+              <span style="margin-left:auto;font-style:italic">Click asset to inspect · trigger scenarios</span>
+            </div>
+          </div>
+
+          <!-- RIGHT: Field Intelligence Activity Stream (340px) -->
+          <div class="activity-stream">
+            <div class="section-hdr">
+              <span class="live-dot"></span>
+              Field Intelligence Stream
+              <span style="margin-left:auto;font-size:0.6rem;color:var(--muted)">{{ fieldIntelItems.length + horizonAlerts.length }} items</span>
+            </div>
+            <div class="activity-list">
+              <!-- Active AI alerts always at top -->
+              <div v-for="alert in horizonAlerts" :key="'alert-'+alert.asset_id"
+                   class="activity-row act-alert"
+                   @click="openDeepDive(alert.asset_id, alert.fault_type)">
+                <span class="act-icon">⚡</span>
+                <span class="act-text"><strong>{{ alert.asset_id }}</strong> — {{ alert.fault_label }}</span>
+                <span class="fi-routine-lbl" style="background:rgba(255,109,0,0.1);color:var(--orange);border:1px solid rgba(255,109,0,0.3);flex-shrink:0">AI</span>
+                <span class="act-time">{{ formatRul(alert.time_to_scada_minutes, alert.horizon_label) }}</span>
+              </div>
+              <!-- Routine field intel (compact rows) -->
+              <div v-for="item in fieldIntelItems" :key="item.id"
+                   class="activity-row"
+                   @click="openFeedModal(item)">
+                <span class="act-icon">{{ item.icon }}</span>
+                <span class="act-text">{{ item.headline }}</span>
+                <span class="fi-routine-lbl" :class="item.lbl_type" style="flex-shrink:0">{{ item.lbl }}</span>
+                <span class="act-time">{{ item.ts }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- fleet-canvas-layout -->
+
+        <!-- Asset Context Menu -->
+        <div v-if="assetContextMenu.visible"
+             class="asset-ctx-menu"
+             :style="{left: assetContextMenu.x + 'px', top: assetContextMenu.y + 'px'}"
+             @click.stop>
+          <div class="ctx-hdr">
+            <span class="ctx-asset-id">{{ assetContextMenu.assetId }}</span>
+            <span class="ctx-asset-type">{{ ASSET_META[assetContextMenu.assetId]?.type }}</span>
+            <button class="ctx-close" @click="assetContextMenu.visible=false">✕</button>
+          </div>
+          <!-- Active fault banner -->
+          <div v-if="isAssetActive(assetContextMenu.assetId)"
+               style="padding:6px 14px;background:rgba(255,109,0,0.08);border-bottom:1px solid var(--border);font-size:0.65rem;color:var(--orange);display:flex;align-items:center;gap:6px">
+            ⚡ AI Fault Active
+            <button @click="openDeepDive(assetContextMenu.assetId, activeDegradesMap[assetContextMenu.assetId]?.fault_type); assetContextMenu.visible=false"
+                    style="margin-left:auto;font-size:0.6rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,109,0,0.4);background:rgba(255,109,0,0.1);color:var(--orange);cursor:pointer">
+              View Deep Dive →
+            </button>
+          </div>
+          <div style="padding:6px 0">
+            <div style="font-size:0.58rem;color:var(--muted);padding:4px 14px;text-transform:uppercase;letter-spacing:0.07em;font-weight:700">Inject Fault Scenario</div>
+            <div v-for="ft in faultsForAsset(assetContextMenu.assetId)" :key="ft">
+              <div class="ctx-fault-row" @click="launchFromContext(assetContextMenu.assetId, ft)">
+                <span class="ctx-fault-dot" :style="{background: FAULT_META[ft]?.color}"></span>
+                <span class="ctx-fault-name">{{ FAULT_META[ft]?.label }}</span>
+                <span class="ctx-fault-risk" v-if="scenarioCostFor(ft)">${{ (scenarioCostFor(ft) || 0).toLocaleString() }}</span>
+                <button class="ctx-info-btn" :class="{active: faultTooltipFt===ft}" @click.stop="toggleFaultTooltip(ft)">ⓘ</button>
+              </div>
+              <!-- Inline tooltip -->
+              <div v-if="faultTooltipFt===ft && faultTooltipData" class="ctx-fault-tooltip">
+                <div class="ctx-tt-name">{{ faultTooltipData.name }}</div>
+                <div class="ctx-tt-desc">{{ faultTooltipData.description }}</div>
+                <div class="ctx-tt-row">📡 <strong>Data fusion:</strong> {{ faultTooltipData.dataFusion }}</div>
+                <div class="ctx-tt-row">💰 <strong>${{ (faultTooltipData.costAvoided||0).toLocaleString() }}</strong> at risk · {{ faultTooltipData.horizon }} horizon</div>
+              </div>
+            </div>
+          </div>
+          <div class="ctx-footer">
+            <button class="ctx-dashboard-btn" @click="openDeepDive(assetContextMenu.assetId, null); assetContextMenu.visible=false">
+              📊 Open Asset Dashboard (no fault)
+            </button>
+          </div>
+        </div>
+        <!-- Click-away overlay -->
+        <div v-if="assetContextMenu.visible" class="ctx-overlay" @click="assetContextMenu.visible=false"></div>
+
+      </div><!-- end dashboard -->
+
+      <!-- ── SPACER — old fleet-section kept for deep dive class compatibility ── -->
+      <div v-if="false" class="fleet-section">
             <div class="section-hdr">
               Fleet Overview — 14 Assets, 3 Sites
               <button @click="resetAllFaults" style="margin-left:auto;font-size:0.6rem;padding:2px 9px;border-radius:6px;border:1px solid rgba(244,67,54,0.35);background:rgba(244,67,54,0.06);color:var(--red);cursor:pointer" onmouseover="this.style.background='rgba(244,67,54,0.15)'" onmouseout="this.style.background='rgba(244,67,54,0.06)'">♻ Reset All Faults</button>
@@ -547,6 +843,26 @@
           <!-- Left: Data Fusion -->
           <div class="fusion-panel">
             <div class="fusion-body">
+              <!-- SCADA vs AI Contrast Banner — shown when fault is active -->
+              <div v-if="ddFaultType" class="scada-vs-ai">
+                <div class="sva-panel sva-scada">
+                  <div class="sva-lbl scada-lbl">SCADA System</div>
+                  <div class="sva-status" :style="{color: injectionRunning ? 'var(--green)' : 'var(--muted)'}">
+                    {{ injectionRunning ? '✓ NORMAL' : '— Waiting' }}
+                  </div>
+                  <div class="sva-sub">{{ injectionRunning ? 'No alarms. All thresholds within limits.' : 'No active fault injected.' }}</div>
+                </div>
+                <div class="sva-panel sva-ai" :class="{pulsing: injectionRunning && degStatus?.is_active}">
+                  <div class="sva-lbl ai-lbl">GDC Edge AI</div>
+                  <div class="sva-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : injectionRunning ? 'var(--yellow)' : 'var(--muted)'}">
+                    {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED' : injectionRunning ? '⚡ Analyzing…' : '— Waiting' }}
+                  </div>
+                  <div class="sva-sub" v-if="injectionRunning && degStatus">
+                    {{ FAULT_META[ddFaultType]?.label || ddFaultType }} · {{ formatRulFull(degStatus.time_to_scada_minutes) }} to SCADA alarm
+                  </div>
+                </div>
+              </div>
+
               <div class="sv-grid">
                 <div class="sv-card" :class="{primary: sensorTabPrimary('psi')}">
                   <div class="sv-lbl">{{ sensorLabel('psi') }}</div>
@@ -1123,6 +1439,10 @@ createApp({
       // Timers
       _pollKpis: null, _pollHorizon: null, _pollMlops: null,
       _pollDeg: null, _pollChart: null,
+      // Phase 15 — Asset Context Menu
+      assetContextMenu: { visible: false, x: 0, y: 0, assetId: null },
+      faultTooltipFt: null,
+      faultTooltipData: null,
     };
   },
 
@@ -1482,6 +1802,48 @@ createApp({
       el.textContent=msg;el.style.display='block';el.style.background=color||'var(--surf2)';el.style.color='#fff';el.style.border=`1px solid ${color||'var(--border)'}`;
       clearTimeout(this._toastTimer);
       this._toastTimer=setTimeout(()=>{el.style.display='none';},3000);
+    },
+
+    // ── Phase 15 — Asset Context Menu methods ──
+    showAssetContextMenu(event, assetId) {
+      event.stopPropagation();
+      const node = event.target.closest('.asset-node');
+      const rect = node ? node.getBoundingClientRect() : event.target.getBoundingClientRect();
+      let x = rect.right + 10;
+      let y = rect.top;
+      if (x + 320 > window.innerWidth) x = rect.left - 328;
+      if (y + 350 > window.innerHeight) y = window.innerHeight - 360;
+      this.faultTooltipFt = null;
+      this.faultTooltipData = null;
+      this.assetContextMenu = { visible: true, x, y, assetId };
+    },
+    toggleFaultTooltip(ft) {
+      if (this.faultTooltipFt === ft) {
+        this.faultTooltipFt = null;
+        this.faultTooltipData = null;
+      } else {
+        this.faultTooltipFt = ft;
+        this.faultTooltipData = DEMO_SCENARIOS.find(s => s.faultType === ft) || null;
+      }
+    },
+    scenarioCostFor(ft) {
+      const sc = DEMO_SCENARIOS.find(s => s.faultType === ft);
+      return sc ? sc.costAvoided : null;
+    },
+    launchFromContext(assetId, faultType) {
+      this.assetContextMenu.visible = false;
+      this.faultTooltipFt = null;
+      const sc = DEMO_SCENARIOS.find(s => s.assetId === assetId && s.faultType === faultType);
+      if (sc) {
+        this.launchScenario(sc);
+      } else {
+        this.openDeepDive(assetId, faultType);
+        setTimeout(() => {
+          this.selectedFaultForInjection = faultType;
+          this.injectDuration = 3600;
+          this.injectFault();
+        }, 400);
+      }
     },
   },
 

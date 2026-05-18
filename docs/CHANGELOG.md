@@ -1,5 +1,34 @@
 # GDC-PM — Change Log
 
+## Phase 15 (2026-05-18 — Session 5) — Dual-Reality UI Redesign
+
+### Fleet Operations Tab — Visual Overhaul (in progress)
+
+**Design Rationale:** The 3-column "Wall of Text" layout (Fleet Overview | Field Intelligence | Predictive Horizon) overwhelms both business and technical audiences in demo settings. Nobody reads 10 dense O&G reports and 6 scenario cards simultaneously. Inspired by the `gdc-das-life` DAS demo's use of:
+- A spatial Google Maps trigger interface (wells on a map, right-click to trigger events)
+- A 3D Plotly well-field visualization that abstracts raw strain data into visual cues
+- A top-level KPI bar that immediately frames the business value (Edge vs Cloud efficiency, savings $)
+
+**New Architecture — "Dual-Reality" Layout:**
+
+`gke/fault-trigger-ui/index.html`
+
+**Dashboard View (replaces 3-column layout):**
+- **Removed:** Middle column (Field Intelligence 310px) from default view
+- **Removed:** Right column (Predictive Horizon with dense scenario cards)
+- **Added: KPI Banner** — slim top bar showing: Assets Online | Edge AI Detections | SCADA Alarms (always 0 until fault) | Savings Protected ($)
+- **Added: 2D Spatial Fleet Map** — CSS/SVG layout of 3 sites as distinct zones. Assets rendered as interactive circular nodes colored by health status.
+  - Click asset node → context menu shows only faults applicable to that asset class
+  - Each fault has an "ⓘ" tooltip revealing the economic scenario and impact (no wall of text)
+  - Active faults pulse orange/red; healthy assets are green/teal
+- **Added: Terse Activity Stream** (replaces paragraph-heavy Field Intel column) — compact event table showing icon | asset | event | badge | time. Click row to expand full detail modal.
+
+**Deep Dive View enhancements:**
+- **Added: SCADA vs AI Contrast Banner** — prominent split display at the top of the deep-dive fusion panel: "SCADA: NORMAL ✓" (left, green) vs "GDC Edge AI: ANOMALY DETECTED ⚡" (right, orange) — the core narrative made visually explicit.
+- **Intelligence Feed:** Non-anomaly items shown as compact 1-line entries; anomaly items highlighted in orange with evidence relevance visible. Reduces text density while preserving clickthrough to full documents.
+
+---
+
 ## Phase 14 (2026-05-15 — Session 4, Part 3)
 
 ### LLM Upgrade, Tab Reorder, Field Intelligence Enhancement, Cost Optimization
