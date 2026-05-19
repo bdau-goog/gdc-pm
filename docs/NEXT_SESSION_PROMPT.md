@@ -1,42 +1,36 @@
-# GDC-PM — Session 5 Handoff
+# GDC-PM — Session 6 Handoff
 
-**Date:** 2026-05-15  
+**Date:** 2026-05-19  
 **Live URL:** http://35.188.3.97  
 **Project:** `gdc-pm-v2` | Cluster: `gdc-edge-simulation` | Namespace: `gdc-pm`  
-**Current image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+**Current image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`  
+**Git head:** `9be43bd` (master)
 
 ---
 
-## What Was Done in Session 4 (Phase 13–14)
+## What Was Done in Session 5 (Phase 15)
 
-### Grafana SCADA Dashboard — Full Redesign + Debugging
+### Phase 15 — Dual-Reality UI Redesign (complete, deployed)
 
-A complete redesign of the Grafana dashboard (`gke/grafana/k8s/grafana-configmap.yaml`) was completed to support the core narrative: *"Even a well-designed, functional SCADA monitoring dashboard is reactive by nature — it cannot detect multi-variable fault precursors before SCADA alarm thresholds are breached."*
+**Problem:** The old 3-column "Fleet Operations" tab was a wall of text — 10 dense O&G document cards + 6 verbose demo scenario cards overwhelmed both business and technical audiences.
 
-**Final working state:**
-- **Time range:** `now-2h` default
-- **SQL:** All 6 timeseries panels use `date_trunc('minute', event_time) AS time` + `GROUP BY 1, asset_id` — native TIMESTAMPTZ output that renders correctly in Grafana 10.4.2
-- **Layout:** Fleet Status KPIs → Pressure → Vibration & Temperature → Electrical & Mechanical → ⚡ Edge AI vs SCADA
-- **Edge AI Detection Timeline (Panel 9):** tooltip `single` mode (no PSI bleed), `showValue: auto` (state labels visible in blocks), `h:10` (spacious y-axis labels)
-- **SCADA Hard-Threshold Breach Log:** Hard physics thresholds only — empty during normal / early-degradation state (this emptiness is the demo point)
+**Solution:** Complete redesign of the Fleet Operations tab inspired by the `gdc-das-life` DAS demo's spatial, interactive approach.
 
-**Key lesson learned — DO NOT change:**
-- Grafana iframe URL MUST use `?kiosk=tv` (NOT `?kiosk`). Using basic kiosk mode breaks the Vue iframe integration and the timeseries chart renderer silently fails. This caused several hours of debugging.
+**What's live:**
+- **KPI Banner** (top): Assets Online | ⚡ AI Detections | SCADA Alarms (always 0) | Savings Protected ($)
+- **2D Spatial Fleet Map** (main body, left): 3 site zones (Pad Alpha, Pad Bravo, Rig 42) with interactive circular asset nodes. Click a node → context menu with fault-specific options + ⓘ scenario/cost tooltip. Active faults pulse orange.
+- **Colored Metric Grid** (per site zone): 5 metric cards each, threshold-colored green/orange/red
+- **Resizable Splitter**: Drag between fleet map and intel stream to redistribute screen space
+- **Terse Field Intelligence Stream** (right, resizable): 10 document rows at 34px each — icon | headline | badge | time. AI alerts float to top. Click to expand full document modal.
+- **Deep Dive — SCADA vs AI Banner**: Two-panel contrast: "SCADA: ✓ NORMAL" (green) vs "GDC Edge AI: ⚡ ANOMALY DETECTED" (orange, pulsing). Makes the core narrative visually explicit.
 
-### UI Improvements
-- **Tab reorder:** Fleet Telemetry is now tab 1 and the default view. Demo starts with SCADA view.
-- **Field Intelligence panel:** All 10 routine reports are now clickable — opens full-text modal with authentic O&G document content (Maximo WOs, spectroscopic oil analysis, EDR driller's notes, BS&W analysis, directional surveys, VFD calibration logs)
-- **↺ All Assets button:** Floating button on Fleet Telemetry tab reloads iframe to reset legend isolation
-- **LLM strings updated** to `gemma4:27b` throughout the UI
+### Phase 15 Bugfix — Vue mount failure (complete, deployed)
 
-### Infrastructure Planning
-- `gke/ollama/k8s/ollama.yaml`: Updated to target L4 GPU (24GB VRAM), `gemma4:27b` model, 50Gi PVC — **NOT YET APPLIED** to live cluster (requires L4 node pool provisioning)
-- `gke/ollama/k8s/ollama-scheduler.yaml`: CronJobs for 6 AM / 6 PM UTC auto-scale — ServiceAccount + CronJobs applied; RBAC Role/RoleBinding needs project admin with `container.roles.create` IAM permission
-- `scripts/ollama-stand-up.sh` / `stand-down.sh`: Manual alternatives, work immediately
+The initial Phase 15 deployment broke Vue entirely. Root cause: `replace_in_file` only replaced through the opening of the old `fleet-section` div, leaving the old Field Intelligence and Predictive Horizon columns + two orphaned `</div>` closing tags dangling between the new dashboard and deep dive views. Browser used orphaned divs to prematurely close `#tab-operations` and `.app-body`, pushing all modals and tabs outside `#app`. Fixed by removing 200 lines of orphaned old HTML.
 
 ---
 
-## Cluster State (as of end of Session 4)
+## Current Cluster State
 
 ```
 gdc-edge-simulation / gdc-pm namespace
@@ -46,73 +40,122 @@ telemetry-simulator    1/1 Running   ← Generates 12 readings/min
 event-processor        1/1 Running   ← RabbitMQ → inference → AlloyDB
 alloydb-omni           1/1 Running   ← PostgreSQL edge DB
 gdc-pm-rabbitmq        1/1 Running   ← AMQP message broker
-grafana                1/1 Running   ← SCADA telemetry dashboard (http://136.115.220.48)
-ollama                 1/1 Running   ← gemma:2b local LLM (deployment env var: gemma:2b)
+grafana                1/1 Running   ← SCADA dashboard (http://136.115.220.48)
+ollama                 1/1 Running   ← gemma:2b local LLM (actual loaded model)
 inference-api          1/1 Running   ← Legacy BQML inference (not used by current UI)
 ```
 
-**Important:** The live Ollama deployment still has `OLLAMA_MODEL=gemma:2b` patched. The app and YAML show `gemma4:27b` but the actual loaded model is `gemma:2b`. The L4/gemma4 upgrade is YAML-ready but not applied.
+**IMPORTANT:** The live Ollama deployment runs `gemma:2b`. The YAML is updated for `gemma4:27b` on L4 but NOT applied (requires L4 node provisioning and project-admin IAM grant).
 
 ---
 
-## What Needs Refinement in Session 5
+## Outstanding Development Items (To-Do)
 
-### 1. Grafana — Time Range Extends Backwards
-The current `now-2h` window is a pragmatic working solution. The original design intent was `now-12h` (one full operator shift) to make slow-developing faults like sand ingress (14-day horizon) visible as a very gentle slope over the course of a shift.
+### High Priority
 
-**Options to explore:**
-- Increase time range to `now-4h` or `now-6h` — test if `date_trunc` queries remain fast
-- Or add `WHERE event_time > NOW() - INTERVAL '4 hours'` explicitly in each query as a belt-and-suspenders approach to avoid relying solely on `$__timeFilter`
+**4. Live Intelligence Generator** *(backend + UI)*
+- **What:** A FastAPI background task (APScheduler or asyncio) that runs every 2-5 min, generates realistic O&G field documents using Ollama, stores in AlloyDB, and surfaces in the intel stream
+- **Why:** Currently the 10 intel stream items are hardcoded. Dynamic documents that respond to fault context would make the demo much more compelling — presenter can point out "the AI just generated a new shift note that correlates with the fault we just injected"
+- **Implementation plan:**
+  1. New AlloyDB table: `field_intel` (id, asset_id, fault_context, doc_type, headline, detail, ai_relevance, created_at)
+  2. New `app.py` background task: calls Ollama with structured prompt, biased toward fault type when active
+  3. New `/api/field-intelligence` endpoint: returns newest-first, optionally filtered by asset/fault context
+  4. UI: poll `/api/field-intelligence` every 60s, prepend new rows with `.act-new` flash animation (CSS already in place)
+- **Prompt template example:**
+  ```
+  Generate a realistic O&G {doc_type} for {asset_id} ({asset_class}).
+  Context: {fault_type} fault detected. Current sensors: {sensor_summary}.
+  Format: One-line headline + 150-word body in authentic field language.
+  ```
 
-### 2. Grafana — Spaghetti Lines on Multi-Asset Charts
-With all 14 assets visible simultaneously on Vibration and Temperature charts, it's still somewhat cluttered. The legend items work for isolation (click to select) but the initial view is busy.
+**5. Route generated intelligence to model** *(dependent on #4)*
+- The intelligence generator would use the existing Ollama `httpx` client in `app.py`
+- When a fault is active, pass fault_type + sensor values as context to bias the generation
+- Documents generated during a fault should show up in the Deep Dive "Live Intelligence Feed" as new evidence nodes, creating the "multi-modal fusion" narrative in real-time
 
-**Options:**
-- Default the `$asset` variable to a specific site (e.g., `ESP-ALPHA-1`) and let users expand
-- OR add separate panels per site type (ESP-only pressure, Gas Lift-only pressure, etc.) instead of all-in-one
-- The `?kiosk=tv` constraint means the `$asset` variable dropdown is inaccessible from the embedded iframe — the only filter mechanism is the chart legend
+### Medium Priority
 
-### 3. Gemma 4 / L4 GPU Upgrade
-The YAML files are ready. Pending:
-1. Project admin runs: `gcloud projects add-iam-policy-binding gdc-pm-v2 --member="serviceAccount:dev-workstation-sa@gdc-pm-v2.iam.gserviceaccount.com" --role="roles/container.developer"`
-2. Then: `kubectl apply -f gke/ollama/k8s/ollama-scheduler.yaml` (for RBAC)
-3. Provision an L4 GPU node pool in the GKE cluster
-4. Apply the updated `ollama.yaml` — first startup will pull `gemma4:27b` (~15GB, 5–15 min)
-5. Patch the deployment: `kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_MODEL=gemma4:27b`
+**6. gemma:2b display string**
+- Currently shows `gemma:2b` in the Edge status bar (accurate — that's what's loaded)
+- **Option A:** Leave as-is (honest) until L4/gemma4 upgrade is applied
+- **Option B:** Add `OLLAMA_DISPLAY_MODEL` env var in `app.py` to separate display from actual calls:
+  ```python
+  OLLAMA_DISPLAY_MODEL = os.getenv("OLLAMA_DISPLAY_MODEL", OLLAMA_MODEL)
+  ```
+  Then patch: `kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_DISPLAY_MODEL="gemma4:27b"`
+- Recommend Option B once decided
 
-### 4. Field Intelligence Panel — Dynamic Integration
-Currently the 10 routine report cards are hardcoded in `FIELD_INTEL_ITEMS` in `index.html`. They are realistic and clickable, but static.
+**7. Gemma 4 / L4 GPU Upgrade** *(infrastructure, requires project admin)*
+- YAML files are ready (`gke/ollama/k8s/ollama.yaml` updated to target L4, gemma4:27b, 50Gi)
+- Pending steps:
+  1. Project admin grants: `gcloud projects add-iam-policy-binding gdc-pm-v2 --member="serviceAccount:dev-workstation-sa@gdc-pm-v2.iam.gserviceaccount.com" --role="roles/container.developer"`
+  2. Provision L4 GPU node pool in GKE cluster
+  3. Apply RBAC: `kubectl apply -f gke/ollama/k8s/ollama-scheduler.yaml`
+  4. Apply updated Ollama deployment: `kubectl apply -f gke/ollama/k8s/ollama.yaml`
+  5. First startup will pull gemma4:27b (~15GB, 5-15 min)
+  6. Update display: `kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_MODEL=gemma4:27b`
 
-**Future enhancement:** Serve these from a new API endpoint `/api/field-intelligence` that could pull from AlloyDB (pre-seeded unstructured documents) or from the RAG pipeline. This would make the Field Intelligence panel update dynamically when a fault is detected — showing only the documents relevant to the active asset's fault type.
+**8. Asset Hover Metrics** *(UI enhancement)*
+- When context menu opens for an active asset, show a mini sensor reading grid
+- Use `degStatus` from the active degradation map to display current PSI/Temp/Vib values
+- Gives the presenter immediate context without clicking into deep dive
 
-### 5. Demo Flow Polish
-A few UX refinements observed during Session 4 testing:
-- The `Fleet Telemetry` tab shows all assets — a presenter tip would be to **click a specific legend item** (e.g., `GLIFT-BRAVO-1`) right before launching the Sand Ingress demo to isolate that asset, making the "clean/green" baseline obvious before the fault is injected
-- The `⚡ GDC Edge AI Detection Timeline` is the "reveal" panel — the orange block appearing while the SCADA Log stays empty is the visual proof point. Consider whether this needs a title update or annotation arrow.
+**9. Grafana Time Range Extension**
+- Current: `now-2h` default
+- Goal: Extend to `now-4h` or `now-6h` to show slower fault development curves
+- All 6 timeseries panels use `date_trunc('minute', event_time)` — should stay fast
+- Test before applying: inspect query times in Grafana
 
----
+**10. Fleet Telemetry — Reduce Spaghetti Lines**
+- Vibration and Temperature panels still show all 14 assets simultaneously
+- Options:
+  - Pre-filter to show only the 4-5 highest-activity assets by default
+  - Split into separate sub-panels by asset class (ESP-only, Gas Lift-only, Rig-only)
+  - Since `?kiosk=tv` hides the `$asset` variable dropdown, legend-click is the only isolation mechanism
 
-## Demo Script (Current Working Flow)
+### Low Priority / Future
 
-1. Open http://35.188.3.97 → opens on **Fleet Telemetry** tab (Grafana SCADA view)
-2. Point out: "This is what a real operator sees. Active Assets: 14. SCADA Hard-Limit Alarms: 0. Everything green."
-3. Scroll down to **⚡ Edge AI vs SCADA** section
-4. Point out: "Two panels here. The top one shows what the AI has already detected. The bottom is the traditional SCADA alarm log. Notice the SCADA log may already be empty while the AI timeline shows orange bars."
-5. Click **Fleet Operations** tab → Dashboard loads
-6. Click a Demo Scenario card (e.g., **Sand Ingress — Supply Chain Lead Time**)
-7. Deep Dive opens, fault injection auto-starts, Intelligence Feed populates
-8. Chart auto-switches to Vibration tab (primary sensor), shows rising projection curve
-9. Switch back to **Fleet Telemetry** — sensors still look normal on the charts
-10. Scroll to Edge AI vs SCADA section — orange bar appeared, SCADA log still empty
-11. Back to **Fleet Operations** → "💬 Consult Operations Agent" → rule-based recommendation fires, Gemma streams
-12. Click "✔ Approve & Execute" → outcome card, net savings shown
-13. Click **Fleet Financials** → ledger entry appears
+**11. Field Intelligence Dynamic Integration from AlloyDB**
+- Currently hardcoded in `FIELD_INTEL_ITEMS` in `index.html`
+- Future: migrate to `/api/field-intelligence` endpoint backed by AlloyDB
+- Enables fault-context-aware document filtering
+
+**12. Demo Flow Polish**
+- Consider adding a "Demo Cheat Sheet" overlay for presenters (like `gdc-das-life` had)
+- Consider whether the `⚡ GDC Edge AI Detection Timeline` in Grafana needs annotation arrows
+- Suggested demo script: start on Fleet Telemetry (SCADA "all clear"), switch to Fleet Operations, click ESP-A2 → Sand Ingress, watch AI detect while SCADA stays silent, consult agent, approve remediation
 
 ---
 
 ## Constraints — Do Not Violate
+
 - **Never apply `terraform/gke.tf`** — destroys the live cluster
-- **Never change iframe to `?kiosk`** — must stay `?kiosk=tv` for chart rendering stability
+- **Never change iframe to `?kiosk`** — must stay `?kiosk=tv` for chart rendering stability  
 - **Only edit:** `gke/fault-trigger-ui/app.py`, `gke/fault-trigger-ui/index.html`, `gke/grafana/k8s/grafana-configmap.yaml`
-- Gemma keepalive thread is in `app.py` — this prevents cold starts during demos
+- Gemma keepalive thread is in `app.py` — prevents cold starts during demos
 - XGBoost health models (`*.ubj`) are validated — do not retrain without specific reason
+
+---
+
+## Rebuild & Deploy Commands
+
+```bash
+cd /home/brian
+docker build --quiet -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest gdc-pm/gke/fault-trigger-ui/
+docker push --quiet us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
+kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=180s
+```
+
+```bash
+# Grafana only (no app rebuild needed):
+kubectl apply -f gdc-pm/gke/grafana/k8s/grafana-configmap.yaml
+kubectl rollout restart deployment/grafana -n gdc-pm
+kubectl rollout status deployment/grafana -n gdc-pm --timeout=90s
+```
+
+---
+
+## Key Lesson Learned (Session 5)
+
+**`replace_in_file` partial replacement danger:** When replacing a large multi-div HTML block, the tool only replaces the exact matched string. If the SEARCH pattern ends mid-structure (e.g., at the opening tag of a div whose content spans hundreds of lines), the remaining content (closing divs, sibling divs) is left orphaned in the file. This caused the Vue mount failure. Always verify div counts before/after major HTML replacements, and use `grep -n` to audit structural divs.
