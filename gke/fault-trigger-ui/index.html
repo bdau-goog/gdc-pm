@@ -256,60 +256,78 @@
     /* ══ Phase 15 — Dual-Reality Fleet UI ══ */
 
     /* KPI Banner */
-    .kpi-banner{display:flex;align-items:center;gap:0;padding:0 16px;height:38px;flex-shrink:0;background:var(--surf2);border-bottom:1px solid var(--border)}
-    .kpi-item{display:flex;align-items:center;gap:10px;padding:0 18px}
-    .kpi-val{font-family:var(--mono);font-size:1.0rem;font-weight:700;color:var(--text2)}
+    .kpi-banner{display:flex;align-items:center;gap:0;padding:0 16px;height:40px;flex-shrink:0;background:var(--surf2);border-bottom:1px solid var(--border)}
+    .kpi-item{display:flex;align-items:center;gap:10px;padding:0 20px}
+    .kpi-val{font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--text2)}
     .kpi-val.ka{color:var(--orange)}
     .kpi-val.kg{color:var(--green)}
     .kpi-val.ks{color:var(--g-green)}
-    .kpi-lbl{font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600}
-    .kpi-sep{width:1px;height:22px;background:var(--border);flex-shrink:0}
+    .kpi-lbl{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600}
+    .kpi-sep{width:1px;height:24px;background:var(--border);flex-shrink:0}
 
     /* Fleet Canvas Layout */
     .fleet-canvas-layout{flex:1;min-height:0;display:flex;overflow:hidden}
-    .fleet-canvas{flex:1;min-width:0;padding:14px 16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+    .fleet-canvas{flex:1;min-width:0;padding:16px 18px;display:flex;flex-direction:column;gap:14px;overflow-y:auto}
 
-    /* Site Zones */
-    .site-zone{border:1px solid var(--border);border-radius:10px;background:var(--surf);padding:12px 14px;transition:border-color 0.2s;flex-shrink:0}
-    .site-zone.has-alert{border-color:rgba(255,109,0,0.4);box-shadow:0 0 12px rgba(255,109,0,0.07)}
-    .zone-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-    .zone-icon{font-size:18px}
-    .zone-name{font-size:0.88rem;font-weight:700;color:var(--text2)}
-    .zone-type{font-size:0.62rem;color:var(--muted)}
-    .zone-dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);margin-left:auto;transition:all 0.4s;flex-shrink:0}
-    .zone-dot.active{background:var(--orange);box-shadow:0 0 6px var(--orange);animation:pulse-warn 1.5s ease-in-out infinite}
-    .zone-kpis{display:flex;gap:14px;font-family:var(--mono);font-size:0.67rem;color:var(--muted);margin-bottom:10px;flex-wrap:wrap}
-    .zone-kpis .zk-ok{color:var(--green)}
+    /* Vertical Splitter between Fleet Canvas and Activity Stream */
+    .canvas-splitter{width:6px;flex-shrink:0;background:var(--border);cursor:col-resize;position:relative;transition:background 0.15s;display:flex;align-items:center;justify-content:center}
+    .canvas-splitter:hover,.canvas-splitter.dragging{background:rgba(30,144,255,0.5)}
+    .canvas-splitter::before{content:'';display:block;width:2px;height:32px;border-radius:2px;background:rgba(255,255,255,0.15)}
 
-    /* Asset Nodes */
-    .asset-nodes{display:flex;flex-wrap:wrap;gap:10px}
-    .asset-node{position:relative;width:54px;height:54px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
-    .asset-node:hover{transform:scale(1.12);filter:brightness(1.2)}
+    /* Site Zones — larger, more spacious */
+    .site-zone{border:1px solid var(--border);border-radius:12px;background:var(--surf);padding:16px 18px;transition:border-color 0.2s;flex-shrink:0}
+    .site-zone.has-alert{border-color:rgba(255,109,0,0.45);box-shadow:0 0 16px rgba(255,109,0,0.09)}
+    .zone-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .zone-icon{font-size:22px}
+    .zone-name{font-size:1.0rem;font-weight:700;color:var(--text2)}
+    .zone-type{font-size:0.65rem;color:var(--muted)}
+    .zone-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);margin-left:auto;transition:all 0.4s;flex-shrink:0}
+    .zone-dot.active{background:var(--orange);box-shadow:0 0 7px var(--orange);animation:pulse-warn 1.5s ease-in-out infinite}
+
+    /* Zone Metric Grid — replaces zone-kpis */
+    .zone-metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin-bottom:14px}
+    .zm-card{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:7px 10px;display:flex;flex-direction:column;gap:2px}
+    .zm-val{font-family:var(--mono);font-size:1.0rem;font-weight:700;line-height:1}
+    .zm-lbl{font-size:0.57rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.04em;font-weight:600}
+    .zm-unit{font-size:0.6rem;font-weight:400;color:var(--muted)}
+    .zm-green{color:var(--green);border-color:rgba(0,230,118,0.25);background:rgba(0,230,118,0.04)}
+    .zm-orange{color:var(--orange);border-color:rgba(255,109,0,0.3);background:rgba(255,109,0,0.04)}
+    .zm-red{color:var(--red);border-color:rgba(244,67,54,0.3);background:rgba(244,67,54,0.04)}
+    .zm-neutral{color:var(--text2)}
+
+    /* Asset Nodes — larger */
+    .asset-nodes{display:flex;flex-wrap:wrap;gap:12px}
+    .asset-node{position:relative;width:76px;height:76px;border-radius:50%;border:2px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
+    .asset-node:hover{transform:scale(1.1);filter:brightness(1.2)}
     .esp-node{border-color:rgba(0,230,118,0.45);background:rgba(0,230,118,0.06)}
     .esp-node:hover{border-color:#00e676;background:rgba(0,230,118,0.13)}
     .glift-node{border-color:rgba(30,144,255,0.45);background:rgba(30,144,255,0.06)}
     .glift-node:hover{border-color:#1e90ff;background:rgba(30,144,255,0.13)}
     .rig-node{border-color:rgba(206,147,216,0.45);background:rgba(206,147,216,0.06)}
     .rig-node:hover{border-color:#ce93d8;background:rgba(206,147,216,0.13)}
-    .asset-node.active{border-color:var(--orange)!important;background:rgba(255,109,0,0.12)!important;box-shadow:0 0 14px rgba(255,109,0,0.28)}
-    .node-label{font-family:var(--mono);font-size:0.57rem;font-weight:700;color:var(--text2);text-align:center;line-height:1.2;pointer-events:none}
-    .node-pulse-ring{position:absolute;inset:-7px;border-radius:50%;border:2px solid var(--orange);opacity:0;animation:node-pulse 2s ease-in-out infinite;pointer-events:none}
+    .asset-node.active{border-color:var(--orange)!important;background:rgba(255,109,0,0.12)!important;box-shadow:0 0 16px rgba(255,109,0,0.32)}
+    .node-label{font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-align:center;line-height:1.2;pointer-events:none}
+    .node-pulse-ring{position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--orange);opacity:0;animation:node-pulse 2s ease-in-out infinite;pointer-events:none}
     @keyframes node-pulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:0.55;transform:scale(1.08)}}
 
     /* Canvas Legend */
-    .canvas-legend{display:flex;align-items:center;gap:12px;padding:4px 2px 0;flex-wrap:wrap}
-    .leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
-    .canvas-legend span{font-size:0.6rem;color:var(--muted)}
+    .canvas-legend{display:flex;align-items:center;gap:14px;padding:6px 2px 0;flex-wrap:wrap}
+    .leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block}
+    .canvas-legend span{font-size:0.62rem;color:var(--muted)}
 
     /* Activity Stream */
-    .activity-stream{width:340px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+    .activity-stream{flex-shrink:0;border-left:none;display:flex;flex-direction:column;overflow:hidden}
+    .act-stream-hdr{font-size:0.63rem;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase;padding:8px 14px 6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;flex-shrink:0}
     .activity-list{flex:1;overflow-y:auto}
-    .activity-row{display:flex;align-items:center;gap:7px;padding:6px 11px;border-bottom:1px solid rgba(30,42,56,0.6);cursor:pointer;transition:background 0.12s;min-height:34px}
+    .activity-row{display:flex;align-items:center;gap:7px;padding:7px 12px;border-bottom:1px solid rgba(30,42,56,0.6);cursor:pointer;transition:background 0.12s;min-height:36px}
     .activity-row:hover{background:var(--surf2)}
     .activity-row.act-alert{background:rgba(255,109,0,0.04);border-left:2px solid rgba(255,109,0,0.45)}
-    .act-icon{font-size:12px;flex-shrink:0}
-    .act-text{flex:1;font-size:0.65rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
-    .act-time{font-family:var(--mono);font-size:0.56rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+    .activity-row.act-new{animation:newItem 3s ease-out}
+    @keyframes newItem{0%{background:rgba(30,144,255,0.12)}100%{background:transparent}}
+    .act-icon{font-size:13px;flex-shrink:0}
+    .act-text{flex:1;font-size:0.67rem;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+    .act-time{font-family:var(--mono);font-size:0.57rem;color:var(--muted);white-space:nowrap;flex-shrink:0}
+    .act-new-badge{font-size:0.5rem;padding:1px 4px;border-radius:3px;background:rgba(30,144,255,0.2);color:var(--blue);font-weight:700;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em}
 
     /* Asset Context Menu */
     .asset-ctx-menu{position:fixed;z-index:1000;background:rgba(18,24,32,0.98);border:1px solid var(--border2);border-radius:8px;min-width:280px;max-width:320px;box-shadow:0 10px 36px rgba(0,0,0,0.72);backdrop-filter:blur(10px)}
@@ -456,11 +474,27 @@
                 <span class="zone-type">ESP Production</span>
                 <span class="zone-dot" :class="{active: hasAlert('pad_alpha')}"></span>
               </div>
-              <div class="zone-kpis" v-if="kpis.pad_alpha">
-                <span>{{ kpis.pad_alpha.production_boed.toLocaleString() }} BOE/d</span>
-                <span :class="{'zk-ok': kpis.pad_alpha.uptime_pct >= 99}">↑ {{ kpis.pad_alpha.uptime_pct }}%</span>
-                <span>WC {{ kpis.pad_alpha.water_cut_pct }}%</span>
-                <span>WHP 245 PSI</span>
+              <div class="zone-metric-grid" v-if="kpis.pad_alpha">
+                <div class="zm-card" :class="kpiColor(kpis.pad_alpha.production_boed, 1600, 1200)">
+                  <div class="zm-val">{{ kpis.pad_alpha.production_boed.toLocaleString() }}</div>
+                  <div class="zm-lbl">Production <span class="zm-unit">BOE/d</span></div>
+                </div>
+                <div class="zm-card" :class="kpiColor(kpis.pad_alpha.uptime_pct, 99, 95)">
+                  <div class="zm-val">{{ kpis.pad_alpha.uptime_pct }}<span class="zm-unit">%</span></div>
+                  <div class="zm-lbl">Uptime</div>
+                </div>
+                <div class="zm-card" :class="kpiColorInv(kpis.pad_alpha.water_cut_pct, 30, 40)">
+                  <div class="zm-val">{{ kpis.pad_alpha.water_cut_pct }}<span class="zm-unit">%</span></div>
+                  <div class="zm-lbl">Water Cut</div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val">245<span class="zm-unit"> PSI</span></div>
+                  <div class="zm-lbl">Wellhead P</div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val">1,104<span class="zm-unit"> scf</span></div>
+                  <div class="zm-lbl">GOR</div>
+                </div>
               </div>
               <div class="asset-nodes">
                 <div v-for="assetId in SITES.pad_alpha.assets" :key="assetId"
@@ -482,11 +516,27 @@
                 <span class="zone-type">Gas Lift Production</span>
                 <span class="zone-dot" :class="{active: hasAlert('pad_bravo')}"></span>
               </div>
-              <div class="zone-kpis" v-if="kpis.pad_bravo">
-                <span>{{ kpis.pad_bravo.production_boed.toLocaleString() }} BOE/d</span>
-                <span :class="{'zk-ok': kpis.pad_bravo.uptime_pct >= 99}">↑ {{ kpis.pad_bravo.uptime_pct }}%</span>
-                <span>Inj. {{ kpis.pad_bravo.inj_gas_mmscfd }} MMscfd</span>
-                <span>WHP 312 PSI</span>
+              <div class="zone-metric-grid" v-if="kpis.pad_bravo">
+                <div class="zm-card" :class="kpiColor(kpis.pad_bravo.production_boed, 650, 500)">
+                  <div class="zm-val">{{ kpis.pad_bravo.production_boed.toLocaleString() }}</div>
+                  <div class="zm-lbl">Production <span class="zm-unit">BOE/d</span></div>
+                </div>
+                <div class="zm-card" :class="kpiColor(kpis.pad_bravo.uptime_pct, 99, 95)">
+                  <div class="zm-val">{{ kpis.pad_bravo.uptime_pct }}<span class="zm-unit">%</span></div>
+                  <div class="zm-lbl">Uptime</div>
+                </div>
+                <div class="zm-card" :class="kpiColor(kpis.pad_bravo.inj_gas_mmscfd, 1.6, 1.2)">
+                  <div class="zm-val">{{ kpis.pad_bravo.inj_gas_mmscfd }}<span class="zm-unit"> MM</span></div>
+                  <div class="zm-lbl">Inj. Gas</div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val">312<span class="zm-unit"> PSI</span></div>
+                  <div class="zm-lbl">Wellhead P</div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val">78<span class="zm-unit">%</span></div>
+                  <div class="zm-lbl">Lift Eff.</div>
+                </div>
               </div>
               <div class="asset-nodes">
                 <div v-for="assetId in SITES.pad_bravo.assets" :key="assetId"
@@ -508,11 +558,27 @@
                 <span class="zone-type">Drilling</span>
                 <span class="zone-dot" :class="{active: hasAlert('rig_42')}"></span>
               </div>
-              <div class="zone-kpis" v-if="kpis.rig_42">
-                <span>{{ kpis.rig_42.rop_ft_per_hr }} ft/hr ROP</span>
-                <span :class="{'zk-ok': kpis.rig_42.uptime_pct >= 99}">↑ {{ kpis.rig_42.uptime_pct }}%</span>
-                <span>{{ kpis.rig_42.depth_ft_md.toLocaleString() }} ft MD</span>
-                <span>{{ kpis.rig_42.mud_weight_ppg }} ppg</span>
+              <div class="zone-metric-grid" v-if="kpis.rig_42">
+                <div class="zm-card" :class="kpiColor(kpis.rig_42.rop_ft_per_hr, 45, 25)">
+                  <div class="zm-val">{{ kpis.rig_42.rop_ft_per_hr }}</div>
+                  <div class="zm-lbl">ROP <span class="zm-unit">ft/hr</span></div>
+                </div>
+                <div class="zm-card" :class="kpiColor(kpis.rig_42.uptime_pct, 99, 95)">
+                  <div class="zm-val">{{ kpis.rig_42.uptime_pct }}<span class="zm-unit">%</span></div>
+                  <div class="zm-lbl">Uptime</div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val" style="font-size:0.85rem">{{ kpis.rig_42.depth_ft_md.toLocaleString() }}</div>
+                  <div class="zm-lbl">Depth <span class="zm-unit">ft MD</span></div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val">{{ kpis.rig_42.mud_weight_ppg }}</div>
+                  <div class="zm-lbl">Mud Wt <span class="zm-unit">ppg</span></div>
+                </div>
+                <div class="zm-card zm-neutral">
+                  <div class="zm-val">22</div>
+                  <div class="zm-lbl">WOB <span class="zm-unit">klbs</span></div>
+                </div>
               </div>
               <div class="asset-nodes">
                 <div v-for="assetId in SITES.rig_42.assets" :key="assetId"
@@ -536,8 +602,11 @@
             </div>
           </div>
 
-          <!-- RIGHT: Field Intelligence Activity Stream (340px) -->
-          <div class="activity-stream">
+          <!-- Splitter -->
+          <div class="canvas-splitter" ref="canvasSplitter"></div>
+
+          <!-- RIGHT: Field Intelligence Activity Stream (dynamic width) -->
+          <div class="activity-stream" :style="{width: activityStreamWidth + 'px'}">
             <div class="section-hdr">
               <span class="live-dot"></span>
               Field Intelligence Stream
@@ -1239,10 +1308,11 @@ createApp({
       // Timers
       _pollKpis: null, _pollHorizon: null, _pollMlops: null,
       _pollDeg: null, _pollChart: null,
-      // Phase 15 — Asset Context Menu
+      // Phase 15 — Asset Context Menu + Splitter
       assetContextMenu: { visible: false, x: 0, y: 0, assetId: null },
       faultTooltipFt: null,
       faultTooltipData: null,
+      activityStreamWidth: 340,
     };
   },
 
@@ -1645,6 +1715,48 @@ createApp({
         }, 400);
       }
     },
+
+    // ── KPI color helpers (higher is better) ──
+    kpiColor(value, greenThreshold, orangeThreshold) {
+      if (value === null || value === undefined) return 'zm-neutral';
+      if (value >= greenThreshold) return 'zm-green';
+      if (value >= orangeThreshold) return 'zm-orange';
+      return 'zm-red';
+    },
+    // ── KPI color helpers (lower is better — e.g., water cut) ──
+    kpiColorInv(value, greenThreshold, orangeThreshold) {
+      if (value === null || value === undefined) return 'zm-neutral';
+      if (value < greenThreshold) return 'zm-green';
+      if (value < orangeThreshold) return 'zm-orange';
+      return 'zm-red';
+    },
+    // ── Horizontal splitter between fleet canvas and activity stream ──
+    initCanvasSplitter() {
+      const splitter = this.$refs.canvasSplitter;
+      if (!splitter) return;
+      let startX = 0, startW = 0;
+      const onMove = (e) => {
+        const delta = startX - e.clientX;
+        this.activityStreamWidth = Math.min(600, Math.max(180, startW + delta));
+      };
+      const onUp = () => {
+        splitter.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+      splitter.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startW = this.activityStreamWidth;
+        splitter.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    },
   },
 
   mounted() {
@@ -1654,6 +1766,7 @@ createApp({
     this._pollHorizon=setInterval(()=>this.fetchHorizonAlerts(),5000);
     this._pollMlops=setInterval(()=>this.fetchMlopsStatus(),15000);
     this.lastRefresh=new Date().toLocaleTimeString();
+    this.$nextTick(()=>this.initCanvasSplitter());
   },
 
   beforeUnmount() {
