@@ -53,15 +53,15 @@ data:
 ---
 # ============================================================================
 # Grafana — GDC-PM O&G SCADA / Telemetry Monitoring Dashboard
-# Phase 13.1 — Fixes: asset dropdown, hidden legends, SCADA-only alarm log,
-#              maxDataPoints limiting, Edge AI Detection Timeline renamed.
+# Session 9 — Site-Zone Grouping: Pad Alpha, Pad Bravo, Rig 42
 #
-# NARRATIVE: This is a well-designed, functional reactive SCADA monitoring view.
-# The "Asset" dropdown lets the operator focus on any single asset.
-# The sensor charts show the full 12-hour shift window with hard alarm limits.
-# The SCADA Breach Log at the bottom fires ONLY when hard thresholds are crossed.
-# During early-stage fault development — when the GDC Edge AI is already
-# predicting failure — THIS DASHBOARD SHOWS NOTHING WRONG.
+# NARRATIVE: Restructured from sensor-type columns to operator-centric
+# site-zone grouping. Each row now represents a physical operational area:
+#   Pad Alpha (ESP Production): PSI, Temp, Amps, Vibration
+#   Pad Bravo (Gas Lift):       PSI, Temp, Vibration
+#   Rig 42 (Drilling):          Mud PSI, SPM, Temp, Vibration
+# During early-stage fault development, THIS DASHBOARD SHOWS NOTHING WRONG.
+# The Edge AI vs SCADA comparison section at the bottom shows the contrast.
 # ============================================================================
 apiVersion: v1
 kind: ConfigMap
@@ -263,7 +263,7 @@ data:
         {
           "id": 2,
           "type": "row",
-          "title": "Pressure",
+          "title": "🛢 Pad Alpha — ESP Production",
           "collapsed": false,
           "gridPos": { "x": 0, "y": 5, "w": 24, "h": 1 }
         },
@@ -271,8 +271,8 @@ data:
         {
           "id": 5,
           "type": "timeseries",
-          "title": "ESP Intake Pressure (PSI)",
-          "description": "Nominal 1,200–1,600 PSI.  ▼ SCADA LOW alarm: 800 PSI (Gas Lock).  ▲ SCADA HIGH alarm: 1,850 PSI. A gradual declining slope — the gas lock precursor the Edge AI detects — sits well above the 800 PSI threshold and looks completely normal on this chart.",
+          "title": "ESP Intake Pressure (PSI) — Pad Alpha",
+          "description": "Nominal 1,200–1,600 PSI.  ▼ SCADA LOW: 800 PSI (Gas Lock).  ▲ SCADA HIGH: 1,850 PSI. A gradual declining slope — the gas lock precursor the Edge AI detects — sits well above the 800 PSI threshold and looks completely normal on this chart.",
           "gridPos": { "x": 0, "y": 6, "w": 12, "h": 9 },
           "maxDataPoints": 200,
           "options": {
@@ -300,137 +300,11 @@ data:
         },
 
         {
-          "id": 31,
-          "type": "timeseries",
-          "title": "Gas Lift Discharge Pressure (PSI)",
-          "description": "Nominal 940–1,060 PSI.  ▼ SCADA LOW alarm: 600 PSI (Check Valve Failure). A slow rate-of-decline of −2 PSI/hr — the valve washout signature — is visible in this 12-hour view but sits far above the 600 PSI alarm limit. Hover to identify individual assets.",
-          "gridPos": { "x": 12, "y": 6, "w": 12, "h": 9 },
-          "maxDataPoints": 200,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "none" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "pressurepsi",
-              "custom": { "lineWidth": 2, "fillOpacity": 6, "thresholdsStyle": { "mode": "line" } },
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "red",    "value": null },
-                { "color": "green",  "value": 600 },
-                { "color": "green",  "value": 900 },
-                { "color": "yellow", "value": 1100 },
-                { "color": "red",    "value": 1200 }
-              ]}
-            }
-          },
-          "targets": [{
-            "datasource": "AlloyDB-Omni",
-            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
-            "format": "time_series"
-          }]
-        },
-
-        {
-          "id": 3,
-          "type": "row",
-          "title": "Vibration & Temperature",
-          "collapsed": false,
-          "gridPos": { "x": 0, "y": 15, "w": 24, "h": 1 }
-        },
-
-        {
-          "id": 71,
-          "type": "timeseries",
-          "title": "Vibration (mm/s) — ESP",
-          "description": "ESP assets (Pad Alpha). Nominal 0.8–2.0 mm/s. SCADA HIGH: 10.0 mm/s. Sand ingress or gas lock causes a slow +0.05 mm/s/hr rise — invisible to SCADA until 10.0 is crossed weeks later.",
-          "gridPos": { "x": 0, "y": 16, "w": 8, "h": 9 },
-          "maxDataPoints": 200,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "desc" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "velocityms",
-              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green",  "value": null },
-                { "color": "yellow", "value": 5.0 },
-                { "color": "red",    "value": 10.0 }
-              ]}
-            }
-          },
-          "targets": [{
-            "datasource": "AlloyDB-Omni",
-            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
-            "format": "time_series"
-          }]
-        },
-
-        {
-          "id": 72,
-          "type": "timeseries",
-          "title": "Vibration (mm/s) — Gas Lift",
-          "description": "Gas Lift compressors (Pad Bravo). Nominal 1.0–2.5 mm/s. SCADA HIGH: 10.0 mm/s. Bearing wear shows a +0.08g/week BPFI spectral rise that is invisible here until overall vibration alarms.",
-          "gridPos": { "x": 8, "y": 16, "w": 8, "h": 9 },
-          "maxDataPoints": 200,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "desc" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "velocityms",
-              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green",  "value": null },
-                { "color": "yellow", "value": 7.0 },
-                { "color": "red",    "value": 12.0 }
-              ]}
-            }
-          },
-          "targets": [{
-            "datasource": "AlloyDB-Omni",
-            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
-            "format": "time_series"
-          }]
-        },
-
-        {
-          "id": 73,
-          "type": "timeseries",
-          "title": "Vibration (mm/s) — Rig 42",
-          "description": "Rig 42: Mud Pumps (nominal 2.5–4.5 mm/s, SCADA HIGH 20 mm/s) and Top Drive (nominal 1.8–3.8 mm/s, SCADA HIGH 15 mm/s). Pulsation dampener failure spikes instantly to 15–28 mm/s.",
-          "gridPos": { "x": 16, "y": 16, "w": 8, "h": 9 },
-          "maxDataPoints": 200,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "desc" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "velocityms",
-              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green",  "value": null },
-                { "color": "yellow", "value": 10.0 },
-                { "color": "red",    "value": 20.0 }
-              ]}
-            }
-          },
-          "targets": [{
-            "datasource": "AlloyDB-Omni",
-            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND (asset_id LIKE 'MUD-%' OR asset_id LIKE 'TOPDRIVE-%') AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
-            "format": "time_series"
-          }]
-        },
-
-        {
           "id": 61,
           "type": "timeseries",
-          "title": "Temperature (°F) — ESP",
-          "description": "ESP motor winding temp (Pad Alpha). Nominal 180–220°F. SCADA HIGH: 230°F. At 67% water cut, cooling degrades — a +1°F/hr thermal climb reaches the alarm 50+ hours after GDC AI first detects it.",
-          "gridPos": { "x": 0, "y": 25, "w": 8, "h": 9 },
+          "title": "ESP Motor Winding Temp (°F) — Pad Alpha",
+          "description": "Nominal 180–220°F. SCADA HIGH: 230°F. At 67% water cut, cooling degrades — a +1°F/hr thermal climb reaches the alarm 50+ hours after GDC AI first detects it.",
+          "gridPos": { "x": 12, "y": 6, "w": 12, "h": 9 },
           "maxDataPoints": 200,
           "options": {
             "tooltip": { "mode": "multi", "sort": "desc" },
@@ -455,77 +329,11 @@ data:
         },
 
         {
-          "id": 62,
-          "type": "timeseries",
-          "title": "Temperature (°F) — Gas Lift",
-          "description": "Gas Lift discharge temp (Pad Bravo). Nominal 140–178°F. SCADA HIGH: 230°F. Thermal runaway from blocked fin-fan cooling climbs +2.1°F/hr — GDC AI detects it 8 hours before the SCADA alarm.",
-          "gridPos": { "x": 8, "y": 25, "w": 8, "h": 9 },
-          "maxDataPoints": 200,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "desc" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "fahrenheit",
-              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green",  "value": null },
-                { "color": "yellow", "value": 190 },
-                { "color": "red",    "value": 230 }
-              ]}
-            }
-          },
-          "targets": [{
-            "datasource": "AlloyDB-Omni",
-            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(temp_f) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
-            "format": "time_series"
-          }]
-        },
-
-        {
-          "id": 63,
-          "type": "timeseries",
-          "title": "Temperature (°F) — Rig 42",
-          "description": "Rig 42 temps: Mud Pump fluid end (nominal 90–120°F, SCADA HIGH 180°F) and Top Drive gearbox oil (nominal 130–165°F, SCADA HIGH 220°F). Piston seal wear drives fluid end +8°F/hr.",
-          "gridPos": { "x": 16, "y": 25, "w": 8, "h": 9 },
-          "maxDataPoints": 200,
-          "options": {
-            "tooltip": { "mode": "multi", "sort": "desc" },
-            "legend": { "displayMode": "list", "placement": "bottom" }
-          },
-          "fieldConfig": {
-            "defaults": {
-              "unit": "fahrenheit",
-              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
-              "thresholds": { "mode": "absolute", "steps": [
-                { "color": "green",  "value": null },
-                { "color": "yellow", "value": 150 },
-                { "color": "red",    "value": 220 }
-              ]}
-            }
-          },
-          "targets": [{
-            "datasource": "AlloyDB-Omni",
-            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(temp_f) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND (asset_id LIKE 'MUD-%' OR asset_id LIKE 'TOPDRIVE-%') AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
-            "format": "time_series"
-          }]
-        },
-
-        {
-          "id": 4,
-          "type": "row",
-          "title": "Electrical & Mechanical",
-          "collapsed": false,
-          "gridPos": { "x": 0, "y": 34, "w": 24, "h": 1 }
-        },
-
-        {
           "id": 29,
           "type": "timeseries",
-          "title": "Motor Current — ESP Assets (A)",
+          "title": "ESP Motor Current (A) — Pad Alpha",
           "description": "Nominal 60–90 A.  ▲ SCADA HIGH: >105 A (Motor Overheat).  ▼ SCADA LOW: <45 A (Gas Lock or sand impeller erosion). A moderate current drop from 82 A to 74 A combined with rising vibration is the early Gas Lock precursor — no single SCADA threshold is breached.",
-          "gridPos": { "x": 0, "y": 35, "w": 12, "h": 9 },
+          "gridPos": { "x": 0, "y": 15, "w": 12, "h": 9 },
           "maxDataPoints": 200,
           "options": {
             "tooltip": { "mode": "multi", "sort": "none" },
@@ -552,9 +360,174 @@ data:
         },
 
         {
+          "id": 71,
+          "type": "timeseries",
+          "title": "ESP Vibration (mm/s) — Pad Alpha",
+          "description": "Nominal 0.8–2.0 mm/s. SCADA HIGH: 10.0 mm/s. Sand ingress or gas lock causes a slow +0.05 mm/s/hr rise — invisible to SCADA until 10.0 is crossed weeks later.",
+          "gridPos": { "x": 12, "y": 15, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "velocityms",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 5.0 },
+                { "color": "red",    "value": 10.0 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'ESP-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 3,
+          "type": "row",
+          "title": "🛢 Pad Bravo — Gas Lift Production",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 24, "w": 24, "h": 1 }
+        },
+
+        {
+          "id": 31,
+          "type": "timeseries",
+          "title": "Gas Lift Discharge Pressure (PSI) — Pad Bravo",
+          "description": "Nominal 940–1,060 PSI.  ▼ SCADA LOW: 600 PSI (Check Valve Failure). A slow rate-of-decline of −2 PSI/hr — the valve washout signature — is visible here but sits far above the 600 PSI alarm limit.",
+          "gridPos": { "x": 0, "y": 25, "w": 8, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "none" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pressurepsi",
+              "custom": { "lineWidth": 2, "fillOpacity": 6, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red",    "value": null },
+                { "color": "green",  "value": 600 },
+                { "color": "green",  "value": 900 },
+                { "color": "yellow", "value": 1100 },
+                { "color": "red",    "value": 1200 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 62,
+          "type": "timeseries",
+          "title": "Gas Lift Discharge Temp (°F) — Pad Bravo",
+          "description": "Nominal 140–178°F. SCADA HIGH: 230°F. Thermal runaway from blocked fin-fan cooling climbs +2.1°F/hr — GDC AI detects it 8 hours before the SCADA alarm.",
+          "gridPos": { "x": 8, "y": 25, "w": 8, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "fahrenheit",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 190 },
+                { "color": "red",    "value": 230 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(temp_f) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 72,
+          "type": "timeseries",
+          "title": "Gas Lift Vibration (mm/s) — Pad Bravo",
+          "description": "Nominal 1.0–2.5 mm/s. SCADA HIGH: 10.0 mm/s. Bearing wear shows a +0.08g/week BPFI spectral rise that is invisible here until overall vibration alarms.",
+          "gridPos": { "x": 16, "y": 25, "w": 8, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "velocityms",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 7.0 },
+                { "color": "red",    "value": 12.0 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'GLIFT-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 4,
+          "type": "row",
+          "title": "🏗 Rig 42 — Drilling",
+          "collapsed": false,
+          "gridPos": { "x": 0, "y": 34, "w": 24, "h": 1 }
+        },
+
+        {
+          "id": 32,
+          "type": "timeseries",
+          "title": "Mud Pump Discharge Pressure (PSI) — Rig 42",
+          "description": "Nominal 2,550–3,150 PSI.  ▼ SCADA LOW: 1,800 PSI (pump stall).  ▲ SCADA HIGH: 3,800 PSI (rupture risk). A gradual PSI decline combined with falling SPM indicates Valve Seat Washout — well within SCADA normal range while the Edge AI has already detected it.",
+          "gridPos": { "x": 0, "y": 35, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "none" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "pressurepsi",
+              "custom": { "lineWidth": 2, "fillOpacity": 6, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "red",    "value": null },
+                { "color": "orange", "value": 1800 },
+                { "color": "green",  "value": 2400 },
+                { "color": "yellow", "value": 3300 },
+                { "color": "red",    "value": 3800 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(psi) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND asset_id LIKE 'MUD-%' AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
           "id": 30,
           "type": "timeseries",
-          "title": "Stroke Rate — Mud Pump Assets (SPM)",
+          "title": "Mud Pump Stroke Rate (SPM) — Rig 42",
           "description": "Nominal 75–100 SPM.  ▲ SCADA HIGH: >120 SPM.  ▼ SCADA LOW: <60 SPM. A gradual SPM decline from 92 to 84 SPM combined with rising discharge pressure indicates Valve Seat Washout — no SCADA threshold is breached at this stage.",
           "gridPos": { "x": 12, "y": 35, "w": 12, "h": 9 },
           "maxDataPoints": 200,
@@ -583,11 +556,69 @@ data:
         },
 
         {
+          "id": 73,
+          "type": "timeseries",
+          "title": "Rig 42 Vibration (mm/s) — Mud Pump & Top Drive",
+          "description": "Mud Pumps (nominal 2.5–4.5 mm/s, SCADA HIGH 20 mm/s) and Top Drive (nominal 1.8–3.8 mm/s, SCADA HIGH 15 mm/s). Pulsation dampener failure spikes instantly to 15–28 mm/s.",
+          "gridPos": { "x": 0, "y": 44, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "velocityms",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 10.0 },
+                { "color": "red",    "value": 20.0 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(vibration) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND (asset_id LIKE 'MUD-%' OR asset_id LIKE 'TOPDRIVE-%') AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
+          "id": 63,
+          "type": "timeseries",
+          "title": "Rig 42 Temperature (°F) — Mud Pump & Top Drive",
+          "description": "Mud Pump fluid end (nominal 90–120°F, SCADA HIGH 180°F) and Top Drive gearbox oil (nominal 130–165°F, SCADA HIGH 220°F). Piston seal wear drives fluid end +8°F/hr.",
+          "gridPos": { "x": 12, "y": 44, "w": 12, "h": 9 },
+          "maxDataPoints": 200,
+          "options": {
+            "tooltip": { "mode": "multi", "sort": "desc" },
+            "legend": { "displayMode": "list", "placement": "bottom" }
+          },
+          "fieldConfig": {
+            "defaults": {
+              "unit": "fahrenheit",
+              "custom": { "lineWidth": 2, "fillOpacity": 5, "thresholdsStyle": { "mode": "line" } },
+              "thresholds": { "mode": "absolute", "steps": [
+                { "color": "green",  "value": null },
+                { "color": "yellow", "value": 150 },
+                { "color": "red",    "value": 220 }
+              ]}
+            }
+          },
+          "targets": [{
+            "datasource": "AlloyDB-Omni",
+            "rawSql": "SELECT date_trunc('minute', event_time) AS time, asset_id AS metric, AVG(temp_f) AS value FROM telemetry_events WHERE $__timeFilter(event_time) AND (asset_id LIKE 'MUD-%' OR asset_id LIKE 'TOPDRIVE-%') AND ('All' = '$asset' OR asset_id = '$asset') GROUP BY 1, asset_id ORDER BY 1",
+            "format": "time_series"
+          }]
+        },
+
+        {
           "id": 50,
           "type": "row",
           "title": "⚡ Edge AI vs SCADA",
           "collapsed": false,
-          "gridPos": { "x": 0, "y": 44, "w": 24, "h": 1 }
+          "gridPos": { "x": 0, "y": 53, "w": 24, "h": 1 }
         },
 
         {
@@ -595,7 +626,7 @@ data:
           "type": "state-timeline",
           "title": "⚡ GDC Edge AI Detection Timeline",
           "description": "This panel shows what the GDC XGBoost model has detected — multi-variable fault precursors scored in real-time at the edge. Orange = Warning-level prediction. Red = Critical prediction. Compare this to the SCADA Breach Log below: the AI detections appear hours or days before the SCADA log would contain a single entry.",
-          "gridPos": { "x": 0, "y": 45, "w": 24, "h": 10 },
+          "gridPos": { "x": 0, "y": 54, "w": 24, "h": 10 },
           "maxDataPoints": 200,
           "options": {
             "mergeValues": true,
@@ -627,7 +658,7 @@ data:
           "type": "table",
           "title": "🔴 SCADA Hard-Threshold Breach Log",
           "description": "This table shows ONLY the events where sensor values physically crossed a hard SCADA alarm limit — what a traditional monitoring system would actually generate as alarms. During normal and early-stage fault development (when the Edge AI timeline above is already populated), this table is empty. That is the point: by the time this log fills up, the corrective maintenance window is already compressed.",
-          "gridPos": { "x": 0, "y": 55, "w": 24, "h": 9 },
+          "gridPos": { "x": 0, "y": 64, "w": 24, "h": 9 },
           "options": {
             "sortBy": [{ "desc": true, "displayName": "Time" }],
             "cellHeight": "sm",

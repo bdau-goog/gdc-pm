@@ -140,23 +140,41 @@
     .dd-horizon-badge.hours{color:var(--orange);border-color:var(--orange);background:rgba(255,109,0,0.1)}
     .dd-horizon-badge.minutes{color:var(--red);border-color:var(--red);background:rgba(244,67,54,0.1)}
     .dd-health-lbl{font-size:0.68rem;font-family:var(--mono);color:var(--muted);margin-left:4px}
-    /* ── New Deep Dive Layout (Session 8): 2-row structure ── */
-    /* Row 1: side-by-side SCADA vs GDC comparison charts    */
-    /* Row 2: 3-column evidence / agent / action bottom half  */
-    .dd-compare-row{height:265px;flex-shrink:0;display:flex;border-bottom:1px solid var(--border)}
+    /* ── Deep Dive Layout (Session 9): vertical comparison stack ──────────────
+       Row 1: GDC AI forecast chart (top)
+               Horizontal time-advantage bridge (middle)
+               Traditional SCADA chart (bottom)
+       Row 2: 3-column evidence / agent / action bottom half                   */
+    .dd-compare-row{height:430px;flex-shrink:0;display:flex;flex-direction:column;border-bottom:1px solid var(--border)}
     .dd-view-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
-    .dd-scada-panel{border-right:1px solid var(--border)}
-    .chart-view-hdr{flex-shrink:0;height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf)}
+    .dd-scada-panel{border-top:1px solid var(--border)}
+    .chart-view-hdr{flex-shrink:0;height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf);position:relative}
     .chart-view-title{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);white-space:nowrap;padding-right:8px;border-right:1px solid var(--border)}
     .gdc-hdr-title{color:rgba(255,140,0,0.8)}
     .chart-view-status{font-size:0.62rem;padding:0 6px;white-space:nowrap}
     .dd-chart-wrap{flex:1;min-height:0;position:relative;background:var(--bg)}
     .dd-chart-wrap #scada-chart, .dd-chart-wrap #forecast-chart{width:100%;height:100%}
-    .dd-delta-bridge{width:74px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:1px solid var(--border);border-right:1px solid var(--border);background:rgba(30,144,255,0.03);padding:6px 3px}
+    /* ── Horizontal time-advantage bridge ── */
+    .dd-delta-bridge{width:100%;flex-shrink:0;height:46px;display:flex;align-items:center;padding:0 16px;gap:10px;background:rgba(30,144,255,0.03);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
+    .bridge-anchor{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0}
+    .bridge-anchor-lbl{font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap}
+    .bridge-anchor-sub{font-size:0.5rem;color:var(--muted);white-space:nowrap}
+    .bridge-track{flex:1;display:flex;flex-direction:column;gap:4px}
+    .bridge-bar-wrap{position:relative;height:10px;background:rgba(255,255,255,0.05);border-radius:5px;overflow:hidden}
+    .bridge-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,rgba(30,144,255,0.7),rgba(255,109,0,0.8));transition:width 0.8s ease}
+    .bridge-bar-label{font-family:var(--mono);font-size:0.62rem;font-weight:700;color:var(--blue);text-align:center}
     .delta-badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
     .delta-icon{font-size:16px}
     .delta-val{font-family:var(--mono);font-size:0.68rem;font-weight:700;color:var(--blue);line-height:1.2}
     .delta-lbl{font-size:0.49rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;text-align:center;line-height:1.35}
+    /* ── AI Factors info button & popover ── */
+    .ai-factors-btn{width:20px;height:20px;border-radius:50%;border:1px solid rgba(255,140,0,0.4);background:rgba(255,140,0,0.08);color:rgba(255,140,0,0.9);font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;font-weight:700;line-height:1;padding:0}
+    .ai-factors-btn:hover,.ai-factors-btn.active{border-color:rgba(255,140,0,0.9);background:rgba(255,140,0,0.18)}
+    .ai-factors-popover{position:absolute;top:38px;right:8px;z-index:100;background:rgba(18,24,32,0.98);border:1px solid rgba(255,140,0,0.3);border-radius:7px;padding:10px 12px;min-width:270px;max-width:340px;box-shadow:0 8px 24px rgba(0,0,0,0.6);backdrop-filter:blur(8px)}
+    .afp-title{font-size:0.62rem;font-weight:700;color:rgba(255,140,0,0.9);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px}
+    .afp-row{font-size:0.63rem;color:var(--text2);padding:2px 0;display:flex;align-items:center;gap:6px;line-height:1.4}
+    .afp-row::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,140,0,0.7);flex-shrink:0}
+    .afp-footer{font-size:0.58rem;color:var(--muted);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);line-height:1.5}
     .dd-bottom-row{flex:1;min-height:0;display:flex;overflow:hidden}
     .dd-intel-col{width:295px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
     .dd-agent-col{width:255px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
@@ -428,9 +446,9 @@
     <span class="hdr-title">GDC Predictive Maintenance</span>
     <span class="hdr-badge">O&G EDGE AI</span>
     <div class="hdr-tabs">
-      <div class="hdr-tab" :class="{active: mainTab==='telemetry'}" @click="mainTab='telemetry';loadGrafana()">Fleet Telemetry</div>
       <div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations'">Fleet Operations</div>
       <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
+      <div class="hdr-tab" :class="{active: mainTab==='telemetry'}" @click="mainTab='telemetry';loadGrafana()" style="color:var(--muted);opacity:0.7">Fleet Telemetry</div>
     </div>
     <div class="hdr-right">
       <span class="wan-badge" :class="'wan-' + (mlops.wan_state||'stable')">
@@ -760,10 +778,72 @@
           </button>
         </div>
 
-        <!-- ── Row 1: Side-by-Side SCADA vs GDC Chart Comparison ── -->
-        <div class="dd-compare-row">
+        <!-- ── Row 1: Vertical GDC AI (top) → Time Bridge (middle) → SCADA (bottom) ── -->
+        <div class="dd-compare-row" @click="showAiFactors=false">
 
-          <!-- SCADA View — historical only, no projection -->
+          <!-- TOP: GDC Edge AI Forecast chart -->
+          <div class="dd-view-panel dd-gdc-panel">
+            <div class="chart-view-hdr">
+              <span class="chart-view-title gdc-hdr-title">⚡ GDC Edge AI Forecast</span>
+              <span class="chart-view-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : 'var(--muted)'}">
+                {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED — RUL active' : 'Monitoring…' }}
+              </span>
+              <span v-if="ddAssetId" style="font-family:var(--mono);font-size:0.62rem;color:var(--blue);margin-left:auto;padding-right:8px">{{ ddAssetId }}</span>
+              <!-- ⓘ AI Input Factors button -->
+              <div style="position:relative;flex-shrink:0;margin-right:4px">
+                <button class="ai-factors-btn" :class="{active: showAiFactors}" @click.stop="showAiFactors=!showAiFactors" title="View AI input features">ⓘ</button>
+                <div v-if="showAiFactors" class="ai-factors-popover" @click.stop>
+                  <div class="afp-title">⚡ XGBoost RUL Model — Input Features</div>
+                  <div v-for="f in aiFactors" :key="f" class="afp-row">{{ f }}</div>
+                  <div v-if="aiFactors.length === 0" class="afp-row" style="color:var(--muted)">Open a fault deep-dive to see the input features.</div>
+                  <div class="afp-footer">
+                    Deterministic ML: multivariate sensor correlation, not single-threshold rules. The Agent chat (right column) additionally reasons over field documents and maintenance records.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="dd-chart-wrap">
+              <div v-if="!chartData" class="chart-placeholder">
+                <div class="ph-icon" style="color:#ff8c00;opacity:0.4">⚡</div>
+                <div class="ph-text">GDC AI forecast will appear here<br><span style="font-size:0.6rem;color:var(--muted)">SCADA Alarm → PNR → Failure timeline</span></div>
+              </div>
+              <div id="forecast-chart"></div>
+            </div>
+          </div>
+
+          <!-- MIDDLE: Horizontal Time Advantage Bridge -->
+          <div class="dd-delta-bridge">
+            <template v-if="injectionRunning && degStatus && degStatus.time_to_scada_minutes > 0">
+              <div class="bridge-anchor">
+                <span class="bridge-anchor-lbl" style="color:var(--orange)">⚡ GDC Detected</span>
+                <span class="bridge-anchor-sub">AI lead established</span>
+              </div>
+              <div class="bridge-track">
+                <div class="bridge-bar-wrap">
+                  <div class="bridge-bar-fill" :style="{width: bridgeBarPct + '%'}"></div>
+                </div>
+                <div class="bridge-bar-label">{{ formatRulFull(degStatus.time_to_scada_minutes) }} GDC Lead Time Remaining</div>
+              </div>
+              <div class="bridge-anchor">
+                <span class="bridge-anchor-lbl" style="color:var(--red)">⛔ SCADA Alarm</span>
+                <span class="bridge-anchor-sub">threshold breach</span>
+              </div>
+            </template>
+            <template v-else-if="injectionRunning">
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px">
+                <span style="font-size:14px">⚠</span>
+                <span style="font-size:0.62rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.06em">SCADA Alarm Zone — Lead Time Consumed</span>
+              </div>
+            </template>
+            <template v-else>
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0.3">
+                <span style="font-size:12px">⏱</span>
+                <span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Inject a fault to see GDC lead time advantage</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- BOTTOM: Traditional SCADA chart — historical only, no projection -->
           <div class="dd-view-panel dd-scada-panel">
             <div class="chart-view-hdr">
               <span class="chart-view-title">🛢 Traditional SCADA</span>
@@ -783,41 +863,6 @@
                 <div class="ph-text">SCADA View — inject a fault to see the contrast<br><span style="font-size:0.6rem;color:var(--green)">✓ No alarms · all thresholds nominal</span></div>
               </div>
               <div id="scada-chart"></div>
-            </div>
-          </div>
-
-          <!-- Delta Bridge — GDC AI lead time advantage -->
-          <div class="dd-delta-bridge">
-            <div v-if="injectionRunning && degStatus && degStatus.time_to_scada_minutes > 0" class="delta-badge">
-              <span class="delta-icon">⚡</span>
-              <div class="delta-val">{{ formatRulFull(degStatus.time_to_scada_minutes) }}</div>
-              <div class="delta-lbl">GDC AI<br>Lead Time</div>
-            </div>
-            <div v-else-if="injectionRunning" class="delta-badge">
-              <span class="delta-icon" style="color:var(--red)">⚠</span>
-              <div class="delta-lbl" style="color:var(--red)">SCADA<br>ALARM<br>ZONE</div>
-            </div>
-            <div v-else style="display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0.28;text-align:center">
-              <span style="font-size:15px">⏱</span>
-              <div class="delta-lbl">Inject<br>fault</div>
-            </div>
-          </div>
-
-          <!-- GDC Edge AI View — full RUL projection -->
-          <div class="dd-view-panel dd-gdc-panel">
-            <div class="chart-view-hdr">
-              <span class="chart-view-title gdc-hdr-title">⚡ GDC Edge AI Forecast</span>
-              <span class="chart-view-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : 'var(--muted)'}">
-                {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED — RUL active' : 'Monitoring…' }}
-              </span>
-              <span v-if="ddAssetId" style="font-family:var(--mono);font-size:0.62rem;color:var(--blue);margin-left:auto;padding-right:6px">{{ ddAssetId }}</span>
-            </div>
-            <div class="dd-chart-wrap">
-              <div v-if="!chartData" class="chart-placeholder">
-                <div class="ph-icon" style="color:#ff8c00;opacity:0.4">⚡</div>
-                <div class="ph-text">GDC AI forecast will appear here<br><span style="font-size:0.6rem;color:var(--muted)">SCADA Alarm → PNR → Failure timeline</span></div>
-              </div>
-              <div id="forecast-chart"></div>
             </div>
           </div>
 
@@ -1300,7 +1345,7 @@ const FIELD_INTEL_ITEMS = [
 createApp({
   data() {
     return {
-      mainTab: 'telemetry',
+      mainTab: 'operations',
       currentView: 'dashboard',
       horizonAlerts: [],
       kpis: {},
@@ -1363,6 +1408,9 @@ createApp({
       faultTooltipFt: null,
       faultTooltipData: null,
       activityStreamWidth: 340,
+      // Session 9 — Deep Dive vertical layout
+      showAiFactors: false,      // toggles the AI input factors popover on the GDC chart
+      initialRulMinutes: null,   // captured on first degrade poll; used for bridge bar pct
     };
   },
 
@@ -1386,6 +1434,26 @@ createApp({
     injectProgressPct() {
       if (!this.degStatus?.is_active) return 0;
       return Math.round((1 - (this.degStatus.health_score || 1)) * 100);
+    },
+    // ── AI input factors — sensor labels for the active fault type ────────────
+    // Used by the ⓘ popover on the GDC AI chart header to list what the XGBoost
+    // model is reading. No LLM involved — these are purely numerical sensor inputs.
+    aiFactors() {
+      if (!this.ddFaultType) return [];
+      const ac = FAULT_META[this.ddFaultType]?.aclass || (ASSET_META[this.ddAssetId]?.aclass);
+      if (!ac) return [];
+      const labels = SENSOR_LABELS[ac] || {};
+      return [labels.psi, labels.temp, labels.vib, labels.s4].filter(Boolean);
+    },
+    // ── Bridge bar percentage — how much lead time is remaining vs initial ────
+    // Starts at 100% when the fault is first detected; shrinks as time elapses.
+    // When initialRulMinutes is null (no baseline captured yet), shows full bar.
+    bridgeBarPct() {
+      if (!this.degStatus?.time_to_scada_minutes) return 100;
+      if (!this.initialRulMinutes) return 100;
+      return Math.min(100, Math.max(2, Math.round(
+        (this.degStatus.time_to_scada_minutes / this.initialRulMinutes) * 100
+      )));
     },
   },
 
@@ -1495,7 +1563,18 @@ createApp({
     async fetchMlopsStatus() { try { const r=await fetch('/api/mlops/status'); if(r.ok){const d=await r.json();this.mlops=d;} } catch{} },
     async fetchDegradeStatus() {
       if(!this.ddAssetId) return;
-      try { const r=await fetch(`/api/degrade-status/${this.ddAssetId}`); if(r.ok){const d=await r.json();this.degStatus=d;if(d.is_active&&d.fault_type)this.ddFaultType=d.fault_type;} } catch{}
+      try {
+        const r=await fetch(`/api/degrade-status/${this.ddAssetId}`);
+        if(r.ok){
+          const d=await r.json();
+          this.degStatus=d;
+          if(d.is_active&&d.fault_type) this.ddFaultType=d.fault_type;
+          // Capture initial RUL when the fault first becomes active for bridge bar baseline
+          if(this.initialRulMinutes === null && d.is_active && d.time_to_scada_minutes > 0) {
+            this.initialRulMinutes = d.time_to_scada_minutes;
+          }
+        }
+      } catch{}
     },
     async fetchForecastData() {
       if(!this.ddAssetId) return;
@@ -1603,6 +1682,7 @@ createApp({
       this.injectionRunning=false;this.ddFaultType=null;this.degStatus=null;this.chartData=null;
       this.feedItems=[];this.visibleFeedCount=0;this.gemmaFinding='';
       this.hitlAction=null;this.hitlOutcome=null;this.remediationTiers=null;this.selectedTierKey=null;
+      this.initialRulMinutes=null; this.showAiFactors=false;
       this.agentMessages=[{role:'system',content:'Fault cleared. Asset reset to nominal baseline.'}];
       Plotly.purge('forecast-chart');
       this.showToast(`↺ ${this.ddAssetId} reset to normal`,'var(--green)');
