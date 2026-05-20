@@ -148,21 +148,21 @@
     .dd-compare-row{flex-shrink:0;display:flex;flex-direction:column;border-bottom:none}
     .dd-view-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
     .dd-scada-panel{border-top:1px solid var(--border)}
-    .chart-view-hdr{flex-shrink:0;height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf);position:relative}
+    .chart-view-hdr{flex-shrink:0;min-height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf);position:relative}
     .chart-view-title{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);white-space:nowrap;padding-right:8px;border-right:1px solid var(--border)}
     .gdc-hdr-title{color:rgba(255,140,0,0.8)}
     .chart-view-status{font-size:0.62rem;padding:0 6px;white-space:nowrap}
     .dd-chart-wrap{flex:1;min-height:0;position:relative;background:var(--bg)}
     .dd-chart-wrap #scada-chart, .dd-chart-wrap #forecast-chart{width:100%;height:100%}
     /* ── Horizontal time-advantage bridge ── */
-    .dd-delta-bridge{width:100%;flex-shrink:0;height:46px;display:flex;align-items:center;padding:0 16px;gap:10px;background:rgba(30,144,255,0.03);border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-    .bridge-anchor{display:flex;flex-direction:column;align-items:center;gap:1px;flex-shrink:0}
-    .bridge-anchor-lbl{font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap}
-    .bridge-anchor-sub{font-size:0.5rem;color:var(--muted);white-space:nowrap}
-    .bridge-track{flex:1;display:flex;flex-direction:column;gap:4px}
-    .bridge-bar-wrap{position:relative;height:10px;background:rgba(255,255,255,0.05);border-radius:5px;overflow:hidden}
-    .bridge-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,rgba(30,144,255,0.7),rgba(255,109,0,0.8));transition:width 0.8s ease}
-    .bridge-bar-label{font-family:var(--mono);font-size:0.62rem;font-weight:700;color:var(--blue);text-align:center}
+    .dd-delta-bridge{width:100%;flex-shrink:0;height:62px;display:flex;align-items:center;padding:0 18px;gap:14px;background:linear-gradient(90deg,rgba(30,144,255,0.06),rgba(255,109,0,0.04));border-top:2px solid rgba(30,144,255,0.3);border-bottom:2px solid rgba(255,109,0,0.2)}
+    .bridge-anchor{display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0}
+    .bridge-anchor-lbl{font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;white-space:nowrap}
+    .bridge-anchor-sub{font-size:0.56rem;color:var(--muted);white-space:nowrap}
+    .bridge-track{flex:1;display:flex;flex-direction:column;gap:5px}
+    .bridge-bar-wrap{position:relative;height:14px;background:rgba(255,255,255,0.06);border-radius:7px;overflow:hidden;box-shadow:0 0 8px rgba(30,144,255,0.1) inset}
+    .bridge-bar-fill{height:100%;border-radius:7px;background:linear-gradient(90deg,#1e90ff,#ff8c00);box-shadow:0 0 10px rgba(30,144,255,0.6);transition:width 0.8s ease}
+    .bridge-bar-label{font-family:var(--mono);font-size:0.72rem;font-weight:700;color:var(--blue);text-align:center;text-shadow:0 0 8px rgba(30,144,255,0.4)}
     .delta-badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
     .delta-icon{font-size:16px}
     .delta-val{font-family:var(--mono);font-size:0.68rem;font-weight:700;color:var(--blue);line-height:1.2}
@@ -176,8 +176,8 @@
     .afp-row::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,140,0,0.7);flex-shrink:0}
     .afp-footer{font-size:0.58rem;color:var(--muted);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);line-height:1.5}
     .dd-bottom-row{flex:1;min-height:0;display:flex;overflow:hidden}
-    .dd-intel-col{width:295px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-    .dd-agent-col{width:255px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+    .dd-intel-col{flex-shrink:0;border-right:none;display:flex;flex-direction:column;overflow:hidden}
+    .dd-agent-col{flex-shrink:0;border-right:none;display:flex;flex-direction:column;overflow:hidden}
     .dd-action-col{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
     .dd-col-hdr{font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);padding:5px 10px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surf)}
 
@@ -424,6 +424,12 @@
     .compare-resize-handle{flex-shrink:0;height:9px;cursor:ns-resize;background:rgba(30,144,255,0.1);border-top:1px solid var(--border2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background 0.15s;position:relative;z-index:10;user-select:none}
     .compare-resize-handle:hover,.compare-resize-handle.dragging{background:rgba(30,144,255,0.32)}
     .compare-resize-handle::before{content:'';display:block;width:40px;height:3px;border-radius:2px;background:rgba(30,144,255,0.45)}
+
+    /* ── Bottom Panel Column Resize Handles ── */
+    .col-resize-handle{width:8px;flex-shrink:0;background:rgba(30,42,56,0.8);border-left:1px solid var(--border2);border-right:1px solid var(--border2);cursor:col-resize;display:flex;align-items:center;justify-content:center;transition:background 0.15s;user-select:none}
+    .col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(30,144,255,0.35);border-left-color:rgba(30,144,255,0.5);border-right-color:rgba(30,144,255,0.5)}
+    .col-resize-handle::before{content:'⋮';font-size:14px;color:rgba(255,255,255,0.3);line-height:1}
+    .col-resize-handle:hover::before,.col-resize-handle.dragging::before{color:rgba(30,144,255,0.9)}
 
     /* ── Telemetry Tab ── */
     #grafana-iframe{width:100%;height:100%;border:none}
@@ -788,24 +794,31 @@
 
           <!-- TOP: GDC Edge AI Forecast chart -->
           <div class="dd-view-panel dd-gdc-panel">
+            <!-- Header row 1: title + status + asset + ⓘ -->
             <div class="chart-view-hdr">
               <span class="chart-view-title gdc-hdr-title">⚡ GDC Edge AI Forecast</span>
               <span class="chart-view-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : 'var(--muted)'}">
                 {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED — RUL active' : 'Monitoring…' }}
               </span>
-              <span v-if="ddAssetId" style="font-family:var(--mono);font-size:0.62rem;color:var(--blue);margin-left:auto;padding-right:8px">{{ ddAssetId }}</span>
-              <!-- ⓘ AI Input Factors button -->
+              <div style="flex:1;min-width:0"></div>
+              <span v-if="ddAssetId" style="font-family:var(--mono);font-size:0.62rem;color:var(--blue);white-space:nowrap;padding-right:4px">{{ ddAssetId }}</span>
               <div style="position:relative;flex-shrink:0;margin-right:4px">
                 <button class="ai-factors-btn" :class="{active: showAiFactors}" @click.stop="showAiFactors=!showAiFactors" title="View AI input features">ⓘ</button>
                 <div v-if="showAiFactors" class="ai-factors-popover" @click.stop>
                   <div class="afp-title">⚡ XGBoost RUL Model — Input Features</div>
                   <div v-for="f in aiFactors" :key="f" class="afp-row">{{ f }}</div>
                   <div v-if="aiFactors.length === 0" class="afp-row" style="color:var(--muted)">Open a fault deep-dive to see the input features.</div>
-                  <div class="afp-footer">
-                    Deterministic ML: multivariate sensor correlation, not single-threshold rules. The Agent chat (right column) additionally reasons over field documents and maintenance records.
-                  </div>
+                  <div class="afp-footer">Deterministic ML: multivariate sensor correlation, not single-threshold rules.</div>
                 </div>
               </div>
+            </div>
+            <!-- Header row 2: Sensor tabs — standalone row, syncs both charts -->
+            <div style="flex-shrink:0;display:flex;align-items:stretch;height:30px;background:var(--surf2);border-bottom:1px solid var(--border);padding:0 10px">
+              <span style="font-size:0.55rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;align-self:center;padding-right:8px;white-space:nowrap;border-right:1px solid var(--border);margin-right:4px">Sensor View</span>
+              <div class="sensor-tab" :class="{active: activeTab==='psi'}" @click="selectTab('psi')" :title="'Switch both charts to ' + sensorTabLabel('psi') + ' view'">{{ sensorTabLabel('psi') }}</div>
+              <div class="sensor-tab" :class="{active: activeTab==='temp'}" @click="selectTab('temp')" :title="'Switch both charts to ' + sensorTabLabel('temp') + ' view'">{{ sensorTabLabel('temp') }}</div>
+              <div class="sensor-tab" :class="{active: activeTab==='vib'}" @click="selectTab('vib')" :title="'Switch both charts to ' + sensorTabLabel('vib') + ' view'">{{ sensorTabLabel('vib') }}</div>
+              <div v-if="sensor4TabKey" class="sensor-tab" :class="{active: activeTab===sensor4TabKey}" @click="selectTab(sensor4TabKey)" :title="'Switch both charts to ' + sensor4Label + ' view'">{{ sensor4Label }}</div>
             </div>
             <div class="dd-chart-wrap">
               <div v-if="!chartData" class="chart-placeholder">
@@ -827,7 +840,7 @@
                 <div class="bridge-bar-wrap">
                   <div class="bridge-bar-fill" :style="{width: bridgeBarPct + '%'}"></div>
                 </div>
-                <div class="bridge-bar-label">{{ formatRulFull(degStatus.time_to_scada_minutes) }} GDC Lead Time Remaining</div>
+                <div class="bridge-bar-label">{{ formatRulFull(degStatus.time_to_scada_minutes) }} until SCADA detection — {{ formatRulFull(initialRulMinutes) }} advance notice given by GDC</div>
               </div>
               <div class="bridge-anchor">
                 <span class="bridge-anchor-lbl" style="color:var(--red)">⛔ SCADA Alarm</span>
@@ -855,12 +868,6 @@
               <span class="chart-view-status" :style="{color: injectionRunning ? 'var(--green)' : 'var(--muted)'}">
                 {{ injectionRunning ? '✓ STATUS NORMAL — No Alarms' : '— Waiting for data' }}
               </span>
-              <div class="sensor-tabs" style="margin-left:auto">
-                <div class="sensor-tab" :class="{active: activeTab==='psi'}" @click="selectTab('psi')">{{ sensorTabLabel('psi') }}</div>
-                <div class="sensor-tab" :class="{active: activeTab==='temp'}" @click="selectTab('temp')">{{ sensorTabLabel('temp') }}</div>
-                <div class="sensor-tab" :class="{active: activeTab==='vib'}" @click="selectTab('vib')">{{ sensorTabLabel('vib') }}</div>
-                <div v-if="sensor4TabKey" class="sensor-tab" :class="{active: activeTab===sensor4TabKey}" @click="selectTab(sensor4TabKey)">{{ sensor4Label }}</div>
-              </div>
             </div>
             <div class="dd-chart-wrap">
               <div v-if="!chartData" class="chart-placeholder">
@@ -874,13 +881,13 @@
         </div><!-- dd-compare-row -->
 
         <!-- ── Chart area resize handle — drag down to enlarge charts, push evidence panels off-screen ── -->
-        <div class="compare-resize-handle" ref="compareResizeHandle" title="Drag to resize chart area"></div>
+        <div class="compare-resize-handle" ref="compareResizeHandle" title="Drag to resize · Double-click to toggle full/split"></div>
 
-        <!-- ── Row 2: Evidence / Agent / Action — 3-column bottom half ── -->
+        <!-- ── Row 2: Evidence / Agent / Action — 3-column bottom half (resizable) ── -->
         <div class="dd-bottom-row">
 
           <!-- Column 1: Intelligence Feed & Sensor Data -->
-          <div class="dd-intel-col">
+          <div class="dd-intel-col" :style="{width: intelColWidth + 'px'}">
             <div class="dd-col-hdr">📡 Evidence & Intelligence
               <template v-if="injectionRunning && ddFaultType">
                 <span class="live-dot" style="margin-left:6px"></span>
@@ -932,8 +939,11 @@
             </div>
           </div>
 
+          <!-- Resizer between Evidence and Agent columns -->
+          <div class="col-resize-handle" ref="intelResizer" title="Drag to resize"></div>
+
           <!-- Column 2: GDC Operations Agent Chat -->
-          <div class="dd-agent-col">
+          <div class="dd-agent-col" :style="{width: agentColWidth + 'px'}">
             <div class="copilot-hdr">
               🤖 GDC Ops Agent
               <span style="font-size:0.54rem;margin-left:3px;opacity:0.7;text-transform:none;font-weight:400">{{ mlops.ollama_model || 'gemma:2b' }} @ Edge</span>
@@ -948,6 +958,9 @@
               <button class="btn-send" @click="sendAgentMessage" :disabled="agentTyping || !agentInput.trim()">Send</button>
             </div>
           </div>
+
+          <!-- Resizer between Agent and Resolution columns -->
+          <div class="col-resize-handle" ref="agentResizer" title="Drag to resize"></div>
 
           <!-- Column 3: Resolution & Action -->
           <div class="dd-action-col">
@@ -1518,8 +1531,15 @@ createApp({
       activityStreamWidth: 340,
       // Session 9 — Deep Dive vertical layout
       showAiFactors: false,      // toggles the AI input factors popover on the GDC chart
-      initialRulMinutes: null,   // captured on first degrade poll; used for bridge bar pct
-      compareRowHeight: 430,     // Session 10: resizable via drag handle — push bottom panels down
+      // initialRulMap: per-asset map of original advance notice — persists across navigation
+      // so that when you go to fleet and back, the original advance notice is preserved
+      initialRulMap: {},
+      // Column widths for the 3 bottom panels — resizable, saved in sessionStorage
+      intelColWidth: (() => { try { const v=sessionStorage.getItem('gdc_intelColWidth'); return v ? parseInt(v,10) : 295; } catch { return 295; } })(),
+      agentColWidth: (() => { try { const v=sessionStorage.getItem('gdc_agentColWidth'); return v ? parseInt(v,10) : 255; } catch { return 255; } })(),
+      compareRowHeight: (() => {
+        try { const v = sessionStorage.getItem('gdc_compareRowHeight'); return v ? parseInt(v, 10) : 520; } catch { return 520; }
+      })(),   // Session 10: resizable via drag handle — push bottom panels down (default 520px)
     };
   },
 
@@ -1555,14 +1575,18 @@ createApp({
       return [labels.psi, labels.temp, labels.vib, labels.s4].filter(Boolean);
     },
     // ── Bridge bar percentage — how much lead time is remaining vs initial ────
-    // Starts at 100% when the fault is first detected; shrinks as time elapses.
-    // When initialRulMinutes is null (no baseline captured yet), shows full bar.
+    // Uses per-asset initialRulMap so navigating away and back doesn't reset it.
     bridgeBarPct() {
       if (!this.degStatus?.time_to_scada_minutes) return 100;
-      if (!this.initialRulMinutes) return 100;
+      const initial = this.ddAssetId ? this.initialRulMap[this.ddAssetId] : null;
+      if (!initial) return 100;
       return Math.min(100, Math.max(2, Math.round(
-        (this.degStatus.time_to_scada_minutes / this.initialRulMinutes) * 100
+        (this.degStatus.time_to_scada_minutes / initial) * 100
       )));
+    },
+    // ── Convenience getter for current asset's initial RUL (used in template) ──
+    initialRulMinutes() {
+      return this.ddAssetId ? (this.initialRulMap[this.ddAssetId] || null) : null;
     },
   },
 
@@ -1592,16 +1616,28 @@ createApp({
         this.fetchIntelligenceFeed();
       } else {
         this.injectionRunning = false;
+        // Clear the initial RUL for this asset only when no active fault
+        // (if there IS an active fault, preserve the original advance notice)
+        if (!dg) {
+          const m = {...this.initialRulMap};
+          delete m[assetId];
+          this.initialRulMap = m;
+        }
       }
       this.startDegPoll();
-      this.$nextTick(() => { this.initCopilotResize(); this.initCompareResize(); });
+      this.$nextTick(() => { this.initCopilotResize(); this.initCompareResize(); this.initColResizers(); });
     },
     backToDashboard() {
       this.currentView = 'dashboard';
       this.stopDegPoll();
       if (this.feedAnimTimer) { clearInterval(this.feedAnimTimer); this.feedAnimTimer = null; }
+      // Purge both charts — SCADA must also be purged or it leaves stale Plotly state
       Plotly.purge('forecast-chart');
+      Plotly.purge('scada-chart');
       this.chartData = null;
+      // NOTE: initialRulMap is intentionally NOT cleared here.
+      // When the user returns to this deep dive while the fault is still active,
+      // the original advance notice (time from first detection) will be preserved.
     },
     launchScenario(sc) {
       this.openDeepDive(sc.assetId, sc.faultType);
@@ -1679,8 +1715,9 @@ createApp({
           this.degStatus=d;
           if(d.is_active&&d.fault_type) this.ddFaultType=d.fault_type;
           // Capture initial RUL when the fault first becomes active for bridge bar baseline
-          if(this.initialRulMinutes === null && d.is_active && d.time_to_scada_minutes > 0) {
-            this.initialRulMinutes = d.time_to_scada_minutes;
+          // Stored per-asset so navigating away and back preserves the original advance notice
+          if(!this.initialRulMap[this.ddAssetId] && d.is_active && d.time_to_scada_minutes > 0) {
+            this.initialRulMap = {...this.initialRulMap, [this.ddAssetId]: d.time_to_scada_minutes};
           }
         }
       } catch{}
@@ -1733,45 +1770,82 @@ createApp({
       if(!this.chartData?.sensors) return;
       const s=this.chartData.sensors[this.activeTab];
       if(!s) return;
+      // ── Build gdcLayout FIRST (hoisted to outer scope so SCADA block can access it) ──
+      const gdcLayout = JSON.parse(JSON.stringify(s.layout));
+      // Override layout to ensure dark background and no padding issues
+      gdcLayout.paper_bgcolor = '#0b0c10';
+      gdcLayout.plot_bgcolor  = '#0b0c10';
+      gdcLayout.margin = gdcLayout.margin || {l:48,r:10,t:10,b:36};
+      if (gdcLayout.annotations) {
+        gdcLayout.annotations = gdcLayout.annotations.filter(a =>
+          !((a.text || '').toLowerCase().includes('scada alarm') ||
+            (a.text || '').toLowerCase().includes('scada a'))
+        );
+      }
       // ── GDC Edge AI chart — full projection + RUL markers ──────────────────
-      // Strip the "SCADA Alarm in Xm" annotation box — the bridge bar tells that story
       const elGdc=document.getElementById('forecast-chart');
       if(elGdc) {
-        const gdcLayout = JSON.parse(JSON.stringify(s.layout));
-        if (gdcLayout.annotations) {
-          gdcLayout.annotations = gdcLayout.annotations.filter(a =>
-            !((a.text || '').toLowerCase().includes('scada alarm') ||
-              (a.text || '').toLowerCase().includes('scada a'))
-          );
-        }
-        Plotly.react(elGdc,s.traces,gdcLayout,{displayModeBar:false,responsive:true})
-              .catch(()=>Plotly.newPlot(elGdc,s.traces,gdcLayout,{displayModeBar:false,responsive:true}));
+        Plotly.react(elGdc, s.traces, gdcLayout, {displayModeBar:false, responsive:true})
+              .catch(()=>Plotly.newPlot(elGdc, s.traces, gdcLayout, {displayModeBar:false, responsive:true}));
       }
       // ── SCADA chart — historical data only, stops at NOW ───────────────────
-      // Shows only what traditional SCADA sees: the blue historical line and the
+      // Shows only what traditional SCADA sees: the live telemetry line and the
       // hard alarm threshold. No projection. No AI inference. No future markers.
-      // The X-axis is capped at the last real timestamp — SCADA has no future view.
+      // Both X and Y axes are locked to match the GDC chart for visual alignment.
       const elScada=document.getElementById('scada-chart');
       if(elScada && s.traces && s.traces.length > 0) {
-        const scadaTraces = s.traces.filter(t =>
-          t.name === 'Live Telemetry' || t.name === 'SCADA Alarm Threshold'
-        );
-        const scadaLayout = JSON.parse(JSON.stringify(s.layout));
-        // Strip all future annotations and shapes — SCADA sees only the present
-        scadaLayout.annotations = [];
-        scadaLayout.shapes = [];
-        // Cap X-axis at last known timestamp (NOW line)
-        const histX = s.traces[0]?.x;
-        if(histX && histX.length > 0) {
-          scadaLayout.xaxis = {...(scadaLayout.xaxis||{}), range:[histX[0], histX[histX.length-1]]};
+        // Robust trace filter: accept telemetry and threshold lines by name
+        // (case-insensitive). Falls back to first trace + any non-fill line.
+        let scadaTraces = s.traces.filter(t => {
+          const n = (t.name || '').toLowerCase().trim();
+          return n.includes('telemetry') || n.includes('threshold') ||
+                 n.includes('alarm') || n.includes('historical') || n.includes('live');
+        });
+        // Fallback: take first trace (historical) plus any non-fill trace (threshold line)
+        if (scadaTraces.length === 0) {
+          scadaTraces = s.traces.slice(0, 1).concat(
+            s.traces.filter((t, i) => i > 0 && !t.fill)
+          );
         }
-        // SCADA title: always "NORMAL" because threshold hasn't been crossed
-        scadaLayout.title = {
-          text: '<b>SCADA Monitor</b><br><span style="font-size:11px;color:#00e676">✓ STATUS NORMAL — No Alarms Active</span>',
-          font: {size:13, color:'#e0e0e0'}, x:0.02, y:0.95
+        // Deep-copy traces, trim to historical data only (x up to last real value)
+        const histX = s.traces[0]?.x || [];
+        const nowIdx = histX.length - 1;
+        scadaTraces = scadaTraces.map(t => {
+          const tc = {...t, x: t.x, y: t.y};
+          // For scatter/line traces that have projection data, slice to nowIdx
+          if (tc.mode && tc.mode.includes('lines') && tc.x && tc.x.length > nowIdx + 1 && !tc.name?.toLowerCase().includes('threshold') && !tc.name?.toLowerCase().includes('alarm')) {
+            tc.x = tc.x.slice(0, nowIdx + 1);
+            tc.y = tc.y.slice(0, nowIdx + 1);
+          }
+          return tc;
+        });
+        const scadaLayout = {
+          paper_bgcolor: '#0b0c10',
+          plot_bgcolor:  '#0b0c10',
+          margin: {l:48, r:10, t:8, b:36},
+          font: {color: '#a0b0c0', size: 11},
+          xaxis: {
+            ...(gdcLayout.xaxis || {}),
+            range: histX.length > 0 ? [(gdcLayout.xaxis?.range?.[0] || histX[0]), histX[nowIdx]] : undefined,
+            autorange: false,
+            gridcolor: '#1e2a38',
+            linecolor: '#1e2a38',
+          },
+          yaxis: {
+            ...(gdcLayout.yaxis || {}),
+            range: gdcLayout.yaxis?.range,
+            autorange: !gdcLayout.yaxis?.range,
+            gridcolor: '#1e2a38',
+            linecolor: '#1e2a38',
+          },
+          showlegend: false,
+          annotations: [],
+          shapes: [],
         };
-        Plotly.react(elScada,scadaTraces,scadaLayout,{displayModeBar:false,responsive:true})
-              .catch(()=>Plotly.newPlot(elScada,scadaTraces,scadaLayout,{displayModeBar:false,responsive:true}));
+        // Always purge and redraw to prevent Plotly "no-resize" blank state
+        Plotly.purge(elScada);
+        Plotly.newPlot(elScada, scadaTraces, scadaLayout, {displayModeBar:false, responsive:true})
+          .then(() => { try { Plotly.Plots.resize(elScada); } catch(e){} });
       }
     },
     selectTab(tab) { this.activeTab=tab; this._tabManuallySelected=true; this.renderChart(); },
@@ -1799,7 +1873,8 @@ createApp({
       this.injectionRunning=false;this.ddFaultType=null;this.degStatus=null;this.chartData=null;
       this.feedItems=[];this.visibleFeedCount=0;this.gemmaFinding='';
       this.hitlAction=null;this.hitlOutcome=null;this.remediationTiers=null;this.selectedTierKey=null;
-      this.initialRulMinutes=null; this.showAiFactors=false;
+      const nm={...this.initialRulMap}; delete nm[this.ddAssetId]; this.initialRulMap=nm;
+      this.showAiFactors=false;
       this.agentMessages=[{role:'system',content:'Fault cleared. Asset reset to nominal baseline.'}];
       Plotly.purge('forecast-chart');
       this.showToast(`↺ ${this.ddAssetId} reset to normal`,'var(--green)');
@@ -1992,6 +2067,8 @@ createApp({
         document.removeEventListener('mouseup', onUp);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        // Persist height across page refreshes
+        try { sessionStorage.setItem('gdc_compareRowHeight', String(this.compareRowHeight)); } catch {}
         // Final re-render after mouse release
         if (this.chartData) this.$nextTick(() => this.renderChart());
       };
@@ -2004,6 +2081,13 @@ createApp({
         document.body.style.userSelect = 'none';
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
+      });
+      // Double-click to toggle between default split (430px) and near-full-screen
+      handle.addEventListener('dblclick', () => {
+        const fullH = Math.round(window.innerHeight * 0.88);
+        this.compareRowHeight = (this.compareRowHeight >= fullH - 20) ? 430 : fullH;
+        try { sessionStorage.setItem('gdc_compareRowHeight', String(this.compareRowHeight)); } catch {}
+        if (this.chartData) this.$nextTick(() => this.renderChart());
       });
     },
 
@@ -2070,6 +2154,44 @@ createApp({
       if (value < orangeThreshold) return 'zm-orange';
       return 'zm-red';
     },
+    // ── Column resizers for bottom panels (Evidence / Agent / Resolution) ──
+    initColResizers() {
+      this._initColResizer(this.$refs.intelResizer, 'intelColWidth', 150, 600, 'gdc_intelColWidth');
+      this._initColResizer(this.$refs.agentResizer, 'agentColWidth', 120, 500, 'gdc_agentColWidth');
+    },
+    _initColResizer(el, prop, min, max, key) {
+      if (!el) return;
+      // Guard: skip if already initialized — prevents duplicate listeners when
+      // openDeepDive() calls initColResizers() on every navigation back to deep dive.
+      if (el.dataset.resizerInit === '1') return;
+      el.dataset.resizerInit = '1';
+      let startX = 0, startW = 0;
+      const onMove = (e) => { this[prop] = Math.min(max, Math.max(min, startW + (e.clientX - startX))); };
+      const onUp = () => {
+        el.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        try { sessionStorage.setItem(key, String(this[prop])); } catch {}
+      };
+      el.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startW = this[prop];
+        el.classList.add('dragging');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      // Double-click resets to default
+      el.addEventListener('dblclick', () => {
+        this[prop] = prop === 'intelColWidth' ? 295 : 255;
+        try { sessionStorage.setItem(key, String(this[prop])); } catch {}
+      });
+    },
+
     // ── Horizontal splitter between fleet canvas and activity stream ──
     initCanvasSplitter() {
       const splitter = this.$refs.canvasSplitter;
