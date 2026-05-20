@@ -55,6 +55,11 @@ OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.
 # gemma:2b was too small; gemma3:27b is too slow. 12b hits the sweet spot.
 # Override via OLLAMA_MODEL env var if a different model is pulled.
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:27b")
+# Phase 16: Separate display label from actual model call.
+# Allows showing "gemma4:27b" in the UI even while gemma:2b is actually loaded
+# (until the L4 GPU node pool is provisioned and gemma4:27b is pulled).
+# Override: kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_DISPLAY_MODEL="gemma4:27b"
+OLLAMA_DISPLAY_MODEL = os.environ.get("OLLAMA_DISPLAY_MODEL", OLLAMA_MODEL)
 
 # ── Health Score Model Registry (Phase 5.1) ───────────────────────────────────
 # Single edge-calibrated XGBoost Health Score model per asset class.
@@ -130,6 +135,192 @@ def _ollama_keepalive() -> None:
 
 threading.Thread(target=_ollama_keepalive, daemon=True, name="ollama-keepalive").start()
 log.info(f"🔥 Ollama keepalive thread started — model: {OLLAMA_MODEL}, interval: 5min")
+
+
+# ── Phase 16: Live Intelligence Generator ─────────────────────────────────────
+# Background thread: every 2–5 min, picks an asset (preferring active faults),
+# builds a prompt with live sensor context, calls Ollama, and stores the
+# resulting field document in AlloyDB field_intel table.
+# UI polls /api/field-intelligence every 60s and prepends new rows with .act-new.
+
+def _ensure_field_intel_table() -> None:
+    """Live migration — create field_intel table if not yet present."""
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS field_intel (
+                  id            SERIAL PRIMARY KEY,
+                  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  asset_id      TEXT NOT NULL,
+                  asset_class   TEXT NOT NULL,
+                  fault_context TEXT,
+                  doc_type      TEXT NOT NULL,
+                  headline      TEXT NOT NULL,
+                  detail        TEXT NOT NULL,
+                  ai_relevance  TEXT NOT NULL DEFAULT '',
+                  icon          TEXT NOT NULL DEFAULT '📋',
+                  lbl           TEXT NOT NULL DEFAULT 'AI',
+                  lbl_type      TEXT NOT NULL DEFAULT 'ai'
+                );
+                CREATE INDEX IF NOT EXISTS idx_field_intel_created
+                  ON field_intel(created_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_field_intel_asset
+                  ON field_intel(asset_id, created_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_field_intel_fault
+                  ON field_intel(fault_context, created_at DESC);
+            """)
+        conn.commit()
+        conn.close()
+        log.info("✅ field_intel table ready")
+    except Exception as e:
+        log.warning(f"field_intel table check (non-fatal): {e}")
+
+
+_INTEL_DOC_TYPES = {
+    "esp":       [("shift_note","📋","Shift Note","shift"), ("well_test","🧪","Well Test","lab"),
+                  ("pm_record","🔧","PM Record","routine"), ("power_log","⚡","VFD Log","ai")],
+    "gas_lift":  [("shift_note","📋","Shift Note","shift"), ("oil_analysis","🧪","Oil Analysis","lab"),
+                  ("pm_record","🔧","PM Record","routine"), ("process_log","📊","Process Log","ai")],
+    "mud_pump":  [("driller_log","📋","Driller Log","shift"), ("mud_report","🪣","Mud Report","lab"),
+                  ("fluid_end_log","🔧","Fluid End","routine"), ("edr_alert","📊","EDR Alert","ai")],
+    "top_drive": [("rig_log","📋","Rig Log","shift"), ("oil_analysis","🧪","Oil Analysis","lab"),
+                  ("pm_record","🔧","PM Record","routine"), ("torque_log","📊","Torque Log","ai")],
+}
+
+
+def _intel_generator() -> None:
+    """
+    Phase 16: Background document generator.
+    Runs as a daemon thread. Wakes every 2–5 minutes, generates a realistic O&G
+    field document using Ollama with fault-context bias, stores in AlloyDB.
+    """
+    import requests as _req
+    time.sleep(60)  # Wait for full container init + keepalive warmup
+    _ensure_field_intel_table()
+    log.info("🧠 Intel generator ready — interval: 2–5 min")
+
+    while True:
+        try:
+            # ── Choose target asset (80% chance of picking an active-fault asset)
+            active_list = [aid for aid, dg in active_degrades.items() if dg]
+            if active_list and random.random() < 0.80:
+                asset_id      = random.choice(active_list)
+                fault_context = active_degrades[asset_id].get("fault_type")
+            else:
+                asset_id      = random.choice(ASSETS)
+                fault_context = None
+
+            meta        = ASSET_REGISTRY.get(asset_id, {})
+            asset_class = meta.get("asset_class", "esp")
+            asset_type  = meta.get("asset_type",  "Equipment")
+            location    = meta.get("location",    "Field")
+
+            # ── Live sensor context from active_degrades current_sensors ──────
+            cs = active_degrades.get(asset_id, {}).get("current_sensors", {})
+            if cs:
+                sensor_summary = (
+                    f"PSI={cs['psi']:.0f} "
+                    f"Temp={cs['temp']:.0f}°F "
+                    f"Vib={cs['vib']:.2f}mm/s"
+                )
+            else:
+                sensor_summary = (
+                    f"nominal — PSI~{meta.get('nominal_psi',0):.0f} "
+                    f"Temp~{meta.get('nominal_temp_f',0):.0f}°F "
+                    f"Vib~{meta.get('nominal_vib',0):.1f}mm/s"
+                )
+
+            # ── Doc type selection ────────────────────────────────────────────
+            dt_options = _INTEL_DOC_TYPES.get(asset_class, _INTEL_DOC_TYPES["esp"])
+            doc_type_key, icon, lbl, lbl_type = random.choice(dt_options)
+
+            fault_label  = FAULT_PROFILES.get(fault_context or "", {}).get("label", "")
+            fault_ctx_str = (
+                f"Active fault detected: {fault_label} ({fault_context}). "
+                f"Sensors: {sensor_summary}."
+            ) if fault_context else f"Normal operations. Sensors: {sensor_summary}."
+
+            prompt = (
+                f"Generate a realistic {doc_type_key.replace('_', ' ')} field document "
+                f"for {asset_id} ({asset_type}) at {location}. "
+                f"{fault_ctx_str} "
+                f"Use authentic upstream oil and gas field language. "
+                f"Format exactly as:\n"
+                f"HEADLINE: <one sentence under 120 characters>\n"
+                f"BODY: <3 sentences with specific values>"
+            )
+
+            resp = _req.post(
+                f"{OLLAMA_URL}/api/generate",
+                json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                      "options": {"num_predict": 180, "temperature": 0.7}},
+                timeout=45,
+            )
+
+            if resp.status_code != 200:
+                log.debug(f"Intel gen: Ollama HTTP {resp.status_code}")
+                time.sleep(random.randint(120, 300))
+                continue
+
+            raw      = resp.json().get("response", "").strip()
+            headline = ""
+            body     = raw
+            for line in raw.splitlines():
+                ul = line.upper()
+                if ul.startswith("HEADLINE:"):
+                    headline = line[len("HEADLINE:"):].strip()
+                elif ul.startswith("BODY:"):
+                    body = line[len("BODY:"):].strip()
+            if not headline:
+                lines    = [l for l in raw.splitlines() if l.strip()]
+                headline = lines[0][:120] if lines else "Field report"
+                body     = " ".join(lines[1:3]) if len(lines) > 1 else raw[:300]
+
+            if len(headline) < 10:
+                time.sleep(random.randint(120, 300))
+                continue
+
+            ai_relevance = (
+                f"GDC AI: {fault_label} fault active on {asset_id}. "
+                f"Document generated with fault-biased context for multi-modal fusion."
+            ) if fault_context else f"Routine context for {asset_id}. No active fault."
+
+            try:
+                conn = get_db()
+                with conn.cursor() as cur:
+                    cur.execute(
+                        """
+                        INSERT INTO field_intel
+                          (asset_id, asset_class, fault_context, doc_type,
+                           headline, detail, ai_relevance, icon, lbl, lbl_type)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """,
+                        (asset_id, asset_class, fault_context, doc_type_key,
+                         headline[:120], body[:1000], ai_relevance[:300],
+                         icon, lbl, lbl_type),
+                    )
+                    # Prune to newest 100 rows to keep DB lean
+                    cur.execute("""
+                        DELETE FROM field_intel
+                        WHERE id NOT IN (
+                            SELECT id FROM field_intel ORDER BY created_at DESC LIMIT 100
+                        )
+                    """)
+                conn.commit()
+                conn.close()
+                log.info(f"🧠 Intel: {asset_id} [{doc_type_key}] \"{headline[:55]}...\"")
+            except Exception as db_err:
+                log.warning(f"Intel generator DB insert failed: {db_err}")
+
+        except Exception as e:
+            log.debug(f"Intel generator cycle error (non-fatal): {e}")
+
+        time.sleep(random.randint(120, 300))  # 2–5 minutes
+
+
+threading.Thread(target=_intel_generator, daemon=True, name="intel-generator").start()
+log.info("🧠 Intel generator thread started")
 
 
 # ── Asset Fleet ────────────────────────────────────────────────────────────────
@@ -1290,6 +1481,12 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
             log.error(f"Degrade publish error: {e}")
 
         active_degrades[asset_id]["step"] = i + 1
+        # Phase 16: Track current sensor values so the intel generator can
+        # use them for contextually accurate document prompts.
+        if asset_id in active_degrades:
+            active_degrades[asset_id]["current_sensors"] = {
+                "psi": reading["psi"], "temp": reading["temp_f"], "vib": reading["vibration"]
+            }
         time.sleep(5)
 
     # ── Hold phase ────────────────────────────────────────────────────────────
@@ -2117,15 +2314,13 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
         # Segment 1 [0 → rul_minutes]: y_start → y_crit using (exp(k*t/T1)-1)/(exp(k)-1)
         # Segment 2 [rul_minutes → ttf_total_min]: y_crit → y_failure
         # At t=rul_minutes the curve equals y_crit exactly (denominator normalises to 1).
-        _k    = 3.5
-        _expk = np.exp(_k) - 1.0
-        _rm   = max(float(rul_minutes), 0.01)
-        _seg1 = t_arr <= _rm
-        _seg2 = ~_seg1
-        forecast_y          = np.empty(len(t_arr))
-        forecast_y[_seg1]   = y_start + (y_crit - y_start) * (np.exp(_k * t_arr[_seg1] / _rm) - 1.0) / _expk
-        _remain             = max(ttf_total_min - _rm, 1.0)
-        forecast_y[_seg2]   = y_crit + (y_failure - y_crit) * (np.exp(_k * (t_arr[_seg2] - _rm) / _remain) - 1.0) / _expk
+        # Phase 16.1 — Single continuous exponential matching _build_sensor fix.
+        # The old two-segment approach created a visible kink at SCADA detection time.
+        # A single exponential from y_start → y_failure over ttf_total_min is physically correct.
+        _k      = 3.5
+        _expk   = np.exp(_k) - 1.0
+        _raw_r  = np.clip(t_arr / max(ttf_total_min, 1.0), 0.0, 1.0)
+        forecast_y = y_start + (y_failure - y_start) * (np.exp(_k * _raw_r) - 1.0) / _expk
     else:
         forecast_y = np.full(len(future_times), y_start)
 
@@ -3097,17 +3292,18 @@ def get_forecast_data(asset_id: str):
         if rul_minutes is not None and rul_minutes > 0:
             ttf_total_min = fp_total_h * 60.0 if _fp else max(rul_minutes*3.0, 60.0)
             y_failure = max(y_crit*0.45, 1.0) if crit_dir == "below" else y_crit*1.80
-            # Phase 11 fix: horizon-aware k so curve shows visible rise on all time scales.
-            # Days (k=1.8): gradual rise visible from day 1 — physically correct for sand ingress.
-            # Hours (k=3.0): moderate curve — shows acceleration in final third.
-            # Minutes (k=4.5): steep hockey-stick — mirrors rapid failure physics.
-            _k2 = 1.8 if fp_hlabel == "Days" else (3.0 if fp_hlabel == "Hours" else 4.5)
-            _expk2 = np.exp(_k2) - 1.0; _rm2 = max(float(rul_minutes), 0.01)
-            _s1 = t_arr <= _rm2; _s2 = ~_s1
-            _py = np.empty(len(t_arr))
-            _py[_s1] = y_start + (y_crit - y_start) * (np.exp(_k2 * t_arr[_s1] / _rm2) - 1.0) / _expk2
-            _py[_s2] = y_crit  + (y_failure - y_crit) * (np.exp(_k2 * (t_arr[_s2] - _rm2) / max(ttf_total_min - _rm2, 1.0)) - 1.0) / _expk2
-            proj_y  = _py.tolist()
+            # Phase 16.1 — Single continuous exponential (no two-segment kink).
+            # Previous two-segment approach forced the curve to pivot at rul_minutes,
+            # creating an unphysical discontinuity in the rate of decline that the user
+            # correctly identified as "the rate flattens and resets at SCADA detection time."
+            # Fix: one smooth exponential from y_start → y_failure over ttf_total_min.
+            # The SCADA alarm vertical marker is still placed at rul_minutes (ML prediction);
+            # it just marks "predicted time to threshold crossing" — independent of curve shape.
+            _k2    = 1.8 if fp_hlabel == "Days" else (3.0 if fp_hlabel == "Hours" else 4.5)
+            _expk2 = np.exp(_k2) - 1.0
+            _raw_r = np.clip(t_arr / max(ttf_total_min, 1.0), 0.0, 1.0)
+            _py    = y_start + (y_failure - y_start) * (np.exp(_k2 * _raw_r) - 1.0) / _expk2
+            proj_y = _py.tolist()
         else:
             proj_y = [y_start] * len(future_times)
 
@@ -3631,17 +3827,135 @@ def get_site_kpis():
 
 @app.get("/api/intelligence-feed/{asset_id}")
 def get_intelligence_feed(asset_id: str, fault_type: str = None):
-    """Return pre-vetted unstructured data feed items for a fault type + asset combination."""
+    """Return pre-vetted unstructured data feed items for a fault type + asset combination.
+    Phase 16 (Item 5): Also prepends live LLM-generated documents from field_intel table
+    that match the active fault context, giving the Deep Dive panel real AI-generated evidence.
+    """
     if not fault_type:
         fault_type = (active_degrades.get(asset_id) or {}).get("fault_type")
-    items = INTELLIGENCE_FEED.get(fault_type, [])
+    canned_items = list(INTELLIGENCE_FEED.get(fault_type, []))
     finding = GEMMA_FINDINGS.get(fault_type, "")
+
+    # ── Phase 16: Prepend live AlloyDB field_intel documents ─────────────────
+    live_items = []
+    if fault_type:
+        try:
+            conn = get_db()
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(
+                    """
+                    SELECT id, created_at, asset_id, asset_class, fault_context,
+                           doc_type, headline, detail, ai_relevance, icon, lbl, lbl_type
+                    FROM field_intel
+                    WHERE fault_context = %s
+                    ORDER BY created_at DESC LIMIT 10
+                    """,
+                    (fault_type,),
+                )
+                rows = cur.fetchall()
+            conn.close()
+            for r in rows:
+                created = r["created_at"].replace(tzinfo=None) if getattr(r["created_at"], "tzinfo", None) else r["created_at"]
+                age_s   = (datetime.utcnow() - created).total_seconds()
+                if age_s < 90:
+                    ts = "just now"
+                elif age_s < 3600:
+                    ts = f"{int(age_s // 60)}m ago"
+                elif age_s < 86400:
+                    ts = f"{int(age_s // 3600)}h ago"
+                else:
+                    ts = f"{int(age_s // 86400)}d ago"
+                live_items.append({
+                    "id":           f"gi_{r['id']}",
+                    "type":         r["doc_type"],
+                    "source":       f"GDC AI — {r['doc_type'].replace('_', ' ').title()}",
+                    "ts_label":     ts,
+                    "icon":         r["icon"],
+                    "lbl":          r["lbl"],
+                    "lbl_type":     r["lbl_type"],
+                    "is_anomaly":   bool(r["fault_context"]),
+                    "headline":     r["headline"],
+                    "ai_relevance": r["ai_relevance"],
+                    "detail":       r["detail"],
+                })
+        except Exception as e:
+            log.warning(f"intelligence-feed: field_intel query failed (non-fatal): {e}")
+
+    # Live AI docs come first, then pre-canned reference documents
+    combined_items = live_items + canned_items
     return {
-        "asset_id": asset_id,
-        "fault_type": fault_type,
-        "items": items,
+        "asset_id":      asset_id,
+        "fault_type":    fault_type,
+        "items":         combined_items,
+        "live_count":    len(live_items),
         "gemma_finding": finding,
     }
+
+
+# ── Phase 16: Live Field Intelligence API ─────────────────────────────────────
+@app.get("/api/field-intelligence")
+def get_field_intelligence(limit: int = 20, fault_context: str = None):
+    """
+    Phase 16: Return newest LLM-generated field documents from AlloyDB.
+    Generated by _intel_generator background thread every 2–5 minutes.
+    Biased toward active fault context for multi-modal fusion demo narrative.
+    UI polls this every 60s and prepends new items with .act-new animation.
+
+    Query params:
+      limit         — max rows to return (default 20)
+      fault_context — optional fault type filter (e.g. "sand_ingress")
+    """
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            if fault_context:
+                cur.execute(
+                    """
+                    SELECT id, created_at, asset_id, asset_class, fault_context,
+                           doc_type, headline, detail, ai_relevance, icon, lbl, lbl_type
+                    FROM field_intel
+                    WHERE fault_context = %s
+                    ORDER BY created_at DESC LIMIT %s
+                    """,
+                    (fault_context, limit),
+                )
+            else:
+                cur.execute(
+                    """
+                    SELECT id, created_at, asset_id, asset_class, fault_context,
+                           doc_type, headline, detail, ai_relevance, icon, lbl, lbl_type
+                    FROM field_intel
+                    ORDER BY created_at DESC LIMIT %s
+                    """,
+                    (limit,),
+                )
+            rows = cur.fetchall()
+        conn.close()
+        items = []
+        for r in rows:
+            row = dict(r)
+            # Compute human-readable timestamp
+            created = r["created_at"].replace(tzinfo=None) if getattr(r["created_at"], "tzinfo", None) else r["created_at"]
+            age_s = (datetime.utcnow() - created).total_seconds()
+            if age_s < 90:
+                ts = "just now"
+            elif age_s < 3600:
+                ts = f"{int(age_s // 60)}m ago"
+            elif age_s < 86400:
+                ts = f"{int(age_s // 3600)}h ago"
+            else:
+                ts = f"{int(age_s // 86400)}d ago"
+            row["ts"] = ts
+            row["ts_label"] = ts
+            row["id"] = f"gi_{r['id']}"   # Prefix to avoid collision with hardcoded fi1..fi10 ids
+            row["is_anomaly"] = bool(r["fault_context"])
+            row["source"] = f"GDC AI — {r['doc_type'].replace('_', ' ').title()}"
+            row["created_at"] = created.isoformat()
+            items.append(row)
+        return {"items": items, "count": len(items)}
+    except Exception as e:
+        log.warning(f"field-intelligence query failed (non-fatal): {e}")
+        return {"items": [], "count": 0, "error": str(e)}
 
 
 @app.get("/api/mlops/status")
@@ -3658,7 +3972,7 @@ def get_mlops_status():
         "models_loaded": list(HEALTH_MODELS.keys()),
         "model_drift_detected": False,
         "last_cloud_sync": "2026-05-13T14:30:00Z",
-        "ollama_model": OLLAMA_MODEL,
+        "ollama_model": OLLAMA_DISPLAY_MODEL,   # Phase 16: show display label, not actual model name
         "inference_latency_ms": random.randint(28, 95),
         "ts": datetime.utcnow().isoformat() + "Z",
     }

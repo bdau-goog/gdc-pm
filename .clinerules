@@ -25,3 +25,25 @@
 - `terraform/gke.tf` must NOT be applied — it would destroy the live cluster.
 - All demo changes go into gke/fault-trigger-ui/index.html and gke/fault-trigger-ui/app.py.
 - After changes: docker build → docker push → kubectl rollout restart.
+
+## Session Handoff (NEXT_SESSION_PROMPT.md)
+- At the end of every session, rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` as a complete, self-contained handoff for the next session. Do NOT append — always rewrite from scratch.
+
+### Pre-Handoff Checklist (ALWAYS run before writing the handoff)
+1. **Check `git status`** — If uncommitted changes exist, list "Commit pending changes" as the #1 High Priority item, and note in the header: "⚠ Uncommitted changes in working directory."
+2. **Feature Completeness Gate** — For every item in "What Was Done This Session", verify it is truly end-to-end complete (code written + deployed + live in cluster). If any part of a feature remains in the To-Do list, the feature is NOT complete — label it **"Partially Complete"** and split its description between the two sections.
+3. **Cross-check To-Do vs What Was Done** — No item should appear in both sections. Any completed To-Do item must be removed from To-Do and moved to What Was Done.
+
+### Document Structure
+- The document must include, in order:
+  1. **Header** — date, live URL, project/cluster/namespace, current image tag, git head (include "⚠ Uncommitted changes in working directory" if `git status` shows any)
+  2. **What Was Done This Session** — only **fully deployed, live work**. Use "Partially Complete" for features where the code was written but not fully wired or deployed.
+  3. **Current Cluster State** — running pods with one-line descriptions, any IMPORTANT caveats (e.g. actual vs display model mismatch)
+  4. **Outstanding Development Items (To-Do)** — numbered, prioritised (High / Medium / Low), with implementation plan for High items. Remove items that were completed this session. Carry forward only what remains.
+  5. **Constraints** — the permanent "never violate" list (unchanged unless a constraint is explicitly retired)
+  6. **Rebuild & Deploy Commands** — exact copy-paste commands for the next session
+  7. **Key Lessons Learned** — session-specific only; replace, do not accumulate across sessions
+
+- The document must be **clean**: no historical "What Was Done in Session N-2" sections, no completed to-do items, no outdated caveats. Each handoff should read as if written fresh for a new reader.
+- The next session is started by pasting the entire contents of this file as the first message in a new conversation. Optimise for that use case — be precise, not exhaustive.
+- **Trigger phrase:** When the user says **"wrap session"**, immediately: (1) run the Pre-Handoff Checklist, (2) rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` per the rules above, (3) confirm with a one-paragraph summary of what was done and what's next. No other words needed from the user.
