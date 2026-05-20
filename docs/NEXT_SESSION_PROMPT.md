@@ -87,21 +87,34 @@ inference-api          1/1 Running   ← Legacy BQML (not used by current UI)
 
 ### High Priority
 
-**1. Financial Story — Tighten the Narrative**
+**1. Grafana Fleet Telemetry — Match Fleet Operations Look & Feel (pure Grafana, no HTML wrapper)**
+- **Goal:** The Grafana dashboard (which fills the Fleet Telemetry tab via iframe) should itself replicate the operator-centric layout of the Fleet Operations tab. No HTML/Vue in front of it — all changes inside `grafana-configmap.yaml`.
+- **Target experience:** Site zone "cards" (Pad Alpha / Pad Bravo / Rig 42), per-asset stat panels showing current sensor values and health, and click-through to that asset's time-series charts using the existing `$asset` variable.
+- **Grafana features to use:**
+  - **Stat panels per asset** (e.g., a row of 6 stat panels for ESP-ALPHA-1 through ESP-ALPHA-6 showing current PSI/health — green = nominal, orange = AI alert, red = SCADA breach)
+  - **Row panels** as site-zone section headers (already in place)
+  - **`$asset` variable** pre-set to "All" by default; operator clicks a stat panel that links to a filtered URL to drill into one asset's charts
+  - **Text panels** for site-zone descriptions if needed
+  - **Panel links:** stat panels can be configured with a `dashboardUID` link that sets `var-asset=ESP-ALPHA-2` — simulating the "click asset → see its telemetry" behaviour entirely within Grafana
+- **The spaghetti problem:** Current charts show all assets as overlapping lines. When `$asset` is set to a specific asset via URL or dropdown, each chart shows only one clean line. The refactoring should make the dropdown selection the primary interaction.
+- File: `gke/grafana/k8s/grafana-configmap.yaml`
+- Deploy: `kubectl apply -f ... && kubectl rollout restart deployment/grafana -n gdc-pm`
+
+**2. Financial Story — Tighten the Narrative**
 - The Fleet Financials tab shows a ledger but the story is currently "loose"
 - Consider: a front-page summary card with a single ROI number, and a clear "before GDC vs. after GDC" framing
 - Ideas: projected annual savings extrapolation, fleet-level uptime bar chart, cost-per-intervention trend
 - The session owner wants a cleaner, more persuasive financial narrative
 - File: `gke/fault-trigger-ui/index.html` (financials tab)
 
-**2. Ollama Scheduler RBAC (requires admin)**
+**3. Ollama Scheduler RBAC (requires admin)**
 - Grant `container.roles.create` / `container.roleBindings.create` to `dev-workstation-sa@gdc-pm-v2.iam.gserviceaccount.com`
 - Then re-apply: `kubectl apply -f gke/ollama/k8s/ollama-scheduler.yaml`
 - This enables automated L4 stand-up/stand-down to save ~78% GPU costs
 
 ### Medium Priority
 
-**3. Demo Flow Review**
+**4. Demo Flow Review**
 - With the new vertical layout, verify the Deep Dive demo flow at http://35.188.3.97:
   1. Fleet Operations (all green) → Click ESP-ALPHA-2 → Inject Sand Ingress
   2. Watch the Time Bridge bar populate and shrink in real time
@@ -110,14 +123,14 @@ inference-api          1/1 Running   ← Legacy BQML (not used by current UI)
   5. Consult Agent → Approve
 - Check that `bridgeBarPct` renders the full bar at injection and shrinks over the 1-hour session
 
-**4. Chart Y-Axis Alignment (optional enhancement)**
+**5. Chart Y-Axis Alignment (optional enhancement)**
 - Currently the GDC forecast chart and SCADA chart may have different Y-axis scales
 - Consider: shared Y-axis scaling so the two charts are directly comparable at a glance
 - Lower priority — the current layout already tells the story clearly
 
 ### Low Priority
 
-**5. Grafana Time Range Tweak**
+**6. Grafana Time Range Tweak**
 - Consider using `now-2h` for the default view during live demos (fault ramp is more visible in 2h window)
 - Currently set to `now-8h`
 
