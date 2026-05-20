@@ -140,11 +140,31 @@
     .dd-horizon-badge.hours{color:var(--orange);border-color:var(--orange);background:rgba(255,109,0,0.1)}
     .dd-horizon-badge.minutes{color:var(--red);border-color:var(--red);background:rgba(244,67,54,0.1)}
     .dd-health-lbl{font-size:0.68rem;font-family:var(--mono);color:var(--muted);margin-left:4px}
-    .dd-main{flex:1;min-height:0;display:grid;grid-template-columns:480px 1fr;overflow:hidden}
+    /* ── New Deep Dive Layout (Session 8): 2-row structure ── */
+    /* Row 1: side-by-side SCADA vs GDC comparison charts    */
+    /* Row 2: 3-column evidence / agent / action bottom half  */
+    .dd-compare-row{height:265px;flex-shrink:0;display:flex;border-bottom:1px solid var(--border)}
+    .dd-view-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+    .dd-scada-panel{border-right:1px solid var(--border)}
+    .chart-view-hdr{flex-shrink:0;height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf)}
+    .chart-view-title{font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);white-space:nowrap;padding-right:8px;border-right:1px solid var(--border)}
+    .gdc-hdr-title{color:rgba(255,140,0,0.8)}
+    .chart-view-status{font-size:0.62rem;padding:0 6px;white-space:nowrap}
+    .dd-chart-wrap{flex:1;min-height:0;position:relative;background:var(--bg)}
+    .dd-chart-wrap #scada-chart, .dd-chart-wrap #forecast-chart{width:100%;height:100%}
+    .dd-delta-bridge{width:74px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-left:1px solid var(--border);border-right:1px solid var(--border);background:rgba(30,144,255,0.03);padding:6px 3px}
+    .delta-badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+    .delta-icon{font-size:16px}
+    .delta-val{font-family:var(--mono);font-size:0.68rem;font-weight:700;color:var(--blue);line-height:1.2}
+    .delta-lbl{font-size:0.49rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;text-align:center;line-height:1.35}
+    .dd-bottom-row{flex:1;min-height:0;display:flex;overflow:hidden}
+    .dd-intel-col{width:295px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+    .dd-agent-col{width:255px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+    .dd-action-col{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
+    .dd-col-hdr{font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);padding:5px 10px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surf)}
 
-    /* Fusion Panel */
-    .fusion-panel{border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-    .fusion-body{flex:1;min-height:0;overflow-y:auto;padding:10px 12px}
+    /* Fusion body (reused inside dd-intel-col) */
+    .fusion-body{flex:1;min-height:0;overflow-y:auto;padding:8px 10px}
     .sv-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px}
     .sv-card{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 9px}
     .sv-card.primary{border-color:rgba(255,140,0,0.5);background:rgba(255,140,0,0.03)}
@@ -740,43 +760,83 @@
           </button>
         </div>
 
-        <!-- Main Two-Panel -->
-        <div class="dd-main">
-          <!-- Left: Data Fusion -->
-          <div class="fusion-panel">
+        <!-- ── Row 1: Side-by-Side SCADA vs GDC Chart Comparison ── -->
+        <div class="dd-compare-row">
+
+          <!-- SCADA View — historical only, no projection -->
+          <div class="dd-view-panel dd-scada-panel">
+            <div class="chart-view-hdr">
+              <span class="chart-view-title">🛢 Traditional SCADA</span>
+              <span class="chart-view-status" :style="{color: injectionRunning ? 'var(--green)' : 'var(--muted)'}">
+                {{ injectionRunning ? '✓ STATUS NORMAL — No Alarms' : '— Waiting for data' }}
+              </span>
+              <div class="sensor-tabs" style="margin-left:auto">
+                <div class="sensor-tab" :class="{active: activeTab==='psi'}" @click="selectTab('psi')">{{ sensorTabLabel('psi') }}</div>
+                <div class="sensor-tab" :class="{active: activeTab==='temp'}" @click="selectTab('temp')">{{ sensorTabLabel('temp') }}</div>
+                <div class="sensor-tab" :class="{active: activeTab==='vib'}" @click="selectTab('vib')">{{ sensorTabLabel('vib') }}</div>
+                <div v-if="sensor4TabKey" class="sensor-tab" :class="{active: activeTab===sensor4TabKey}" @click="selectTab(sensor4TabKey)">{{ sensor4Label }}</div>
+              </div>
+            </div>
+            <div class="dd-chart-wrap">
+              <div v-if="!chartData" class="chart-placeholder">
+                <div class="ph-icon" style="opacity:0.4">🛢</div>
+                <div class="ph-text">SCADA View — inject a fault to see the contrast<br><span style="font-size:0.6rem;color:var(--green)">✓ No alarms · all thresholds nominal</span></div>
+              </div>
+              <div id="scada-chart"></div>
+            </div>
+          </div>
+
+          <!-- Delta Bridge — GDC AI lead time advantage -->
+          <div class="dd-delta-bridge">
+            <div v-if="injectionRunning && degStatus && degStatus.time_to_scada_minutes > 0" class="delta-badge">
+              <span class="delta-icon">⚡</span>
+              <div class="delta-val">{{ formatRulFull(degStatus.time_to_scada_minutes) }}</div>
+              <div class="delta-lbl">GDC AI<br>Lead Time</div>
+            </div>
+            <div v-else-if="injectionRunning" class="delta-badge">
+              <span class="delta-icon" style="color:var(--red)">⚠</span>
+              <div class="delta-lbl" style="color:var(--red)">SCADA<br>ALARM<br>ZONE</div>
+            </div>
+            <div v-else style="display:flex;flex-direction:column;align-items:center;gap:3px;opacity:0.28;text-align:center">
+              <span style="font-size:15px">⏱</span>
+              <div class="delta-lbl">Inject<br>fault</div>
+            </div>
+          </div>
+
+          <!-- GDC Edge AI View — full RUL projection -->
+          <div class="dd-view-panel dd-gdc-panel">
+            <div class="chart-view-hdr">
+              <span class="chart-view-title gdc-hdr-title">⚡ GDC Edge AI Forecast</span>
+              <span class="chart-view-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : 'var(--muted)'}">
+                {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED — RUL active' : 'Monitoring…' }}
+              </span>
+              <span v-if="ddAssetId" style="font-family:var(--mono);font-size:0.62rem;color:var(--blue);margin-left:auto;padding-right:6px">{{ ddAssetId }}</span>
+            </div>
+            <div class="dd-chart-wrap">
+              <div v-if="!chartData" class="chart-placeholder">
+                <div class="ph-icon" style="color:#ff8c00;opacity:0.4">⚡</div>
+                <div class="ph-text">GDC AI forecast will appear here<br><span style="font-size:0.6rem;color:var(--muted)">SCADA Alarm → PNR → Failure timeline</span></div>
+              </div>
+              <div id="forecast-chart"></div>
+            </div>
+          </div>
+
+        </div><!-- dd-compare-row -->
+
+        <!-- ── Row 2: Evidence / Agent / Action — 3-column bottom half ── -->
+        <div class="dd-bottom-row">
+
+          <!-- Column 1: Intelligence Feed & Sensor Data -->
+          <div class="dd-intel-col">
+            <div class="dd-col-hdr">📡 Evidence & Intelligence
+              <template v-if="injectionRunning && ddFaultType">
+                <span class="live-dot" style="margin-left:6px"></span>
+                <span style="font-size:0.56rem;font-weight:600;color:var(--orange);margin-left:4px;text-transform:none">{{ FAULT_META[ddFaultType]?.label }}</span>
+              </template>
+              <button v-if="ddFaultType" @click="resetAsset" class="btn-reset" style="margin-left:auto;font-size:0.56rem;padding:2px 7px">↺ Reset</button>
+            </div>
             <div class="fusion-body">
-              <!-- SCADA vs AI Contrast Banner — shown when fault is active -->
-              <div v-if="ddFaultType" class="scada-vs-ai">
-                <div class="sva-panel sva-scada">
-                  <div class="sva-lbl scada-lbl">SCADA System</div>
-                  <div class="sva-status" :style="{color: injectionRunning ? 'var(--green)' : 'var(--muted)'}">
-                    {{ injectionRunning ? '✓ NORMAL' : '— Waiting' }}
-                  </div>
-                  <div class="sva-sub">{{ injectionRunning ? 'No alarms. All thresholds within limits.' : 'No active fault injected.' }}</div>
-                </div>
-                <div class="sva-panel sva-ai" :class="{pulsing: injectionRunning && degStatus?.is_active}">
-                  <div class="sva-lbl ai-lbl">GDC Edge AI</div>
-                  <div class="sva-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : injectionRunning ? 'var(--yellow)' : 'var(--muted)'}">
-                    {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED' : injectionRunning ? '⚡ Analyzing…' : '— Waiting' }}
-                  </div>
-                  <div class="sva-sub" v-if="injectionRunning && degStatus">
-                    {{ FAULT_META[ddFaultType]?.label || ddFaultType }} · {{ formatRulFull(degStatus.time_to_scada_minutes) }} to SCADA alarm
-                  </div>
-                </div>
-              </div>
-
-              <!-- AI Lead Time — how far ahead of SCADA GDC AI is detecting -->
-              <div v-if="injectionRunning && degStatus && degStatus.time_to_scada_minutes > 0" class="ai-lead-banner">
-                <span class="ai-lead-icon">⏱</span>
-                <div>
-                  <div class="ai-lead-val">{{ formatRulFull(degStatus.time_to_scada_minutes) }}</div>
-                </div>
-                <div class="ai-lead-label">
-                  <strong style="color:var(--blue)">GDC AI leads SCADA</strong> by this margin<br>
-                  SCADA: ✓ NORMAL &nbsp;·&nbsp; AI: ⚡ Fault detected
-                </div>
-              </div>
-
+              <!-- Sensor Grid -->
               <div class="sv-grid">
                 <div class="sv-card" :class="{primary: sensorTabPrimary('psi')}">
                   <div class="sv-lbl">{{ sensorLabel('psi') }}</div>
@@ -795,10 +855,11 @@
                   <div class="sv-val" :class="{anomaly: isSensorAnomaly('s4')}">{{ lastSensorVals.s4 || '—' }}<span class="sv-trend" :class="sensorTrend('s4')">{{ sensorTrendArrow('s4') }}</span></div>
                 </div>
               </div>
+              <!-- Intel Feed -->
               <div class="intel-feed-hdr">
-                📡 Live Intelligence Feed
-                <span style="font-family:var(--mono);font-size:0.58rem;color:var(--blue);font-weight:400">{{ visibleFeedItems.length }}/{{ feedItems.length }} sources</span>
-                <button class="drill-btn" @click="openFeedModal(null)">View All ▾</button>
+                Live Intelligence Feed
+                <span style="font-family:var(--mono);font-size:0.58rem;color:var(--blue);font-weight:400">{{ visibleFeedItems.length }}/{{ feedItems.length }}</span>
+                <button class="drill-btn" @click="openFeedModal(null)">All ▾</button>
               </div>
               <div v-for="item in visibleFeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
                 <div class="fi-top">
@@ -816,129 +877,78 @@
               <div v-if="feedItems.length === 0 && ddFaultType && injectionRunning" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:6px 0">Ingesting unstructured data sources…</div>
               <div v-if="gemmaFinding" class="gemma-finding">{{ gemmaFinding }}</div>
             </div>
-            <!-- Minimal fault status strip — fault injection available via Fleet map or ✏️ Craft Fault above -->
-            <div style="flex-shrink:0;border-top:1px solid var(--border);padding:7px 14px;background:var(--surf);display:flex;align-items:center;gap:8px">
-              <template v-if="injectionRunning && ddFaultType">
-                <span class="live-dot"></span>
-                <span style="font-size:0.7rem;font-weight:600;color:var(--orange)">{{ FAULT_META[ddFaultType]?.label }}</span>
-                <span v-if="degStatus" style="font-size:0.62rem;color:var(--muted)">{{ injectProgressPct }}% degraded</span>
-                <div v-if="degStatus" class="dprog-bg" style="flex:1;max-width:120px">
-                  <div class="dprog-fill" :style="{width: injectProgressPct + '%'}"></div>
-                </div>
-              </template>
-              <template v-else>
-                <span style="font-size:0.62rem;color:var(--muted)">No active fault · inject from Fleet map context menu or ✏️ Craft Fault above</span>
-              </template>
-              <button v-if="ddFaultType" @click="resetAsset" class="btn-reset" style="margin-left:auto;font-size:0.62rem;padding:3px 9px">↺ Reset</button>
+          </div>
+
+          <!-- Column 2: GDC Operations Agent Chat -->
+          <div class="dd-agent-col">
+            <div class="copilot-hdr">
+              🤖 GDC Ops Agent
+              <span style="font-size:0.54rem;margin-left:3px;opacity:0.7;text-transform:none;font-weight:400">{{ mlops.ollama_model || 'gemma:2b' }} @ Edge</span>
+              <span v-if="agentTyping" style="font-size:0.54rem;color:var(--muted);text-transform:none;font-weight:400;margin-left:3px">streaming…</span>
+            </div>
+            <div class="chat-log" ref="chatLog">
+              <div v-for="(msg, i) in agentMessages.slice(-8)" :key="i" class="chat-msg" :class="msg.role">{{ msg.content }}</div>
+            </div>
+            <div class="agent-typing" v-if="agentTyping">{{ agentTypingText }}</div>
+            <div class="chat-input-row">
+              <input id="agent-input" type="text" v-model="agentInput" placeholder="Ask the Operations Agent…" @keydown.enter="sendAgentMessage" :disabled="agentTyping">
+              <button class="btn-send" @click="sendAgentMessage" :disabled="agentTyping || !agentInput.trim()">Send</button>
             </div>
           </div>
 
-          <!-- Right: Chart -->
-          <div class="chart-panel">
-            <div class="plot-hdr">
-              <span class="plot-title">📈 ML Forecast</span>
-              <div class="sensor-tabs">
-                <div class="sensor-tab" :class="{active: activeTab==='psi'}" @click="selectTab('psi')">{{ sensorTabLabel('psi') }}<span v-if="sensorTabPrimary('psi')" class="pri-badge">★</span></div>
-                <div class="sensor-tab" :class="{active: activeTab==='temp'}" @click="selectTab('temp')">{{ sensorTabLabel('temp') }}<span v-if="sensorTabPrimary('temp')" class="pri-badge">★</span></div>
-                <div class="sensor-tab" :class="{active: activeTab==='vib'}" @click="selectTab('vib')">{{ sensorTabLabel('vib') }}<span v-if="sensorTabPrimary('vib')" class="pri-badge">★</span></div>
-                <div v-if="sensor4TabKey" class="sensor-tab" :class="{active: activeTab===sensor4TabKey}" @click="selectTab(sensor4TabKey)">{{ sensor4Label }}</div>
-              </div>
-              <span style="font-family:var(--mono);font-size:0.67rem;color:var(--blue);padding:0 10px">{{ ddAssetId }}</span>
+          <!-- Column 3: Resolution & Action -->
+          <div class="dd-action-col">
+            <div class="dd-col-hdr">⚙ Resolution & Action
+              <button @click="fetchJustification()" v-if="ddFaultType" style="margin-left:auto;font-size:0.55rem;padding:1px 6px;border-radius:4px;border:1px solid rgba(138,180,248,0.35);background:rgba(138,180,248,0.07);color:var(--g-blue);cursor:pointer">ⓘ Cost Basis</button>
             </div>
-            <div class="chart-wrap">
-              <div v-if="!chartData" class="chart-placeholder">
-                <div class="ph-icon">🛢</div>
-                <div class="ph-text">Select a fault type and inject to view<br>the ML predictive forecast<br><span style="font-size:0.6rem;color:var(--muted)">SCADA → PNR → Failure timeline</span></div>
+            <div style="flex:1;min-height:0;padding:10px 12px;overflow-y:auto">
+              <!-- Consult button -->
+              <div v-if="!hitlAction && !hitlOutcome">
+                <div class="hitl-action-lbl">⚙ Recommended Action</div>
+                <button class="hitl-consult-btn" :disabled="!ddFaultType || !injectionRunning || agentTyping" @click="consultAgent">💬 Consult Operations Agent</button>
+                <div v-if="!injectionRunning" style="font-size:0.62rem;color:var(--muted);text-align:center;margin-top:4px">Inject a fault first to enable agent consultation</div>
               </div>
-              <div id="forecast-chart"></div>
-            </div>
-          </div>
-        </div><!-- dd-main -->
-
-        <!-- ── COPILOT PANEL ── -->
-        <div class="copilot-panel" :style="{height: copilotHeight + 'px'}">
-          <div class="copilot-resize-handle" ref="copilotHandle"></div>
-          <div class="copilot-hdr">
-            🤖 GDC Operations Agent — {{ mlops.ollama_model || 'gemma4:27b' }} @ Edge
-            <span v-if="agentTyping" style="font-size:0.58rem;color:var(--muted);text-transform:none;font-weight:400;margin-left:4px">streaming…</span>
-          </div>
-          <div class="copilot-body">
-
-            <!-- Narrow Chat Log (250px) -->
-            <div style="width:250px;flex-shrink:0;display:flex;flex-direction:column;overflow:hidden;border-right:1px solid var(--border)">
-              <div class="chat-log" ref="chatLog">
-                <div v-for="(msg, i) in agentMessages.slice(-5)" :key="i" class="chat-msg" :class="msg.role">{{ msg.content }}</div>
-              </div>
-              <div class="agent-typing" v-if="agentTyping">{{ agentTypingText }}</div>
-              <div class="chat-input-row">
-                <input id="agent-input" type="text" v-model="agentInput" placeholder="Ask the Operations Agent…" @keydown.enter="sendAgentMessage" :disabled="agentTyping">
-                <button class="btn-send" @click="sendAgentMessage" :disabled="agentTyping || !agentInput.trim()">Send</button>
-              </div>
-            </div>
-
-            <!-- Wide HITL Panel (flex:1) -->
-            <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
-              <div style="flex:1;padding:10px 12px;overflow-y:auto">
-
-                <!-- No action: Consult button -->
-                <div v-if="!hitlAction && !hitlOutcome">
-                  <div class="hitl-action-lbl">⚙ Pending Action</div>
-                  <button class="hitl-consult-btn" :disabled="!ddFaultType || !injectionRunning || agentTyping" @click="consultAgent">💬 Consult Operations Agent</button>
-                  <div v-if="!injectionRunning" style="font-size:0.62rem;color:var(--muted);text-align:center;margin-top:4px">Inject a fault first to enable agent consultation</div>
-                </div>
-
-                <!-- Remediation Tiers Grid -->
-                <div v-if="hitlAction && !hitlOutcome">
-                  <div class="hitl-action-lbl">📋 All Remediation Options — <span style="color:var(--blue);text-transform:none;font-weight:400">click a tier to select for approval</span>
-                    <button @click="fetchJustification()" style="margin-left:auto;font-size:0.58rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(138,180,248,0.35);background:rgba(138,180,248,0.07);color:var(--g-blue);cursor:pointer" title="View itemized cost breakdown">ⓘ Cost Basis</button>
-                  </div>
-                  <!-- 4-tier grid when API tiers loaded -->
-                  <div v-if="remediationTiers" style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:8px">
-                    <div v-for="(tier, tierKey) in remediationTiers" :key="tierKey"
-                         :style="{border: tier.is_active ? '2px solid rgba(30,144,255,0.7)' : (selectedTierKey===tierKey ? '2px solid rgba(0,230,118,0.6)' : '1px solid var(--border)'),borderRadius:'7px',padding:'8px 10px',background: selectedTierKey===tierKey ? 'rgba(0,230,118,0.05)' : (tier.is_active ? 'rgba(30,144,255,0.06)' : 'var(--bg)'),opacity:tier.dim?0.5:1,cursor:tier.dim?'default':'pointer',transition:'all 0.15s'}"
-                         @click="!tier.dim && selectTierApprove(tierKey, tier)">
-                      <div style="display:flex;align-items:center;gap:5px;margin-bottom:4px">
-                        <span style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em" :style="{color: tier.is_active ? 'var(--blue)' : (selectedTierKey===tierKey ? 'var(--green)' : 'var(--muted)')}">{{ tierKey.replace('_',' ') }}</span>
-                        <span v-if="tier.is_active" style="font-size:0.52rem;padding:1px 4px;border-radius:3px;background:rgba(30,144,255,0.2);color:var(--blue);font-weight:700">ACTIVE</span>
-                        <span v-if="selectedTierKey===tierKey" style="font-size:0.52rem;padding:1px 4px;border-radius:3px;background:rgba(0,230,118,0.2);color:var(--green);font-weight:700">SELECTED</span>
-                        <span style="margin-left:auto;font-size:0.55rem;font-weight:700;padding:1px 5px;border-radius:3px" :style="{background: tier.viability_color + '22', color: tier.viability_color, border: '1px solid ' + tier.viability_color + '55'}">{{ tier.viability }}</span>
-                      </div>
-                      <div style="font-size:0.65rem;color:var(--text2);line-height:1.4;margin-bottom:4px">{{ tier.action }}</div>
-                      <div style="font-size:0.6rem;color:var(--muted)">⏱ {{ tier.time_to_execute }} &nbsp;·&nbsp; 💰 ${{ (tier.cost_incurred||0).toLocaleString() }}</div>
+              <!-- Remediation Tiers Grid -->
+              <div v-if="hitlAction && !hitlOutcome">
+                <div class="hitl-action-lbl">📋 Remediation Options</div>
+                <div v-if="remediationTiers" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+                  <div v-for="(tier, tierKey) in remediationTiers" :key="tierKey"
+                       :style="{border: tier.is_active ? '2px solid rgba(30,144,255,0.7)' : (selectedTierKey===tierKey ? '2px solid rgba(0,230,118,0.6)' : '1px solid var(--border)'),borderRadius:'7px',padding:'7px 9px',background: selectedTierKey===tierKey ? 'rgba(0,230,118,0.05)' : (tier.is_active ? 'rgba(30,144,255,0.06)' : 'var(--bg)'),opacity:tier.dim?0.5:1,cursor:tier.dim?'default':'pointer'}"
+                       @click="!tier.dim && selectTierApprove(tierKey, tier)">
+                    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+                      <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase" :style="{color: tier.is_active ? 'var(--blue)' : (selectedTierKey===tierKey ? 'var(--green)' : 'var(--muted)')}">{{ tierKey.replace('_',' ') }}</span>
+                      <span v-if="tier.is_active" style="font-size:0.5rem;padding:1px 4px;border-radius:3px;background:rgba(30,144,255,0.2);color:var(--blue);font-weight:700">ACTIVE</span>
+                      <span v-if="selectedTierKey===tierKey" style="font-size:0.5rem;padding:1px 4px;border-radius:3px;background:rgba(0,230,118,0.2);color:var(--green);font-weight:700">SELECTED</span>
+                      <span style="margin-left:auto;font-size:0.54rem;font-weight:700;padding:1px 5px;border-radius:3px" :style="{background: tier.viability_color + '22', color: tier.viability_color, border: '1px solid ' + tier.viability_color + '55'}">{{ tier.viability }}</span>
                     </div>
-                  </div>
-                  <!-- Fallback single recommendation -->
-                  <div v-if="!remediationTiers" style="border:1px solid rgba(30,144,255,0.35);border-radius:7px;padding:9px 11px;background:rgba(30,144,255,0.04);margin-bottom:8px">
-                    <div style="font-size:0.7rem;color:var(--text2);line-height:1.5;margin-bottom:7px">{{ hitlAction.action_text }}</div>
-                    <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 9px;font-size:0.65rem;margin-bottom:8px">
-                      <span style="color:var(--muted)">Cost Avoided:</span><span style="font-family:var(--mono);font-weight:700;color:var(--green)">${{ (hitlAction.cost_avoided||0).toLocaleString() }}</span>
-                      <span style="color:var(--muted)">Cost Incurred:</span><span style="font-family:var(--mono);font-weight:700;color:var(--orange)">${{ (hitlAction.cost_incurred||0).toLocaleString() }}</span>
-                      <span style="color:var(--muted)">Net Savings:</span><span style="font-family:var(--mono);font-weight:700;color:var(--green);font-size:0.76rem">${{ ((hitlAction.cost_avoided||0)-(hitlAction.cost_incurred||0)).toLocaleString() }}</span>
-                    </div>
-                  </div>
-                  <div style="display:flex;gap:6px">
-                    <button class="btn-approve" @click="approveHitl">✔ Approve & Execute</button>
-                    <button class="btn-reject" @click="rejectHitl">✖ Reject</button>
+                    <div style="font-size:0.63rem;color:var(--text2);line-height:1.4;margin-bottom:3px">{{ tier.action }}</div>
+                    <div style="font-size:0.58rem;color:var(--muted)">⏱ {{ tier.time_to_execute }} · 💰 ${{ (tier.cost_incurred||0).toLocaleString() }}</div>
                   </div>
                 </div>
-
-                <!-- Outcome Card -->
-                <div v-if="hitlOutcome">
-                  <div class="outcome-card">
-                    <div class="outcome-title">✅ Intervention Executed</div>
-                    <div class="outcome-text">{{ hitlOutcome.outcome_message }}</div>
-                    <div class="outcome-savings">${{ (hitlOutcome.net_savings||0).toLocaleString() }} net saved</div>
-                    <button @click="hitlOutcome=null;hitlAction=null;injectionRunning=false;ddFaultType=null;remediationTiers=null;selectedTierKey=null"
-                            style="margin-top:8px;font-size:0.65rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);color:var(--muted);cursor:pointer">
-                      ↺ New Scenario
-                    </button>
-                  </div>
+                <div v-if="!remediationTiers" style="border:1px solid rgba(30,144,255,0.35);border-radius:7px;padding:9px 11px;background:rgba(30,144,255,0.04);margin-bottom:8px">
+                  <div style="font-size:0.7rem;color:var(--text2);line-height:1.5;margin-bottom:7px">{{ hitlAction.action_text }}</div>
                 </div>
-
+                <div style="display:flex;gap:6px">
+                  <button class="btn-approve" @click="approveHitl">✔ Approve & Execute</button>
+                  <button class="btn-reject" @click="rejectHitl">✖ Reject</button>
+                </div>
+              </div>
+              <!-- Outcome Card -->
+              <div v-if="hitlOutcome">
+                <div class="outcome-card">
+                  <div class="outcome-title">✅ Intervention Executed</div>
+                  <div class="outcome-text">{{ hitlOutcome.outcome_message }}</div>
+                  <div class="outcome-savings">${{ (hitlOutcome.net_savings||0).toLocaleString() }} net saved</div>
+                  <button @click="hitlOutcome=null;hitlAction=null;injectionRunning=false;ddFaultType=null;remediationTiers=null;selectedTierKey=null"
+                          style="margin-top:8px;font-size:0.65rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);color:var(--muted);cursor:pointer">
+                    ↺ New Scenario
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div><!-- copilot-panel -->
+
+        </div><!-- dd-bottom-row -->
 
         <!-- ── CRAFT FAULT MODAL ── -->
         <div v-if="craftModalOpen" @click.self="craftModalOpen=false"
@@ -1535,9 +1545,38 @@ createApp({
       if(!this.chartData?.sensors) return;
       const s=this.chartData.sensors[this.activeTab];
       if(!s) return;
-      const el=document.getElementById('forecast-chart');
-      if(!el) return;
-      Plotly.react(el,s.traces,s.layout,{displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(el,s.traces,s.layout,{displayModeBar:false,responsive:true}));
+      // ── GDC Edge AI chart — full projection + RUL markers ──────────────────
+      const elGdc=document.getElementById('forecast-chart');
+      if(elGdc) {
+        Plotly.react(elGdc,s.traces,s.layout,{displayModeBar:false,responsive:true})
+              .catch(()=>Plotly.newPlot(elGdc,s.traces,s.layout,{displayModeBar:false,responsive:true}));
+      }
+      // ── SCADA chart — historical data only, stops at NOW ───────────────────
+      // Shows only what traditional SCADA sees: the blue historical line and the
+      // hard alarm threshold. No projection. No AI inference. No future markers.
+      // The X-axis is capped at the last real timestamp — SCADA has no future view.
+      const elScada=document.getElementById('scada-chart');
+      if(elScada && s.traces && s.traces.length > 0) {
+        const scadaTraces = s.traces.filter(t =>
+          t.name === 'Live Telemetry' || t.name === 'SCADA Alarm Threshold'
+        );
+        const scadaLayout = JSON.parse(JSON.stringify(s.layout));
+        // Strip all future annotations and shapes — SCADA sees only the present
+        scadaLayout.annotations = [];
+        scadaLayout.shapes = [];
+        // Cap X-axis at last known timestamp (NOW line)
+        const histX = s.traces[0]?.x;
+        if(histX && histX.length > 0) {
+          scadaLayout.xaxis = {...(scadaLayout.xaxis||{}), range:[histX[0], histX[histX.length-1]]};
+        }
+        // SCADA title: always "NORMAL" because threshold hasn't been crossed
+        scadaLayout.title = {
+          text: '<b>SCADA Monitor</b><br><span style="font-size:11px;color:#00e676">✓ STATUS NORMAL — No Alarms Active</span>',
+          font: {size:13, color:'#e0e0e0'}, x:0.02, y:0.95
+        };
+        Plotly.react(elScada,scadaTraces,scadaLayout,{displayModeBar:false,responsive:true})
+              .catch(()=>Plotly.newPlot(elScada,scadaTraces,scadaLayout,{displayModeBar:false,responsive:true}));
+      }
     },
     selectTab(tab) { this.activeTab=tab; this._tabManuallySelected=true; this.renderChart(); },
 
