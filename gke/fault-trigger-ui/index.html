@@ -145,7 +145,7 @@
                Horizontal time-advantage bridge (middle)
                Traditional SCADA chart (bottom)
        Row 2: 3-column evidence / agent / action bottom half                   */
-    .dd-compare-row{height:430px;flex-shrink:0;display:flex;flex-direction:column;border-bottom:1px solid var(--border)}
+    .dd-compare-row{flex-shrink:0;display:flex;flex-direction:column;border-bottom:none}
     .dd-view-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
     .dd-scada-panel{border-top:1px solid var(--border)}
     .chart-view-hdr{flex-shrink:0;height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf);position:relative}
@@ -419,6 +419,11 @@
     .ai-lead-icon{font-size:18px}
     .ai-lead-val{font-family:var(--mono);font-size:1.4rem;font-weight:800;color:var(--blue);line-height:1}
     .ai-lead-label{font-size:0.68rem;color:var(--text2);line-height:1.3}
+
+    /* ── Compare Row Resize Handle ── */
+    .compare-resize-handle{flex-shrink:0;height:9px;cursor:ns-resize;background:rgba(30,144,255,0.1);border-top:1px solid var(--border2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background 0.15s;position:relative;z-index:10;user-select:none}
+    .compare-resize-handle:hover,.compare-resize-handle.dragging{background:rgba(30,144,255,0.32)}
+    .compare-resize-handle::before{content:'';display:block;width:40px;height:3px;border-radius:2px;background:rgba(30,144,255,0.45)}
 
     /* ── Telemetry Tab ── */
     #grafana-iframe{width:100%;height:100%;border:none}
@@ -779,7 +784,7 @@
         </div>
 
         <!-- ── Row 1: Vertical GDC AI (top) → Time Bridge (middle) → SCADA (bottom) ── -->
-        <div class="dd-compare-row" @click="showAiFactors=false">
+        <div class="dd-compare-row" :style="{height: compareRowHeight + 'px'}" @click="showAiFactors=false">
 
           <!-- TOP: GDC Edge AI Forecast chart -->
           <div class="dd-view-panel dd-gdc-panel">
@@ -867,6 +872,9 @@
           </div>
 
         </div><!-- dd-compare-row -->
+
+        <!-- ── Chart area resize handle — drag down to enlarge charts, push evidence panels off-screen ── -->
+        <div class="compare-resize-handle" ref="compareResizeHandle" title="Drag to resize chart area"></div>
 
         <!-- ── Row 2: Evidence / Agent / Action — 3-column bottom half ── -->
         <div class="dd-bottom-row">
@@ -1511,6 +1519,7 @@ createApp({
       // Session 9 — Deep Dive vertical layout
       showAiFactors: false,      // toggles the AI input factors popover on the GDC chart
       initialRulMinutes: null,   // captured on first degrade poll; used for bridge bar pct
+      compareRowHeight: 430,     // Session 10: resizable via drag handle — push bottom panels down
     };
   },
 
@@ -1585,7 +1594,7 @@ createApp({
         this.injectionRunning = false;
       }
       this.startDegPoll();
-      this.$nextTick(() => this.initCopilotResize());
+      this.$nextTick(() => { this.initCopilotResize(); this.initCompareResize(); });
     },
     backToDashboard() {
       this.currentView = 'dashboard';
@@ -1725,10 +1734,18 @@ createApp({
       const s=this.chartData.sensors[this.activeTab];
       if(!s) return;
       // ── GDC Edge AI chart — full projection + RUL markers ──────────────────
+      // Strip the "SCADA Alarm in Xm" annotation box — the bridge bar tells that story
       const elGdc=document.getElementById('forecast-chart');
       if(elGdc) {
-        Plotly.react(elGdc,s.traces,s.layout,{displayModeBar:false,responsive:true})
-              .catch(()=>Plotly.newPlot(elGdc,s.traces,s.layout,{displayModeBar:false,responsive:true}));
+        const gdcLayout = JSON.parse(JSON.stringify(s.layout));
+        if (gdcLayout.annotations) {
+          gdcLayout.annotations = gdcLayout.annotations.filter(a =>
+            !((a.text || '').toLowerCase().includes('scada alarm') ||
+              (a.text || '').toLowerCase().includes('scada a'))
+          );
+        }
+        Plotly.react(elGdc,s.traces,gdcLayout,{displayModeBar:false,responsive:true})
+              .catch(()=>Plotly.newPlot(elGdc,s.traces,gdcLayout,{displayModeBar:false,responsive:true}));
       }
       // ── SCADA chart — historical data only, stops at NOW ───────────────────
       // Shows only what traditional SCADA sees: the blue historical line and the
@@ -1950,6 +1967,44 @@ createApp({
       const onMouseMove=(e)=>{const delta=startY-e.clientY;this.copilotHeight=Math.min(600,Math.max(120,startH+delta));};
       const onMouseUp=()=>{handle.classList.remove('dragging');document.removeEventListener('mousemove',onMouseMove);document.removeEventListener('mouseup',onMouseUp);document.body.style.cursor='';document.body.style.userSelect='';};
       handle.addEventListener('mousedown',(e)=>{e.preventDefault();startY=e.clientY;startH=this.copilotHeight;handle.classList.add('dragging');document.body.style.cursor='ns-resize';document.body.style.userSelect='none';document.addEventListener('mousemove',onMouseMove);document.addEventListener('mouseup',onMouseUp);});
+    },
+
+    // ── Chart area resize handle — Session 10 ──────────────────────────────
+    // Dragging the handle between the chart row and evidence panels adjusts
+    // compareRowHeight, pushing the evidence/agent/action panels down or off-screen.
+    // Min 180px (enough for two mini charts), max 90% of viewport for full-screen mode.
+    initCompareResize() {
+      const handle = this.$refs.compareResizeHandle;
+      if (!handle) return;
+      let startY = 0, startH = 0;
+      const onMove = (e) => {
+        const delta = e.clientY - startY;
+        this.compareRowHeight = Math.min(
+          Math.round(window.innerHeight * 0.9),
+          Math.max(180, startH + delta)
+        );
+        // Re-render charts on every mousemove so they fill the new height
+        if (this.chartData) this.renderChart();
+      };
+      const onUp = () => {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        // Final re-render after mouse release
+        if (this.chartData) this.$nextTick(() => this.renderChart());
+      };
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startY = e.clientY;
+        startH = this.compareRowHeight;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'ns-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
     },
 
     showToast(msg, color) {
