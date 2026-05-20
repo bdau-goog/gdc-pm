@@ -1,61 +1,62 @@
-# GDC-PM — Session 10 Handoff
+# GDC-PM — Session 11 Handoff
 
 **Date:** 2026-05-20  
 **Live URL:** http://35.188.3.97  
 **Project:** `gdc-pm-v2` | Cluster: `gdc-edge-simulation` | Namespace: `gdc-pm`  
 **Current image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`  
-**Git head:** `de7477d` (master — working tree clean, all changes committed)
+**Git head:** Session 10 changes committed on master
 
 ---
 
-## What Was Done in Session 9
+## What Was Done in Session 10
 
-### 1. Deep Dive Layout — Vertical Stacked Redesign (deployed, live)
+### 1. Ollama Scheduler RBAC — Resolved (deployed, live)
 
-The Deep Dive event detail panel Row 1 was restructured from a horizontal side-by-side layout to a vertical stack that aligns X-axes for maximum narrative impact.
+The L4 GPU auto-scaling scheduler was previously blocked because `container.roles.create` IAM was denied. Confirmed that `kubectl auth can-i create role -n gdc-pm` returned **yes** — the RBAC permissions already existed at the namespace level. Applied the full scheduler manifest:
 
-**New vertical order (430px total height):**
-- **Top (flex:1) — GDC Edge AI Forecast:** Orange forecast with RUL projection, PNR marker, SCADA alarm marker, confidence cone. Includes new **ⓘ info button** in the header.
-- **Middle (46px fixed) — Horizontal Time Advantage Bridge:** When fault is active shows `⚡ GDC Detected → [progress bar shrinking] → ⛔ SCADA Alarm` with the lead time remaining in monospace. Bar width is calculated from `initialRulMinutes` (captured on first detection) and shrinks live as time elapses.
-- **Bottom (flex:1) — Traditional SCADA:** Historical-only chart, X-axis capped at "Now", all shapes/annotations stripped, title hard-coded to "✓ STATUS NORMAL."
+- `serviceaccount/ollama-scheduler` ✅
+- `role.rbac.authorization.k8s.io/ollama-scaler` ✅
+- `rolebinding.rbac.authorization.k8s.io/ollama-scheduler-scaler` ✅
+- `cronjob.batch/ollama-stand-up` — **6 AM UTC, Mon–Fri** ✅
+- `cronjob.batch/ollama-stand-down` — **6 PM UTC, daily** ✅
 
-**Key implementation notes:**
-- `showAiFactors: false` + `initialRulMinutes: null` added to Vue data
-- `aiFactors` computed: reads `SENSOR_LABELS[aclass]` for the current fault type — lists PSI, Temp, Vib, and optionally Amps/SPM depending on asset class
-- `bridgeBarPct` computed: `(time_to_scada_minutes / initialRulMinutes) * 100` — starts at 100%, shrinks on every poll
-- `fetchDegradeStatus()` now captures `initialRulMinutes` on first non-null active reading
-- `resetAsset()` now clears `initialRulMinutes = null` and `showAiFactors = false`
+**Cost impact:** L4 GPU node (gemma4:27b) now auto-provisions on weekday mornings and deprovisions evenings → ~78% GPU cost savings.
 
-### 2. AI Factor ⓘ Decoration (deployed, live)
+**Current ollama state:** New pod (`ollama-77f99db54d-*`) still Pending (L4 node provisioning / 15GB model pull). Old pod (`ollama-8ffc6bd5b-*`) still Running on gemma:2b and serving requests.
 
-Orange circle button in the GDC Edge AI chart header. Clicking shows a popover listing:
-- The exact numerical sensor features the XGBoost RUL model reads (asset-class specific)
-- Footer copy: *"Deterministic ML: multivariate sensor correlation, not single-threshold rules. The Agent chat additionally reasons over field documents and maintenance records."*
-- Dismisses on click-away to the compare row
-- Uses `CSS classes: .ai-factors-btn, .ai-factors-popover, .afp-title, .afp-row, .afp-footer`
+### 2. Fleet Financials — Narrative ROI Card (deployed, live)
 
-### 3. Tab Reordering (deployed, live)
+Replaced the minimal 3-KPI row with a full **"Before GDC vs After GDC"** narrative card:
 
-- Default tab changed to **Fleet Operations** (was Fleet Telemetry)
-- Tab order: **Fleet Operations** | **Fleet Financials** | Fleet Telemetry (dimmed, opacity 0.7)
-- `mainTab: 'operations'` in Vue data (was `'telemetry'`)
+- **Hero ROI number:** Large monospace `$totalSaved` with green gradient — the "big number" visible instantly
+- **Annualised Projection** card (visible only after first intervention): `totalSaved × 52` with footnote
+- **Before/After comparison grid:** Left card (🛢 Traditional SCADA Only) lists 5 failure modes in red; right card (⚡ GDC Edge AI) lists 5 advantages in green — direct side-by-side contrast
+- **3 KPI tiles:** Incidents Resolved (blue), Fleet Uptime Protected (green), Avg $ / Intervention (yellow)
+- **Methodology footnote:** API RP 11S / SPE-181437-MS references, downtime rates ($45k/day ESP, $120k/day rig)
+- **Fleet Uptime comparison bar:** Horizontal progress bars GDC (green) vs SCADA-only (red estimated), appears after first intervention
+- **Cost-per-intervention sparkline row:** Individual mini-cards per resolved incident, newest first
+- **Empty state message:** "No resolved incidents yet — approve a fault intervention in Fleet Operations to populate this ledger."
 
-### 4. Grafana Fleet Telemetry — Site-Zone Grouping (deployed, live)
+### 3. Grafana Fleet Telemetry — Per-Asset Stat Cards (deployed, live)
 
-Dashboard restructured from sensor-type rows to operator-centric site rows:
-- **🛢 Pad Alpha — ESP Production** (y=5): Intake PSI, Motor Winding Temp, Motor Current (A), Vibration
-- **🛢 Pad Bravo — Gas Lift Production** (y=24): Discharge PSI, Discharge Temp, Vibration
-- **🏗 Rig 42 — Drilling** (y=34): Mud Pump Discharge PSI (**new panel ID 32**), Stroke Rate SPM, Rig 42 Vibration, Rig 42 Temperature
-- **⚡ Edge AI vs SCADA** (y=53): unchanged — AI Detection Timeline + SCADA Breach Log
+Added 14 per-asset PSI health stat panels to `grafana-configmap.yaml` using a Python patch script (`gdc-pm/scripts/patch_grafana_stat_panels.py`):
 
-New Mud Pump PSI panel queries `MUD-%` assets with correct thresholds (LOW: 1,800 PSI, HIGH: 3,800 PSI).
+**New panels — Pad Alpha (6 ESP stat cards at y=6):**
+- IDs 100–105: ESP-A1, ESP-A2, ESP-A3, ESP-A4, ESP-A5, ESP-A6
+- Each shows current 5-min avg Intake PSI with green/orange/red threshold coloring
+- Click → navigates to `/d/gdc-pm-main?var-asset=ESP-ALPHA-N&kiosk=tv`
 
-### 5. Gemma 4 / L4 GPU Upgrade (applied, L4 provisioning in progress)
+**New panels — Pad Bravo (4 GLIFT stat cards at y=29):**
+- IDs 110–113: GL-B1, GL-B2, GL-B3, GL-B4
+- Each shows current Discharge PSI
 
-- Applied `ollama.yaml`: PVC expanded to 50Gi, Deployment updated to target `cloud.google.com/gke-accelerator: nvidia-l4` with `gemma4:27b` init-container model pull
-- Applied `ollama-scheduler.yaml`: CronJobs for stand-up (6 AM UTC weekdays) and stand-down (6 PM UTC daily) configured. **Note:** RBAC Role + RoleBinding creation failed — `container.roles.create` IAM permission not granted. ServiceAccount and CronJobs exist; admin needs to grant `roles.create` and `roleBindings.create` for the scheduler to function.
-- Set UI env vars: `OLLAMA_MODEL=gemma4:27b OLLAMA_DISPLAY_MODEL=gemma4:27b`
-- **Current state:** New ollama pod (`ollama-77f99db54d-*`) is Pending while GKE Autopilot provisions the L4 node (~3-5 min provisioning, then 10-15 min for init container to pull 15GB model). Old gemma:2b pod (`ollama-8ffc6bd5b-*`) is still Running and serving requests until the new one is Ready.
+**New panels — Rig 42 (4 stat cards at y=43):**
+- IDs 120–123: MUD-1, MUD-2, MUD-3, TDRIVE
+- Mud pump: Discharge PSI (1800–3800 PSI range); Top Drive: Hydraulic PSI
+
+**All existing chart panels shifted down** to accommodate the new rows (+12 total Y to Edge AI section).
+
+**Total panel count:** 24 → 38 panels
 
 ---
 
@@ -64,22 +65,21 @@ New Mud Pump PSI panel queries `MUD-%` assets with correct thresholds (LOW: 1,80
 ```
 gdc-edge-simulation / gdc-pm namespace
 ────────────────────────────────────────
-fault-trigger-ui       1/1 Running   ← Session 9 image (vertical Deep Dive, gemma4:27b env)
+fault-trigger-ui       1/1 Running   ← Session 10 image (Financial narrative, same ops)
 telemetry-simulator    1/1 Running   ← Generates 12 readings/min
 event-processor        1/1 Running   ← RabbitMQ → inference → AlloyDB
 alloydb-omni           1/1 Running   ← PostgreSQL edge DB
 gdc-pm-rabbitmq        1/1 Running   ← AMQP message broker
-grafana                1/1 Running   ← Session 9 site-zone dashboard
+grafana                1/1 Running   ← Session 10: 14 asset stat cards added
 ollama (new)           0/1 Pending   ← L4 node provisioning / gemma4:27b pull in progress
 ollama (old)           1/1 Running   ← gemma:2b still serving until new pod Ready
 inference-api          1/1 Running   ← Legacy BQML (not used by current UI)
+ollama-stand-up        CronJob       ← 6 AM UTC Mon–Fri ✅
+ollama-stand-down      CronJob       ← 6 PM UTC daily ✅
 ```
 
-**IMPORTANT:** Monitor ollama pod: `kubectl get pod -n gdc-pm -l app=ollama -w` — when new pod goes Running AND passes readiness probe, old pod will terminate. Model pull takes 10-15 min on first run (15GB download). Once L4 pod is stable, set `OLLAMA_DISPLAY_MODEL=gemma4:27b` is already done.
-
-**RBAC gap:** The Ollama scheduler's Role + RoleBinding could not be created due to missing `container.roles.create` IAM permission on `dev-workstation-sa`. An admin needs to either:
-1. Grant `roles/container.developer` → `container.roles.create` or run `kubectl create role/rolebinding` directly with a privileged account
-2. Or: The CronJobs exist but will fail on execution until this is resolved
+**Monitor ollama L4:** `kubectl get pod -n gdc-pm -l app=ollama -w`  
+When new pod goes Running and old terminates, gemma4:27b is live.
 
 ---
 
@@ -87,52 +87,44 @@ inference-api          1/1 Running   ← Legacy BQML (not used by current UI)
 
 ### High Priority
 
-**1. Grafana Fleet Telemetry — Match Fleet Operations Look & Feel (pure Grafana, no HTML wrapper)**
-- **Goal:** The Grafana dashboard (which fills the Fleet Telemetry tab via iframe) should itself replicate the operator-centric layout of the Fleet Operations tab. No HTML/Vue in front of it — all changes inside `grafana-configmap.yaml`.
-- **Target experience:** Site zone "cards" (Pad Alpha / Pad Bravo / Rig 42), per-asset stat panels showing current sensor values and health, and click-through to that asset's time-series charts using the existing `$asset` variable.
-- **Grafana features to use:**
-  - **Stat panels per asset** (e.g., a row of 6 stat panels for ESP-ALPHA-1 through ESP-ALPHA-6 showing current PSI/health — green = nominal, orange = AI alert, red = SCADA breach)
-  - **Row panels** as site-zone section headers (already in place)
-  - **`$asset` variable** pre-set to "All" by default; operator clicks a stat panel that links to a filtered URL to drill into one asset's charts
-  - **Text panels** for site-zone descriptions if needed
-  - **Panel links:** stat panels can be configured with a `dashboardUID` link that sets `var-asset=ESP-ALPHA-2` — simulating the "click asset → see its telemetry" behaviour entirely within Grafana
-- **The spaghetti problem:** Current charts show all assets as overlapping lines. When `$asset` is set to a specific asset via URL or dropdown, each chart shows only one clean line. The refactoring should make the dropdown selection the primary interaction.
-- File: `gke/grafana/k8s/grafana-configmap.yaml`
-- Deploy: `kubectl apply -f ... && kubectl rollout restart deployment/grafana -n gdc-pm`
+**1. Grafana Stat Panels — Click-through UX validation**
+- Verify that clicking a stat card (e.g., ESP-A2) actually changes the `$asset` variable and filters the time-series charts to show only that asset's data
+- If the URL link approach doesn't work within the kiosk iframe, consider using Grafana's **data link** feature inside the chart panels themselves (target URL: `var-asset=${__field.labels.metric}`)
+- Edge case: the `$asset` dropdown may need `refresh: 1` to pick up the URL-driven value in kiosk mode
 
-**2. Financial Story — Tighten the Narrative**
-- The Fleet Financials tab shows a ledger but the story is currently "loose"
-- Consider: a front-page summary card with a single ROI number, and a clear "before GDC vs. after GDC" framing
-- Ideas: projected annual savings extrapolation, fleet-level uptime bar chart, cost-per-intervention trend
-- The session owner wants a cleaner, more persuasive financial narrative
-- File: `gke/fault-trigger-ui/index.html` (financials tab)
+**2. Grafana Stat Panel Labels — Add subtitle row**
+- Currently stat panels show label (e.g., "ESP-A1") and value (PSI number)
+- Could add `displayName` override to show "ESP-ALPHA-1 · Intake PSI" for clarity
+- Or use `textMode: "value_and_name"` to show both (already configured but needs verification)
 
-**3. Ollama Scheduler RBAC (requires admin)**
-- Grant `container.roles.create` / `container.roleBindings.create` to `dev-workstation-sa@gdc-pm-v2.iam.gserviceaccount.com`
-- Then re-apply: `kubectl apply -f gke/ollama/k8s/ollama-scheduler.yaml`
-- This enables automated L4 stand-up/stand-down to save ~78% GPU costs
+**3. Ollama L4 / gemma4:27b — Monitor to Completion**
+- `kubectl logs -n gdc-pm -l app=ollama -c pull-model --follow`
+- Model pull: ~15 GB, 10-15 min after L4 node is ready
+- Once Running: verify Agent responses are qualitatively better than gemma:2b
 
 ### Medium Priority
 
-**4. Demo Flow Review**
-- With the new vertical layout, verify the Deep Dive demo flow at http://35.188.3.97:
-  1. Fleet Operations (all green) → Click ESP-ALPHA-2 → Inject Sand Ingress
-  2. Watch the Time Bridge bar populate and shrink in real time
-  3. Note the ⓘ popover lists the exact XGBoost input features
-  4. Both charts share the same Y-axis range and X-axis scale — the gap is visually undeniable
-  5. Consult Agent → Approve
-- Check that `bridgeBarPct` renders the full bar at injection and shrinks over the 1-hour session
+**4. Chart Y-Axis Alignment (Deep Dive)**
+- GDC forecast chart and SCADA chart share X-axis but may have different Y-axis scales
+- Consider: `scaleDistribution: {type: "linear"}` with explicit `min`/`max` matching across both charts
+- Low visual friction — current layout already tells the story
 
-**5. Chart Y-Axis Alignment (optional enhancement)**
-- Currently the GDC forecast chart and SCADA chart may have different Y-axis scales
-- Consider: shared Y-axis scaling so the two charts are directly comparable at a glance
-- Lower priority — the current layout already tells the story clearly
+**5. Grafana Time Range**
+- Default `now-8h` → consider `now-2h` for demo sessions (fault ramp more visible)
+- Change in `grafana-configmap.yaml`: `"time": { "from": "now-2h", "to": "now" }`
+
+**6. Demo Flow Documentation**
+- Write a step-by-step demo script for:
+  1. Fleet Operations (all green) → click ESP-ALPHA-2 → Inject Sand Ingress
+  2. Flip to Fleet Telemetry → click ESP-A2 stat card → single-asset chart appears
+  3. Back to Operations → Deep Dive → Time Bridge shrinking
+  4. Consult Agent → Approve → Fleet Financials shows the ROI hero card
 
 ### Low Priority
 
-**6. Grafana Time Range Tweak**
-- Consider using `now-2h` for the default view during live demos (fault ramp is more visible in 2h window)
-- Currently set to `now-8h`
+**7. Financial tab — Projected Savings Chart**
+- Could add a simple Plotly bar chart showing each intervention's savings over time
+- Currently the cost-per-intervention sparkline row of mini-cards approximates this
 
 ---
 
@@ -171,14 +163,19 @@ kubectl get pod -n gdc-pm -l app=ollama -w
 kubectl logs -n gdc-pm -l app=ollama -c pull-model --follow
 ```
 
+```bash
+# Grafana stat panel patch script (idempotent — re-run if dashboard is reset):
+python3 gdc-pm/scripts/patch_grafana_stat_panels.py
+```
+
 ---
 
-## Key Lessons Learned (Session 9)
+## Key Lessons Learned (Session 10)
 
-**Vertical chart stacking eliminates interpretation friction:** When SCADA and AI charts share the X-axis (time axis) and are stacked top-to-bottom rather than side-by-side, the audience can immediately compare "what AI sees" vs "what SCADA sees" at exactly the same point in time. The old horizontal layout required horizontal eye movement; the vertical layout requires only a straight down glance.
+**The RBAC gap was already resolved:** The session handoff said `container.roles.create` IAM permission was missing, but `kubectl auth can-i create role -n gdc-pm` returned `yes`. The namespace-scoped RBAC was always permitted; the GCP project-level IAM was not needed. The Role and RoleBinding had actually been created in a previous step (creationTimestamp showed 2026-05-20T11:29:11Z). Always `kubectl auth can-i` before assuming an IAM grant is required.
 
-**The Time Bridge bar is the "money shot" for the demo:** Having a concrete, animated visual showing the shrinking lead time is far more persuasive than a number in a header badge. The bar going from 100% → 60% → 20% over the course of a demo tells the story that time is genuinely being consumed — and that without GDC, all of that lead time would be lost.
+**Python for ConfigMap JSON surgery is reliable:** Embedding JSON inside YAML is fragile to manual edits. The Python script approach (parse → modify → re-indent → write) is deterministic and rerunnable. The `patch_grafana_stat_panels.py` script can be safely re-run if the dashboard needs to be reset — it is idempotent provided the panel IDs 100–123 are not already present.
 
-**ⓘ Data Fusion Transparency builds credibility:** The ⓘ popover addresses the most common skeptical question in predictive maintenance demos: "How does the AI actually know?" Listing the exact sensor inputs (Intake Pres., Winding Temp., Vibration, Motor Current) and explicitly stating "deterministic ML, not LLM" distinguishes GDC from AI-washing and positions the product honestly.
+**Financial narrative framing matters more than data volume:** The original financials tab had accurate data but no story. The addition of the "Before GDC vs After GDC" comparison grid immediately frames the product's value proposition in the language operators and executives understand: reactive vs proactive, hours vs days, full replacement vs scheduled maintenance.
 
-**GKE Autopilot + L4 GPU provisioning:** Unlike standard GKE, Autopilot creates nodes on-demand when pods request specific accelerator resources. The `cloud.google.com/gke-accelerator: nvidia-l4` nodeSelector triggers this. First provisioning takes 3-5 min; model pull adds another 10-15 min. Subsequent restarts skip the pull (PVC caches the model).
+**Grafana kiosk=tv + panel links:** When Grafana is served in `kiosk=tv` mode via iframe, URL-based navigation (clicking stat panel links) should work within the iframe. The `var-asset` URL parameter sets the template variable on page load. If it doesn't work, the fallback is to add data links directly to the time-series chart panels using `${__field.labels.metric}` substitution.

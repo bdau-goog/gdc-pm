@@ -1039,15 +1039,115 @@
     <!-- ══ TAB: FINANCIALS ══ -->
     <div id="tab-financials" class="main-tab-content" :class="{active: mainTab==='financials'}">
       <div class="fin-tab">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
-          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase">Fleet Financials — Resolved Incidents Ledger</span>
+
+        <!-- ── ROI Narrative Hero Card ───────────────────────────────────── -->
+        <div style="background:linear-gradient(135deg,rgba(21,101,192,0.12),rgba(0,150,136,0.08));border:1px solid rgba(30,144,255,0.25);border-radius:12px;padding:22px 26px;margin-bottom:20px;position:relative;overflow:hidden">
+          <!-- Watermark -->
+          <div style="position:absolute;right:20px;top:50%;transform:translateY(-50%);font-size:88px;opacity:0.04;line-height:1;pointer-events:none;user-select:none">⚡</div>
+          <div style="display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap">
+            <!-- Left: The Big Number -->
+            <div style="flex-shrink:0">
+              <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px">GDC Edge AI — Demonstrated ROI</div>
+              <div style="font-family:var(--mono);font-size:2.8rem;font-weight:800;color:var(--g-green);line-height:1;letter-spacing:-1px">${{ totalSaved > 0 ? totalSaved.toLocaleString() : '—' }}</div>
+              <div style="font-size:0.65rem;color:var(--text2);margin-top:5px">capital preserved this session</div>
+              <!-- Projected annualisation -->
+              <div v-if="ledger.length > 0" style="margin-top:10px;padding:7px 11px;border-radius:7px;background:rgba(129,201,149,0.08);border:1px solid rgba(129,201,149,0.25)">
+                <div style="font-size:0.58rem;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px">Annualised Projection (×52 sessions)</div>
+                <div style="font-family:var(--mono);font-size:1.1rem;font-weight:700;color:var(--g-green)">${{ (totalSaved * 52).toLocaleString() }}</div>
+                <div style="font-size:0.58rem;color:var(--muted);margin-top:2px">extrapolated at current intervention rate</div>
+              </div>
+            </div>
+            <!-- Middle: Before vs After comparison -->
+            <div style="flex:1;min-width:260px">
+              <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.09em;color:var(--muted);margin-bottom:10px">Before GDC  vs  After GDC</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <!-- Without GDC -->
+                <div style="border:1px solid rgba(244,67,54,0.25);border-radius:8px;padding:12px 14px;background:rgba(244,67,54,0.04)">
+                  <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--g-red);margin-bottom:8px">🛢 Traditional SCADA Only</div>
+                  <div style="font-size:0.67rem;color:var(--text2);line-height:1.7">
+                    <div>⛔ Hard-threshold detection only</div>
+                    <div>⛔ ≥ 48 hr lag from fault onset</div>
+                    <div>⛔ Reactive emergency dispatch</div>
+                    <div>⛔ Full replacement cost at failure</div>
+                    <div>⛔ No unstructured data fusion</div>
+                  </div>
+                </div>
+                <!-- With GDC -->
+                <div style="border:1px solid rgba(129,201,149,0.35);border-radius:8px;padding:12px 14px;background:rgba(129,201,149,0.05)">
+                  <div style="font-size:0.6rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--g-green);margin-bottom:8px">⚡ GDC Edge AI</div>
+                  <div style="font-size:0.67rem;color:var(--text2);line-height:1.7">
+                    <div>✅ Multivariate XGBoost detection</div>
+                    <div>✅ Days–hours early warning</div>
+                    <div>✅ Scheduled proactive intervention</div>
+                    <div>✅ Parts cost only (no downtime)</div>
+                    <div>✅ Field docs + SCADA + LLM fusion</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Right: KPI column -->
+            <div style="flex-shrink:0;display:flex;flex-direction:column;gap:8px;min-width:140px">
+              <div style="text-align:center;border:1px solid rgba(30,144,255,0.2);border-radius:8px;padding:10px 14px;background:rgba(30,144,255,0.06)">
+                <div style="font-family:var(--mono);font-size:1.5rem;font-weight:800;color:var(--blue)">{{ ledger.length }}</div>
+                <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:3px">Incidents Resolved</div>
+              </div>
+              <div style="text-align:center;border:1px solid rgba(0,230,118,0.2);border-radius:8px;padding:10px 14px;background:rgba(0,230,118,0.05)">
+                <div style="font-family:var(--mono);font-size:1.5rem;font-weight:800;color:var(--green)">{{ fleetUptime }}%</div>
+                <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:3px">Uptime Protected</div>
+              </div>
+              <div style="text-align:center;border:1px solid rgba(255,179,0,0.2);border-radius:8px;padding:10px 14px;background:rgba(255,179,0,0.04)">
+                <div style="font-family:var(--mono);font-size:1.5rem;font-weight:800;color:var(--yellow)">{{ ledger.length > 0 ? '$' + Math.round(totalSaved / ledger.length).toLocaleString() : '—' }}</div>
+                <div style="font-size:0.58rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin-top:3px">Avg / Intervention</div>
+              </div>
+            </div>
+          </div>
+          <!-- Bottom: Methodology footnote -->
+          <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);font-size:0.58rem;color:var(--muted);line-height:1.6">
+            <strong style="color:var(--text2)">Savings basis:</strong> Each intervention saving is the delta between full-failure replacement cost (industry benchmark: API RP 11S, SPE-181437-MS) and the early-intervention cost incurred (inspection + scheduled parts). Unmitigated costs include downtime at $45k/day for ESP assets, $120k/day for drilling rigs. Annualised projection assumes similar fault frequency over 52 working sessions.
+          </div>
+        </div>
+
+        <!-- ── Uptime Bar (fleet-level visual) ── -->
+        <div v-if="ledger.length > 0" style="background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-bottom:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)">Fleet Uptime — GDC vs Unprotected Baseline</span>
+            <span style="font-family:var(--mono);font-size:0.65rem;color:var(--muted)">{{ ledger.length }} intervention{{ ledger.length > 1 ? 's' : '' }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:120px;flex-shrink:0;font-size:0.63rem;color:var(--text2)">⚡ With GDC Edge AI</span>
+              <div style="flex:1;height:16px;background:var(--border);border-radius:4px;overflow:hidden">
+                <div :style="{width: fleetUptime + '%', height: '100%', background: 'linear-gradient(90deg,#00c853,#00e676)', borderRadius: '4px', transition: 'width 1s ease'}"></div>
+              </div>
+              <span style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:var(--green);width:42px;text-align:right">{{ fleetUptime }}%</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="width:120px;flex-shrink:0;font-size:0.63rem;color:var(--text2)">🛢 SCADA Only (est.)</span>
+              <div style="flex:1;height:16px;background:var(--border);border-radius:4px;overflow:hidden">
+                <div :style="{width: Math.max(30, fleetUptime - (ledger.length * 3)) + '%', height: '100%', background: 'linear-gradient(90deg,#b71c1c,#f44336)', borderRadius: '4px', transition: 'width 1s ease'}"></div>
+              </div>
+              <span style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:var(--red);width:42px;text-align:right">{{ Math.max(30, Math.round(fleetUptime - (ledger.length * 3))) }}%</span>
+            </div>
+          </div>
+          <div style="font-size:0.58rem;color:var(--muted);margin-top:8px">SCADA-only baseline estimated at −3% uptime per unmitigated failure event. Actual impact depends on failure mode severity (ESP gas lock to rig downtime range: 4 hr – 7 days).</div>
+        </div>
+
+        <!-- ── Incident Ledger header ── -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span style="font-size:0.65rem;font-weight:700;letter-spacing:0.08em;color:var(--muted);text-transform:uppercase">Resolved Incidents — Detail Ledger</span>
           <button @click="clearDispatch" style="font-size:0.65rem;font-weight:600;padding:4px 12px;border-radius:7px;border:1px solid rgba(244,67,54,0.35);background:rgba(244,67,54,0.07);color:var(--red);cursor:pointer">♻ Reset Demo Data</button>
         </div>
-        <div class="fin-kpi-row">
-          <div class="fin-kpi"><div class="fin-kpi-lbl">Aggregate Capital Saved</div><div class="fin-kpi-val" style="color:var(--green)">${{ totalSaved.toLocaleString() }}</div></div>
-          <div class="fin-kpi"><div class="fin-kpi-lbl">Incidents Resolved</div><div class="fin-kpi-val" style="color:var(--blue)">{{ ledger.length }}</div></div>
-          <div class="fin-kpi"><div class="fin-kpi-lbl">Fleet Uptime Protected</div><div class="fin-kpi-val" style="color:var(--text)">{{ fleetUptime }}%</div></div>
+
+        <!-- ── Cost-per-intervention trend (sparkline text) ── -->
+        <div v-if="ledger.length >= 2" style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <div v-for="(ev, i) in ledger.slice().reverse()" :key="ev.id"
+               style="border:1px solid var(--border);border-radius:6px;padding:7px 11px;background:var(--surf);flex-shrink:0">
+            <div style="font-family:var(--mono);font-size:0.62rem;color:var(--muted)">{{ formatTs(ev.ack_time || ev.event_time) }}</div>
+            <div style="font-family:var(--mono);font-size:0.8rem;font-weight:700;color:var(--g-green)">+${{ (ev.cost_avoided||0).toLocaleString() }}</div>
+            <div style="font-size:0.58rem;color:var(--muted)">{{ ev.asset_id }} · {{ (ev.failure_type||'').replace(/_/g,' ') }}</div>
+          </div>
         </div>
+
         <div style="background:var(--surf);border:1px solid var(--border);border-radius:8px;overflow:hidden">
           <table style="width:100%;border-collapse:collapse;text-align:left">
             <thead style="background:var(--surf2);border-bottom:1px solid var(--border)">
@@ -1061,7 +1161,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr v-if="ledger.length === 0"><td colspan="6" style="padding:20px;text-align:center;color:var(--muted)">No resolved incidents yet</td></tr>
+              <tr v-if="ledger.length === 0"><td colspan="6" style="padding:20px;text-align:center;color:var(--muted)">No resolved incidents yet — approve a fault intervention in Fleet Operations to populate this ledger.</td></tr>
               <tr v-for="(ev, i) in ledger" :key="ev.id" :style="{background: i%2===0 ? 'transparent' : 'rgba(255,255,255,0.01)'}">
                 <td style="padding:8px 14px;font-size:0.65rem;font-family:var(--mono);color:var(--muted)">{{ formatTs(ev.ack_time || ev.event_time) }}</td>
                 <td style="padding:8px 14px;font-size:0.68rem;font-family:var(--mono);color:var(--blue)">{{ ev.asset_id }}</td>
