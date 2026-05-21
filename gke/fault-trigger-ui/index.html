@@ -622,9 +622,16 @@
           <span v-if="degStatus && degStatus.horizon_label" class="dd-horizon-badge" :class="(degStatus.horizon_label||'').toLowerCase()">
             {{ degStatus.horizon_label.toUpperCase() }} HORIZON
           </span>
-          <span v-if="degStatus && degStatus.health_score" class="dd-health-lbl">
-            Health: {{ (degStatus.health_score * 100).toFixed(1) }}%
-            <span v-if="degStatus.time_to_scada_minutes !== null"> · SCADA alarm: {{ formatRulFull(degStatus.time_to_scada_minutes) }}</span>
+          <span v-if="degStatus && degStatus.health_score" class="dd-health-lbl" style="display:flex;align-items:center;gap:12px;">
+            <span style="padding:2px 8px;border-radius:6px;background:rgba(30,144,255,0.1);border:1px solid rgba(30,144,255,0.3);color:var(--blue);">
+              Health: {{ (degStatus.health_score * 100).toFixed(1) }}%
+            </span>
+            <span v-if="degStatus.time_to_scada_minutes !== null" style="padding:2px 8px;border-radius:6px;background:rgba(255,109,0,0.1);border:1px solid rgba(255,109,0,0.3);color:var(--orange);">
+              Base RUL: {{ formatRulFull(degStatus.time_to_scada_minutes) }}
+            </span>
+            <span v-if="degStatus.adjusted_rul_minutes !== null && degStatus.adjusted_rul_minutes !== degStatus.time_to_scada_minutes" style="padding:2px 8px;border-radius:6px;background:rgba(244,67,54,0.1);border:1px solid rgba(244,67,54,0.3);color:var(--red);">
+              Adjusted RUL (AI Fusion): {{ formatRulFull(degStatus.adjusted_rul_minutes) }}
+            </span>
           </span>
           <!-- Craft Fault Button -->
           <button v-if="!injectionRunning && !hitlOutcome" @click="craftModalOpen=true"
@@ -1503,6 +1510,7 @@ createApp({
       if(!this.ddFaultType) return;
       try {
         const rul = this.degStatus?.time_to_scada_minutes ?? 60;
+        const rul = this.degStatus?.adjusted_rul_minutes ?? this.degStatus?.time_to_scada_minutes ?? 60;
         const r=await fetch(`/api/resolution-actions/${this.ddFaultType}?rul_minutes=${rul}`);
         if(r.ok){const d=await r.json();this.remediationTiers=d.actions||null;}
       } catch{}
@@ -1574,8 +1582,8 @@ createApp({
           font: {color: '#a0b0c0', size: 11},
           xaxis: {
             ...(gdcLayout.xaxis || {}),
-            range: histX.length > 0 ? [(gdcLayout.xaxis?.range?.[0] || histX[0]), histX[nowIdx]] : undefined,
-            autorange: false,
+            range: gdcLayout.xaxis?.range,
+            autorange: !gdcLayout.xaxis?.range,
             gridcolor: '#1e2a38',
             linecolor: '#1e2a38',
           },
@@ -1590,6 +1598,27 @@ createApp({
           annotations: [],
           shapes: [],
         };
+
+        // Add 'SCADA Blind Spot' to the empty future space if the AI chart projects into the future
+        if (histX.length > 0 && gdcLayout.xaxis?.range && new Date(gdcLayout.xaxis.range[1]) > new Date(histX[nowIdx])) {
+          scadaLayout.shapes.push({
+            type: 'rect',
+            xref: 'x', yref: 'paper',
+            x0: histX[nowIdx], x1: gdcLayout.xaxis.range[1],
+            y0: 0, y1: 1,
+            fillcolor: 'rgba(255, 109, 0, 0.05)',
+            line: { width: 0 }
+          });
+          
+          scadaLayout.annotations.push({
+            x: new Date((new Date(histX[nowIdx]).getTime() + new Date(gdcLayout.xaxis.range[1]).getTime()) / 2).toISOString(),
+            y: 0.5,
+            xref: 'x', yref: 'paper',
+            text: '<b>SCADA BLIND SPOT</b>',
+            showarrow: false,
+            font: { color: 'rgba(255, 109, 0, 0.4)', size: 16, family: 'JetBrains Mono' }
+          });
+        }
         // Always purge and redraw to prevent Plotly "no-resize" blank state
         Plotly.purge(elScada);
         Plotly.newPlot(elScada, scadaTraces, scadaLayout, {displayModeBar:false, responsive:true})
