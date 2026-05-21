@@ -4176,6 +4176,201 @@ def get_financial_justification(fault_type: str):
     return {"fault_type": fault_type, "justification": justification}
 
 
+# ── Sprint 4: Pad Alpha 2D Digital Twin Mockup — API-rendered SVG ────────────
+# Returns a dynamically-generated SVG (V2 variation) served from /api/pad-mockup.
+# Deliberately different visual language from the inline V1 SVG:
+#   - Blueprint/technical-drawing style (dark navy + cyan accent for GDC)
+#   - Title block (bottom-right, standard engineering drawing format)
+#   - More infrastructure detail: separator, WAN cloud, cable routing
+#   - Well annotations showing depth labels
+# No external dependencies — pure Python string templating.
+
+@app.get("/api/pad-mockup", response_class=HTMLResponse)
+def get_pad_mockup():
+    """
+    Sprint 4 — Variation 2: API-rendered 2D Pad Alpha schematic.
+    Returns image/svg+xml so <img src="/api/pad-mockup"> renders inline.
+    Visual style: technical blueprint (dark navy / cyan) vs V1 (dark / blue-gray).
+    """
+    from fastapi.responses import Response
+    # ── Active-fault well colours (derive from live degrade state) ──────────
+    WELL_IDS = [
+        "ESP-ALPHA-1", "ESP-ALPHA-2", "ESP-ALPHA-3",
+        "ESP-ALPHA-4", "ESP-ALPHA-5", "ESP-ALPHA-6",
+    ]
+    WELL_XS   = [62, 162, 262, 362, 462, 562]
+    WELL_NAMES = ["A-1", "A-2", "A-3", "A-4", "A-5", "A-6"]
+    WELL_DEPTHS = ["8,240 ft", "8,310 ft", "8,190 ft", "8,450 ft", "8,275 ft", "8,360 ft"]
+
+    def _well_stroke(wid: str) -> str:
+        dg = active_degrades.get(wid, {})
+        if not dg:
+            return "#00c8a0"          # teal-green = healthy
+        hs = dg.get("health_score", 1.0)
+        if hs >= 0.8:   return "#00c8a0"   # green
+        if hs >= 0.3:   return "#f59e0b"   # amber
+        return "#ef4444"                    # red
+
+    def _well_glow(wid: str) -> str:
+        dg = active_degrades.get(wid, {})
+        if not dg:
+            return "rgba(0,200,160,0.18)"
+        hs = dg.get("health_score", 1.0)
+        if hs >= 0.8:   return "rgba(0,200,160,0.18)"
+        if hs >= 0.3:   return "rgba(245,158,11,0.2)"
+        return "rgba(239,68,68,0.22)"
+
+    # Build well circle elements
+    well_circles = ""
+    for i, (wid, wx, wname, wdepth) in enumerate(
+            zip(WELL_IDS, WELL_XS, WELL_NAMES, WELL_DEPTHS)):
+        stroke = _well_stroke(wid)
+        glow   = _well_glow(wid)
+        well_circles += f"""
+  <!-- Well {wname} -->
+  <circle cx="{wx}" cy="148" r="21" fill="{glow}" stroke="{stroke}" stroke-width="1.8"/>
+  <text x="{wx}" y="144" text-anchor="middle" font-family="monospace" font-size="6.5"
+        fill="{stroke}" font-weight="bold">ESP</text>
+  <text x="{wx}" y="154" text-anchor="middle" font-family="monospace" font-size="6"
+        fill="#4a7a8a">{wname}</text>
+  <text x="{wx}" y="168" text-anchor="middle" font-family="monospace" font-size="5"
+        fill="#2a4a5a">{wdepth}</text>
+  <line x1="{wx}" y1="170" x2="{wx}" y2="180" stroke="#0a1828" stroke-width="1"
+        stroke-dasharray="2,2"/>"""
+
+    # Build vertical connection lines (manifold → wells)
+    vert_lines = ""
+    for wx in WELL_XS:
+        vert_lines += f'  <line x1="{wx}" y1="96" x2="{wx}" y2="127" stroke="#0e2236" stroke-width="1.5"/>\n'
+
+    svg = f"""<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 195" width="660" height="195">
+  <defs>
+    <linearGradient id="gdcGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#0a2048"/>
+      <stop offset="100%" stop-color="#041428"/>
+    </linearGradient>
+    <linearGradient id="padGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#04080e"/>
+      <stop offset="100%" stop-color="#060c16"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="660" height="195" fill="url(#padGrad)"/>
+
+  <!-- Pad bounding box (blueprint-style solid thin border) -->
+  <rect x="4" y="4" width="652" height="187" rx="5" fill="none"
+        stroke="#0e2236" stroke-width="1"/>
+
+  <!-- ── Top-row infrastructure ── -->
+
+  <!-- Generator -->
+  <rect x="12" y="18" width="56" height="32" rx="3"
+        fill="#040c14" stroke="#1a3028" stroke-width="1"/>
+  <text x="40" y="29" text-anchor="middle" font-family="monospace" font-size="6"
+        fill="#2a5040" font-weight="bold">GENERATOR</text>
+  <text x="40" y="40" text-anchor="middle" font-family="monospace" font-size="5"
+        fill="#1a3028">500 kVA</text>
+
+  <!-- GDC Edge AI — blueprint cyan accent, gradient fill -->
+  <rect x="262" y="12" width="116" height="46" rx="3"
+        fill="url(#gdcGrad)" stroke="#0a6080" stroke-width="1.5"/>
+  <rect x="262" y="12" width="116" height="4" rx="3" fill="#0a6080"/>
+  <circle cx="271" cy="20" r="2" fill="#00d8a8" opacity="0.9">
+    <animate attributeName="opacity" values="0.9;0.2;0.9" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="278" cy="20" r="2" fill="#0080d0" opacity="0.8"/>
+  <text x="320" y="30" text-anchor="middle" font-family="monospace" font-size="7"
+        fill="#00a8c0" font-weight="bold">GDC EDGE AI</text>
+  <text x="320" y="40" text-anchor="middle" font-family="monospace" font-size="5.2"
+        fill="#0a6080">XGBoost · Gemma4 · RAG</text>
+  <text x="320" y="50" text-anchor="middle" font-family="monospace" font-size="4.5"
+        fill="#065060">Inference: 48 ms · Edge</text>
+
+  <!-- SCADA RTU -->
+  <rect x="512" y="18" width="66" height="32" rx="3"
+        fill="#040c14" stroke="#1a3028" stroke-width="1"/>
+  <text x="545" y="29" text-anchor="middle" font-family="monospace" font-size="6"
+        fill="#2a4828" font-weight="bold">SCADA RTU</text>
+  <text x="545" y="40" text-anchor="middle" font-family="monospace" font-size="5"
+        fill="#1a2e18">Threshold Only</text>
+
+  <!-- Starlink -->
+  <ellipse cx="620" cy="24" rx="15" ry="6" fill="none"
+           stroke="#0a3848" stroke-width="1.2" transform="rotate(-18,620,24)"/>
+  <line x1="620" y1="30" x2="620" y2="47" stroke="#0a2838" stroke-width="1.1"/>
+  <line x1="614" y1="47" x2="626" y2="47" stroke="#0a2838" stroke-width="1.4"/>
+  <text x="620" y="56" text-anchor="middle" font-family="monospace" font-size="5"
+        fill="#0a3850">STARLINK</text>
+
+  <!-- ── Connecting lines ── -->
+  <!-- Data: GDC → SCADA (cyan dashed) -->
+  <line x1="378" y1="35" x2="512" y2="35" stroke="rgba(0,160,192,0.3)"
+        stroke-width="0.8" stroke-dasharray="3,4"/>
+  <polygon points="509,32.5 515,35 509,37.5" fill="rgba(0,160,192,0.3)"/>
+
+  <!-- Data: SCADA → Starlink -->
+  <line x1="578" y1="34" x2="605" y2="27" stroke="rgba(0,120,160,0.2)"
+        stroke-width="0.7" stroke-dasharray="2,5"/>
+
+  <!-- Power: GEN → manifold (dashed gold) -->
+  <line x1="40" y1="50" x2="40" y2="93" stroke="rgba(80,64,20,0.45)"
+        stroke-width="1" stroke-dasharray="3,4"/>
+
+  <!-- Data: GDC → manifold (cyan vertical) -->
+  <line x1="320" y1="58" x2="320" y2="93" stroke="rgba(0,160,192,0.2)"
+        stroke-width="0.7" stroke-dasharray="2,5"/>
+
+  <!-- Separator box (right of manifold) -->
+  <rect x="594" y="84" width="52" height="20" rx="2"
+        fill="#040c14" stroke="#0e2236" stroke-width="1"/>
+  <text x="620" y="97" text-anchor="middle" font-family="monospace" font-size="5.5"
+        fill="#1a3040">SEPARATOR</text>
+
+  <!-- ── Production manifold ── -->
+  <line x1="36" y1="96" x2="594" y2="96" stroke="#0a2040"
+        stroke-width="3.5" stroke-linecap="round"/>
+  <polygon points="594,93 601,96 594,99" fill="#0a2040"/>
+
+  <!-- Manifold label -->
+  <text x="500" y="91" font-family="monospace" font-size="5" fill="#1a3040">PROD. HEADER</text>
+
+  <!-- ── Vertical connections: manifold → wells ── -->
+{vert_lines}
+
+  <!-- ── ESP Well circles ── -->
+{well_circles}
+
+  <!-- ── Legend ── -->
+  <circle cx="14" cy="181" r="4" fill="rgba(0,200,160,0.2)" stroke="#00c8a0" stroke-width="1"/>
+  <text x="22" y="184" font-family="monospace" font-size="5" fill="#1a4a5a">Healthy</text>
+  <circle cx="60" cy="181" r="4" fill="rgba(245,158,11,0.2)" stroke="#f59e0b" stroke-width="1"/>
+  <text x="68" y="184" font-family="monospace" font-size="5" fill="#1a4a5a">Warning</text>
+  <circle cx="108" cy="181" r="4" fill="rgba(239,68,68,0.2)" stroke="#ef4444" stroke-width="1"/>
+  <text x="116" y="184" font-family="monospace" font-size="5" fill="#1a4a5a">Critical</text>
+  <line x1="150" y1="181" x2="164" y2="181" stroke="rgba(0,160,192,0.4)"
+        stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="167" y="184" font-family="monospace" font-size="5" fill="#1a4a5a">Data</text>
+  <line x1="192" y1="181" x2="206" y2="181" stroke="rgba(80,64,20,0.5)"
+        stroke-width="1" stroke-dasharray="3,3"/>
+  <text x="209" y="184" font-family="monospace" font-size="5" fill="#1a4a5a">Power</text>
+
+  <!-- Title block (bottom-right, standard engineering drawing style) -->
+  <rect x="430" y="170" width="226" height="21" rx="2"
+        fill="#04080e" stroke="#0a1a28" stroke-width="0.8"/>
+  <line x1="530" y1="170" x2="530" y2="191" stroke="#0a1a28" stroke-width="0.5"/>
+  <line x1="430" y1="178" x2="656" y2="178" stroke="#0a1a28" stroke-width="0.5"/>
+  <text x="438" y="176" font-family="monospace" font-size="4.5" fill="#0a4060">PAD ALPHA — ESP PRODUCTION</text>
+  <text x="438" y="188" font-family="monospace" font-size="4" fill="#082838">GDC-PM · Sprint 4 · V2 · API</text>
+  <text x="536" y="176" font-family="monospace" font-size="4.5" fill="#0a4060">DWG: PA-2D-001</text>
+  <text x="536" y="188" font-family="monospace" font-size="4" fill="#082838">REV: Sprint 4</text>
+</svg>"""
+
+    return Response(content=svg, media_type="image/svg+xml",
+                    headers={"Cache-Control": "no-cache", "X-GDC-Mockup": "V2-API"})
+
+
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────
 GRAFANA_EXTERNAL_IP = os.environ.get("GRAFANA_URL", "http://136.115.220.48")
 
