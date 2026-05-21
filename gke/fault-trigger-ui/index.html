@@ -64,55 +64,6 @@
     .live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 4px var(--green);animation:blink 2s ease-in-out infinite}
     @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
 
-    /* ── Fleet Overview — left column 360px ── */
-    .fleet-section{width:360px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-    .fleet-body{flex:1;overflow-y:auto;padding:10px}
-    .fleet-row{display:flex;flex-direction:column;gap:10px}
-    .site-card{border:1px solid var(--border);border-radius:10px;background:var(--surf2);overflow:hidden;transition:border-color 0.2s}
-    .site-card.has-alert{border-color:rgba(255,109,0,0.4);box-shadow:0 0 10px rgba(255,109,0,0.08)}
-    .site-hdr{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border)}
-    .site-name{font-size:0.9rem;font-weight:700;color:var(--text2)}
-    .site-type{font-size:0.68rem;color:var(--muted)}
-    .site-status-dot{width:9px;height:9px;border-radius:50%;margin-left:auto;background:var(--green);box-shadow:0 0 4px var(--green);transition:all 0.4s}
-    .site-status-dot.alert{background:var(--orange);box-shadow:0 0 6px var(--orange);animation:pulse-warn 1.5s ease-in-out infinite}
-    @keyframes pulse-warn{0%,100%{box-shadow:0 0 4px rgba(255,109,0,0.4)}50%{box-shadow:0 0 10px rgba(255,109,0,0.8)}}
-    .asset-chip{font-family:var(--mono);font-size:0.68rem;padding:4px 10px;border-radius:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text2);transition:all 0.15s;white-space:nowrap}
-    .asset-chip:hover{border-color:var(--blue);color:var(--blue)}
-    .asset-chip.alert{border-color:rgba(255,109,0,0.6);color:var(--orange)}
-    .asset-chip.selected{border-color:var(--blue);background:rgba(30,144,255,0.1);color:var(--blue)}
-
-    /* ── Field Intelligence Panel — middle column 310px ── */
-    .field-intel-section{width:310px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
-    .field-intel-body{flex:1;overflow-y:auto;padding:8px 10px}
-    .fi-routine{border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px;background:var(--surf);animation:slideIn 0.35s ease-out}
-    .fi-routine-lbl{font-size:0.55rem;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:auto;text-transform:uppercase;letter-spacing:0.05em}
-    .fi-routine-lbl.routine{background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.25)}
-    .fi-routine-lbl.report{background:rgba(30,144,255,0.1);color:var(--blue);border:1px solid rgba(30,144,255,0.25)}
-    .fi-routine-lbl.lab{background:rgba(255,179,0,0.1);color:var(--yellow);border:1px solid rgba(255,179,0,0.25)}
-    .fi-routine-lbl.survey{background:rgba(206,147,216,0.15);color:#ce93d8;border:1px solid rgba(206,147,216,0.3)}
-
-    /* ── Horizon Section — right, flex:1 ── */
-    .horizon-section{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
-    .horizon-body{flex:1;overflow-y:auto;padding:8px}
-    .horizon-group-lbl{font-size:0.6rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);padding:4px 6px 3px;display:flex;align-items:center;gap:6px;border-bottom:1px solid var(--border);margin-bottom:4px;margin-top:6px}
-    .horizon-group-lbl:first-child{margin-top:0}
-    .hz-urgency-dot{width:8px;height:8px;border-radius:50%}
-    .alert-card{border:1px solid var(--border);border-radius:7px;padding:9px 11px;margin-bottom:5px;background:var(--surf);cursor:pointer;transition:all 0.15s}
-    .alert-card:hover{border-color:var(--border2);background:var(--surf2)}
-    .alert-card.minutes{border-left:3px solid var(--red)}
-    .alert-card.hours{border-left:3px solid var(--orange)}
-    .alert-card.days{border-left:3px solid var(--yellow)}
-    .ac-top{display:flex;align-items:center;gap:7px;margin-bottom:4px}
-    .ac-asset{font-family:var(--mono);font-size:0.73rem;font-weight:700;color:var(--blue)}
-    .ac-fault{font-size:0.68rem;font-weight:600}
-    .ac-site{font-size:0.6rem;color:var(--muted);flex:1}
-    .ac-rul{font-family:var(--mono);font-size:0.72rem;font-weight:700}
-    .ac-rul.minutes{color:var(--red)}
-    .ac-rul.hours{color:var(--orange)}
-    .ac-rul.days{color:var(--yellow)}
-    .ac-intervention{font-size:0.6rem;color:var(--muted)}
-    .ac-btn{font-size:0.62rem;padding:2px 9px;border-radius:6px;border:none;background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:auto}
-    .ac-btn:hover{filter:brightness(1.15)}
 
     /* Demo Scenario Cards */
     .scenario-card{border:1px solid var(--border);border-radius:7px;padding:9px 11px;margin-bottom:5px;background:var(--surf2);cursor:pointer;transition:all 0.15s;border-left:3px solid rgba(30,144,255,0.5)}
@@ -336,24 +287,27 @@
     /* Asset Nodes — larger */
     .asset-nodes{display:flex;flex-wrap:wrap;gap:12px}
     /* Base: no default border-radius — each class defines its own shape */
-    .asset-node{position:relative;width:76px;height:76px;border:2px solid;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
+    .asset-node{position:relative;width:76px;height:76px;border:2px solid transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.2s;flex-shrink:0;user-select:none}
     .asset-node:hover{transform:scale(1.1);filter:brightness(1.2)}
     /* ESP — perfect circle */
-    .esp-node{border-radius:50%;border-color:rgba(0,230,118,0.45);background:rgba(0,230,118,0.06)}
-    .esp-node:hover{border-color:#00e676;background:rgba(0,230,118,0.13)}
+    .esp-node{border-radius:50%;}
     /* Gas Lift — organic oval / stadium */
-    .glift-node{border-radius:52% 48% 48% 52% / 60% 60% 40% 40%;border-color:rgba(30,144,255,0.45);background:rgba(30,144,255,0.06)}
-    .glift-node:hover{border-color:#1e90ff;background:rgba(30,144,255,0.13)}
+    .glift-node{border-radius:52% 48% 48% 52% / 60% 60% 40% 40%;}
     /* Mud Pump — rounded squircle */
-    .mud-node{border-radius:28%;border-color:rgba(171,71,188,0.45);background:rgba(171,71,188,0.06)}
-    .mud-node:hover{border-color:#ab47bc;background:rgba(171,71,188,0.13)}
+    .mud-node{border-radius:28%;}
     /* Top Drive — four-lobe blob */
-    .topdrive-node{border-radius:50% 30% 50% 30% / 30% 50% 30% 50%;border-color:rgba(255,179,0,0.55);background:rgba(255,179,0,0.06)}
-    .topdrive-node:hover{border-color:#ffb300;background:rgba(255,179,0,0.13)}
+    .topdrive-node{border-radius:50% 30% 50% 30% / 30% 50% 30% 50%;}
     /* Legacy alias so nothing breaks if referenced elsewhere */
-    .rig-node{border-radius:28%;border-color:rgba(206,147,216,0.45);background:rgba(206,147,216,0.06)}
-    .rig-node:hover{border-color:#ce93d8;background:rgba(206,147,216,0.13)}
-    .asset-node.active{border-color:var(--orange)!important;background:rgba(255,109,0,0.12)!important;box-shadow:0 0 16px rgba(255,109,0,0.32)}
+    .rig-node{border-radius:28%;}
+
+    /* Health Indicator Colors */
+    .health-green{border-color:rgba(0,230,118,0.45);background:rgba(0,230,118,0.06)}
+    .health-green:hover{border-color:#00e676;background:rgba(0,230,118,0.13)}
+    .health-amber{border-color:rgba(255,179,0,0.55);background:rgba(255,179,0,0.12);box-shadow:0 0 10px rgba(255,179,0,0.2)}
+    .health-amber:hover{border-color:#ffb300;background:rgba(255,179,0,0.2)}
+    .health-red{border-color:rgba(244,67,54,0.6);background:rgba(244,67,54,0.15);box-shadow:0 0 16px rgba(244,67,54,0.3)}
+    .health-red:hover{border-color:#f44336;background:rgba(244,67,54,0.25)}
+    .asset-node.selected{border-color:var(--blue)!important;background:rgba(30,144,255,0.12)!important;box-shadow:0 0 16px rgba(30,144,255,0.32)}
     .node-label{font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-align:center;line-height:1.2;pointer-events:none}
     .node-pulse-ring{position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--orange);opacity:0;animation:node-pulse 2s ease-in-out infinite;pointer-events:none}
     @keyframes node-pulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:0.55;transform:scale(1.08)}}
@@ -496,6 +450,17 @@
       <!-- ── DASHBOARD VIEW — Phase 15 Dual-Reality Layout ── -->
       <div v-if="currentView === 'dashboard'" class="dashboard-view">
 
+        <!-- High-Level Alert Banners -->
+        <div v-if="horizonAlerts.length > 0" style="background:rgba(255,109,0,0.15);border-bottom:1px solid rgba(255,109,0,0.4);padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+          <span style="font-size:16px">⚠️</span>
+          <span style="font-size:0.75rem;font-weight:700;color:var(--orange)">
+            {{ horizonAlerts.length }} Active AI Detection{{ horizonAlerts.length > 1 ? 's' : '' }} — Action Required
+          </span>
+          <span style="font-size:0.65rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            {{ horizonAlerts.map(a => a.asset_id + ' (' + a.fault_label + ')').join(', ') }}
+          </span>
+        </div>
+
         <!-- KPI Banner -->
         <div class="kpi-banner">
           <div class="kpi-item">
@@ -563,95 +528,12 @@
               <div class="asset-nodes">
                 <div v-for="assetId in SITES.pad_alpha.assets" :key="assetId"
                      class="asset-node esp-node"
-                     :class="{active: isAssetActive(assetId)}"
-                     @click.stop="showAssetContextMenu($event, assetId)"
-                     :title="'Click to inspect ' + assetId">
+                     :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
+                     @contextmenu.prevent="showAssetContextMenu($event, assetId)"
+                     @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
+                     :title="'Right-click to inspect ' + assetId">
                   <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- PAD BRAVO -->
-            <div class="site-zone" :class="{'has-alert': hasAlert('pad_bravo')}">
-              <div class="zone-header">
-                <span class="zone-icon">🛢</span>
-                <span class="zone-name">Pad Bravo</span>
-                <span class="zone-type">Gas Lift Production</span>
-                <span class="zone-dot" :class="{active: hasAlert('pad_bravo')}"></span>
-              </div>
-              <div class="zone-metric-grid" v-if="kpis.pad_bravo">
-                <div class="zm-card" :class="kpiColor(kpis.pad_bravo.production_boed, 650, 500)">
-                  <div class="zm-val">{{ kpis.pad_bravo.production_boed.toLocaleString() }}</div>
-                  <div class="zm-lbl">Production <span class="zm-unit">BOE/d</span></div>
-                </div>
-                <div class="zm-card" :class="kpiColor(kpis.pad_bravo.uptime_pct, 99, 95)">
-                  <div class="zm-val">{{ kpis.pad_bravo.uptime_pct }}<span class="zm-unit">%</span></div>
-                  <div class="zm-lbl">Uptime</div>
-                </div>
-                <div class="zm-card" :class="kpiColor(kpis.pad_bravo.inj_gas_mmscfd, 1.6, 1.2)">
-                  <div class="zm-val">{{ kpis.pad_bravo.inj_gas_mmscfd }}<span class="zm-unit"> MM</span></div>
-                  <div class="zm-lbl">Inj. Gas</div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val">312<span class="zm-unit"> PSI</span></div>
-                  <div class="zm-lbl">Wellhead P</div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val">78<span class="zm-unit">%</span></div>
-                  <div class="zm-lbl">Lift Eff.</div>
-                </div>
-              </div>
-              <div class="asset-nodes">
-                <div v-for="assetId in SITES.pad_bravo.assets" :key="assetId"
-                     class="asset-node glift-node"
-                     :class="{active: isAssetActive(assetId)}"
-                     @click.stop="showAssetContextMenu($event, assetId)"
-                     :title="'Click to inspect ' + assetId">
-                  <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring"></div>
-                </div>
-              </div>
-            </div>
-
-            <!-- RIG 42 -->
-            <div class="site-zone" :class="{'has-alert': hasAlert('rig_42')}">
-              <div class="zone-header">
-                <span class="zone-icon">🏗</span>
-                <span class="zone-name">Rig 42</span>
-                <span class="zone-type">Drilling</span>
-                <span class="zone-dot" :class="{active: hasAlert('rig_42')}"></span>
-              </div>
-              <div class="zone-metric-grid" v-if="kpis.rig_42">
-                <div class="zm-card" :class="kpiColor(kpis.rig_42.rop_ft_per_hr, 45, 25)">
-                  <div class="zm-val">{{ kpis.rig_42.rop_ft_per_hr }}</div>
-                  <div class="zm-lbl">ROP <span class="zm-unit">ft/hr</span></div>
-                </div>
-                <div class="zm-card" :class="kpiColor(kpis.rig_42.uptime_pct, 99, 95)">
-                  <div class="zm-val">{{ kpis.rig_42.uptime_pct }}<span class="zm-unit">%</span></div>
-                  <div class="zm-lbl">Uptime</div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val" style="font-size:0.85rem">{{ kpis.rig_42.depth_ft_md.toLocaleString() }}</div>
-                  <div class="zm-lbl">Depth <span class="zm-unit">ft MD</span></div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val">{{ kpis.rig_42.mud_weight_ppg }}</div>
-                  <div class="zm-lbl">Mud Wt <span class="zm-unit">ppg</span></div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val">22</div>
-                  <div class="zm-lbl">WOB <span class="zm-unit">klbs</span></div>
-                </div>
-              </div>
-              <div class="asset-nodes">
-                <div v-for="assetId in SITES.rig_42.assets" :key="assetId"
-                     class="asset-node"
-                     :class="[ASSET_META[assetId].aclass === 'top_drive' ? 'topdrive-node' : 'mud-node', {active: isAssetActive(assetId)}]"
-                     @click.stop="showAssetContextMenu($event, assetId)"
-                     :title="'Click to inspect ' + assetId">
-                  <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring"></div>
+                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring" :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
                 </div>
               </div>
             </div>
@@ -659,47 +541,10 @@
             <!-- Canvas Legend — updated for distinct per-type shapes -->
             <div class="canvas-legend">
               <span class="leg-dot" style="border-radius:50%;background:#00e676"></span><span>ESP</span>
-              <span style="width:11px;height:9px;border-radius:52% 48% 48% 52% / 60% 60% 40% 40%;background:#1e90ff;display:inline-block;flex-shrink:0"></span><span>Gas Lift</span>
-              <span class="leg-dot" style="border-radius:28%;background:#ab47bc"></span><span>Mud Pump</span>
-              <span class="leg-dot" style="border-radius:50% 30% 50% 30% / 30% 50% 30% 50%;background:#ffb300"></span><span>Top Drive</span>
               <span class="leg-dot" style="border-radius:50%;background:#ff6d00"></span><span>AI Alert Active</span>
-              <span style="margin-left:auto;font-style:italic">Click asset to inspect · trigger scenarios</span>
+              <span style="margin-left:auto;font-style:italic">Right-click asset to trigger scenarios · Left-click to inspect</span>
             </div>
           </div>
-
-          <!-- Splitter -->
-          <div class="canvas-splitter" ref="canvasSplitter"></div>
-
-          <!-- RIGHT: Field Intelligence Activity Stream (dynamic width) -->
-          <div class="activity-stream" :style="{width: activityStreamWidth + 'px'}">
-            <div class="section-hdr">
-              <span class="live-dot"></span>
-              Field Intelligence Stream
-              <span style="margin-left:auto;font-size:0.6rem;color:var(--muted)">{{ fieldIntelItems.length + horizonAlerts.length }} items</span>
-            </div>
-            <div class="activity-list">
-              <!-- Active AI alerts always at top -->
-              <div v-for="alert in horizonAlerts" :key="'alert-'+alert.asset_id"
-                   class="activity-row act-alert"
-                   @click="openDeepDive(alert.asset_id, alert.fault_type)">
-                <span class="act-icon">⚡</span>
-                <span class="act-text"><strong>{{ alert.asset_id }}</strong> — {{ alert.fault_label }}</span>
-                <span class="fi-routine-lbl" style="background:rgba(255,109,0,0.1);color:var(--orange);border:1px solid rgba(255,109,0,0.3);flex-shrink:0">AI</span>
-                <span class="act-time">{{ formatRul(alert.time_to_scada_minutes, alert.horizon_label) }}</span>
-              </div>
-              <!-- Routine field intel (compact rows) — new items from intel generator flash .act-new -->
-              <div v-for="item in fieldIntelItems" :key="item.id"
-                   class="activity-row"
-                   :class="{'act-new': item.isNew}"
-                   @click="openFeedModal(item)">
-                <span class="act-icon">{{ item.icon }}</span>
-                <span class="act-text">{{ item.headline }}</span>
-                <span class="fi-routine-lbl" :class="item.lbl_type" style="flex-shrink:0">{{ item.lbl }}</span>
-                <span class="act-time">{{ item.ts }}</span>
-              </div>
-            </div>
-          </div>
-
         </div><!-- fleet-canvas-layout -->
 
         <!-- Asset Context Menu -->
@@ -1651,6 +1496,14 @@ createApp({
 
     hasAlert(siteId) { return this.horizonAlerts.some(a => a.site === siteId); },
     isAssetActive(assetId) { return !!this.activeDegradesMap[assetId]; },
+    getAssetHealthClass(assetId) {
+      const dg = this.activeDegradesMap[assetId];
+      if (!dg) return 'health-green';
+      const hs = dg.health_score ?? 1.0;
+      if (hs >= 0.8) return 'health-green';
+      if (hs >= 0.3) return 'health-amber';
+      return 'health-red';
+    },
     formatSiteName(siteId) { return SITES[siteId]?.name || siteId; },
     faultsForAsset(assetId) { return FAULTS_BY_CLASS[ASSET_META[assetId]?.aclass] || []; },
     assetTypeLabel(assetId) { return ASSET_META[assetId]?.type || ''; },

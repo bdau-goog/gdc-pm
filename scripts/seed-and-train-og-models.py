@@ -67,11 +67,11 @@ ASSET_PROFILES = {
             "motor_overheat": ("temp", "above", 280.0),
             "gas_lock":       ("psi",  "below", 800.0),
         },
-        "normal_ranges": {"psi": (1200, 1600), "temp": (180, 220), "vib": (0.8, 2.0)},
+        "normal_ranges": {"psi": (1200, 1600), "temp": (180, 220), "vib": (0.8, 2.0), "amps": (60, 90)},
         "fault_ranges": {
-            "gas_lock":       {"psi": (350, 750), "temp": (195, 245), "vib": (6.0, 12.0)},
-            "sand_ingress":   {"psi": (1280, 1580), "temp": (200, 240), "vib": (4.5, 9.5)},
-            "motor_overheat": {"psi": (1300, 1560), "temp": (265, 295), "vib": (2.5, 4.5)},
+            "gas_lock":       {"psi": (350, 750), "temp": (195, 245), "vib": (6.0, 12.0), "amps": (20, 45)},
+            "sand_ingress":   {"psi": (1280, 1580), "temp": (200, 240), "vib": (4.5, 9.5), "amps": (45, 65)},
+            "motor_overheat": {"psi": (1300, 1560), "temp": (265, 295), "vib": (2.5, 4.5), "amps": (88, 105)},
         },
         "sensor_labels": {
             "psi": ("Intake Pressure", "PSI"),
@@ -167,8 +167,8 @@ ASSET_PROFILES = {
 
 
 # ── Data Generation ────────────────────────────────────────────────────────────
-def gen_classifier_data(profile: dict, n_normal: int = 5000, n_fault: int = 1500) -> tuple:
-    """Generate classifier training data (PSI, Temp, Vib → fault label)."""
+def gen_classifier_data(profile: dict, asset_class: str, n_normal: int = 5000, n_fault: int = 1500) -> tuple:
+    """Generate classifier training data."""
     rows, labels = [], []
     nr = profile["normal_ranges"]
 
@@ -177,7 +177,15 @@ def gen_classifier_data(profile: dict, n_normal: int = 5000, n_fault: int = 1500
         psi = np.random.uniform(*nr["psi"])
         temp = np.random.uniform(*nr["temp"])
         vib = np.random.uniform(*nr["vib"])
-        rows.append([psi, temp, vib])
+        if asset_class == "esp":
+            amps = np.random.uniform(*nr["amps"])
+            dpsi_dt = np.random.normal(0, 0.5)
+            dtemp_dt = np.random.normal(0, 0.1)
+            dvib_dt = np.random.normal(0, 0.05)
+            damps_dt = np.random.normal(0, 0.2)
+            rows.append([psi, temp, vib, amps, dpsi_dt, dtemp_dt, dvib_dt, damps_dt])
+        else:
+            rows.append([psi, temp, vib])
         labels.append(0)
 
     # Fault readings
@@ -192,7 +200,29 @@ def gen_classifier_data(profile: dict, n_normal: int = 5000, n_fault: int = 1500
             psi  += np.random.normal(0, abs(psi * 0.02))
             temp += np.random.normal(0, abs(temp * 0.01))
             vib  += np.random.normal(0, abs(vib * 0.05))
-            rows.append([psi, temp, vib])
+            if asset_class == "esp":
+                amps = np.random.uniform(*fr["amps"])
+                amps += np.random.normal(0, abs(amps * 0.02))
+                if fault_name == "gas_lock":
+                    dpsi_dt = np.random.uniform(-50.0, -10.0)
+                    dtemp_dt = np.random.uniform(0.5, 2.0)
+                    dvib_dt = np.random.uniform(0.1, 1.0)
+                    damps_dt = np.random.uniform(-5.0, -1.0)
+                elif fault_name == "sand_ingress":
+                    dpsi_dt = np.random.uniform(-5.0, -1.0)
+                    dtemp_dt = np.random.uniform(0.5, 2.0)
+                    dvib_dt = np.random.uniform(0.1, 0.5)
+                    damps_dt = np.random.uniform(-1.0, -0.1)
+                elif fault_name == "motor_overheat":
+                    dpsi_dt = np.random.uniform(-2.0, 0.0)
+                    dtemp_dt = np.random.uniform(1.0, 5.0)
+                    dvib_dt = np.random.uniform(0.01, 0.1)
+                    damps_dt = np.random.uniform(0.5, 2.0)
+                else:
+                    dpsi_dt, dtemp_dt, dvib_dt, damps_dt = 0.0, 0.0, 0.0, 0.0
+                rows.append([psi, temp, vib, amps, dpsi_dt, dtemp_dt, dvib_dt, damps_dt])
+            else:
+                rows.append([psi, temp, vib])
             labels.append(i + 1)
 
     X = np.array(rows, dtype=np.float32)
@@ -281,8 +311,13 @@ def train_classifier(X: np.ndarray, y: np.ndarray, n_classes: int, asset_class: 
     """Train a multi-class XGBoost classifier."""
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-    dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=["psi", "temp_f", "vibration"])
-    dtest  = xgb.DMatrix(X_test,  label=y_test,  feature_names=["psi", "temp_f", "vibration"])
+    if asset_class == "esp":
+        feature_names = ["psi", "temp_f", "vibration", "motor_amps", "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
+    else:
+        feature_names = ["psi", "temp_f", "vibration"]
+
+    dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=feature_names)
+    dtest  = xgb.DMatrix(X_test,  label=y_test,  feature_names=feature_names)
 
     params = {
         "objective":        "multi:softprob",
@@ -421,7 +456,7 @@ def main():
 
         # ── Classifier ───────────────────────────────────────────────────────
         print(f"  [1/2] Training Fault Classifier ({len(profile['classes'])} classes)...")
-        X_clf, y_clf = gen_classifier_data(profile, n_normal=args.rows, n_fault=1500)
+        X_clf, y_clf = gen_classifier_data(profile, asset_class, n_normal=args.rows, n_fault=1500)
         print(f"        Dataset: {len(X_clf)} rows")
         clf = train_classifier(X_clf, y_clf, len(profile["classes"]), asset_class)
 

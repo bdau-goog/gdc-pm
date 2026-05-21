@@ -265,11 +265,18 @@ class TelemetryInput(BaseModel):
     psi:       float = Field(..., ge=0,   le=6000,  description="Pressure (PSI) — ESP intake, compressor discharge, mud pump, etc.")
     temp_f:    float = Field(..., ge=-50, le=1500,  description="Temperature (°F) — wide range for all asset types")
     vibration: float = Field(..., ge=0,   le=50.0,  description="Vibration amplitude (mm/s) — up to 28+ for mud pump dampener failures")
+    
+    # Optional extended sensors
+    motor_amps: Optional[float] = None
+    dpsi_dt:    Optional[float] = None
+    dtemp_dt:   Optional[float] = None
+    dvib_dt:    Optional[float] = None
+    damps_dt:   Optional[float] = None
+    kv:         Optional[float] = Field(default=None, description="Line voltage kV (transformers)")
+
     # Asset routing
     asset_type: str  = Field(default="esp",
                              description="Asset class: compressor | turbine | transformer")
-    # Optional extended sensors (not yet used in scoring, stored for future models)
-    kv:         Optional[float] = Field(default=None, description="Line voltage kV (transformers)")
 
     class Config:
         # Allow extra fields gracefully (forward-compatible)
@@ -339,8 +346,18 @@ def predict(payload: TelemetryInput):
 
     # Build feature matrix — always [psi, temp_f, vibration] in this order
     # For transformers, psi column contains kV (handled by training data convention)
-    features = np.array([[payload.psi, payload.temp_f, payload.vibration]], dtype=np.float32)
-    dmat     = xgb.DMatrix(features, feature_names=["psi", "temp_f", "vibration"])
+    if model_name == "esp_classifier":
+        features = np.array([[
+            payload.psi, payload.temp_f, payload.vibration, payload.motor_amps or 0.0,
+            payload.dpsi_dt or 0.0, payload.dtemp_dt or 0.0, payload.dvib_dt or 0.0, payload.damps_dt or 0.0
+        ]], dtype=np.float32)
+        dmat = xgb.DMatrix(features, feature_names=[
+            "psi", "temp_f", "vibration", "motor_amps",
+            "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"
+        ])
+    else:
+        features = np.array([[payload.psi, payload.temp_f, payload.vibration]], dtype=np.float32)
+        dmat     = xgb.DMatrix(features, feature_names=["psi", "temp_f", "vibration"])
 
     # Predict
     raw_probs = model.predict(dmat)

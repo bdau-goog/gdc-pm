@@ -15,6 +15,7 @@ Narrative generation (AI_NARRATIVE_ENABLED env var):
 """
 
 import os
+from collections import deque
 import json
 import logging
 import time
@@ -380,13 +381,26 @@ def connect_rabbitmq() -> pika.BlockingConnection:
 
 # ── Inference ─────────────────────────────────────────────────────────────────
 def call_inference_api(asset_type: str, psi: float, temp_f: float, vibration: float,
-                       kv: float | None = None) -> dict:
+                       kv: float | None = None, motor_amps: float | None = None,
+                       dpsi_dt: float | None = None, dtemp_dt: float | None = None,
+                       dvib_dt: float | None = None, damps_dt: float | None = None) -> dict:
     """Call the local Inference API and return the prediction result."""
     try:
         payload = {"psi": psi, "temp_f": temp_f, "vibration": vibration,
                    "asset_type": asset_type}
         if kv is not None:
             payload["kv"] = kv
+        if motor_amps is not None:
+            payload["motor_amps"] = motor_amps
+        if dpsi_dt is not None:
+            payload["dpsi_dt"] = dpsi_dt
+        if dtemp_dt is not None:
+            payload["dtemp_dt"] = dtemp_dt
+        if dvib_dt is not None:
+            payload["dvib_dt"] = dvib_dt
+        if damps_dt is not None:
+            payload["damps_dt"] = damps_dt
+        
         resp = requests.post(INFERENCE_API_URL, json=payload, timeout=5)
         resp.raise_for_status()
         return resp.json()
@@ -413,6 +427,35 @@ def count_similar_events(conn, asset_id: str, predicted_label: str) -> int:
             return cur.fetchone()[0]
     except Exception:
         return 0
+
+
+# ── Global History Buffer ─────────────────────────────────────────────────────
+asset_history: dict[str, deque] = {}
+
+def get_slopes(asset_id: str, reading: dict) -> tuple[float, float, float, float]:
+    """Calculate rolling slopes over a 60-reading window (5 mins)."""
+    if asset_id not in asset_history:
+        asset_history[asset_id] = deque(maxlen=60)
+    
+    history = asset_history[asset_id]
+    history.append(reading)
+    
+    if len(history) < 2:
+        return 0.0, 0.0, 0.0, 0.0
+        
+    oldest = history[0]
+    newest = history[-1]
+    
+    dt_minutes = (len(history) - 1) / 12.0
+    if dt_minutes <= 0:
+        return 0.0, 0.0, 0.0, 0.0
+        
+    dpsi_dt = (newest['psi'] - oldest['psi']) / dt_minutes
+    dtemp_dt = (newest['temp_f'] - oldest['temp_f']) / dt_minutes
+    dvib_dt = (newest['vibration'] - oldest['vibration']) / dt_minutes
+    damps_dt = (newest['motor_amps'] - oldest['motor_amps']) / dt_minutes
+    
+    return dpsi_dt, dtemp_dt, dvib_dt, damps_dt
 
 
 # ── Message Handler ───────────────────────────────────────────────────────────
@@ -444,8 +487,23 @@ def make_handler(db_conn: psycopg2.extensions.connection):
         failure_type = msg.get("failure_type", "normal")
         source       = msg.get("source", "simulator")
 
+        # Compute slopes for ESP
+        dpsi_dt, dtemp_dt, dvib_dt, damps_dt = 0.0, 0.0, 0.0, 0.0
+        if asset_type == "esp":
+            reading = {
+                "psi": psi,
+                "temp_f": temp_f,
+                "vibration": vibration,
+                "motor_amps": motor_amps if motor_amps is not None else 0.0
+            }
+            dpsi_dt, dtemp_dt, dvib_dt, damps_dt = get_slopes(asset_id, reading)
+
         # Call ML model
-        prediction      = call_inference_api(asset_type, psi, temp_f, vibration, kv)
+        prediction = call_inference_api(
+            asset_type, psi, temp_f, vibration, kv,
+            motor_amps=motor_amps, dpsi_dt=dpsi_dt, dtemp_dt=dtemp_dt,
+            dvib_dt=dvib_dt, damps_dt=damps_dt
+        )
         predicted_class = prediction.get("predicted_class", -1)
         predicted_label = prediction.get("predicted_label", "unknown")
         confidence      = prediction.get("confidence", 0.0)
