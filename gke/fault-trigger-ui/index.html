@@ -1179,8 +1179,6 @@ const { createApp } = Vue;
 
 const SITES = {
   pad_alpha: { name:'Pad Alpha', icon:'🛢', type:'ESP Production',      assets:['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','ESP-ALPHA-5','ESP-ALPHA-6'] },
-  pad_bravo: { name:'Pad Bravo', icon:'🛢', type:'Gas Lift Production', assets:['GLIFT-BRAVO-1','GLIFT-BRAVO-2','GLIFT-BRAVO-3','GLIFT-BRAVO-4'] },
-  rig_42:    { name:'Rig 42',    icon:'🏗', type:'Drilling',            assets:['MUD-RIG42-1','MUD-RIG42-2','MUD-RIG42-3','TOPDRIVE-RIG42-1'] },
 };
 const ASSET_META = {
   'ESP-ALPHA-1':{label:'ESP-A1',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
@@ -1189,123 +1187,22 @@ const ASSET_META = {
   'ESP-ALPHA-4':{label:'ESP-A4',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
   'ESP-ALPHA-5':{label:'ESP-A5',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
   'ESP-ALPHA-6':{label:'ESP-A6',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
-  'GLIFT-BRAVO-1':{label:'GL-B1',site:'pad_bravo',aclass:'gas_lift',type:'Gas Lift Compressor'},
-  'GLIFT-BRAVO-2':{label:'GL-B2',site:'pad_bravo',aclass:'gas_lift',type:'Gas Lift Compressor'},
-  'GLIFT-BRAVO-3':{label:'GL-B3',site:'pad_bravo',aclass:'gas_lift',type:'Gas Lift Compressor'},
-  'GLIFT-BRAVO-4':{label:'GL-B4',site:'pad_bravo',aclass:'gas_lift',type:'Gas Lift Compressor'},
-  'MUD-RIG42-1':{label:'MUD-1',site:'rig_42',aclass:'mud_pump',type:'Triplex Mud Pump'},
-  'MUD-RIG42-2':{label:'MUD-2',site:'rig_42',aclass:'mud_pump',type:'Triplex Mud Pump'},
-  'MUD-RIG42-3':{label:'MUD-3',site:'rig_42',aclass:'mud_pump',type:'Triplex Mud Pump'},
-  'TOPDRIVE-RIG42-1':{label:'TDRIVE',site:'rig_42',aclass:'top_drive',type:'Top Drive'},
 };
 const FAULT_META = {
   gas_lock:                   {label:'Gas Lock',                color:'#f44336',desc:'Gas entrainment — pump efficiency degrading',aclass:'esp'},
   sand_ingress:               {label:'Sand Ingress',             color:'#f9a825',desc:'Formation sand erodes impeller stages',aclass:'esp'},
   motor_overheat:             {label:'Motor Over-Temp',          color:'#ff6d00',desc:'Winding temp climbs toward insulation failure',aclass:'esp'},
-  valve_failure:              {label:'Check Valve Failure',      color:'#e53935',desc:'Discharge pressure crashes as gas reverses',aclass:'gas_lift'},
-  thermal_runaway:            {label:'Thermal Runaway',          color:'#ff6f00',desc:'Cylinder jacket cooling fails — temp climbs',aclass:'gas_lift'},
-  bearing_wear:               {label:'Journal Bearing Wear',     color:'#f9a825',desc:'Crankshaft bearing wear — vibration rises',aclass:'gas_lift'},
-  pulsation_dampener_failure: {label:'Dampener Rupture',         color:'#b71c1c',desc:'Bladder ruptures — pipe-rupture risk',aclass:'mud_pump'},
-  valve_washout:              {label:'Valve Seat Washout',       color:'#e65100',desc:'Fluid erodes valve seat — pressure declines',aclass:'mud_pump'},
-  piston_seal_wear:           {label:'Liner Seal Wear',          color:'#f57f17',desc:'Piston-liner seals degrade — temp rises',aclass:'mud_pump'},
-  gearbox_bearing_spalling:   {label:'Gearbox Bearing Spalling', color:'#880e4f',desc:'Bearing race fatigue — seizure risk',aclass:'top_drive'},
-  hydraulic_leak:             {label:'Hydraulic System Leak',    color:'#4a148c',desc:'Hydraulic fluid loss — torque capacity drops',aclass:'top_drive'},
 };
 const FAULTS_BY_CLASS = {
   esp:       ['gas_lock','sand_ingress','motor_overheat'],
-  gas_lift:  ['valve_failure','thermal_runaway','bearing_wear'],
-  mud_pump:  ['pulsation_dampener_failure','valve_washout','piston_seal_wear'],
-  top_drive: ['gearbox_bearing_spalling','hydraulic_leak'],
 };
 const SENSOR_LABELS = {
   esp:       {psi:'Intake Pres. (PSI)',temp:'Winding Temp (°F)',vib:'Vibration (mm/s)',s4:'Motor Current (A)'},
-  gas_lift:  {psi:'Discharge Pres. (PSI)',temp:'Discharge Temp (°F)',vib:'Frame Vib. (mm/s)',s4:null},
-  mud_pump:  {psi:'Discharge Pres. (PSI)',temp:'Fluid End Temp (°F)',vib:'Module Vib. (mm/s)',s4:'Stroke Rate (SPM)'},
-  top_drive: {psi:'Hydraulic Pres. (PSI)',temp:'Gearbox Oil Temp (°F)',vib:'Gearbox Vib. (mm/s)',s4:null},
 };
 const DEMO_SCENARIOS = [
   {id:'demo_sand_ingress',name:'Sand Ingress — Supply Chain Lead Time',horizon:'Days',assetId:'ESP-ALPHA-2',faultType:'sand_ingress',faultLabel:'Sand Ingress',description:'GDC detects sand production 14 days early. SCADA sees nothing. Lab report & shift notes fused with vibration trend — SAP order must be placed today.',costAvoided:85000,dataFusion:'Lab Report + Shift Notes + Vibration',durationSec:3600},
-  {id:'demo_thermal_runaway',name:'Thermal Runaway — Workforce Scheduling',horizon:'Hours',assetId:'GLIFT-BRAVO-1',faultType:'thermal_runaway',faultLabel:'Thermal Runaway',description:'Overdue fin-fan PM combined with rising discharge temp. Crew already en route tomorrow — append task at zero cost vs $1,800 emergency dispatch.',costAvoided:150000,dataFusion:'Maximo PM Records + Cooling Historian',durationSec:3600},
-  {id:'demo_valve_washout',name:'Valve Seat Washout — Operational Control',horizon:'Hours',assetId:'MUD-RIG42-1',faultType:'valve_washout',faultLabel:'Valve Seat Washout',description:"Driller's EDR notes + declining VE confirm valve erosion. Standby pump transition maintains ECD. SCADA pressure trend alone would miss this pattern.",costAvoided:52500,dataFusion:'Pason EDR Log + Mud Report + Maintenance Record',durationSec:3600},
   {id:'demo_motor_overheat',name:'Motor Over-Temp — ESP Emergency',horizon:'Hours',assetId:'ESP-ALPHA-4',faultType:'motor_overheat',faultLabel:'Motor Over-Temp',description:'67% water cut degrading downhole motor cooling. Winding temp rising at +2.1A/hr. Class H insulation failure in 18h — SCADA sees nothing until 280°F.',costAvoided:200000,dataFusion:'VFD Power Monitor + Well Test Report',durationSec:1800},
   {id:'demo_gas_lock',name:'Gas Lock — SCADA Autonomous Control',horizon:'Minutes',assetId:'ESP-ALPHA-1',faultType:'gas_lock',faultLabel:'Gas Lock',description:'Gas void fraction rising in pump intake — intake PSI declining. PNR: 25 minutes. VFD frequency adjustment available via SCADA. Sub-minute edge response.',costAvoided:150000,dataFusion:'VFD Control + SCADA Historian',durationSec:900},
-  {id:'demo_bearing_wear',name:'Journal Bearing Wear — Predictive Scheduling',horizon:'Hours',assetId:'GLIFT-BRAVO-3',faultType:'bearing_wear',faultLabel:'Journal Bearing Wear',description:'BPFI spectral peak 40% above ISO alert + ferrous debris 4× in oil sample. Crew dispatch already scheduled — append bearing job at zero extra travel cost.',costAvoided:85000,dataFusion:'Online Vibration Analysis + Oil Sample Lab',durationSec:3600},
-];
-
-// Field Intelligence — routine non-sensor reports shown on dashboard empty state
-// Each item has full unstructured text (detail) and AI relevance context.
-// Clicking any item opens the feed-detail modal showing the full document.
-const FIELD_INTEL_ITEMS = [
-  {
-    id:'fi1',icon:'🧪',
-    headline:'Daily Well Test — Pad Alpha all-clear. WC 28.4%, GOR 1,104 scf/bbl, all pressures nominal.',
-    source:'Well Test Report',ts:'07:00 shift',ts_label:'07:00 shift handover',lbl:'Report',lbl_type:'report',
-    ai_relevance:'Baseline document — ESP-ALPHA-5 WC up +1.4% vs 30-day avg. Nominal GOR anchors gas lock model. PI reference for intake pressure modeling.',
-    detail:'DAILY WELL TEST REPORT — PAD ALPHA\nDate: Today  |  Shift: Night/Day Handover  |  Test Tech: J. Morales\n\nINDIVIDUAL WELL TEST RESULTS (24-hr average):\n----------------------------------------------\nESP-ALPHA-1:  Flow = 142 STB/d  |  WHP = 247 PSI  |  WC = 26.8%  |  GOR = 1,098 scf/bbl\nESP-ALPHA-2:  Flow = 138 STB/d  |  WHP = 241 PSI  |  WC = 28.1%  |  GOR = 1,110 scf/bbl\nESP-ALPHA-3:  Flow = 151 STB/d  |  WHP = 253 PSI  |  WC = 27.9%  |  GOR = 1,095 scf/bbl\nESP-ALPHA-4:  Flow = 135 STB/d  |  WHP = 244 PSI  |  WC = 29.2%  |  GOR = 1,118 scf/bbl\nESP-ALPHA-5:  Flow = 129 STB/d  |  WHP = 238 PSI  |  WC = 31.1%  |  GOR = 1,102 scf/bbl\nESP-ALPHA-6:  Flow = 144 STB/d  |  WHP = 252 PSI  |  WC = 28.6%  |  GOR = 1,092 scf/bbl\n----------------------------------------------\nPAD TOTAL:    Flow = 839 STB/d  |  Avg WC = 28.4%  |  Avg GOR = 1,104 scf/bbl\n\nSTATIC / BOTTOMHOLE MEASUREMENTS:\n  SBHP (ESP-ALPHA-3 survey): 4,182 PSI  |  Reservoir temp: 218°F\n  PI estimate (ESP-ALPHA-3): 1.44 STB/d/PSI\n\nOPERATIONS NOTES:\n  - All 6 ESPs operating within VFD frequency range 48.5-51.2 Hz. No SCADA alarms.\n  - ESP-ALPHA-5 WC trending up +1.4% vs. last 30-day average — monitor.\n  - Sand screen differential on ESP-ALPHA-2 within spec at +18 PSI.\n  - Next scheduled test: Tomorrow 07:00 by day crew.\n\nSigned: J. Morales (Well Test Tech)  |  Reviewed: T. Okonkwo (Field Supervisor)',
-  },
-  {
-    id:'fi2',icon:'🔧',
-    headline:'Routine PM completed on ESP-ALPHA-3 — motor cable inspection, VFD calibration OK.',
-    source:'Maximo WO-PM-0412',ts:'06:30',ts_label:'06:30 today',lbl:'Routine',lbl_type:'routine',
-    ai_relevance:'Cable insulation resistance 98.2 MΩ — well above 50 MΩ minimum. ESP-ALPHA-3 excluded from overheat risk model. PM currency confirmed in Maximo.',
-    detail:'MAXIMO WORK ORDER WO-PM-0412\nType: Preventive Maintenance  |  Priority: Routine  |  Completed: Today 06:30\nAsset: ESP-ALPHA-3  |  Location: Pad Alpha - Well A-3  |  Technician: M. Castillo\n\nTASKS PERFORMED:\n1. Motor cable inspection — visual and resistance test\n   - Cable insulation resistance: 98.2 MΩ (min: 50 MΩ per Baker Hughes spec)  ✅ PASS\n   - No abrasion or jacket damage observed at surface splice point\n2. VFD calibration verification\n   - Set point: 51.0 Hz  |  Actual output: 51.0 Hz  ✅ PASS\n   - Power factor: 0.87 (nominal 0.85-0.90)  ✅ PASS\n   - Motor current: 73.8 A (nominal 60-90 A)  ✅ PASS\n3. Surface cable connection torque check — all connectors torqued to spec\n\nFINDINGS: No deficiencies identified. All parameters within spec.\nNEXT PM DUE: In 90 days (WO-PM-0412-R)\n\nTotal labor: 2.5 hours  |  Parts used: None\nSigned: M. Castillo  |  Reviewed: Field Supervisor T. Okonkwo',
-  },
-  {
-    id:'fi3',icon:'🧪',
-    headline:'Lube oil sample — GLIFT-BRAVO-2 crankcase: Fe 14 ppm, ISO cleanliness 15/13/10. Normal.',
-    source:'Oil Analysis Lab',ts:'sample 2d ago',ts_label:'sample taken 2 days ago',lbl:'Lab',lbl_type:'lab',
-    ai_relevance:'Fe 14 ppm at normal wear threshold. GLIFT-BRAVO-2 excluded from bearing wear risk. Baseline for comparison if GLIFT-BRAVO-3 sample escalates (48 ppm Fe, currently flagged).',
-    detail:'SPECTROSCOPIC OIL ANALYSIS REPORT\nLab: Core Laboratories, Midland TX  |  PO: OA-2026-0841\nAsset: GLIFT-BRAVO-2  |  Sample taken: 2 days ago  |  Sample ID: OA-0841-B2\nMaximo WO: WO-PM-0399\n\nMETALS ANALYSIS (ppm):\n  Iron (Fe):      14 ppm   [Normal wear limit: 20 ppm]  ✅ NORMAL\n  Copper (Cu):     4 ppm   [Limit: 15 ppm]              ✅ NORMAL\n  Aluminum (Al):   2 ppm   [Limit: 10 ppm]              ✅ NORMAL\n  Chromium (Cr):   1 ppm   [Limit: 5 ppm]               ✅ NORMAL\n  Silicon (Si):    8 ppm   [Limit: 20 ppm]              ✅ NORMAL (dirt/dust)\n\nPHYSICAL PROPERTIES:\n  Viscosity @ 40°C: 68.4 cSt  (spec: 65-70 cSt)        ✅ NORMAL\n  Total Acid Number (TAN): 0.28 (limit: 2.0)             ✅ NORMAL\n  Water content: <0.05%                                  ✅ NORMAL\n  ISO Cleanliness Code: 15/13/10                         ✅ NORMAL\n\nPARTICLE COUNT:\n  >4μm: 2,840/mL  |  >10μm: 520/mL  |  >25μm: 88/mL\n\nLAB RECOMMENDATION: No action required. Continue normal oil change interval (2,000 hrs).\nNext sample due: In 500 operating hours.\n\nAnalyst: Dr. K. Hernandez, Core Laboratories',
-  },
-  {
-    id:'fi4',icon:'📋',
-    headline:'Shift handover — Pad Alpha night tour: no SCADA alarms, all ESPs running within parameters.',
-    source:'Shift Handover Notes',ts:'06:00 handover',ts_label:'06:00 shift handover',lbl:'Report',lbl_type:'report',
-    ai_relevance:'Human-observed operational notes not accessible to SCADA. Night tour pusher noted "subtle vibration on A-2" — aligns with sand ingress vibration signature beginning. Critical context for AI fusion.',
-    detail:'SHIFT HANDOVER NOTES — PAD ALPHA NIGHT TOUR\nDate: Today  |  Handover: 06:00  |  Tour Pusher: R. Mendoza\nReceiving: Day Tour Pusher D. Whitfield\n\nOPERATIONS SUMMARY:\n  - All 6 ESPs on Pad Alpha ran continuously through the night. Zero SCADA alarms.\n  - Production rate stable at ~839 STB/d total pad production.\n  - WC slightly elevated on A-5 (31.1% vs 29.7% last week) — noted for monitoring.\n\nSPECIFIC OBSERVATIONS:\n  ESP-ALPHA-1: Normal. VFD at 50.5 Hz. Motor current 74 A.\n  ESP-ALPHA-2: Minor vibration noted during makeup of last downhole connection at ~0315h.\n               Subtle but noticeable increase vs. last week — worth watching.\n               Production normal at 318 BPD. No alarm. Not reported to SCADA.\n  ESP-ALPHA-3: Normal post-PM. Cable test good.\n  ESP-ALPHA-4: Running well. Water cut slightly elevated.\n  ESP-ALPHA-5: Monitor WC trend. Consider well test tomorrow.\n  ESP-ALPHA-6: Normal.\n\nOPEN ITEMS:\n  - Water cut A-5: Continuing upward trend. Recommend extended well test.\n  - A-2 vibration: Keep an eye on it. No action yet.\n\nSafety: No incidents. Area secure.\nSigned: R. Mendoza (Night Tour)  |  D. Whitfield (Day Tour, acknowledged)',
-  },
-  {
-    id:'fi5',icon:'📊',
-    headline:'Monthly directional survey — Rig 42 at 11,240 ft MD: inclination 38.5°, all targets on track.',
-    source:'Directional Survey',ts:'yesterday',ts_label:'yesterday 14:00',lbl:'Survey',lbl_type:'survey',
-    ai_relevance:'Current position 11,240 ft MD confirmed. Inclination 38.5° consistent with torque demand on TOPDRIVE-RIG42-1. Survey data provides context for top drive load model.',
-    detail:'DIRECTIONAL SURVEY REPORT\nRig: Rig 42  |  Well: 42-A-2H  |  Surveyed: Yesterday 14:00\nDirectional Driller: S. Kowalski (AOS Directional)\n\nSURVEY STATION — 11,240 ft MD:\n  Measured Depth (MD): 11,240 ft\n  True Vertical Depth (TVD): 9,847 ft\n  Inclination: 38.5°\n  Azimuth: 284.2° (True North)\n  North: -2,840 ft  |  East: +4,120 ft\n\nDOGLEG SEVERITY (last 100 ft): 0.4°/100ft  [Limit: 3.0°/100ft]  ✅ NORMAL\n\nFORMATION TOPS (PENETRATED):\n  Wolfcamp A: 8,420 ft TVD  (landed as planned)\n  Wolfcamp B: 9,612 ft TVD  (entered yesterday)\n  Target: Landing in Wolfcamp B lateral — ON TARGET\n\nLATERAL GEOMETRY:\n  Current lateral length: 3,892 ft  |  Target total lateral: 10,000 ft\n  Remaining lateral to drill: 6,108 ft\n  Projected TD: ~18,500 ft MD\n\nOPERATOR NOTES:\n  All survey parameters within acceptable ranges. Trajectory on plan.\n  Next survey station at 11,540 ft MD (~3 hrs drilling time at current ROP).\n\nApproved: Company Geologist F. Reyes | Directional Contractor: AOS Directional Services',
-  },
-  {
-    id:'fi6',icon:'🔧',
-    headline:'GLIFT-BRAVO-4 compressor valve inspection — seats within tolerance, next interval 6 months.',
-    source:'Maximo WO-PM-0408',ts:'2 days ago',ts_label:'2 days ago',lbl:'Routine',lbl_type:'routine',
-    ai_relevance:'GLIFT-BRAVO-4 valve seats within tolerance. Confirms valve failure risk confined to GLIFT-BRAVO-1 (18 months since last inspection). Cross-reference with discharge pressure chattering.',
-    detail:'MAXIMO WORK ORDER WO-PM-0408\nType: Preventive Maintenance — Valve Inspection  |  Priority: Routine\nAsset: GLIFT-BRAVO-4  |  Completed: 2 days ago  |  Tech: F. Ramos (Ariel Certified)\n\nINSPECTION SCOPE:\n  Ariel JGP-4 reciprocating compressor — suction and discharge valve deck\n\nVALVE INSPECTION FINDINGS:\n  Valve 1A (suction): Seat wear 0.012" [limit: 0.020"]  ✅ ACCEPTABLE\n  Valve 1B (suction): Seat wear 0.009" [limit: 0.020"]  ✅ ACCEPTABLE\n  Valve 2A (discharge): Seat wear 0.015" [limit: 0.020"] ✅ ACCEPTABLE\n  Valve 2B (discharge): Seat wear 0.017" [limit: 0.020"] ✅ MARGINAL — monitor\n  Valve disk inspection: All disks intact. No cracks or pitting observed.\n  Springs: All within elasticity spec. No fatigue cracking.\n\nCONDITION SUMMARY:\n  All valves within acceptable wear limits. Valve 2B approaching replacement threshold.\n  Recommend inspection at next 6-month interval (or if discharge pressure alarm fires).\n\nPARTS USED: None  |  NEXT PM: 6 months (WO-PM-0408-R)\nSigned: F. Ramos  |  Reviewed: Compression Supervisor A. Okafor',
-  },
-  {
-    id:'fi7',icon:'🧪',
-    headline:'Pad Alpha BS&W samples: A-1 through A-6 all < 0.3% — no formation water influx anomaly.',
-    source:'Daily Well Test Report',ts:'08:00 today',ts_label:'08:00 today',lbl:'Lab',lbl_type:'lab',
-    ai_relevance:'BS&W baseline confirms no emulsion treatment needed. Sand content not measured in this test — tracked separately via centrifuge (see Well Test Report fi1). ESP-ALPHA-2 sand ingress uses vibration, not BS&W.',
-    detail:'BS&W FIELD ANALYSIS — PAD ALPHA\nDate: Today 08:00  |  Technician: P. Whitmore\nMethod: ASTM D4007 centrifuge  |  Lab: On-site field lab\n\nSAMPLE RESULTS:\n  Well A-1 (ESP-ALPHA-1):  BS&W = 0.21%  |  Grade: Pipeline spec  ✅\n  Well A-2 (ESP-ALPHA-2):  BS&W = 0.28%  |  Grade: Pipeline spec  ✅\n  Well A-3 (ESP-ALPHA-3):  BS&W = 0.19%  |  Grade: Pipeline spec  ✅\n  Well A-4 (ESP-ALPHA-4):  BS&W = 0.24%  |  Grade: Pipeline spec  ✅\n  Well A-5 (ESP-ALPHA-5):  BS&W = 0.29%  |  Grade: Pipeline spec  ✅\n  Well A-6 (ESP-ALPHA-6):  BS&W = 0.22%  |  Grade: Pipeline spec  ✅\n\nAll samples below BS&W pipeline specification of 0.50%.\nNo free water or emulsion treatment required at this time.\nNote: BS&W measures water and sediment in produced oil. Sand influx measured\n      separately by centrifuge particle analysis (ESP-ALPHA-2 trended +0.9 mg/100mL).\n\nSigned: P. Whitmore (Field Technician)',
-  },
-  {
-    id:'fi8',icon:'📋',
-    headline:'MUD-RIG42-2 & MUD-RIG42-3 fluid end inspection — valves within spec at 2,500 ft interval.',
-    source:'Fluid End Inspection Log',ts:'maintenance record',ts_label:'current interval',lbl:'Routine',lbl_type:'routine',
-    ai_relevance:'MUD-RIG42-2 and MUD-RIG42-3 confirmed within spec. Confirms MUD-RIG42-1 is the source of declining VE — cross-reference with EDR SPM compensation and mud engineer VE report.',
-    detail:'FLUID END INSPECTION LOG — RIG 42\nInspection Date: Current interval  |  Inspector: NOV Field Service (B. Nguyen)\nPumps Inspected: MUD-RIG42-2 and MUD-RIG42-3\nDepth at Inspection: MUD-RIG42-2 at 14,200 ft MD  |  MUD-RIG42-3 at 14,200 ft MD\n\nMUD-RIG42-2 INSPECTION RESULTS:\n  Valve seats (3 cylinders): Wear 0.008-0.012"  [limit: 0.025"]  ✅ ACCEPTABLE\n  Piston assemblies: Cup seals within spec                        ✅ ACCEPTABLE\n  Liner condition: No visible scoring or bore wear                ✅ ACCEPTABLE\n  Volumetric efficiency test: 96%  [nominal: 95%+]               ✅ PASS\n  RESULT: Return to service — no repairs required\n\nMUD-RIG42-3 INSPECTION RESULTS:\n  Valve seats (3 cylinders): Wear 0.006-0.010"  [limit: 0.025"]  ✅ ACCEPTABLE\n  Piston assemblies: Cup seals within spec                        ✅ ACCEPTABLE\n  Liner condition: No visible scoring or bore wear                ✅ ACCEPTABLE\n  Volumetric efficiency test: 97%  [nominal: 95%+]               ✅ PASS\n  RESULT: Return to service — no repairs required\n\nNOTE: MUD-RIG42-1 NOT INCLUDED in this inspection (460 ft past interval). VE trending down.\nNext inspection due: At 2,500 ft interval  |  Parts used: None\nSigned: B. Nguyen, NOV Field Service',
-  },
-  {
-    id:'fi9',icon:'📊',
-    headline:'Wellhead pressure survey — Pad Bravo all wells 305–318 PSI, injection rates nominal.',
-    source:'SCADA Daily Report',ts:'morning report',ts_label:'morning report 07:30',lbl:'Report',lbl_type:'report',
-    ai_relevance:'Pad Bravo wellhead pressures nominal. Mean discharge 978 PSI within normal range — SCADA shows no alarm. Cyclic pressure amplitude (42 PSI chattering) in GLIFT-BRAVO-1 is NOT captured in this daily report.',
-    detail:'SCADA DAILY OPERATIONS REPORT — PAD BRAVO\nDate: Today  |  Report Time: 07:30  |  Generated by: SCADA System\n\nWELLHEAD PRESSURE SUMMARY (24-hr mean):\n  Well B-1 (GLIFT-BRAVO-1):  WHP = 308 PSI  |  Inj. Gas Rate = 0.43 MMscfd  ✅\n  Well B-2 (GLIFT-BRAVO-2):  WHP = 312 PSI  |  Inj. Gas Rate = 0.46 MMscfd  ✅\n  Well B-3 (GLIFT-BRAVO-3):  WHP = 318 PSI  |  Inj. Gas Rate = 0.48 MMscfd  ✅\n  Well B-4 (GLIFT-BRAVO-4):  WHP = 305 PSI  |  Inj. Gas Rate = 0.43 MMscfd  ✅\n  PAD TOTAL INJECTION: 1.80 MMscfd  |  PAD PRODUCTION: 720 BOE/d\n\nCOMPRESSOR DISCHARGE PRESSURES (24-hr mean):\n  GLIFT-BRAVO-1: 978 PSI  [Alarm: <600 PSI]  ✅ NORMAL\n  GLIFT-BRAVO-2: 985 PSI  [Alarm: <600 PSI]  ✅ NORMAL\n  GLIFT-BRAVO-3: 1,004 PSI [Alarm: <600 PSI] ✅ NORMAL\n  GLIFT-BRAVO-4: 990 PSI  [Alarm: <600 PSI]  ✅ NORMAL\n\nALARMS: 0 active alarms on Pad Bravo.\nNote: SCADA reports mean values only. Pressure oscillations <5s duration are filtered.\n      The 42-PSI cyclic amplitude on GLIFT-BRAVO-1 (1.8 Hz, <5s period) is below the\n      SCADA sampling resolution and does NOT appear in this report.\n\nReport generated automatically by SCADA historian. No operator review required.',
-  },
-  {
-    id:'fi10',icon:'🔧',
-    headline:'ESP-ALPHA-5 & ESP-ALPHA-6 VFD firmware updated to v4.2.1 — power factor improved to 0.87.',
-    source:'Maximo WO-ELEC-0118',ts:'yesterday',ts_label:'yesterday 10:00',lbl:'Routine',lbl_type:'routine',
-    ai_relevance:'VFD firmware v4.2.1 introduces improved harmonic filtering. Power factor 0.87 exceeds previous 0.81. Any motor current anomaly on A-5 or A-6 post-update should be evaluated against this new baseline.',
-    detail:'MAXIMO WORK ORDER WO-ELEC-0118\nType: Electrical Maintenance — VFD Firmware Update  |  Priority: Routine\nAssets: ESP-ALPHA-5, ESP-ALPHA-6  |  Completed: Yesterday 10:00\nTechnician: K. Park (Baker Hughes VFD Specialist)\n\nWORK PERFORMED:\n  1. VFD firmware updated: v4.0.3 → v4.2.1 (Baker Hughes Centrilift release 2026-Q1)\n  2. Harmonic distortion filter recalibration (new adaptive algorithm in v4.2.1)\n  3. Pre/post-update performance test\n\nPERFORMANCE COMPARISON (ESP-ALPHA-5):\n  Pre-update:  Power factor = 0.81  |  Motor current = 76.4 A  |  THD = 8.2%\n  Post-update: Power factor = 0.87  |  Motor current = 73.8 A  |  THD = 5.1%\n\nPERFORMANCE COMPARISON (ESP-ALPHA-6):\n  Pre-update:  Power factor = 0.82  |  Motor current = 75.1 A  |  THD = 7.9%\n  Post-update: Power factor = 0.87  |  Motor current = 73.2 A  |  THD = 4.8%\n\nRELEASE NOTES v4.2.1 HIGHLIGHTS:\n  - Improved adaptive harmonic filtering reduces THD from ~8% to ~5%\n  - Power factor correction now tracks dynamically with load variation\n  - Motor current reporting accuracy improved to ±0.1 A\n  - No change to control logic or alarm setpoints\n\nALL TESTS PASSED. Firmware update complete. Units returned to normal operation.\nSigned: K. Park (BH VFD Specialist)  |  Reviewed: Electrical Supervisor L. Torres',
-  },
 ];
 
 createApp({
@@ -1321,7 +1218,6 @@ createApp({
       selectedAsset: null,
       SITES, ASSET_META, FAULT_META, FAULTS_BY_CLASS,
       demoScenarios: DEMO_SCENARIOS,
-      fieldIntelItems: FIELD_INTEL_ITEMS,
       // Deep Dive
       ddAssetId: null,
       ddFaultType: null,
@@ -1368,7 +1264,6 @@ createApp({
       // Timers
       _pollKpis: null, _pollHorizon: null, _pollMlops: null,
       _pollDeg: null, _pollChart: null,
-      _pollFieldIntel: null,   // Phase 16: polls /api/field-intelligence every 60s
       // Phase 15 — Asset Context Menu + Splitter
       assetContextMenu: { visible: false, x: 0, y: 0, assetId: null },
       faultTooltipFt: null,
@@ -1846,32 +1741,6 @@ createApp({
       if(this._pollChart){clearInterval(this._pollChart);this._pollChart=null;}
     },
 
-    // ── Phase 16: Live Field Intel — polls /api/field-intelligence every 60s ──
-    // Prepends new LLM-generated documents to fieldIntelItems with .act-new flash.
-    // Deduplication by id prevents re-showing existing items on every poll.
-    async fetchFieldIntel() {
-      try {
-        const r = await fetch('/api/field-intelligence?limit=20');
-        if (!r.ok) return;
-        const d = await r.json();
-        const incoming = d.items || [];
-        if (incoming.length === 0) return;
-        // Collect IDs already in the list to avoid duplicates
-        const existingIds = new Set(this.fieldIntelItems.map(i => i.id));
-        const newItems = incoming.filter(item => !existingIds.has(item.id));
-        if (newItems.length === 0) return;
-        // Mark as new so the .act-new CSS animation fires
-        newItems.forEach(item => { item.isNew = true; });
-        // Prepend to the front so latest appear at top (before the hardcoded fi1..fi10)
-        this.fieldIntelItems = [...newItems, ...this.fieldIntelItems];
-        // Clear the isNew flag after 3.5s so re-opens don't re-animate
-        setTimeout(() => {
-          newItems.forEach(item => { item.isNew = false; });
-        }, 3500);
-        console.debug && console.debug(`🧠 ${newItems.length} new intel doc(s) added to stream`);
-      } catch {}
-    },
-
     async clearDispatch() {
       try { await fetch('/api/clear-dispatch',{method:'POST'});await this.fetchLedger();this.totalSaved=0;this.showToast('♻ Demo data reset','var(--blue)'); } catch{}
     },
@@ -2082,16 +1951,10 @@ createApp({
     this._pollMlops=setInterval(()=>this.fetchMlopsStatus(),15000);
     this.lastRefresh=new Date().toLocaleTimeString();
     this.$nextTick(()=>this.initCanvasSplitter());
-    // Phase 16: poll /api/field-intelligence every 60s; first call delayed 90s
-    // to allow the intel generator to produce its first document after startup.
-    setTimeout(()=>{
-      this.fetchFieldIntel();
-      this._pollFieldIntel=setInterval(()=>this.fetchFieldIntel(),60000);
-    }, 90000);
   },
 
   beforeUnmount() {
-    [this._pollKpis,this._pollHorizon,this._pollMlops,this._pollFieldIntel].forEach(t=>t&&clearInterval(t));
+    [this._pollKpis,this._pollHorizon,this._pollMlops].forEach(t=>t&&clearInterval(t));
     this.stopDegPoll();
   },
 }).mount('#app');

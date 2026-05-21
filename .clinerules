@@ -25,6 +25,7 @@
 - `terraform/gke.tf` must NOT be applied — it would destroy the live cluster.
 - All demo changes go into gke/fault-trigger-ui/index.html and gke/fault-trigger-ui/app.py.
 - After changes: docker build → docker push → kubectl rollout restart.
+- Note: This SSH remote does not have a browser, so the `browser_action` tool should not be used.
 
 ## Session Handoff (NEXT_SESSION_PROMPT.md)
 - At the end of every session, rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` as a complete, self-contained handoff for the next session. Do NOT append — always rewrite from scratch.

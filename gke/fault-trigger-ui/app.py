@@ -427,11 +427,6 @@ ASSETS = [
     # Pad Alpha (ESP Production — Pure ESP Pad)
     "ESP-ALPHA-1", "ESP-ALPHA-2", "ESP-ALPHA-3",
     "ESP-ALPHA-4", "ESP-ALPHA-5", "ESP-ALPHA-6",
-    # Pad Bravo (Gas Lift Production — Pure Gas Lift Pad)
-    "GLIFT-BRAVO-1", "GLIFT-BRAVO-2", "GLIFT-BRAVO-3", "GLIFT-BRAVO-4",
-    # Rig 42 (Drilling)
-    "MUD-RIG42-1", "MUD-RIG42-2", "MUD-RIG42-3",
-    "TOPDRIVE-RIG42-1",
 ]
 
 ASSET_REGISTRY = {
@@ -1248,22 +1243,6 @@ SCENARIOS = {
              "note": "Sand ingress accelerating — impeller wear visible"},
             {"fault": "gas_lock",      "delay_s": 30, "burst": 5,
              "note": "Gas lock triggered — production loss imminent"},
-        ],
-    },
-    "rig_drilling_emergency": {
-        "name": "Rig 42 — Drilling Emergency",
-        "description": (
-            "Mud pump valve washout simultaneously with top drive vibration. "
-            "Demonstrates fleet-wide multi-asset monitoring during a drilling crisis."
-        ),
-        "asset": "MUD-RIG42-1",
-        "steps": [
-            {"fault": "valve_washout",              "asset_override": "MUD-RIG42-1",       "delay_s": 0,  "burst": 3,
-             "note": "Mud pump #1: valve washout beginning"},
-            {"fault": "gearbox_bearing_spalling",   "asset_override": "TOPDRIVE-RIG42-1",  "delay_s": 5,  "burst": 3,
-             "note": "Top drive: bearing spalling detected"},
-            {"fault": "valve_washout",              "asset_override": "MUD-RIG42-2",       "delay_s": 10, "burst": 3,
-             "note": "Mud pump #2: valve washout spreading — drilling at risk"},
         ],
     },
     "pad_alpha_production_loss": {
@@ -3520,16 +3499,6 @@ SITE_KPI_BASE = {
         "production_boed": 1842, "water_cut_pct": 28.4,
         "gor_scf_bbl": 1104, "wellhead_pressure_psi": 245, "uptime_pct": 100.0,
     },
-    "pad_bravo": {
-        "label": "Pad Bravo", "type": "Gas Lift Production",
-        "production_boed": 720, "inj_gas_mmscfd": 1.8,
-        "lift_efficiency_pct": 78, "wellhead_pressure_psi": 312, "uptime_pct": 100.0,
-    },
-    "rig_42": {
-        "label": "Rig 42", "type": "Drilling",
-        "rop_ft_per_hr": 68, "depth_ft_md": 11240,
-        "wob_klbs": 22, "mud_weight_ppg": 11.4, "uptime_pct": 100.0,
-    },
 }
 
 INTELLIGENCE_FEED = {
@@ -3923,15 +3892,6 @@ def get_site_kpis():
             kpis["pad_alpha"]["production_boed"] = max(0, round(
                 SITE_KPI_BASE["pad_alpha"]["production_boed"] * (1 - degradation * 0.18)))
             kpis["pad_alpha"]["uptime_pct"] = round(max(60.0, 100.0 - degradation * 15), 1)
-        elif site == "pad_bravo" and meta.get("asset_class") == "gas_lift":
-            kpis["pad_bravo"]["production_boed"] = max(0, round(
-                SITE_KPI_BASE["pad_bravo"]["production_boed"] * (1 - degradation * 0.28)))
-            kpis["pad_bravo"]["uptime_pct"] = round(max(60.0, 100.0 - degradation * 20), 1)
-        elif site == "rig_42":
-            if meta.get("asset_class") == "mud_pump":
-                kpis["rig_42"]["rop_ft_per_hr"] = max(0, round(
-                    SITE_KPI_BASE["rig_42"]["rop_ft_per_hr"] * (1 - degradation * 0.45), 1))
-            kpis["rig_42"]["uptime_pct"] = round(max(60.0, 100.0 - degradation * 25), 1)
     return {"kpis": kpis, "ts": datetime.utcnow().isoformat() + "Z"}
 
 
