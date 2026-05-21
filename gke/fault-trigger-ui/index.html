@@ -401,41 +401,14 @@
     .feed-modal-relevance{margin-top:10px;padding:8px 10px;border-radius:5px;font-size:0.68rem;background:rgba(30,144,255,0.06);border:1px solid rgba(30,144,255,0.2);color:var(--blue)}
     .modal-close-btn{margin-top:12px;padding:7px 14px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);color:var(--text2);cursor:pointer;font-size:0.72rem}
 
-    /* ══ Sprint 4 — Pad Alpha Digital Twin Mockup Variations ══ */
-
-    /* Mockup selector header */
-    .pad-twin-hdr{display:flex;align-items:center;gap:8px;margin-bottom:7px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:10px}
-    .pad-twin-lbl{font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
-    .twin-var-pills{display:flex;gap:3px;margin-left:auto}
-    .twin-var-btn{font-size:0.55rem;font-weight:700;padding:2px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all 0.15s;text-transform:uppercase;letter-spacing:0.04em;white-space:nowrap}
-    .twin-var-btn.active{border-color:rgba(30,144,255,0.5);background:rgba(30,144,255,0.08);color:var(--blue)}
-    .twin-var-btn:hover:not(.active){border-color:var(--border2);color:var(--text2)}
-
-    /* V1: Inline SVG schematic */
-    .pad-svg-bg{width:100%;margin-bottom:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(26,40,56,0.7);background:rgba(8,12,18,0.55)}
-
-    /* V2: API-rendered image */
-    .pad-png-wrap{width:100%;margin-bottom:10px;border-radius:6px;overflow:hidden;border:1px solid rgba(26,40,56,0.7);background:rgba(8,12,18,0.55);display:flex;align-items:center;justify-content:center;min-height:120px;position:relative}
-    .pad-png-wrap img{width:100%;display:block;border-radius:5px}
-    .pad-png-loading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--muted);font-size:0.65rem;pointer-events:none;z-index:1}
-    .pad-png-badge{position:absolute;bottom:5px;right:7px;font-size:0.48rem;font-family:var(--mono);color:rgba(30,100,200,0.6);font-weight:700;z-index:2}
-
-    /* V3: CSS grid spatial layout */
-    .pad-grid-v3{position:relative;border-radius:8px;border:1px dashed rgba(28,48,68,0.45);margin-bottom:10px;padding:12px 12px 10px;background:repeating-linear-gradient(0deg,transparent,transparent 19px,rgba(18,32,50,0.12) 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,rgba(18,32,50,0.12) 20px),linear-gradient(135deg,rgba(7,11,18,0.82),rgba(10,15,26,0.82));overflow:hidden}
-    .pad-infra-row{display:flex;align-items:flex-end;gap:6px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(26,44,64,0.35);position:relative}
-    .infra-node{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;position:relative}
-    .infra-icon-box{width:54px;height:38px;border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border:1px solid;position:relative;overflow:hidden}
-    .infra-box-gen{background:rgba(10,16,22,0.95);border-color:rgba(36,56,36,0.7)}
-    .infra-box-gdc{background:rgba(5,13,36,0.95);border-color:rgba(30,90,200,0.6);box-shadow:0 0 8px rgba(20,80,180,0.14)}
-    .infra-box-scada{background:rgba(10,18,22,0.95);border-color:rgba(36,60,50,0.6)}
-    .infra-box-starlink{background:rgba(8,16,24,0.95);border-color:rgba(28,62,80,0.6)}
-    .infra-icon-txt{font-size:14px;line-height:1}
-    .infra-lbl{font-size:0.49rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);text-align:center;white-space:nowrap}
-    .infra-sub{font-size:0.44rem;color:rgba(52,72,96,0.9);text-align:center;font-family:var(--mono);white-space:nowrap}
-    .infra-spacer{flex:1;border-bottom:1px dashed rgba(26,46,64,0.3);align-self:flex-end;margin-bottom:18px}
-    .gdc-live-dot{position:absolute;top:4px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--blue);box-shadow:0 0 4px var(--blue);animation:blink 2s ease-in-out infinite}
-    .v3-wells-row{display:flex;flex-wrap:wrap;gap:10px}
-    .v3-zone-label{position:absolute;bottom:4px;right:8px;font-size:0.44rem;font-family:var(--mono);color:rgba(30,60,90,0.6);font-weight:700;letter-spacing:0.06em}
+    /* ══ Sprint 4 — Pad Alpha Digital Twin (V1 Integrated Interactive) ══ */
+    /* SVG schematic container — position:relative so Vue well nodes can overlay it */
+    .pad-svg-bg{position:relative;width:100%;margin-bottom:10px;border-radius:6px;overflow:visible;border:1px solid rgba(42,70,100,0.6);background:rgba(8,14,22,0.6)}
+    /* Overlay div that holds the interactive Vue ESP nodes at exact well positions */
+    .pad-well-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+    .pad-well-overlay .asset-node{pointer-events:all;position:absolute;width:62px;height:62px}
+    .pad-well-overlay .node-label{font-size:0.56rem}
+    .pad-well-overlay .node-pulse-ring{inset:-6px}
   </style>
 </head>
 <body>
@@ -561,150 +534,123 @@
                   <div class="zm-lbl">GOR</div>
                 </div>
               </div>
-              <!-- ══ Sprint 4: Pad Alpha Digital Twin Mockup Variations ══ -->
-              <div class="pad-twin-hdr">
-                <span class="pad-twin-lbl">🗺 Digital Twin</span>
-                <div class="twin-var-pills">
-                  <button class="twin-var-btn" :class="{active:padMockupVar===1}" @click="padMockupVar=1" title="V1: Inline SVG schematic">V1 · SVG</button>
-                  <button class="twin-var-btn" :class="{active:padMockupVar===2}" @click="padMockupVar=2;padPngLoaded=false;padPngErr=false" title="V2: API-rendered map from /api/pad-mockup">V2 · API</button>
-                  <button class="twin-var-btn" :class="{active:padMockupVar===3}" @click="padMockupVar=3" title="V3: CSS grid with live asset nodes">V3 · Grid</button>
-                </div>
-              </div>
-
-              <!-- ── Variation 1: Inline SVG Schematic (pure HTML/CSS) ── -->
-              <div v-if="padMockupVar===1" class="pad-svg-bg">
+              <!-- ══ Sprint 4: Pad Alpha Digital Twin — Integrated Interactive Diagram ══
+                   Layout: Infrastructure (top) → Shared Network Bus → Wells (middle, live Vue nodes)
+                           → Production Manifold (bottom)
+                   Data flow: All field assets publish to Edge Broker. GDC Edge AI and SCADA RTU
+                   both SUBSCRIBE to the same Pub/Sub topics — GDC is not downstream of SCADA.    ══ -->
+              <div class="pad-svg-bg">
+                <!-- ── Redesigned SVG: equipment top → shared network bus → wells (Vue overlaid)
+                                        → production manifold bottom                               ── -->
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 185" style="width:100%;display:block;">
                   <!-- Pad bounding box -->
-                  <rect x="5" y="5" width="750" height="175" rx="7" fill="none" stroke="#182838" stroke-width="1" stroke-dasharray="6,4"/>
-                  <!-- GEN (Generator) — top left -->
-                  <rect x="14" y="18" width="58" height="34" rx="4" fill="#0a1018" stroke="#222e3a" stroke-width="1"/>
-                  <text x="43" y="30" text-anchor="middle" font-family="monospace" font-size="7" fill="#3a5840" font-weight="bold">GENERATOR</text>
-                  <text x="43" y="43" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#2a3830">500 kVA</text>
-                  <!-- GDC Edge AI — top center, distinct blue tint -->
-                  <rect x="290" y="14" width="112" height="42" rx="4" fill="#050c22" stroke="#1e4a8a" stroke-width="1.5"/>
-                  <rect x="290" y="14" width="112" height="5" rx="4" fill="#1a3870"/>
-                  <circle cx="300" cy="22" r="2.5" fill="#00e676" opacity="0.85">
-                    <animate attributeName="opacity" values="0.85;0.2;0.85" dur="2.2s" repeatCount="indefinite"/>
+                  <rect x="5" y="5" width="750" height="175" rx="7" fill="none" stroke="#2a4060" stroke-width="1" stroke-dasharray="6,4"/>
+
+                  <!-- ── Equipment row (top) ── -->
+
+                  <!-- GEN — present on pad, no data connection -->
+                  <rect x="14" y="12" width="62" height="36" rx="4" fill="#0e1c14" stroke="#2a5040" stroke-width="1.2"/>
+                  <text x="45" y="26" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#4a8060" font-weight="bold">GENERATOR</text>
+                  <text x="45" y="40" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4030">500 kVA</text>
+
+                  <!-- A/C UNIT — present on pad, no data connection -->
+                  <rect x="84" y="17" width="44" height="26" rx="3" fill="#0e1a24" stroke="#2a3858" stroke-width="1"/>
+                  <text x="106" y="28" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#3a5878" font-weight="bold">A/C</text>
+                  <text x="106" y="38" text-anchor="middle" font-family="monospace" font-size="4.5" fill="#2a3858">UNIT</text>
+
+                  <!-- EDGE BROKER — subscribes and publishes Pub/Sub topics -->
+                  <rect x="138" y="12" width="78" height="36" rx="4" fill="#0e1828" stroke="#2a5888" stroke-width="1.2"/>
+                  <text x="177" y="25" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#4a88a8" font-weight="bold">EDGE BROKER</text>
+                  <text x="177" y="38" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4868">RabbitMQ / MQTT</text>
+
+                  <!-- GDC EDGE AI — subscribes to same topics as SCADA, runs XGBoost inference -->
+                  <rect x="290" y="10" width="128" height="46" rx="4" fill="#06102e" stroke="#2a80c0" stroke-width="1.8"/>
+                  <rect x="290" y="10" width="128" height="5" rx="4" fill="#1a5090"/>
+                  <circle cx="301" cy="20" r="3" fill="#00e676" opacity="0.9">
+                    <animate attributeName="opacity" values="0.9;0.2;0.9" dur="2.2s" repeatCount="indefinite"/>
                   </circle>
-                  <circle cx="308" cy="22" r="2.5" fill="#1e90ff" opacity="0.7"/>
-                  <text x="346" y="32" text-anchor="middle" font-family="monospace" font-size="7.5" fill="#2060b0" font-weight="bold">GDC EDGE AI</text>
-                  <text x="346" y="44" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#1a3870">XGBoost · Gemma4 · RAG</text>
-                  <!-- SCADA RTU — top right -->
-                  <rect x="580" y="18" width="68" height="34" rx="4" fill="#0a1018" stroke="#222e3a" stroke-width="1"/>
-                  <text x="614" y="30" text-anchor="middle" font-family="monospace" font-size="7" fill="#3a5040" font-weight="bold">SCADA RTU</text>
-                  <text x="614" y="43" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#2a3030">Threshold Only</text>
-                  <!-- Starlink Uplink — far right -->
-                  <ellipse cx="718" cy="26" rx="17" ry="7" fill="none" stroke="#1a3e4e" stroke-width="1.3" transform="rotate(-20,718,26)"/>
-                  <line x1="718" y1="33" x2="718" y2="50" stroke="#142a38" stroke-width="1.2"/>
-                  <line x1="712" y1="50" x2="724" y2="50" stroke="#142a38" stroke-width="1.5"/>
-                  <text x="718" y="62" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#1e4050">STARLINK</text>
-                  <!-- Data line: GDC EDGE → SCADA RTU (blue dashed) -->
-                  <line x1="402" y1="35" x2="580" y2="35" stroke="rgba(30,100,200,0.3)" stroke-width="0.8" stroke-dasharray="3,4"/>
-                  <polygon points="577,32.5 583,35 577,37.5" fill="rgba(30,100,200,0.3)"/>
-                  <!-- Data line: SCADA RTU → Starlink -->
-                  <line x1="648" y1="35" x2="700" y2="32" stroke="rgba(30,80,160,0.2)" stroke-width="0.7" stroke-dasharray="2,5"/>
-                  <!-- Power line: GEN bottom → manifold level (vertical dashed) -->
-                  <line x1="43" y1="52" x2="43" y2="93" stroke="rgba(80,64,20,0.5)" stroke-width="1" stroke-dasharray="3,4"/>
-                  <!-- Data line: GDC center-bottom → manifold level (vertical blue) -->
-                  <line x1="346" y1="56" x2="346" y2="93" stroke="rgba(30,100,200,0.2)" stroke-width="0.7" stroke-dasharray="2,5"/>
-                  <!-- Production header / manifold -->
-                  <line x1="36" y1="96" x2="582" y2="96" stroke="#1a2c42" stroke-width="3.5" stroke-linecap="round"/>
-                  <polygon points="582,93 590,96 582,99" fill="#1a2c42"/>
-                  <text x="516" y="91" font-family="monospace" font-size="5.5" fill="#243444">→ SEPARATOR</text>
-                  <!-- Vertical connections: manifold to wells -->
-                  <line x1="58" y1="96" x2="58" y2="125" stroke="#142030" stroke-width="1.5"/>
-                  <line x1="158" y1="96" x2="158" y2="125" stroke="#142030" stroke-width="1.5"/>
-                  <line x1="258" y1="96" x2="258" y2="125" stroke="#142030" stroke-width="1.5"/>
-                  <line x1="358" y1="96" x2="358" y2="125" stroke="#142030" stroke-width="1.5"/>
-                  <line x1="458" y1="96" x2="458" y2="125" stroke="#142030" stroke-width="1.5"/>
-                  <line x1="558" y1="96" x2="558" y2="125" stroke="#142030" stroke-width="1.5"/>
-                  <!-- ESP Well circles A-1 through A-6 -->
-                  <circle cx="58" cy="147" r="20" fill="rgba(8,12,20,0.85)" stroke="#122438" stroke-width="1.5"/>
-                  <text x="58" y="144" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#1e4060" font-weight="bold">ESP</text>
-                  <text x="58" y="154" text-anchor="middle" font-family="monospace" font-size="6" fill="#162838">A-1</text>
-                  <line x1="58" y1="167" x2="58" y2="178" stroke="#0e1822" stroke-width="1" stroke-dasharray="2,2"/>
-                  <circle cx="158" cy="147" r="20" fill="rgba(8,12,20,0.85)" stroke="#122438" stroke-width="1.5"/>
-                  <text x="158" y="144" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#1e4060" font-weight="bold">ESP</text>
-                  <text x="158" y="154" text-anchor="middle" font-family="monospace" font-size="6" fill="#162838">A-2</text>
-                  <line x1="158" y1="167" x2="158" y2="178" stroke="#0e1822" stroke-width="1" stroke-dasharray="2,2"/>
-                  <circle cx="258" cy="147" r="20" fill="rgba(8,12,20,0.85)" stroke="#122438" stroke-width="1.5"/>
-                  <text x="258" y="144" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#1e4060" font-weight="bold">ESP</text>
-                  <text x="258" y="154" text-anchor="middle" font-family="monospace" font-size="6" fill="#162838">A-3</text>
-                  <line x1="258" y1="167" x2="258" y2="178" stroke="#0e1822" stroke-width="1" stroke-dasharray="2,2"/>
-                  <circle cx="358" cy="147" r="20" fill="rgba(8,12,20,0.85)" stroke="#122438" stroke-width="1.5"/>
-                  <text x="358" y="144" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#1e4060" font-weight="bold">ESP</text>
-                  <text x="358" y="154" text-anchor="middle" font-family="monospace" font-size="6" fill="#162838">A-4</text>
-                  <line x1="358" y1="167" x2="358" y2="178" stroke="#0e1822" stroke-width="1" stroke-dasharray="2,2"/>
-                  <circle cx="458" cy="147" r="20" fill="rgba(8,12,20,0.85)" stroke="#122438" stroke-width="1.5"/>
-                  <text x="458" y="144" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#1e4060" font-weight="bold">ESP</text>
-                  <text x="458" y="154" text-anchor="middle" font-family="monospace" font-size="6" fill="#162838">A-5</text>
-                  <line x1="458" y1="167" x2="458" y2="178" stroke="#0e1822" stroke-width="1" stroke-dasharray="2,2"/>
-                  <circle cx="558" cy="147" r="20" fill="rgba(8,12,20,0.85)" stroke="#122438" stroke-width="1.5"/>
-                  <text x="558" y="144" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#1e4060" font-weight="bold">ESP</text>
-                  <text x="558" y="154" text-anchor="middle" font-family="monospace" font-size="6" fill="#162838">A-6</text>
-                  <line x1="558" y1="167" x2="558" y2="178" stroke="#0e1822" stroke-width="1" stroke-dasharray="2,2"/>
+                  <circle cx="311" cy="20" r="3" fill="#1e90ff" opacity="0.85"/>
+                  <text x="354" y="33" text-anchor="middle" font-family="monospace" font-size="8" fill="#4ab8e0" font-weight="bold">GDC EDGE AI</text>
+                  <text x="354" y="47" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#2a80a8">XGBoost · Gemma4 · RAG</text>
+
+                  <!-- SCADA RTU — also subscribes; hard-threshold alarms only -->
+                  <rect x="458" y="12" width="74" height="36" rx="4" fill="#0e1e1a" stroke="#2a6858" stroke-width="1.2"/>
+                  <text x="495" y="25" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#4a9070" font-weight="bold">SCADA RTU</text>
+                  <text x="495" y="38" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4840">Threshold Only</text>
+
+                  <!-- Starlink — WAN uplink to cloud, subscribes to edge broker events -->
+                  <ellipse cx="644" cy="22" rx="20" ry="8" fill="none" stroke="#2a5878" stroke-width="1.4" transform="rotate(-20,644,22)"/>
+                  <line x1="644" y1="30" x2="644" y2="50" stroke="#1a3858" stroke-width="1.3"/>
+                  <line x1="636" y1="50" x2="652" y2="50" stroke="#1a3858" stroke-width="1.6"/>
+                  <text x="644" y="62" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#2a5870">STARLINK</text>
+
+                  <!-- ── Shared Edge Network bar ── -->
+                  <!-- All subscribing components connect to this common data bus -->
+                  <line x1="132" y1="72" x2="660" y2="72" stroke="#2a4a70" stroke-width="1.5"/>
+                  <text x="396" y="67" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4a68">SHARED EDGE NETWORK — Pub/Sub Data Bus</text>
+
+                  <!-- Network bar junction dots — equipment subscribers -->
+                  <circle cx="177" cy="72" r="3.5" fill="#2a6090"/>
+                  <circle cx="354" cy="72" r="3.5" fill="#2a80c0"/>
+                  <circle cx="495" cy="72" r="3.5" fill="#2a6858"/>
+                  <circle cx="644" cy="72" r="3.5" fill="#2a5878"/>
+
+                  <!-- Network bar junction dots — wells (sensors publish here) -->
+                  <circle cx="80"  cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
+                  <circle cx="188" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
+                  <circle cx="296" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
+                  <circle cx="404" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
+                  <circle cx="512" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
+                  <circle cx="620" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
+
+                  <!-- Equipment → Network vertical drops (dashed = data subscription) -->
+                  <line x1="177" y1="48" x2="177" y2="72" stroke="#2a5888" stroke-width="1" stroke-dasharray="3,3"/>
+                  <line x1="354" y1="56" x2="354" y2="72" stroke="#2a80c0" stroke-width="1.2" stroke-dasharray="3,3"/>
+                  <line x1="495" y1="48" x2="495" y2="72" stroke="#2a6858" stroke-width="1" stroke-dasharray="3,3"/>
+                  <line x1="644" y1="50" x2="644" y2="72" stroke="#2a5878" stroke-width="1" stroke-dasharray="3,3"/>
+
+                  <!-- Well vertical lines: network bus (y=72) → production manifold (y=156)
+                       These run continuously through the Vue node positions — wells publish up to network
+                       and fluid flows down to manifold. Vue nodes overlay these lines at y=118. -->
+                  <line x1="80"  y1="72" x2="80"  y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
+                  <line x1="188" y1="72" x2="188" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
+                  <line x1="296" y1="72" x2="296" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
+                  <line x1="404" y1="72" x2="404" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
+                  <line x1="512" y1="72" x2="512" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
+                  <line x1="620" y1="72" x2="620" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
+
+                  <!-- ── Production manifold (bottom) ── -->
+                  <line x1="58" y1="156" x2="634" y2="156" stroke="#2a4a6a" stroke-width="3.5" stroke-linecap="round"/>
+                  <polygon points="634,153 642,156 634,159" fill="#2a4a6a"/>
+                  <text x="548" y="150" font-family="monospace" font-size="5" fill="#2a4868">→ SEPARATOR</text>
+                  <text x="180" y="150" font-family="monospace" font-size="5" fill="#2a4060">PRODUCTION HEADER</text>
+
+                  <!-- Wellbore stubs (below manifold) -->
+                  <line x1="80"  y1="158" x2="80"  y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
+                  <line x1="188" y1="158" x2="188" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
+                  <line x1="296" y1="158" x2="296" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
+                  <line x1="404" y1="158" x2="404" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
+                  <line x1="512" y1="158" x2="512" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
+                  <line x1="620" y1="158" x2="620" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
+
                   <!-- Legend -->
-                  <line x1="626" y1="128" x2="644" y2="128" stroke="rgba(30,100,200,0.4)" stroke-width="1" stroke-dasharray="3,3"/>
-                  <text x="648" y="131" font-family="monospace" font-size="5.5" fill="#1e3852">Data</text>
-                  <line x1="626" y1="142" x2="644" y2="142" stroke="rgba(80,64,20,0.5)" stroke-width="1" stroke-dasharray="3,3"/>
-                  <text x="648" y="145" font-family="monospace" font-size="5.5" fill="#1e3852">Power</text>
-                  <line x1="626" y1="156" x2="644" y2="156" stroke="#1a2c42" stroke-width="2"/>
-                  <text x="648" y="159" font-family="monospace" font-size="5.5" fill="#1e3852">Flow</text>
-                  <text x="626" y="175" font-family="monospace" font-size="4.8" fill="#142030">Pad Alpha · 2D Schematic · V1</text>
+                  <line x1="14" y1="179" x2="32" y2="179" stroke="#2a4a6a" stroke-width="2.5"/>
+                  <text x="36" y="182" font-family="monospace" font-size="5" fill="#2a4868">Flow</text>
+                  <line x1="68" y1="179" x2="86" y2="179" stroke="#1e3a5e" stroke-width="1.2"/>
+                  <circle cx="77" cy="179" r="2" fill="#1e3858" stroke="#2a5888" stroke-width="0.7"/>
+                  <text x="90" y="182" font-family="monospace" font-size="5" fill="#2a4868">Data / Network</text>
+                  <line x1="170" y1="179" x2="188" y2="179" stroke="#2a80c0" stroke-width="1" stroke-dasharray="3,3"/>
+                  <text x="192" y="182" font-family="monospace" font-size="5" fill="#2a4868">Subscription</text>
+                  <text x="600" y="182" font-family="monospace" font-size="4.5" fill="#1a3050">Pad Alpha · GDC Digital Twin</text>
                 </svg>
-              </div>
-
-              <!-- ── Variation 2: API-Rendered Map from /api/pad-mockup ── -->
-              <div v-else-if="padMockupVar===2" class="pad-png-wrap">
-                <img src="/api/pad-mockup" alt="Pad Alpha Site Map" style="width:100%;display:block;border-radius:5px;" @load="padPngLoaded=true" @error="padPngErr=true"/>
-                <div v-if="!padPngLoaded && !padPngErr" class="pad-png-loading">
-                  <span style="font-size:22px;opacity:0.25">🗺</span>
-                  <span>Rendering pad layout from API…</span>
-                  <span style="font-size:0.54rem;font-family:var(--mono);color:rgba(30,100,200,0.5)">/api/pad-mockup</span>
-                </div>
-                <div v-if="padPngErr" class="pad-png-loading">
-                  <span style="font-size:14px;opacity:0.4">⚠</span>
-                  <span style="font-size:0.62rem">Mockup endpoint unavailable — restart deployment</span>
-                </div>
-                <span v-if="padPngLoaded" class="pad-png-badge">⚡ /api/pad-mockup · SVG</span>
-              </div>
-
-              <!-- ── Variation 3: CSS Grid Spatial Layout with Live Asset Nodes ── -->
-              <div v-else-if="padMockupVar===3" class="pad-grid-v3">
-                <div class="pad-infra-row">
-                  <div class="infra-node">
-                    <div class="infra-icon-box infra-box-gen"><span class="infra-icon-txt">⚡</span></div>
-                    <span class="infra-lbl">Generator</span>
-                    <span class="infra-sub">500 kVA</span>
-                  </div>
-                  <div class="infra-spacer"></div>
-                  <div class="infra-node">
-                    <div class="infra-icon-box infra-box-gdc">
-                      <div class="gdc-live-dot"></div>
-                      <span class="infra-icon-txt" style="font-size:12px">⚡</span>
-                      <span style="font-size:0.42rem;font-weight:700;color:var(--blue);font-family:var(--mono);letter-spacing:0.04em;line-height:1.2">GDC</span>
-                    </div>
-                    <span class="infra-lbl">GDC Edge AI</span>
-                    <span class="infra-sub">XGBoost·Gemma4</span>
-                  </div>
-                  <div class="infra-spacer"></div>
-                  <div class="infra-node">
-                    <div class="infra-icon-box infra-box-scada"><span class="infra-icon-txt">🛢</span></div>
-                    <span class="infra-lbl">SCADA RTU</span>
-                    <span class="infra-sub">Threshold only</span>
-                  </div>
-                  <div class="infra-spacer"></div>
-                  <div class="infra-node">
-                    <div class="infra-icon-box infra-box-starlink"><span class="infra-icon-txt">📡</span></div>
-                    <span class="infra-lbl">Starlink</span>
-                    <span class="infra-sub">WAN uplink</span>
-                  </div>
-                </div>
-                <!-- Interactive ESP asset nodes — same Vue nodes as V1/V2 but arranged in spatial grid row -->
-                <div class="v3-wells-row">
-                  <div v-for="assetId in SITES.pad_alpha.assets" :key="assetId"
+                <!-- ── Interactive Vue ESP nodes overlaid at well positions within the diagram ──
+                     Well SVG centers: x=[80,188,296,404,512,620]/760, y=118/185
+                     padWellStyle(idx) returns absolute positioning for each node.           ── -->
+                <div class="pad-well-overlay">
+                  <div v-for="(assetId, idx) in SITES.pad_alpha.assets" :key="assetId"
                        class="asset-node esp-node"
                        :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
+                       :style="padWellStyle(idx)"
                        @contextmenu.prevent="showAssetContextMenu($event, assetId)"
                        @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
                        :title="'Right-click to inspect ' + assetId">
@@ -712,22 +658,8 @@
                     <div v-if="isAssetActive(assetId)" class="node-pulse-ring" :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
                   </div>
                 </div>
-                <span class="v3-zone-label">PAD ALPHA · DIGITAL TWIN · V3</span>
-              </div>
-
-              <!-- Standard interactive asset nodes for V1 and V2 (schematic is decorative above) -->
-              <div v-if="padMockupVar !== 3" class="asset-nodes">
-                <div v-for="assetId in SITES.pad_alpha.assets" :key="assetId"
-                     class="asset-node esp-node"
-                     :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
-                     @contextmenu.prevent="showAssetContextMenu($event, assetId)"
-                     @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
-                     :title="'Right-click to inspect ' + assetId">
-                  <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                  <div v-if="isAssetActive(assetId)" class="node-pulse-ring" :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
-                </div>
-              </div>
-            </div>
+              </div><!-- end pad-svg-bg -->
+            </div><!-- end site-zone -->
 
             <!-- Canvas Legend — updated for distinct per-type shapes -->
             <div class="canvas-legend">
@@ -1478,10 +1410,7 @@ createApp({
       compareRowHeight: (() => {
         try { const v = sessionStorage.getItem('gdc_compareRowHeight'); return v ? parseInt(v, 10) : 520; } catch { return 520; }
       })(),   // Session 10: resizable via drag handle — push bottom panels down (default 520px)
-      // Sprint 4: Pad Alpha Digital Twin Mockup state
-      padMockupVar: 1,       // 1 = SVG schematic, 2 = API-rendered, 3 = CSS Grid
-      padPngLoaded: false,   // true when V2 img fires @load
-      padPngErr: false,      // true when V2 img fires @error
+      // Sprint 4: Pad Alpha Digital Twin — no runtime state needed (integrated V1 only)
     };
   },
 
@@ -2099,6 +2028,14 @@ createApp({
       if (value < greenThreshold) return 'zm-green';
       if (value < orangeThreshold) return 'zm-orange';
       return 'zm-red';
+    },
+    // ── Sprint 4: Pad Alpha Digital Twin — well node absolute positioning ──────
+    // Maps each well index (0–5) to CSS absolute-position within .pad-svg-bg.
+    // SVG well centers: x=[80,188,296,404,512,620]/760, y=118/185
+    // translate(-50%,-50%) centres the 62×62px node on the exact SVG coordinate.
+    padWellStyle(idx) {
+      const XS = [10.53, 24.74, 38.95, 53.16, 67.37, 81.58]; // x%
+      return { left: XS[idx] + '%', top: '63.78%', transform: 'translate(-50%,-50%)' };
     },
     // ── Column resizers for bottom panels (Evidence / Agent / Resolution) ──
     initColResizers() {
