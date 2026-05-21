@@ -1,4 +1,4 @@
-# Next Session Prompt — ESP v2 Redesign (Sprint 5 v2: Digital Twin Refinement Continued)
+# Next Session Prompt — ESP v2 Redesign (Sprint 5 v1 Complete: Begin Sprint 5 v2)
 
 ## Header
 **Date:** May 21, 2026
@@ -7,86 +7,132 @@
 **Cluster:** gdc-edge-simulation
 **Namespace:** gdc-pm
 **Current Image Tag:** latest (Sprint 5 v1, commit c8c0b54)
-✅ Working tree clean.
+✅ Working tree clean. Two commits this session: `c8c0b54` (UI) and `a29dfb7` (docs).
+
+---
 
 ## What Was Done This Session
 
-### Sprint 5 v1 (committed `c8c0b54`)
-**Replaced the SVG + HTML overlay Digital Twin diagram with a pure CSS Flexbox layout.**
+### Sprint 5 v1 — CSS Flexbox Digital Twin + Label Updates (committed `c8c0b54`)
 
-Key architectural changes:
+#### 1. Digital Twin Diagram — Replaced SVG Overlay with CSS Flexbox
 
-1. **Landing Page Digital Twin — CSS Flexbox (replaces SVG overlay)**
-   - The old `<div class="pad-svg-bg">` SVG + `.pad-well-overlay` absolute positioning approach has been **fully removed**.
-   - Replaced with a `.twin-diagram` container using a tiered Flexbox layout:
-     - **Tier 1 (Top Row)**: External Left (Generator + A/C) | Site Structure (Broker + GDC AI + SCADA + Network Bar) | External Right (Starlink)
-     - The "site structure" has a **dashed light-grey border** (`#5a6a7a`) indicating the wellsite equipment boundary
-     - Generator, A/C, and Starlink sit **outside** the structure boundary (by design — not connected to the data network)
-     - Edge Broker, GDC Edge AI, and SCADA RTU sit **inside** the structure
-     - A shared **Network Segment Bar** at the bottom of the structure represents the Pub/Sub data bus
-     - **Tier 2**: Network lines (blue/grey) from network bar down to wells — uses `v-for="n in 6"` loops
-     - **Tier 3**: 6 ESP well nodes — **larger (72×72px), fully opaque** with **A-1 through A-6 labels** below
-     - **Tier 4**: Google Blue (`#8ab4f8`) gas/fluid lines from wells down to pipeline
-     - **Tier 5**: Production manifold pipeline with separator arrow
-   - Includes a legend strip with clear color coding
-   - The currently selected asset (after Deep Dive navigation) gets a `selected` highlight class
-   - All right-click (fault injection) and left-click (deep dive) interactions preserved
+**Why changed:** The SVG + absolute-positioned `.pad-well-overlay` approach (Sprint 4) had lines running visually through the opaque well nodes, fragile percentage-based positioning that broke on resize, and labels that could be obscured.
 
-2. **Deep Dive Header — RUL Terminology Updated**
-   - "Base RUL" → **"Initial RUL"** (time_to_scada_minutes badge)
-   - "Adjusted RUL (AI Fusion)" → **"AI Informed RUL"** (adjusted_rul_minutes badge)
+**What replaced it:** A `.twin-diagram` container with a 5-tier CSS Flexbox layout. All relevant CSS uses the `.twin-*` prefix.
 
-3. **Evidence Panel — RAG Context Label Updated**
-   - "Live Intelligence Feed" renamed to **"📄 RAG Context Documents"**
-   - This accurately describes what these items are: dynamically generated enterprise documents (lab reports, shift notes, PM records, VFD logs) that are inserted into ChromaDB and used as RAG context for the Gemma4 LLM and for the `adjust_rul_with_documents()` multiplier
-   - The "All ▾" drill-down modal still works; modal title still reads "All Intelligence Feed Items"
+**Layout structure (top to bottom):**
+
+```
+[GENERATOR] [A/C]  |  [BROKER] [GDC AI] [SCADA]  |  [STARLINK]
+                   |   ─────── NETWORK BAR ──────  |
+                   ↓ (network lines, blue)           ↓
+         [A-1] [A-2] [A-3] [A-4] [A-5] [A-6]    ← 72×72px opaque ESP nodes
+                ↓ (gas lines, Google Blue #8ab4f8)
+         ════════════ PRODUCTION HEADER ═══════→ SEPARATOR
+         [Legend: Network/Data | Gas/Fluid | Nominal | Degrading | Critical]
+```
+
+**Key CSS classes (all in `index.html` `<style>` block):**
+- `.twin-diagram` — outer container, dark bg, subtle border
+- `.twin-top-row` — flex row aligning external assets + structure + starlink
+- `.twin-external-left` — Generator + A/C column (outside structure)
+- `.twin-external-right` — Starlink column (outside structure)
+- `.twin-structure` — dashed `#5a6a7a` border; contains broker/GDC/SCADA + network bar
+- `.twin-equip-row` — horizontal flex of equipment boxes inside structure
+- `.twin-equip-box` + `.twin-equip-broker` / `.twin-equip-gdc` / `.twin-equip-scada` / `.twin-equip-ext` / `.twin-equip-ac` — styled equipment tiles
+- `.twin-network-bar` — 6px horizontal blue bar at bottom of structure
+- `.twin-network-label` — "SHARED EDGE NETWORK — Pub/Sub Data Bus" label
+- `.twin-network-lines-row` — flex row with spacers + `.twin-net-lines` (6 vertical network line segments)
+- `.twin-net-line` / `.twin-net-line-seg` / `.twin-net-junction` — individual vertical network lines
+- `.twin-wells-row` — flex row of 6 `.twin-well-col` containers
+- `.twin-well-col` — contains `.asset-node.esp-node` + `.twin-well-label` ("A-1" through "A-6")
+- `.twin-wells-row .asset-node` — overrides size to 72×72px with `!important`
+- `.twin-wells-row .health-green/amber/red` — opaque health colour fills (use `!important` to override global semi-transparent version)
+- `.twin-gas-lines-row` — flex row of 6 `.twin-gas-line` with Google Blue gas junction dots + line segments
+- `.twin-pipeline-row` — horizontal pipeline bar + arrow
+- `.twin-pipeline-labels` — "PRODUCTION HEADER" and "→ SEPARATOR" labels
+- `.twin-legend` — bottom legend strip
+- `.gdc-led` / `.gdc-led2` — animated LED indicators on GDC AI box
+
+**Vue interaction wiring (in `.twin-wells-row`):**
+- `v-for="(assetId, idx) in SITES.pad_alpha.assets"` iterates 6 wells
+- `@contextmenu.prevent="showAssetContextMenu($event, assetId)"` — right-click fault injection
+- `@click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"` — left-click deep dive
+- `:class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"` — live health + selection highlight
+- `padWellStyle(idx)` method still exists in JS but is **not used** — can be cleaned up in a future session
+
+**Network line spacers:** `twin-line-spacer-left` is `width:80px` and `twin-line-spacer-right` is `width:56px`. These are approximations — may need visual tuning after live testing to align lines with wells.
+
+#### 2. Deep Dive Header — RUL Labels Updated
+
+| Old Label | New Label | Data source |
+|-----------|-----------|-------------|
+| Base RUL | **Initial RUL** | `degStatus.time_to_scada_minutes` |
+| Adjusted RUL (AI Fusion) | **AI Informed RUL** | `degStatus.adjusted_rul_minutes` |
+
+Both appear as pill badges in the `.dd-header` when a fault is active.
+
+#### 3. Evidence Panel — Label Updated
+
+| Old | New |
+|-----|-----|
+| "Live Intelligence Feed" | "📄 RAG Context Documents" |
+
+The section header in Column 1 of the Deep Dive now reads "📄 RAG Context Documents". The section shows the dynamically generated enterprise documents (lab reports, shift notes, PM records, VFD logs) that `generate_dynamic_documents()` in `app.py` creates and pushes to ChromaDB. These documents directly feed the Gemma4 LLM prompt AND the `adjust_rul_with_documents()` regex-based multiplier that produces the "AI Informed RUL".
+
+**Not yet updated** (open item for Sprint 5 v2):
+- The "All ▾" drill-down modal title still reads "All Intelligence Feed Items" → should be "All RAG Context Documents"
+- The loading placeholder reads "Ingesting unstructured data sources…" → can stay as-is
+
+---
 
 ## Current Cluster State
-- `alloydb-omni` (1/1): Running stable.
-- `event-processor` (1/1): Running.
-- `fault-trigger-ui` (1/1): Running — Sprint 5 v1 flexbox twin. HTTP 200 ✅
-- `inference-api` (1/1): Running.
-- `grafana` (1/1): Running.
-- `telemetry-simulator` (1/1): Running.
-- `ollama` (0/1): Pending GPU node provisioning (Autopilot scaling).
 
-## Design Decisions Made This Session (Source of Truth)
+| Pod | Status |
+|-----|--------|
+| `alloydb-omni` | ✅ 1/1 Running |
+| `event-processor` | ✅ 1/1 Running |
+| `fault-trigger-ui` | ✅ 1/1 Running (Sprint 5 v1, HTTP 200) |
+| `inference-api` | ✅ 1/1 Running |
+| `grafana` | ✅ 1/1 Running |
+| `telemetry-simulator` | ✅ 1/1 Running |
+| `ollama` | ⏳ 0/1 Pending (awaiting L4 GPU node from GKE Autopilot) |
 
-### Digital Twin Architecture
-- **DO use pure CSS Flexbox**, NOT SVG + HTML overlay. The overlay approach had line-through and alignment issues.
-- The `.twin-diagram` class and all `.twin-*` CSS classes are the canonical implementation.
-- The tiered structure (top-row → network-lines → wells → gas-lines → pipeline) is the agreed layout.
-- Wells are **always at the bottom**, **large (72×72px)**, **fully opaque** with individual health colour fills.
-- **No Activity Stream on the landing page** — this was explicitly agreed and removed from scope.
+---
 
-### Terminology
-- **"Initial RUL"** = `time_to_scada_minutes` (the base XGBoost RUL before document fusion)
-- **"AI Informed RUL"** = `adjusted_rul_minutes` (after `adjust_rul_with_documents()` multiplier applied)
-- **"RAG Context Documents"** = the dynamically generated enterprise documents (lab reports, shift notes, PM records, VFD logs) that feed ChromaDB and inform both the LLM and the RUL adjustment
+## Immutable Design Decisions (Do Not Reverse)
 
-### Data Flow Architecture (Immutable Demo Talking Point)
-- GDC Edge AI does **NOT** receive data from SCADA
-- Both GDC Edge AI and SCADA RTU **independently subscribe** to the same Pub/Sub topics on the Edge Broker (RabbitMQ/MQTT)
-- This is why GDC catches sub-threshold faults SCADA misses — it reads the raw sensor stream, not a filtered SCADA feed
+1. **No Activity Stream on the landing page.** The right-side activity stream was removed from scope. Do not add it back.
+2. **CSS Flexbox only for the Digital Twin.** SVG + HTML overlay must never return. If the diagram needs changes, edit the `.twin-*` CSS classes and the HTML tiers in `.twin-diagram`.
+3. **Terminology:** "Initial RUL" / "AI Informed RUL" / "RAG Context Documents" — these are agreed labels.
+4. **GDC data flow:** GDC Edge AI and SCADA RTU both independently subscribe to the Edge Broker Pub/Sub. GDC is NOT downstream of SCADA. This is a critical demo talking point encoded in the diagram.
 
-## Outstanding Development Items (To-Do)
+---
 
-**High Priority — Sprint 5 Continued**
+## Outstanding Development Items — Sprint 5 v2
 
-1. **Digital Twin Layout Refinement** (visual alignment, spacing still needs review):
-   - The network lines (Tier 2) spacers (`width:80px` left, `width:56px` right) may need tuning if the external left/right panels change width
-   - The network lines should line up approximately with the wells below them
-   - May want to add subtle visual connection from equipment boxes (Broker, GDC, SCADA) down to the network bar
-   - Consider adding a very subtle horizontal line from each equipment box to the network bar to show the "subscription" relationship (currently implied by the shared bus)
+### Must-Do (visual quality)
+1. **Live visual test of the Flexbox diagram** — load http://gdc-pm.bdau.io and verify:
+   - Network lines (Tier 2) align approximately above the wells (Tier 3)
+   - Wells are opaque and labels (A-1 through A-6) are clearly visible
+   - Gas lines (Google Blue) drop cleanly from wells to pipeline
+   - No labels are obscured
+   - Right-click context menu on wells still works
+   - Left-click opens Deep Dive
+   - Fault injection changes well node colour (amber → red)
+   - Active fault shows pulse ring on the well
 
-2. **RAG Context Documents — improve drill-down modal title** (minor):
-   - The "All Intelligence Feed Items" modal title should be updated to "All RAG Context Documents"
-   - The "Ingesting unstructured data sources…" placeholder text is fine as-is
+2. **Fix spacer widths if alignment is off** — edit `.twin-network-lines-row` spacer `style="width:80px"` and `style="width:56px"` values to tune alignment with wells.
 
-3. **Ollama / Gemma4 GPU node**: `ollama` pod still pending L4 GPU provisioning.
+3. **Update drill-down modal title** — change "All Intelligence Feed Items" → "All RAG Context Documents" in the `#feed-modal` template.
 
-4. **Health state binding to well colours** (✅ already implemented via `getAssetHealthClass()`):
-   - Green/Amber/Red health states are correctly applied to well nodes via `.twin-wells-row .health-*` CSS
+### Nice-to-Have
+4. **Equipment→Network subscription lines** — currently the link between each equipment box and the network bar is implied by the shared bar. Could add a subtle dashed `border-left` stub from each equipment box down to the network bar for visual clarity.
+
+5. **Ollama GPU node** — pending GKE Autopilot L4 provisioning. No action needed, monitor with `kubectl get pod ollama-0 -n gdc-pm -w`.
+
+---
 
 ## Constraints
 - `terraform/gke.tf` must NOT be applied.
@@ -95,7 +141,9 @@ Key architectural changes:
 - `/api/*` endpoints must remain backward-compatible.
 - Do NOT commit to `main`.
 - O&G scenarios and physics must remain authentic.
-- **Note: The SSH remote does not have a browser** — `browser_action` tool should not be used.
+- **No browser on the SSH remote** — `browser_action` tool must NOT be used.
+
+---
 
 ## Rebuild & Deploy Commands
 ```bash
@@ -105,10 +153,10 @@ docker push ${REGISTRY}/fault-trigger-ui:latest
 kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 ```
 
-## Key Lessons Learned
-- SVG inline + absolute HTML overlay (the Sprint 4 approach) is NOT suitable for resizable interactive diagrams.
-- **Pure CSS Flexbox tiered layout** (`twin-*` classes) is the correct solution. It scales naturally with the browser window and never has line-through issues.
-- For the well nodes: `background` on `.twin-wells-row .health-green` etc. must use `!important` to override the global `.health-green` which only has a semi-transparent background.
-- **GDC data flow architecture**: GDC does NOT receive data from SCADA — both independently subscribe to the same edge Pub/Sub bus (RabbitMQ). Critical demo talking point.
-- The `adjust_rul_with_documents()` function in `app.py` uses regex to extract variables from dynamically generated documents and applies RUL multipliers. The UI now correctly labels this as "AI Informed RUL".
-- RAG context documents are generated by `generate_dynamic_documents()` and pushed to ChromaDB. The UI's "📄 RAG Context Documents" section surfaces these for demo transparency.
+---
+
+## Key Lessons Learned This Session
+- SVG + absolute-positioned HTML overlay fails at resize — CSS Flexbox is the right approach.
+- `.health-green/amber/red` global rules are semi-transparent. The `.twin-wells-row` scoped overrides use `!important` to force opaque fills on well nodes.
+- The `padWellStyle(idx)` method in Vue JS is now dead code (kept for safety but no longer called). Can be removed in a future cleanup commit.
+- Rigorous `NEXT_SESSION_PROMPT.md` documentation prevents context loss between sessions — include CSS class names, Vue wiring details, and exact data field names alongside design intent.
