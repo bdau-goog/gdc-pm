@@ -401,14 +401,90 @@
     .feed-modal-relevance{margin-top:10px;padding:8px 10px;border-radius:5px;font-size:0.68rem;background:rgba(30,144,255,0.06);border:1px solid rgba(30,144,255,0.2);color:var(--blue)}
     .modal-close-btn{margin-top:12px;padding:7px 14px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);color:var(--text2);cursor:pointer;font-size:0.72rem}
 
-    /* ══ Sprint 4 — Pad Alpha Digital Twin (V1 Integrated Interactive) ══ */
-    /* SVG schematic container — position:relative so Vue well nodes can overlay it */
-    .pad-svg-bg{position:relative;width:100%;margin-bottom:10px;border-radius:6px;overflow:visible;border:1px solid rgba(42,70,100,0.6);background:rgba(8,14,22,0.6)}
-    /* Overlay div that holds the interactive Vue ESP nodes at exact well positions */
-    .pad-well-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible}
-    .pad-well-overlay .asset-node{pointer-events:all;position:absolute;width:62px;height:62px}
-    .pad-well-overlay .node-label{font-size:0.56rem}
-    .pad-well-overlay .node-pulse-ring{inset:-6px}
+    /* ══ Sprint 5 — Pad Alpha Digital Twin: Pure CSS Flexbox Layout ══ */
+    /* Top-level diagram container — stacks all tiers vertically */
+    .twin-diagram{width:100%;margin-bottom:6px;border-radius:6px;background:rgba(8,14,22,0.6);border:1px solid rgba(42,70,100,0.5);padding:10px 12px;box-sizing:border-box}
+
+    /* ── Tier 1: Top row — external-left | structure | external-right ── */
+    .twin-top-row{display:flex;align-items:flex-end;gap:0;width:100%}
+
+    /* External assets (Generator, A/C) sit left of the structure */
+    .twin-external-left{display:flex;flex-direction:column;gap:6px;padding-right:10px;flex-shrink:0;align-self:flex-end;padding-bottom:4px}
+    /* Starlink sits right of the structure */
+    .twin-external-right{display:flex;flex-direction:column;align-items:center;padding-left:10px;flex-shrink:0;align-self:flex-end;padding-bottom:4px}
+
+    /* The main "site structure" — dashed light grey border enclosing broker, GDC, SCADA + network segment */
+    .twin-structure{flex:1;min-width:0;border:1.5px dashed #5a6a7a;border-radius:8px;padding:8px 10px 0 10px;display:flex;flex-direction:column;gap:0}
+
+    /* Equipment row inside the structure */
+    .twin-equip-row{display:flex;align-items:center;gap:8px;justify-content:space-around;padding-bottom:6px}
+
+    /* Individual equipment boxes inside the structure */
+    .twin-equip-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 8px;border-radius:5px;font-family:var(--mono);text-align:center;flex-shrink:0}
+    .twin-equip-label{font-size:0.58rem;font-weight:700;letter-spacing:0.05em;white-space:nowrap}
+    .twin-equip-sub{font-size:0.5rem;margin-top:2px;white-space:nowrap}
+    .twin-equip-broker{background:#0e1828;border:1.2px solid #2a5888;color:#4a88a8}
+    .twin-equip-gdc{background:#06102e;border:1.8px solid #2a80c0;color:#4ab8e0;box-shadow:0 0 8px rgba(42,128,192,0.2)}
+    .twin-equip-scada{background:#0e1e1a;border:1.2px solid #2a6858;color:#4a9070}
+    .twin-equip-ext{background:#0e1c14;border:1.2px solid #2a5040;color:#4a8060}
+    .twin-equip-ac{background:#0e1a24;border:1.2px solid #2a3858;color:#3a5878;font-size:0.58rem}
+
+    /* Starlink icon */
+    .twin-starlink{display:flex;flex-direction:column;align-items:center;gap:2px;color:#2a5870}
+    .twin-starlink-dish{width:36px;height:22px;border:1.4px solid #2a5878;border-radius:50% 50% 0 0;position:relative}
+    .twin-starlink-mast{width:2px;height:10px;background:#1a3858;margin:0 auto}
+    .twin-starlink-base{width:18px;height:2px;background:#1a3858;margin:0 auto}
+
+    /* Shared network segment bar at the BOTTOM INSIDE of the structure — all equipmnt connects here */
+    .twin-network-bar{height:6px;background:rgba(30,90,160,0.5);border-radius:2px;margin:4px 0 0 0;border:1px solid rgba(42,128,192,0.4);position:relative}
+    .twin-network-label{font-family:var(--mono);font-size:0.45rem;color:#2a5070;text-align:center;padding:2px 0 6px;letter-spacing:0.04em}
+
+    /* ── Tier 2: Vertical lines from network segment down to wells (network color) ── */
+    .twin-network-lines-row{display:flex;align-items:flex-start;padding:0 0 0 0;width:100%;box-sizing:border-box}
+    /* Spacer to align lines with structure interior — matches external-left padding + structure left padding + distribution */
+    .twin-line-spacer-left{flex-shrink:0}
+    .twin-line-spacer-right{flex-shrink:0}
+    .twin-net-lines{flex:1;display:flex;justify-content:space-around}
+    .twin-net-line{display:flex;flex-direction:column;align-items:center}
+    .twin-net-line-seg{width:2px;height:20px;background:rgba(42,100,180,0.5);border-radius:1px}
+    .twin-net-junction{width:6px;height:6px;border-radius:50%;background:#2a6090;border:1px solid #3a88c0;flex-shrink:0}
+
+    /* ── Tier 3: Wells row ── */
+    .twin-wells-row{display:flex;justify-content:space-around;padding:0}
+    .twin-well-col{display:flex;flex-direction:column;align-items:center;gap:0}
+    .twin-well-label{font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:4px;font-weight:700;user-select:none}
+
+    /* Override asset-node size for digital twin wells — larger and opaque */
+    .twin-wells-row .asset-node{width:72px;height:72px;background:var(--bg)!important}
+    .twin-wells-row .health-green{background:#05120a!important;border-color:rgba(0,230,118,0.55)!important}
+    .twin-wells-row .health-amber{background:#141008!important;border-color:rgba(255,179,0,0.65)!important}
+    .twin-wells-row .health-red{background:#160508!important;border-color:rgba(244,67,54,0.7)!important}
+    .twin-wells-row .asset-node.selected{background:rgba(30,60,120,0.7)!important;border-color:var(--blue)!important}
+    .twin-wells-row .node-label{font-size:0.6rem}
+    .twin-wells-row .node-pulse-ring{inset:-8px}
+
+    /* ── Tier 4: Gas lines (Google Blue) from bottom of wells to pipeline ── */
+    .twin-gas-lines-row{display:flex;justify-content:space-around;padding:0}
+    .twin-gas-line{display:flex;flex-direction:column;align-items:center}
+    .twin-gas-line-seg{width:2px;height:18px;background:rgba(138,180,248,0.65);border-radius:1px}
+    .twin-gas-junction{width:6px;height:6px;border-radius:50%;background:#8ab4f8;flex-shrink:0;box-shadow:0 0 3px rgba(138,180,248,0.5)}
+
+    /* ── Tier 5: Production manifold pipeline ── */
+    .twin-pipeline-row{display:flex;align-items:center;padding:0 0 4px 0}
+    .twin-pipeline-spacer{flex-shrink:0}
+    .twin-pipeline-line{flex:1;height:5px;background:linear-gradient(90deg,#2a4a6a,#1e3a5e);border-radius:2px;position:relative}
+    .twin-pipeline-arrow{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:10px solid #2a4a6a;flex-shrink:0}
+    .twin-pipeline-labels{display:flex;justify-content:space-between;padding:0;font-family:var(--mono);font-size:0.43rem;color:#2a4060;padding-bottom:4px}
+
+    /* Legend strip */
+    .twin-legend{display:flex;align-items:center;gap:12px;padding:4px 2px 0;flex-wrap:wrap;border-top:1px solid rgba(42,70,100,0.3);margin-top:2px}
+    .twin-leg-item{display:flex;align-items:center;gap:5px;font-size:0.55rem;color:var(--muted)}
+    .twin-leg-line{height:2px;width:16px;border-radius:1px;flex-shrink:0}
+    .twin-leg-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+    /* GDC LED blink */
+    .gdc-led{width:6px;height:6px;border-radius:50%;background:#00e676;display:inline-block;margin-right:3px;box-shadow:0 0 4px #00e676;animation:blink 2.2s ease-in-out infinite}
+    .gdc-led2{width:6px;height:6px;border-radius:50%;background:#1e90ff;display:inline-block;margin-right:3px}
   </style>
 </head>
 <body>
@@ -534,131 +610,137 @@
                   <div class="zm-lbl">GOR</div>
                 </div>
               </div>
-              <!-- ══ Sprint 4: Pad Alpha Digital Twin — Integrated Interactive Diagram ══
-                   Layout: Infrastructure (top) → Shared Network Bus → Wells (middle, live Vue nodes)
-                           → Production Manifold (bottom)
-                   Data flow: All field assets publish to Edge Broker. GDC Edge AI and SCADA RTU
-                   both SUBSCRIBE to the same Pub/Sub topics — GDC is not downstream of SCADA.    ══ -->
-              <div class="pad-svg-bg">
-                <!-- ── Redesigned SVG: equipment top → shared network bus → wells (Vue overlaid)
-                                        → production manifold bottom                               ── -->
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 185" style="width:100%;display:block;">
-                  <!-- Pad bounding box -->
-                  <rect x="5" y="5" width="750" height="175" rx="7" fill="none" stroke="#2a4060" stroke-width="1" stroke-dasharray="6,4"/>
+              <!-- ══ Sprint 5: Pad Alpha Digital Twin — Pure CSS Flexbox Layout ══
+                   Architecture: External assets flank the dashed "structure" enclosure.
+                   Inside: Edge Broker, GDC Edge AI, SCADA RTU connected to shared network segment.
+                   Outside: Generator, A/C (left), Starlink (right).
+                   Wells sit below the structure with network lines above and gas lines below.
+                   GDC and SCADA independently subscribe to the same Pub/Sub bus.             ══ -->
+              <div class="twin-diagram">
 
-                  <!-- ── Equipment row (top) ── -->
+                <!-- Tier 1: Top row — external-left | structure | external-right -->
+                <div class="twin-top-row">
 
-                  <!-- GEN — present on pad, no data connection -->
-                  <rect x="14" y="12" width="62" height="36" rx="4" fill="#0e1c14" stroke="#2a5040" stroke-width="1.2"/>
-                  <text x="45" y="26" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#4a8060" font-weight="bold">GENERATOR</text>
-                  <text x="45" y="40" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4030">500 kVA</text>
+                  <!-- External left: Generator + A/C (not connected to network) -->
+                  <div class="twin-external-left">
+                    <div class="twin-equip-box twin-equip-ext">
+                      <span class="twin-equip-label">GENERATOR</span>
+                      <span class="twin-equip-sub" style="color:#2a4030">500 kVA</span>
+                    </div>
+                    <div class="twin-equip-box twin-equip-ac">
+                      <span class="twin-equip-label">A/C UNIT</span>
+                    </div>
+                  </div>
 
-                  <!-- A/C UNIT — present on pad, no data connection -->
-                  <rect x="84" y="17" width="44" height="26" rx="3" fill="#0e1a24" stroke="#2a3858" stroke-width="1"/>
-                  <text x="106" y="28" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#3a5878" font-weight="bold">A/C</text>
-                  <text x="106" y="38" text-anchor="middle" font-family="monospace" font-size="4.5" fill="#2a3858">UNIT</text>
+                  <!-- The site structure boundary (dashed light-grey border) -->
+                  <div class="twin-structure">
+                    <!-- Equipment row: Broker, GDC, SCADA — all independently subscribe to bus -->
+                    <div class="twin-equip-row">
+                      <div class="twin-equip-box twin-equip-broker">
+                        <span class="twin-equip-label">EDGE BROKER</span>
+                        <span class="twin-equip-sub">RabbitMQ / MQTT</span>
+                      </div>
+                      <div class="twin-equip-box twin-equip-gdc">
+                        <span style="display:flex;align-items:center;justify-content:center">
+                          <span class="gdc-led"></span><span class="gdc-led2"></span>
+                        </span>
+                        <span class="twin-equip-label" style="color:#4ab8e0">GDC EDGE AI</span>
+                        <span class="twin-equip-sub" style="color:#2a80a8">XGBoost · Gemma4 · RAG</span>
+                      </div>
+                      <div class="twin-equip-box twin-equip-scada">
+                        <span class="twin-equip-label">SCADA RTU</span>
+                        <span class="twin-equip-sub" style="color:#2a4840">Threshold Only</span>
+                      </div>
+                    </div>
+                    <!-- Shared network segment bar at bottom of structure -->
+                    <div class="twin-network-bar"></div>
+                    <div class="twin-network-label">SHARED EDGE NETWORK — Pub/Sub Data Bus</div>
+                  </div>
 
-                  <!-- EDGE BROKER — subscribes and publishes Pub/Sub topics -->
-                  <rect x="138" y="12" width="78" height="36" rx="4" fill="#0e1828" stroke="#2a5888" stroke-width="1.2"/>
-                  <text x="177" y="25" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#4a88a8" font-weight="bold">EDGE BROKER</text>
-                  <text x="177" y="38" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4868">RabbitMQ / MQTT</text>
+                  <!-- External right: Starlink (WAN uplink, outside structure) -->
+                  <div class="twin-external-right">
+                    <div class="twin-starlink">
+                      <div class="twin-starlink-dish"></div>
+                      <div class="twin-starlink-mast"></div>
+                      <div class="twin-starlink-base"></div>
+                      <span style="font-family:var(--mono);font-size:0.48rem;color:#2a5870;margin-top:2px">STARLINK</span>
+                    </div>
+                  </div>
+                </div><!-- end twin-top-row -->
 
-                  <!-- GDC EDGE AI — subscribes to same topics as SCADA, runs XGBoost inference -->
-                  <rect x="290" y="10" width="128" height="46" rx="4" fill="#06102e" stroke="#2a80c0" stroke-width="1.8"/>
-                  <rect x="290" y="10" width="128" height="5" rx="4" fill="#1a5090"/>
-                  <circle cx="301" cy="20" r="3" fill="#00e676" opacity="0.9">
-                    <animate attributeName="opacity" values="0.9;0.2;0.9" dur="2.2s" repeatCount="indefinite"/>
-                  </circle>
-                  <circle cx="311" cy="20" r="3" fill="#1e90ff" opacity="0.85"/>
-                  <text x="354" y="33" text-anchor="middle" font-family="monospace" font-size="8" fill="#4ab8e0" font-weight="bold">GDC EDGE AI</text>
-                  <text x="354" y="47" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#2a80a8">XGBoost · Gemma4 · RAG</text>
+                <!-- Tier 2: Network lines from structure down to wells -->
+                <div class="twin-network-lines-row">
+                  <div class="twin-line-spacer-left" style="width:80px"></div>
+                  <div class="twin-net-lines">
+                    <div class="twin-net-line" v-for="n in 6" :key="'nl'+n">
+                      <div class="twin-net-line-seg"></div>
+                      <div class="twin-net-junction"></div>
+                    </div>
+                  </div>
+                  <div class="twin-line-spacer-right" style="width:56px"></div>
+                </div>
 
-                  <!-- SCADA RTU — also subscribes; hard-threshold alarms only -->
-                  <rect x="458" y="12" width="74" height="36" rx="4" fill="#0e1e1a" stroke="#2a6858" stroke-width="1.2"/>
-                  <text x="495" y="25" text-anchor="middle" font-family="monospace" font-size="6.5" fill="#4a9070" font-weight="bold">SCADA RTU</text>
-                  <text x="495" y="38" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4840">Threshold Only</text>
-
-                  <!-- Starlink — WAN uplink to cloud, subscribes to edge broker events -->
-                  <ellipse cx="644" cy="22" rx="20" ry="8" fill="none" stroke="#2a5878" stroke-width="1.4" transform="rotate(-20,644,22)"/>
-                  <line x1="644" y1="30" x2="644" y2="50" stroke="#1a3858" stroke-width="1.3"/>
-                  <line x1="636" y1="50" x2="652" y2="50" stroke="#1a3858" stroke-width="1.6"/>
-                  <text x="644" y="62" text-anchor="middle" font-family="monospace" font-size="5.5" fill="#2a5870">STARLINK</text>
-
-                  <!-- ── Shared Edge Network bar ── -->
-                  <!-- All subscribing components connect to this common data bus -->
-                  <line x1="132" y1="72" x2="660" y2="72" stroke="#2a4a70" stroke-width="1.5"/>
-                  <text x="396" y="67" text-anchor="middle" font-family="monospace" font-size="5" fill="#2a4a68">SHARED EDGE NETWORK — Pub/Sub Data Bus</text>
-
-                  <!-- Network bar junction dots — equipment subscribers -->
-                  <circle cx="177" cy="72" r="3.5" fill="#2a6090"/>
-                  <circle cx="354" cy="72" r="3.5" fill="#2a80c0"/>
-                  <circle cx="495" cy="72" r="3.5" fill="#2a6858"/>
-                  <circle cx="644" cy="72" r="3.5" fill="#2a5878"/>
-
-                  <!-- Network bar junction dots — wells (sensors publish here) -->
-                  <circle cx="80"  cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
-                  <circle cx="188" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
-                  <circle cx="296" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
-                  <circle cx="404" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
-                  <circle cx="512" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
-                  <circle cx="620" cy="72" r="2.5" fill="#1e3858" stroke="#2a5888" stroke-width="0.8"/>
-
-                  <!-- Equipment → Network vertical drops (dashed = data subscription) -->
-                  <line x1="177" y1="48" x2="177" y2="72" stroke="#2a5888" stroke-width="1" stroke-dasharray="3,3"/>
-                  <line x1="354" y1="56" x2="354" y2="72" stroke="#2a80c0" stroke-width="1.2" stroke-dasharray="3,3"/>
-                  <line x1="495" y1="48" x2="495" y2="72" stroke="#2a6858" stroke-width="1" stroke-dasharray="3,3"/>
-                  <line x1="644" y1="50" x2="644" y2="72" stroke="#2a5878" stroke-width="1" stroke-dasharray="3,3"/>
-
-                  <!-- Well vertical lines: network bus (y=72) → production manifold (y=156)
-                       These run continuously through the Vue node positions — wells publish up to network
-                       and fluid flows down to manifold. Vue nodes overlay these lines at y=118. -->
-                  <line x1="80"  y1="72" x2="80"  y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
-                  <line x1="188" y1="72" x2="188" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
-                  <line x1="296" y1="72" x2="296" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
-                  <line x1="404" y1="72" x2="404" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
-                  <line x1="512" y1="72" x2="512" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
-                  <line x1="620" y1="72" x2="620" y2="156" stroke="#1e3a5e" stroke-width="1.2"/>
-
-                  <!-- ── Production manifold (bottom) ── -->
-                  <line x1="58" y1="156" x2="634" y2="156" stroke="#2a4a6a" stroke-width="3.5" stroke-linecap="round"/>
-                  <polygon points="634,153 642,156 634,159" fill="#2a4a6a"/>
-                  <text x="548" y="150" font-family="monospace" font-size="5" fill="#2a4868">→ SEPARATOR</text>
-                  <text x="180" y="150" font-family="monospace" font-size="5" fill="#2a4060">PRODUCTION HEADER</text>
-
-                  <!-- Wellbore stubs (below manifold) -->
-                  <line x1="80"  y1="158" x2="80"  y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
-                  <line x1="188" y1="158" x2="188" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
-                  <line x1="296" y1="158" x2="296" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
-                  <line x1="404" y1="158" x2="404" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
-                  <line x1="512" y1="158" x2="512" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
-                  <line x1="620" y1="158" x2="620" y2="172" stroke="#1a2848" stroke-width="1" stroke-dasharray="2,2"/>
-
-                  <!-- Legend -->
-                  <line x1="14" y1="179" x2="32" y2="179" stroke="#2a4a6a" stroke-width="2.5"/>
-                  <text x="36" y="182" font-family="monospace" font-size="5" fill="#2a4868">Flow</text>
-                  <line x1="68" y1="179" x2="86" y2="179" stroke="#1e3a5e" stroke-width="1.2"/>
-                  <circle cx="77" cy="179" r="2" fill="#1e3858" stroke="#2a5888" stroke-width="0.7"/>
-                  <text x="90" y="182" font-family="monospace" font-size="5" fill="#2a4868">Data / Network</text>
-                  <line x1="170" y1="179" x2="188" y2="179" stroke="#2a80c0" stroke-width="1" stroke-dasharray="3,3"/>
-                  <text x="192" y="182" font-family="monospace" font-size="5" fill="#2a4868">Subscription</text>
-                  <text x="600" y="182" font-family="monospace" font-size="4.5" fill="#1a3050">Pad Alpha · GDC Digital Twin</text>
-                </svg>
-                <!-- ── Interactive Vue ESP nodes overlaid at well positions within the diagram ──
-                     Well SVG centers: x=[80,188,296,404,512,620]/760, y=118/185
-                     padWellStyle(idx) returns absolute positioning for each node.           ── -->
-                <div class="pad-well-overlay">
-                  <div v-for="(assetId, idx) in SITES.pad_alpha.assets" :key="assetId"
-                       class="asset-node esp-node"
-                       :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
-                       :style="padWellStyle(idx)"
-                       @contextmenu.prevent="showAssetContextMenu($event, assetId)"
-                       @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
-                       :title="'Right-click to inspect ' + assetId">
-                    <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                    <div v-if="isAssetActive(assetId)" class="node-pulse-ring" :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
+                <!-- Tier 3: Interactive well nodes (opaque, larger, health-coloured) with labels -->
+                <div class="twin-wells-row">
+                  <div class="twin-well-col" v-for="(assetId, idx) in SITES.pad_alpha.assets" :key="assetId">
+                    <div class="asset-node esp-node"
+                         :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
+                         @contextmenu.prevent="showAssetContextMenu($event, assetId)"
+                         @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
+                         :title="'Right-click: inject fault · Left-click: deep dive'">
+                      <span class="node-label">{{ ASSET_META[assetId].label }}</span>
+                      <div v-if="isAssetActive(assetId)" class="node-pulse-ring"
+                           :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
+                    </div>
+                    <span class="twin-well-label">A-{{ idx + 1 }}</span>
                   </div>
                 </div>
-              </div><!-- end pad-svg-bg -->
+
+                <!-- Tier 4: Google Blue gas lines from wells down to manifold -->
+                <div class="twin-gas-lines-row">
+                  <div class="twin-gas-line" v-for="n in 6" :key="'gl'+n">
+                    <div class="twin-gas-junction"></div>
+                    <div class="twin-gas-line-seg"></div>
+                  </div>
+                </div>
+
+                <!-- Tier 5: Production manifold pipeline -->
+                <div class="twin-pipeline-row">
+                  <div class="twin-pipeline-spacer" style="width:24px"></div>
+                  <div class="twin-pipeline-line"></div>
+                  <div class="twin-pipeline-arrow"></div>
+                </div>
+                <div class="twin-pipeline-labels" style="padding-left:28px;padding-right:14px">
+                  <span>PRODUCTION HEADER</span>
+                  <span>→ SEPARATOR</span>
+                </div>
+
+                <!-- Legend strip -->
+                <div class="twin-legend">
+                  <div class="twin-leg-item">
+                    <div class="twin-leg-line" style="background:rgba(42,100,180,0.6)"></div>
+                    <span>Network / Data</span>
+                  </div>
+                  <div class="twin-leg-item">
+                    <div class="twin-leg-line" style="background:rgba(138,180,248,0.8)"></div>
+                    <span>Gas / Fluid Line</span>
+                  </div>
+                  <div class="twin-leg-item">
+                    <div class="twin-leg-dot" style="background:var(--green);border:2px solid rgba(0,230,118,0.4)"></div>
+                    <span>Nominal</span>
+                  </div>
+                  <div class="twin-leg-item">
+                    <div class="twin-leg-dot" style="background:rgba(255,179,0,0.8);border:2px solid rgba(255,179,0,0.4)"></div>
+                    <span>Degrading</span>
+                  </div>
+                  <div class="twin-leg-item">
+                    <div class="twin-leg-dot" style="background:var(--red);border:2px solid rgba(244,67,54,0.4)"></div>
+                    <span>Critical</span>
+                  </div>
+                  <span style="margin-left:auto;font-size:0.5rem;color:var(--muted);font-style:italic">Right-click: inject · Left-click: deep dive</span>
+                </div>
+
+              </div><!-- end twin-diagram -->
             </div><!-- end site-zone -->
 
             <!-- Canvas Legend — updated for distinct per-type shapes -->
@@ -750,10 +832,10 @@
               Health: {{ (degStatus.health_score * 100).toFixed(1) }}%
             </span>
             <span v-if="degStatus.time_to_scada_minutes !== null" style="padding:2px 8px;border-radius:6px;background:rgba(255,109,0,0.1);border:1px solid rgba(255,109,0,0.3);color:var(--orange);">
-              Base RUL: {{ formatRulFull(degStatus.time_to_scada_minutes) }}
+              Initial RUL: {{ formatRulFull(degStatus.time_to_scada_minutes) }}
             </span>
             <span v-if="degStatus.adjusted_rul_minutes !== null && degStatus.adjusted_rul_minutes !== degStatus.time_to_scada_minutes" style="padding:2px 8px;border-radius:6px;background:rgba(244,67,54,0.1);border:1px solid rgba(244,67,54,0.3);color:var(--red);">
-              Adjusted RUL (AI Fusion): {{ formatRulFull(degStatus.adjusted_rul_minutes) }}
+              AI Informed RUL: {{ formatRulFull(degStatus.adjusted_rul_minutes) }}
             </span>
           </span>
           <!-- Craft Fault Button -->
@@ -892,7 +974,7 @@
               </div>
               <!-- Intel Feed -->
               <div class="intel-feed-hdr">
-                Live Intelligence Feed
+                📄 RAG Context Documents
                 <span style="font-family:var(--mono);font-size:0.58rem;color:var(--blue);font-weight:400">{{ visibleFeedItems.length }}/{{ feedItems.length }}</span>
                 <button class="drill-btn" @click="openFeedModal(null)">All ▾</button>
               </div>
