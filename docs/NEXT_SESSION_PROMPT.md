@@ -7,7 +7,7 @@
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
 **Git Head:** `08b590a` — "feat: finalize stage 2 fixes and runbooks" ✅ clean working tree
-**Session ended at:** ~10:00 AM EDT May 25, 2026
+**Image:** `sha256:ecae6a004c82c169cebdd7821b67043dd570c321f388293a90e39ba435318837` (rebuilt from 08b590a, deployed 22:32 UTC May 25)
 
 ---
 
@@ -19,7 +19,6 @@ kubectl get pods -n gdc-pm --no-headers
 
 # 2. Verify Ollama state
 kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
-kubectl get pods -n gdc-pm -l app=ollama --no-headers
 
 # 3. API truth
 curl -s http://34.138.32.109/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
@@ -30,152 +29,162 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected results when healthy:**
-- All pods: `1/1 Running`
-- Ollama: `1` replica, pod on gpu-pool node
+- All pods: `1/1 Running` (fault-trigger-ui, alloydb-omni, event-processor, rabbitmq, grafana, inference-api, telemetry-sim, ollama)
+- Ollama: `1` replica
 - API: `ollama_online: True  model: gemma:27b`
-- field_intel: ≥ 0 rows (clears on pod restart)
-- rag_documents: **11 rows** (esp:3, gas_lift:3, mud_pump:3, top_drive:2) ⚠️ was 0 at last check — must be restored
-- fault_sessions: ≥ 2 rows (write path verified working)
+- rag_documents: **11 rows** ⚠️ was 0 at last check — if still 0, investigate before proceeding
+- fault_sessions: ≥ 2 rows
 
 ---
 
-## ⚠️ Known Integrity State (as of May 25, 2026 ~10:00 EDT)
+## ⚠️ Known Integrity State
 
 | Item | Actual State | Action Required |
 |------|-------------|-----------------|
-| **rag_documents** | **0 rows** (expected 11) | ⚠️ HIGH — investigate and restore before any demo |
-| fault_sessions | 2 rows ✅ | Write path working (Fix 11b complete) |
-| field_intel | 100 rows ✅ | Active, populates on fault injection |
-| Ollama / gemma:27b | `ollama_online: True` ✅ | Running on GPU node (us-east1) |
-| UI Gemma status | Honest ✅ | Shows `⛔ offline` when Ollama down |
+| **rag_documents** | **0 rows** (expected 11) | Investigate and restore before any demo. If pod restart caused it, re-seed from init script. |
+| fault_sessions | 2 rows ✅ | Working |
+| field_intel | 100 rows ✅ | Active |
+| Ollama / gemma:27b | `ollama_online: True` ✅ | Serving on GPU |
 | GPU CronJobs | SUSPENDED ✅ | Use manual scripts only |
-| ChromaDB | Removed ✅ | Replaced by AlloyDB field_intel dynamic RAG |
-| sentence-transformers | Not installed ✅ | Static rag_documents pgvector query skipped gracefully |
-
----
-
-## ⚠️ CLUSTER MIGRATION NOTE — us-central1 → us-east1
-
-- Region: `us-east1`
-- Cluster: `gdc-edge-simulation`
-- Live IP: `34.138.32.109`
-- Terraform: `gdc-pm/terraform/terraform.tfvars` → `region=us-east1`, `gke_subnet_name=subnet-us-east1`
-- GPU node pool: `gpu-pool` with `g2-standard-8` + `nvidia-l4` in us-east1
 
 ---
 
 ## GPU Management (Manual — No CronJobs)
 
-### Start the GPU (run at start of work day):
 ```bash
-cd /home/brian/gdc-pm
-./scripts/gpu-start.sh
-```
-- Scales Ollama to 1 replica
-- GKE Standard provisions L4 GPU node in us-east1 (~10-15 min)
-- PVC `ollama-models-pvc` in us-east1 ✅ (zone-matched)
-- Init container skips pull if `gemma:27b` already on PVC (~15 min with cached model)
+# Start GPU (beginning of work day):
+cd /home/brian/gdc-pm && ./scripts/gpu-start.sh
 
-### Stop the GPU (run when done for the day):
-```bash
-cd /home/brian/gdc-pm
-./scripts/gpu-stop.sh
-```
-- Scales Ollama to 0; L4 node deprovisioned (~5 min); PVC retained
-- Cost: ~$0.65/hr while running
+# Stop GPU (end of day):
+cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh
 
-### Verify Gemma is serving:
-```bash
-kubectl exec -n gdc-pm deployment/ollama -- curl -sf http://localhost:11434/api/tags | python3 -c "import sys,json;d=json.load(sys.stdin);print([m['name'] for m in d.get('models',[])])"
+# Verify Gemma serving:
+kubectl exec -n gdc-pm deployment/ollama -- curl -sf http://localhost:11434/api/tags \
+  | python3 -c "import sys,json;d=json.load(sys.stdin);print([m['name'] for m in d.get('models',[])])"
 # Must return: ['gemma:27b']
 ```
 
 ---
 
-## Sprint 5 Layout (DO NOT REVERT)
+## THIS SESSION'S OBJECTIVE: Architecture Diagram Tab
+
+### Context: Why This Matters
+The demo narrative (see `docs/DEMO_NARRATIVE_UPDATE.md`) positions GDC-PM as a **multi-modal AI platform at the tactical edge**. There is currently no visual explanation of how the pieces connect. A "How It Works" architecture tab in the live UI serves two purposes:
+1. Gives a customer something to look at while the system is booting/fault-injecting
+2. Grounds the demo story — shows that sensor data, unstructured docs, XGBoost, and Gemma all converge in one place
+
+### What the Previous Attempt Did Wrong (Do NOT Repeat)
+The afternoon session on May 25 produced a broken implementation. Specific failures:
+
+1. **No upfront plan approval** — jumped straight to 1500+ lines of SVG code without getting the layout approved first
+2. **Massive inline SVG** — used SVG gradients, glow filters, and `<defs>` blocks; too complex to debug without a browser
+3. **Duplicate HTML** — the `<div id="tab-telemetry">` block appeared twice in the file, breaking the tab layout
+4. **Wrong file modified** — `DEPLOY_FROM_SCRATCH.md` was accidentally replaced during the same session
+5. **No incremental testing** — the tab was never verified to render before the session ended
+
+### The Correct Approach for This Session
+
+**Step 1 — Present the wireframe in ASCII, get approval before writing any HTML.**
+
+Proposed layout for the "Architecture" tab:
 ```
-┌────────────────────────────┬───┬──────────────────┐
-│  dd-compare-col (charts)   │ ║ │  Intelligence    │  ← 260px default
-│   GDC AI forecast          │ ║ ├··················┤
-│   gdc-scada-handle (amber) │ ║ │  Agent Chat      │  ← 280px default
-│   SCADA chart              │ ║ ├··················┤
-│                            │ ║ │  Resolution      │  ← flex:1 remainder
-└────────────────────────────┴───┴──────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        HOW IT WORKS                                          │
+│              GDC Predictive Maintenance — Data Flow                          │
+├──────────────┬──────────────────┬───────────────────┬────────────────────────┤
+│  INPUT TIER  │   MESSAGING &    │   AI ENGINE        │   OPERATOR OUTPUT      │
+│              │   STORAGE        │                    │                        │
+│ ESP Sensors  │                  │  XGBoost           │  Fleet Operations      │
+│ ─────────────│→  RabbitMQ  ─────│→ Inference API  ───│→ Tab (health score,    │
+│ Telemetry    │                  │  (3 models)        │  RUL, HITL approval)   │
+│              │→  AlloyDB ───────│→ Gemma 27b      ───│→ Fleet Financials      │
+│ Unstructured │   ┌─telemetry    │  (RAG + LLM)       │  Tab (cost avoided,    │
+│ Documents    │   ├─field_intel  │  NVIDIA L4 GPU     │  fault audit log)      │
+│ (shift notes │   ├─rag_docs     │                    │→ Grafana Telemetry     │
+│  Maximo,     │   └─fault_sess.  │                    │  Tab (live charts)     │
+│  lab reports)│                  │                    │                        │
+└──────────────┴──────────────────┴───────────────────┴────────────────────────┘
 ```
+
+**Step 2 — Build with HTML/CSS divs, NOT SVG.**
+
+Rationale: The app's dark theme is already established via CSS variables. An HTML/CSS flexbox diagram:
+- Uses the existing `var(--blue)`, `var(--surf2)`, `var(--text2)`, `var(--border2)`, `var(--muted)` tokens — no new styles needed
+- Is readable as plain text (can be verified without a browser)
+- Has no SVG-specific bugs (no coordinate systems, no `<defs>`, no `transform` attributes)
+- Degrades gracefully if the container resizes
+
+**Step 3 — Insert the tab skeleton first (5 lines), verify it renders, THEN add diagram content.**
+
+**Step 4 — One file only: `gke/fault-trigger-ui/index.html`. Do NOT touch `app.py` or any doc files.**
+
+**Step 5 — Build, push, and verify in the live cluster before declaring done.**
 
 ---
 
-## What IS Working (verified as of May 25, 2026 ~10:00 EDT)
+### Exact Insertion Points in index.html (2242 lines total)
 
-| Feature | Status | Verified by |
-|---------|--------|-------------|
-| GDC AI Forecast (XGBoost) | ✅ | All 4 health models loaded at startup |
-| GDC vs SCADA bridge bar countdown | ✅ | Elapsed-time fallback (Fix 3) |
-| Sensor highlighting (per-sensor) | ✅ | Fix 4 |
-| SCADA chart purge on reset/approve | ✅ | Fix 5 |
-| Intelligence Feed randomization | ✅ | Fix 8b — `random.sample` + `random.shuffle` |
-| AI Informed RUL divergence | ✅ | GVF guaranteed >70, 0.6x multiplier always fires |
-| HITL flow (approve, savings) | ✅ | Full end-to-end works |
-| Honest Gemma status | ✅ | `⛔ offline` shown when Ollama down |
-| `gpu-start.sh` / `gpu-stop.sh` | ✅ | Manual GPU scripts, CronJobs suspended |
-| **Fix 9: ALL fault type dynamic docs** | ✅ | valve_failure, thermal_runaway + 5 remaining branches — all done |
-| **Fix 10: Dynamic Gemma finding** | ✅ | Templates for all fault types, interpolates live PSI/amps/GVF/conf |
-| **Fix 11b: fault_sessions audit log** | ✅ | Table + GET endpoint + write on inject/resolve (2 rows confirmed) |
-| **Deploy-from-scratch runbook** | ✅ | `docs/runbooks/DEPLOY_FROM_SCRATCH.md` |
-| **DEVELOPMENT_DECISIONS.md** | ✅ | Created in `docs/` |
-| **gemma:27b typo fix** | ✅ | Was `gemma4:27b` — corrected, GPU LLM inference restored |
-
----
-
-## NEXT SESSION PLAN
-
-| # | Item | Change | Verification Test | Complexity |
-|---|------|--------|-------------------|------------|
-| 1 | **Restore rag_documents** | Investigate why 11 rows went to 0; re-seed if needed | `SELECT COUNT(*) FROM rag_documents` = 11 | Small |
-| 2 | **Architecture tab in UI** | Add an Architecture tab to `index.html` with SVG data-flow diagram (all tiers: SCADA → sensors → AlloyDB → XGBoost + Gemma → dashboards) | Tab renders in live app without duplicate HTML | Medium |
-| 3 | **Demo narrative** | Review and implement improvements from `docs/DEMO_NARRATIVE_UPDATE.md` | Live walkthrough matches narrative | Medium |
-
----
-
-## Current Cluster State (VERIFIED May 25, 2026 ~22:28 UTC)
-
-```
-kubectl get pods -n gdc-pm --no-headers:
-alloydb-omni-5fcfc68fdb-x9xc8          1/1  Running    3d9h
-event-processor-7d9b594b6b-wjlkc       1/1  Running    3d8h
-fault-trigger-ui-7df579f6c5-qmwdn      1/1  Running    39m
-gdc-pm-rabbitmq-server-0               1/1  Running    3d8h
-grafana-655b6f5c7c-mtmtw               1/1  Running    3d9h
-inference-api-5697b79566-4q8tm         1/1  Running    3d8h
-ollama-5bc5db749b-jf997                1/1  Running    10h   ← GPU pod
-telemetry-simulator-6b9668648b-ddc66   1/1  Running    3d9h
-
-Ollama replicas: 1
-API: ollama_online: True  model: gemma:27b ✅
-
-AlloyDB:
-  field_intel:    100 rows
-  rag_documents:  0 rows  ⚠️ REGRESSION — was 11 rows
-  fault_sessions: 2 rows  ✅ (write path confirmed working)
-
-CronJobs:
-  ollama-stand-up:   SUSPENDED ✅
-  ollama-stand-down: SUSPENDED ✅
+**Tab button** — insert after line 491 (after the telemetry hdr-tab):
+```html
+<div class="hdr-tab" :class="{active: mainTab==='architecture'}" @click="mainTab='architecture'">Architecture</div>
 ```
 
+**Tab content block** — insert after line 1256 (after `</div>` closing the telemetry tab, before `</div><!-- app-body -->`):
+```html
+<div id="tab-architecture" class="main-tab-content" :class="{active: mainTab==='architecture'}" style="overflow-y:auto;padding:32px 48px">
+  <!-- architecture diagram goes here -->
+</div>
+```
+
+No Vue `data()` change needed — `mainTab` is a free string, any value works.
+
 ---
 
-## Constraints (unchanged — never violate)
-- `terraform/gke.tf` must NOT be applied without review
-- All UI changes → `gke/fault-trigger-ui/index.html` and `gke/fault-trigger-ui/app.py`
-- Preserve XGBoost health score models (`*.ubj` files)
-- `/api/*` endpoints must remain backward-compatible
-- Do NOT commit to `main`
-- O&G physics must remain authentic
-- **No browser on SSH remote** — `browser_action` must NOT be used
-- **No inline high-res screenshots** — token budget
-- **`classifier_active = (fault_fraction > 0.20) or is_degrading`** — DO NOT REVERT
-- Commit after every verified deployment (not just at session end)
+### Diagram Content: What to Show
+
+The diagram must tell this story (from `DEMO_NARRATIVE_UPDATE.md`):
+
+| Layer | Components | Key Message |
+|-------|-----------|-------------|
+| **Input** | ESP sensors, SCADA, Shift notes, Maximo records, Lab reports | Multiple data modalities, not just sensors |
+| **Ingestion** | RabbitMQ (telemetry bus) | Edge message broker — no cloud needed |
+| **Storage** | AlloyDB Omni (PostgreSQL + pgvector) — 4 tables | Unified store: structured + unstructured |
+| **AI** | XGBoost Inference API (health score + RUL) + Gemma 27b on L4 GPU (RAG + synthesis) | Multi-modal AI fully on-prem |
+| **Output** | Operator HITL → approval → cost avoided → fault_sessions audit | Quantifiable ROI, closed loop |
+
+**Keep it factual and minimal.** This is a demo aid, not a marketing brochure. Boxes, arrows (CSS borders or `→` text), and labels. No gradients, no animations, no icons that require external CDN.
+
+---
+
+### Recommended HTML/CSS Pattern
+
+Use a CSS grid or flexbox with styled `<div>` cards. Example structure (to be approved by user before building):
+
+```
+[diagram-container: display:flex; gap:24px; align-items:flex-start]
+  [tier-col] INPUT
+    [node-card] ESP Sensors
+    [node-card] Unstructured Docs
+  [arrow] →
+  [tier-col] INGESTION & STORAGE
+    [node-card] RabbitMQ
+    [node-card] AlloyDB Omni
+      [sub-label] telemetry_events
+      [sub-label] rag_documents (pgvector)
+      [sub-label] field_intel
+      [sub-label] fault_sessions
+  [arrow] →
+  [tier-col] AI ENGINE
+    [node-card highlight-orange] XGBoost Inference
+    [node-card highlight-purple] Gemma 27b (L4 GPU)
+  [arrow] →
+  [tier-col] OPERATOR
+    [node-card] Fleet Operations (HITL)
+    [node-card] Fleet Financials (ROI)
+    [node-card] Grafana Telemetry
+```
+
+**Reuse existing CSS variables from the app.** Add any new styles as a scoped `<style>` block at the top of the new tab `<div>`, not in the global `<style>` section at the top of the file.
 
 ---
 
@@ -190,7 +199,57 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Key Lessons Learned (May 25 session)
-- **Always commit after deployment** — the afternoon session made code changes and deployed them without committing; git history had a 10-hour gap that required manual reconstruction
-- **`gemma4:27b` vs `gemma:27b`** — the model name typo was silently causing Ollama inference to fail; always verify `ollama_online: True` AND the model name in the API response
-- **rag_documents can drain unexpectedly** — went from 11 to 0 between sessions; cause unknown; add to session opener verification and investigate
+## What IS Working (no regressions)
+
+| Feature | Status |
+|---------|--------|
+| All 4 XGBoost health models | ✅ |
+| Fix 8b: Intel feed randomization | ✅ |
+| Fix 9: Dynamic docs for all 11 fault types | ✅ |
+| Fix 10: Dynamic Gemma finding (all fault types) | ✅ |
+| Fix 11b: fault_sessions write on inject/resolve | ✅ |
+| Honest Gemma status (⛔ when offline) | ✅ |
+| HITL approve → savings → financials ledger | ✅ |
+| gpu-start.sh / gpu-stop.sh | ✅ |
+| Deploy-from-scratch runbook | ✅ |
+| gemma:27b (was gemma4:27b typo — fixed) | ✅ |
+
+---
+
+## Constraints (never violate)
+- `terraform/gke.tf` must NOT be applied without review
+- All UI changes → `gke/fault-trigger-ui/index.html` and `gke/fault-trigger-ui/app.py` only
+- Preserve XGBoost health score models (`*.ubj` files)
+- `/api/*` endpoints must remain backward-compatible
+- Do NOT commit to `main`
+- O&G physics must remain authentic
+- **No browser on SSH remote** — `browser_action` must NOT be used
+- **`classifier_active = (fault_fraction > 0.20) or is_degrading`** — DO NOT REVERT
+- **Commit after every verified deployment** — not just at session end
+
+---
+
+## Current Cluster State (VERIFIED May 25, 2026 ~22:32 UTC)
+
+```
+fault-trigger-ui-59fb946d59-24f5m   1/1  Running  22s   ← rebuilt from 08b590a
+alloydb-omni-5fcfc68fdb-x9xc8       1/1  Running  3d9h
+event-processor-7d9b594b6b-wjlkc    1/1  Running  3d8h
+gdc-pm-rabbitmq-server-0            1/1  Running  3d8h
+grafana-655b6f5c7c-mtmtw            1/1  Running  3d9h
+inference-api-5697b79566-4q8tm      1/1  Running  3d8h
+ollama-5bc5db749b-jf997             1/1  Running  10h   ← GPU
+telemetry-simulator-6b9668648b-ddc66 1/1 Running  3d9h
+
+API: ollama_online: True  model: gemma:27b ✅
+AlloyDB: field_intel=100, rag_documents=0 ⚠️, fault_sessions=2
+```
+
+---
+
+## Key Lessons Learned (May 25 — do not repeat)
+- **Plan before code.** Get ASCII wireframe approved before writing a single line of HTML.
+- **HTML/CSS > SVG** for diagrams on this stack. SVG is unverifiable without a browser.
+- **One scope per session.** The architecture tab is the ONLY objective. Do not touch docs, app.py, or runbooks in the same session.
+- **Skeleton first.** Add the empty tab and verify it appears in the UI before adding any content.
+- **Duplicate div check.** After any HTML insertion, `grep -c 'id="tab-telemetry"' index.html` must return `1`.
