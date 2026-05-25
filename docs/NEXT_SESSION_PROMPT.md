@@ -1,147 +1,227 @@
-# Next Session Prompt — ESP v2 Redesign (Sprint 5 v1 Complete: Begin Sprint 5 v2)
+# Next Session Prompt — ESP v2 Redesign (Sprint 5 v8 — Stage 2 COMPLETE)
 
 ## Header
-**Date:** May 21, 2026
-**Live URL:** http://gdc-pm.bdau.io
+**Date:** May 22, 2026
+**Live URL:** http://34.138.32.109  ← NEW IP (us-east1 cluster)
 **Project:** gdc-pm (esp-v2-redesign branch)
-**Cluster:** gdc-edge-simulation
+**Cluster:** gdc-edge-simulation  ← NOW IN us-east1 (was us-central1)
 **Namespace:** gdc-pm
-**Current Image Tag:** latest (Sprint 5 v1, commit c8c0b54)
-✅ Working tree clean. Two commits this session: `c8c0b54` (UI) and `a29dfb7` (docs).
+**Current Image:** fault-trigger-ui:latest (sha256:d12a1a8e059d) — includes all Sprint 5 v8 Stage 2 fixes
+**Session ended at:** ~835K tokens
 
 ---
 
-## What Was Done This Session
+## ⚠️ MANDATORY SESSION OPENER — Run this BEFORE writing any code
 
-### Sprint 5 v1 — CSS Flexbox Digital Twin + Label Updates (committed `c8c0b54`)
+```bash
+# 1. Verify cluster truth
+kubectl get pods -n gdc-pm --no-headers
 
-#### 1. Digital Twin Diagram — Replaced SVG Overlay with CSS Flexbox
+# 2. Verify Ollama state (is it truly running and serving Gemma?)
+kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
+kubectl get pods -n gdc-pm -l app=ollama --no-headers
 
-**Why changed:** The SVG + absolute-positioned `.pad-well-overlay` approach (Sprint 4) had lines running visually through the opaque well nodes, fragile percentage-based positioning that broke on resize, and labels that could be obscured.
+# 3. API truth (does the UI tell the truth about Gemma?)
+curl -s http://34.138.32.109/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
 
-**What replaced it:** A `.twin-diagram` container with a 5-tier CSS Flexbox layout. All relevant CSS uses the `.twin-*` prefix.
-
-**Layout structure (top to bottom):**
-
-```
-[GENERATOR] [A/C]  |  [BROKER] [GDC AI] [SCADA]  |  [STARLINK]
-                   |   ─────── NETWORK BAR ──────  |
-                   ↓ (network lines, blue)           ↓
-         [A-1] [A-2] [A-3] [A-4] [A-5] [A-6]    ← 72×72px opaque ESP nodes
-                ↓ (gas lines, Google Blue #8ab4f8)
-         ════════════ PRODUCTION HEADER ═══════→ SEPARATOR
-         [Legend: Network/Data | Gas/Fluid | Nominal | Degrading | Critical]
+# 4. Database truth
+kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability \
+  -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**Key CSS classes (all in `index.html` `<style>` block):**
-- `.twin-diagram` — outer container, dark bg, subtle border
-- `.twin-top-row` — flex row aligning external assets + structure + starlink
-- `.twin-external-left` — Generator + A/C column (outside structure)
-- `.twin-external-right` — Starlink column (outside structure)
-- `.twin-structure` — dashed `#5a6a7a` border; contains broker/GDC/SCADA + network bar
-- `.twin-equip-row` — horizontal flex of equipment boxes inside structure
-- `.twin-equip-box` + `.twin-equip-broker` / `.twin-equip-gdc` / `.twin-equip-scada` / `.twin-equip-ext` / `.twin-equip-ac` — styled equipment tiles
-- `.twin-network-bar` — 6px horizontal blue bar at bottom of structure
-- `.twin-network-label` — "SHARED EDGE NETWORK — Pub/Sub Data Bus" label
-- `.twin-network-lines-row` — flex row with spacers + `.twin-net-lines` (6 vertical network line segments)
-- `.twin-net-line` / `.twin-net-line-seg` / `.twin-net-junction` — individual vertical network lines
-- `.twin-wells-row` — flex row of 6 `.twin-well-col` containers
-- `.twin-well-col` — contains `.asset-node.esp-node` + `.twin-well-label` ("A-1" through "A-6")
-- `.twin-wells-row .asset-node` — overrides size to 72×72px with `!important`
-- `.twin-wells-row .health-green/amber/red` — opaque health colour fills (use `!important` to override global semi-transparent version)
-- `.twin-gas-lines-row` — flex row of 6 `.twin-gas-line` with Google Blue gas junction dots + line segments
-- `.twin-pipeline-row` — horizontal pipeline bar + arrow
-- `.twin-pipeline-labels` — "PRODUCTION HEADER" and "→ SEPARATOR" labels
-- `.twin-legend` — bottom legend strip
-- `.gdc-led` / `.gdc-led2` — animated LED indicators on GDC AI box
-
-**Vue interaction wiring (in `.twin-wells-row`):**
-- `v-for="(assetId, idx) in SITES.pad_alpha.assets"` iterates 6 wells
-- `@contextmenu.prevent="showAssetContextMenu($event, assetId)"` — right-click fault injection
-- `@click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"` — left-click deep dive
-- `:class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"` — live health + selection highlight
-- `padWellStyle(idx)` method still exists in JS but is **not used** — can be cleaned up in a future session
-
-**Network line spacers:** `twin-line-spacer-left` is `width:80px` and `twin-line-spacer-right` is `width:56px`. These are approximations — may need visual tuning after live testing to align lines with wells.
-
-#### 2. Deep Dive Header — RUL Labels Updated
-
-| Old Label | New Label | Data source |
-|-----------|-----------|-------------|
-| Base RUL | **Initial RUL** | `degStatus.time_to_scada_minutes` |
-| Adjusted RUL (AI Fusion) | **AI Informed RUL** | `degStatus.adjusted_rul_minutes` |
-
-Both appear as pill badges in the `.dd-header` when a fault is active.
-
-#### 3. Evidence Panel — Label Updated
-
-| Old | New |
-|-----|-----|
-| "Live Intelligence Feed" | "📄 RAG Context Documents" |
-
-The section header in Column 1 of the Deep Dive now reads "📄 RAG Context Documents". The section shows the dynamically generated enterprise documents (lab reports, shift notes, PM records, VFD logs) that `generate_dynamic_documents()` in `app.py` creates and pushes to ChromaDB. These documents directly feed the Gemma4 LLM prompt AND the `adjust_rul_with_documents()` regex-based multiplier that produces the "AI Informed RUL".
-
-**Not yet updated** (open item for Sprint 5 v2):
-- The "All ▾" drill-down modal title still reads "All Intelligence Feed Items" → should be "All RAG Context Documents"
-- The loading placeholder reads "Ingesting unstructured data sources…" → can stay as-is
+**Expected results when healthy:**
+- Ollama pod: `ollama-XXXXX  1/1  Running` on a GPU node (gpu-pool in us-east1)
+- API: `ollama_online: True  model: gemma:27b`
+- field_intel: some rows (0 if no fault has been injected since pod restart)
+- rag_documents: 11 rows
 
 ---
 
-## Current Cluster State
+## ⚠️ CLUSTER MIGRATION — us-central1 → us-east1
 
-| Pod | Status |
-|-----|--------|
-| `alloydb-omni` | ✅ 1/1 Running |
-| `event-processor` | ✅ 1/1 Running |
-| `fault-trigger-ui` | ✅ 1/1 Running (Sprint 5 v1, HTTP 200) |
-| `inference-api` | ✅ 1/1 Running |
-| `grafana` | ✅ 1/1 Running |
-| `telemetry-simulator` | ✅ 1/1 Running |
-| `ollama` | ⏳ 0/1 Pending (awaiting L4 GPU node from GKE Autopilot) |
+**Why:** L4 GPU capacity exhausted in all 3 us-central1 zones (a, b, c). us-east1 has capacity.
 
----
+**New cluster details:**
+- Region: `us-east1`
+- Cluster: `gdc-edge-simulation`
+- Live IP: `34.138.32.109`
+- Terraform: `gdc-pm/terraform/terraform.tfvars` → `region=us-east1`, `gke_subnet_name=subnet-us-east1`
+- Subnet: `subnet-us-east1` (10.31.0.0/20) in `gdc-pm-vpc`
 
-## Immutable Design Decisions (Do Not Reverse)
-
-1. **No Activity Stream on the landing page.** The right-side activity stream was removed from scope. Do not add it back.
-2. **CSS Flexbox only for the Digital Twin.** SVG + HTML overlay must never return. If the diagram needs changes, edit the `.twin-*` CSS classes and the HTML tiers in `.twin-diagram`.
-3. **Terminology:** "Initial RUL" / "AI Informed RUL" / "RAG Context Documents" — these are agreed labels.
-4. **GDC data flow:** GDC Edge AI and SCADA RTU both independently subscribe to the Edge Broker Pub/Sub. GDC is NOT downstream of SCADA. This is a critical demo talking point encoded in the diagram.
+**GPU node pool:** `gpu-pool` with `g2-standard-8` + `nvidia-l4` in us-east1
 
 ---
 
-## Outstanding Development Items — Sprint 5 v2
+## ⚠️ Known Integrity State (as of May 22, 2026)
 
-### Must-Do (visual quality)
-1. **Live visual test of the Flexbox diagram** — load http://gdc-pm.bdau.io and verify:
-   - Network lines (Tier 2) align approximately above the wells (Tier 3)
-   - Wells are opaque and labels (A-1 through A-6) are clearly visible
-   - Gas lines (Google Blue) drop cleanly from wells to pipeline
-   - No labels are obscured
-   - Right-click context menu on wells still works
-   - Left-click opens Deep Dive
-   - Fault injection changes well node colour (amber → red)
-   - Active fault shows pulse ring on the well
-
-2. **Fix spacer widths if alignment is off** — edit `.twin-network-lines-row` spacer `style="width:80px"` and `style="width:56px"` values to tune alignment with wells.
-
-3. **Update drill-down modal title** — change "All Intelligence Feed Items" → "All RAG Context Documents" in the `#feed-modal` template.
-
-### Nice-to-Have
-4. **Equipment→Network subscription lines** — currently the link between each equipment box and the network bar is implied by the shared bar. Could add a subtle dashed `border-left` stub from each equipment box down to the network bar for visual clarity.
-
-5. **Ollama GPU node** — pending GKE Autopilot L4 provisioning. No action needed, monitor with `kubectl get pod ollama-0 -n gdc-pm -w`.
+| Item | Actual State | Notes |
+|------|-------------|-------|
+| Ollama / Gemma4:27b | **PENDING** (init container pulling gemma:27b ~15GB) | Started ~12:49 UTC. Will take 15-20 min. |
+| GPU CronJobs | **SUSPENDED** (both ollama-stand-up and ollama-stand-down) | Replaced by manual scripts. Do NOT unsuspend. |
+| GPU control | **Manual scripts only** | `./scripts/gpu-start.sh` and `./scripts/gpu-stop.sh` |
+| AI Informed RUL | **Fixed** (GVF guaranteed > 70) | Was only firing ~60% of runs before fix |
+| UI Gemma status | **Honest** | Shows `⛔ offline` when Ollama down, real model name when up |
+| ChromaDB | **Removed** | Replaced by AlloyDB field_intel dynamic RAG |
+| sentence-transformers | **Not installed** (reverted — was 6GB image) | Static rag_documents pgvector query skipped gracefully |
+| k8s yamls | **PATCHED** | GCR_IMAGE_PLACEHOLDER replaced with real registry URLs |
+| Secrets | **RECREATED** | alloydb-secret + rabbitmq-secret from .secrets/ files |
 
 ---
 
-## Constraints
-- `terraform/gke.tf` must NOT be applied.
-- All demo UI changes go into `gke/fault-trigger-ui/index.html` and logic into `gke/fault-trigger-ui/app.py`.
-- Preserve XGBoost health score models (`*.ubj` files).
-- `/api/*` endpoints must remain backward-compatible.
-- Do NOT commit to `main`.
-- O&G scenarios and physics must remain authentic.
-- **No browser on the SSH remote** — `browser_action` tool must NOT be used.
+## GPU Management (Manual — No CronJobs)
+
+### Start the GPU (run this at start of work day):
+```bash
+cd /home/brian/gdc-pm
+./scripts/gpu-start.sh
+```
+- Scales Ollama to 1 replica
+- GKE Standard provisions L4 GPU node in **us-east1** (~10-15 min)
+- PVC `ollama-models-pvc` is in us-east1 ✅ (zone-matched)
+- Init container skips pull if `gemma:27b` already on PVC (faster restart)
+- Watches until `gemma:27b` is responding (~15-20 min total first time, ~15 min with cached model)
+
+### Stop the GPU (run when done for the day):
+```bash
+cd /home/brian/gdc-pm
+./scripts/gpu-stop.sh
+```
+- Scales Ollama to 0
+- L4 node deprovisioned by GKE (~5 min)
+- PVC retained (model cache preserved for faster next startup)
+- Cost: ~$0.65/hr while running
+
+### Verify Gemma is actually serving (after gpu-start.sh completes):
+```bash
+kubectl exec -n gdc-pm deployment/ollama -- curl -sf http://localhost:11434/api/tags | python3 -c "import sys,json;d=json.load(sys.stdin);print([m['name'] for m in d.get('models',[])])"
+# Must return: ['gemma:27b']
+```
+
+---
+
+## Sprint 5 v7 Layout (DO NOT REVERT)
+```
+┌────────────────────────────┬───┬──────────────────┐
+│  dd-compare-col (charts)   │ ║ │  Intelligence    │  ← 260px default
+│   GDC AI forecast          │ ║ ├··················┤
+│   gdc-scada-handle (amber) │ ║ │  Agent Chat      │  ← 280px default
+│   SCADA chart              │ ║ ├··················┤
+│                            │ ║ │  Resolution      │  ← flex:1 remainder
+└────────────────────────────┴───┴──────────────────┘
+```
+
+---
+
+## What IS Working (verified)
+
+| Feature | Status | Verified by |
+|---------|--------|-------------|
+| GDC AI Forecast (XGBoost) | ✅ | All 4 health models loaded at startup |
+| GDC vs SCADA bridge bar countdown | ✅ | Elapsed-time fallback (Fix 3) |
+| Sensor highlighting (per-sensor) | ✅ | Fix 4 |
+| SCADA chart purge on reset/approve | ✅ | Fix 5 |
+| Intelligence Feed (gas_lock) | ✅ | 5-item pool; live field_intel docs after ~30s |
+| AI Informed RUL divergence | ✅ | GVF guaranteed >70, 0.6x multiplier always fires |
+| HITL flow (approve, savings) | ✅ | Full end-to-end works |
+| Honest Gemma status | ✅ | `⛔ offline` shown when Ollama down |
+| `gpu-start.sh` / `gpu-stop.sh` | ✅ | Scripts created, CronJobs suspended |
+| **Fix 8b: Intel feed randomization** | ✅ | `random.sample` + `random.shuffle` — verified live |
+| **Fix 10: Dynamic Gemma finding** | ✅ | Interpolates live PSI/amps/GVF/conf — verified live |
+| **Fix 9: valve_failure docs** | ✅ | 3 randomized templates (process_historian, maximo_service, shift_note) |
+| **Fix 9: thermal_runaway docs** | ✅ | 3 randomized templates (process_historian, maximo_pm, shift_note) |
+| **Fix 11b: fault_sessions table** | ✅ | Table created, `/api/fault-sessions` returns 0 count, no error |
+
+## What IS NOT Working Yet
+
+| Feature | Status | Fix |
+|---------|--------|-----|
+| Gemma LLM streaming | ❌ Ollama PENDING (L4 provisioning in us-east1) | Will auto-resolve when L4 node provisions |
+| Dynamic docs for non-ESP faults (5 remaining) | ❌ Generic "Shift Note" fallback | Fix 9 (remaining 5 branches) |
+| Dynamic Gemma finding for non-gas_lock faults | ❌ Static string for other fault types | Fix 10 (extend templates) |
+| Fault sessions audit log (write path) | ❌ Table exists, no writes yet | Fix 11b (write on inject/resolve) |
+| Deploy-from-scratch runbook | ❌ Not documented | **TODO: Next session** |
+
+---
+
+## 🚧 TODO: Deploy-from-Scratch Runbook
+
+**MARKER: This needs to be created next session.**
+
+Similar to `~/gdc-das-life` runbook. Should cover:
+1. Terraform apply (creates cluster + node pools + BigQuery + GCS)
+2. Namespace creation (`kubectl create namespace gdc-pm`)
+3. Secret creation (alloydb-secret, rabbitmq-secret from .secrets/ files)
+4. Service deployment order (alloydb-omni first, then rabbitmq, then everything else)
+5. k8s yaml image URL patching (GCR_IMAGE_PLACEHOLDER → real registry)
+6. IAM: grant `roles/artifactregistry.reader` to compute SA
+7. Ollama deployment + gpu-start.sh
+8. Verification checklist
+
+**Also needed: Architecture diagram overview** covering:
+- GKE cluster (us-east1) with node pools (default + gpu-pool)
+- AlloyDB Omni (PostgreSQL) — telemetry_events, field_intel, rag_documents, fault_sessions
+- RabbitMQ — telemetry exchange, sensor.reading routing key
+- Telemetry Simulator → RabbitMQ → Event Processor → AlloyDB
+- Fault Trigger UI (FastAPI) — serves frontend + all /api/* endpoints
+- Inference API — XGBoost health models
+- Ollama (GPU pod) — gemma:27b LLM
+- Grafana — dashboards
+- Artifact Registry (us-central1) — Docker images
+- VPC: gdc-pm-vpc, subnet-gke (us-central1), subnet-us-east1 (us-east1)
+
+---
+
+## NEXT SESSION PLAN
+
+| # | Fix | Change | Verification Test | Complexity |
+|---|-----|--------|-------------------|------------|
+| 1 | 9 (remaining) | 5 more fault type branches in `generate_dynamic_documents` | Inject valve_washout → check field_intel for non-generic content | Medium |
+| 2 | 10 (extend) | Add templates for thermal_runaway, valve_failure, bearing_wear_glift | Inject thermal_runaway, check gemma_finding contains live temp value | Small |
+| 3 | 11b (write path) | Write to fault_sessions on inject + resolve | Inject gas_lock, approve → check `/api/fault-sessions` has 1 row | Small |
+| 4 | Runbook | Create deploy-from-scratch runbook | Follow runbook on fresh namespace | Medium |
+
+---
+
+## Current Cluster State (as of May 22, 2026 ~12:50 UTC)
+
+```bash
+# VERIFIED cluster state:
+kubectl get pods -n gdc-pm  # actual output at session end:
+# alloydb-omni      ✅ 1/1 Running
+# event-processor   ✅ 1/1 Running
+# fault-trigger-ui  ✅ 1/1 Running  (sha256:d12a1a8e059d — includes all Stage 2 fixes)
+# gdc-pm-rabbitmq   ✅ 1/1 Running
+# grafana           ✅ 1/1 Running
+# inference-api     ✅ 1/1 Running
+# telemetry-sim     ✅ 1/1 Running
+# ollama            ⏳ Init:0/1 — pulling gemma:27b (~15 min from 12:49 UTC)
+
+# AlloyDB:
+# rag_documents: 11 rows (esp:3, gas_lift:3, mud_pump:3, top_drive:2)
+# field_intel: cleared on next fault injection
+# fault_sessions: 0 rows (table created, write path not yet implemented)
+
+# CronJobs:
+# ollama-stand-up:   SUSPENDED ✅
+# ollama-stand-down: SUSPENDED ✅
+
+# Secrets:
+# alloydb-secret:  ✅ (from .secrets/alloydb-password.txt)
+# rabbitmq-secret: ✅ (from .secrets/rabbitmq-password.txt)
+```
+
+---
+
+## Constraints (unchanged)
+- `terraform/gke.tf` must NOT be applied without review
+- All UI changes → `gke/fault-trigger-ui/index.html` and `gke/fault-trigger-ui/app.py`
+- Preserve XGBoost health score models (`*.ubj` files)
+- `/api/*` endpoints must remain backward-compatible
+- Do NOT commit to `main`
+- O&G physics must remain authentic
+- **No browser on SSH remote** — `browser_action` must NOT be used
+- **No inline high-res screenshots** — token budget
+- **`classifier_active = (fault_fraction > 0.20) or is_degrading`** — DO NOT REVERT
 
 ---
 
@@ -155,8 +235,21 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Key Lessons Learned This Session
-- SVG + absolute-positioned HTML overlay fails at resize — CSS Flexbox is the right approach.
-- `.health-green/amber/red` global rules are semi-transparent. The `.twin-wells-row` scoped overrides use `!important` to force opaque fills on well nodes.
-- The `padWellStyle(idx)` method in Vue JS is now dead code (kept for safety but no longer called). Can be removed in a future cleanup commit.
-- Rigorous `NEXT_SESSION_PROMPT.md` documentation prevents context loss between sessions — include CSS class names, Vue wiring details, and exact data field names alongside design intent.
+## Fix Specs for Stage 2 (COMPLETED)
+
+### Fix 8b — ✅ DONE
+`random.sample(pool, min(3, len(pool)))` + `random.shuffle(canned_items)` in `get_intelligence_feed`
+
+### Fix 10 — ✅ DONE
+`GEMMA_FINDING_TEMPLATES` dict + `get_gemma_finding(fault_type, asset_id)` function.
+Interpolates: `psi`, `amps`, `gvf`, `conf`, `pnr` from `active_degrades[asset_id]["current_sensors"]`.
+Currently only gas_lock has templates; other fault types fall back to static GEMMA_FINDINGS.
+
+### Fix 9 — ✅ PARTIAL (valve_failure + thermal_runaway done; 5 more remaining)
+Added `elif fault_type == "valve_failure"` and `elif fault_type == "thermal_runaway"` branches
+in `generate_dynamic_documents`. Each has 3 doc types with 3 randomized content variants.
+
+### Fix 11b — ✅ PARTIAL (table + GET endpoint done; write path not yet implemented)
+`fault_sessions` table created in `_ensure_field_intel_table()`.
+`GET /api/fault-sessions` endpoint added.
+Write path (INSERT on inject/resolve) not yet implemented.

@@ -3,7 +3,7 @@
 **Live URL:** http://35.188.3.97  
 **Cluster:** `gdc-edge-simulation` / namespace `gdc-pm` / region `us-central1`  
 **Image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`  
-**LLM:** `gemma:2b` running on existing node. `gemma4:27b` is configured in the Ollama deployment YAML; the NAP is actively provisioning an L4 GPU node in `us-central1-c` (old PVC was zone-locked to `us-central1-f` which does not support L4 — fixed in this sprint). Once the node provisions, the init container will auto-pull the 15 GB model.
+**LLM:** `gemma:2b` running on existing node. `gemma:27b` is configured in the Ollama deployment YAML; the NAP is actively provisioning an L4 GPU node in `us-central1-c` (old PVC was zone-locked to `us-central1-f` which does not support L4 — fixed in this sprint). Once the node provisions, the init container will auto-pull the 15 GB model.
 
 ---
 
@@ -43,10 +43,10 @@ Only edit `gke/fault-trigger-ui/app.py` and `gke/fault-trigger-ui/index.html`.
 - **Pressure units:** All pressure stat panels (ESP-A1–A6, Avg ESP Intake) use `"unit": "psi"` — prevents Grafana auto-scaling from ksi to PSI. Display names set to `"ESP Intake Pressure (PSI)"`.
 - **Timeseries panels** (ESP panel 5, Gas Lift 31, Mud Pump 32): also use `"unit": "psi"` (not `pressurepsi` which auto-scales to ksi).
 
-### Ollama / gemma4:27b
-- **Status:** Deployment YAML configured for `gemma4:27b` on L4 GPU (`g2-standard-4`).
+### Ollama / gemma:27b
+- **Status:** Deployment YAML configured for `gemma:27b` on L4 GPU (`g2-standard-4`).
 - **Previous issue:** PVC `ollama-models-pvc` was zone-locked to `us-central1-f` which does NOT support NVIDIA L4. Fixed by deleting the PVC and letting GKE NAP provision a fresh one in `us-central1-c`.
-- **Current:** NAP is actively trying to provision in `us-central1-c` (L4-capable). Once the node is available, init container pulls `gemma4:27b` (~15 GB, ~10 min). `gemma:2b` is NOT available anymore (old PVC deleted). Until gemma4:27b pulls, agent responses use the rule-based fallback.
+- **Current:** NAP is actively trying to provision in `us-central1-c` (L4-capable). Once the node is available, init container pulls `gemma:27b` (~15 GB, ~10 min). `gemma:2b` is NOT available anymore (old PVC deleted). Until gemma:27b pulls, agent responses use the rule-based fallback.
 - **Cost:** L4 GPU node ~$0.65/hr. The `ollama-scheduler` CronJobs manage stand-up (6 AM UTC Mon–Fri) / stand-down (6 PM UTC daily).
 
 ---
@@ -90,7 +90,7 @@ kubectl rollout restart deployment/grafana -n gdc-pm
 kubectl rollout status deployment/grafana -n gdc-pm --timeout=90s
 ```
 
-## Check gemma4:27b status
+## Check gemma:27b status
 
 ```bash
 kubectl get pods -n gdc-pm -l app=ollama -o wide

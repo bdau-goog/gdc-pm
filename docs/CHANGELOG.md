@@ -36,27 +36,27 @@
 **gke/fault-trigger-ui/index.html**
 - **Tab reorder:** Fleet Telemetry → Fleet Operations → Fleet Financials (Telemetry is now first and the default view on load)
 - **Fleet Telemetry loads on mount:** `this.loadGrafana()` called in `mounted()` — Grafana iframe begins loading immediately when app opens
-- **LLM display string:** `'gemma:2b'` fallback → `'gemma4:27b'` in both the Edge/Cloud status bar and Copilot panel header
+- **LLM display string:** `'gemma:2b'` fallback → `'gemma:27b'` in both the Edge/Cloud status bar and Copilot panel header
 - **Field Intelligence click-through:** All 10 routine report cards are now clickable — `@click="openFeedModal(item)"` opens the existing feed-detail modal with full document text
 - **FIELD_INTEL_ITEMS enriched:** Each item now has `detail` (full verbatim report text), `ts_label` (for modal header), and `ai_relevance` (explains how GDC AI uses this document). Content is authentic: Maximo WOs, spectroscopic oil analysis with metals/viscosity/cleanliness codes, API BS&W analysis, EDR driller's notes, Pason mud reports, VFD calibration logs, directional surveys
 - **Tab labels renamed:** "Operations" → "Fleet Operations"; "Historical Telemetry" → "Fleet Telemetry"
 
 **gke/fault-trigger-ui/app.py**
-- `OLLAMA_MODEL` default: `"gemma3:12b"` → `"gemma4:27b"`
+- `OLLAMA_MODEL` default: `"gemma3:12b"` → `"gemma:27b"`
 
 **gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml**
-- `OLLAMA_MODEL` env var added explicitly to deployment spec: `"gemma4:27b"` — overrides code default, persists across container image updates
+- `OLLAMA_MODEL` env var added explicitly to deployment spec: `"gemma:27b"` — overrides code default, persists across container image updates
 - `GRAFANA_URL` env var added (was previously only injected by app.py logic)
 - Resource limits increased: CPU `100m/500m` → `250m/1000m`, Memory `128Mi/256Mi` → `512Mi/1Gi`
 
 **gke/ollama/k8s/ollama.yaml** (YAML updated — not applied to live cluster; requires L4 node pool provisioning)
 - GPU node target: `nvidia-a2` → `nvidia-l4` (24GB VRAM, Ada Lovelace architecture)
-- Model: `gemma:2b` → `gemma4:27b` (Q4_K_M, ~15GB VRAM, fits on L4 with 7GB headroom)
-- PVC storage: `10Gi` → `50Gi` (gemma4:27b model is ~15GB)
+- Model: `gemma:2b` → `gemma:27b` (Q4_K_M, ~15GB VRAM, fits on L4 with 7GB headroom)
+- PVC storage: `10Gi` → `50Gi` (gemma:27b model is ~15GB)
 - Container resources: `4Gi/8Gi` memory → `12Gi/26Gi`; CPU `1000m` → `4000m/8000m`
 - Flash attention enabled: `OLLAMA_FLASH_ATTENTION=1`; context window: `OLLAMA_NUM_CTX=8192`
 - Ollama image: `0.3.12` → `latest` (required for Gemma 4 support)
-- Init container: updated to pull `gemma4:27b`; improved health-check loop before pull
+- Init container: updated to pull `gemma:27b`; improved health-check loop before pull
 
 **gke/ollama/k8s/ollama-scheduler.yaml** (NEW — partially applied)
 - Kubernetes CronJobs for automated L4 cost management

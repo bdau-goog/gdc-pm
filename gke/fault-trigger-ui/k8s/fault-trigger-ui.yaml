@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: fault-trigger-ui
-          image: GCR_IMAGE_PLACEHOLDER
+          image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
           ports:
             - containerPort: 8080
           env:
@@ -64,9 +64,9 @@ spec:
                   name: alloydb-secret
                   key: password
             # LLM model name — must match what is loaded in the ollama pod.
-            # Phase 14: upgraded from gemma:2b to gemma4:27b (NVIDIA L4).
+            # Phase 14: upgraded from gemma:2b to gemma:27b (NVIDIA L4).
             - name: OLLAMA_MODEL
-              value: "gemma4:27b"
+              value: "gemma:27b"
             - name: GRAFANA_URL
               value: "http://136.115.220.48"
           resources:

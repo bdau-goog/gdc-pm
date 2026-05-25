@@ -97,7 +97,7 @@ spec:
                   echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC') — Standing UP ollama deployment (replicas=1)"
                   kubectl scale deployment ollama -n gdc-pm --replicas=1
                   echo "✅ ollama scaled to 1 replica. GKE Autoscaler will provision L4 node (~2-3 min)."
-                  echo "   Ollama will be ready for gemma4:27b inference once readiness probe passes."
+                  echo "   Ollama will be ready for gemma:27b inference once readiness probe passes."
               resources:
                 requests:
                   cpu: "50m"

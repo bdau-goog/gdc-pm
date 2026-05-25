@@ -27,6 +27,47 @@
 - After changes: docker build → docker push → kubectl rollout restart.
 - Note: This SSH remote does not have a browser, so the `browser_action` tool should not be used.
 
+## ── AUTOMATIC SESSION STARTUP ─────────────────────────────────────────────────
+#
+# At the start of EVERY new conversation — before responding to any user request,
+# before reading any file, before writing any code — automatically run all four
+# of these commands and report the results to the user. Do not wait to be asked.
+#
+# This is not optional. It is the first action in every session.
+#
+execute_on_start:
+  - kubectl get pods -n gdc-pm --no-headers
+  - kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
+  - curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
+  - kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
+#
+# After running these commands:
+# 1. Compare each result against NEXT_SESSION_PROMPT.md "Expected results when healthy"
+# 2. Report any discrepancy to the user immediately
+# 3. If anything doesn't match: ask the user to confirm the correct state before proceeding
+# 4. Do NOT write any code until all 4 commands have been run and their output reported
+#
+# Then read gdc-pm/docs/NEXT_SESSION_PROMPT.md and report the NEXT SESSION PLAN
+# so the user knows what this session will work on before any work starts.
+#
+
+## Integrity — No Silent Lies
+- Any code that DISPLAYS value X but ACTUALLY has value Y is an integrity violation that must be documented and fixed, never left as an acceptable design pattern.
+- Examples of violations: hardcoded display labels that don't reflect actual state, health checks that always return green, model names shown in UI that aren't actually running.
+- If you create or encounter such a mismatch, add it immediately to the "Known Integrity State" table in NEXT_SESSION_PROMPT.md with a fix deadline.
+
+## Atomic Fix Rule
+- Implement ONE fix per session if possible. Never more than THREE related fixes.
+- After each fix: verify it works in the live cluster (kubectl, curl the API, or check logs), THEN write the next fix.
+- A fix is NOT complete until it is deployed and verified. "Code written" ≠ "done."
+
+## Token Budget Discipline
+- After completing and verifying 2-3 fixes: update NEXT_SESSION_PROMPT.md and explicitly ask the user whether to continue or end cleanly.
+- At 80% of the context window: stop all implementation. Document only. Do not start any new code.
+- At 95%: hard stop. Write the handoff and end.
+- Never start a fix that cannot be completed and verified within the remaining context budget.
+- The task_progress checklist in each tool call must reflect true state — mark nothing complete until it is deployed and verified.
+
 ## Session Handoff (NEXT_SESSION_PROMPT.md)
 - At the end of every session, rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` as a complete, self-contained handoff for the next session. Do NOT append — always rewrite from scratch.
 
@@ -34,16 +75,31 @@
 1. **Check `git status`** — If uncommitted changes exist, list "Commit pending changes" as the #1 High Priority item, and note in the header: "⚠ Uncommitted changes in working directory."
 2. **Feature Completeness Gate** — For every item in "What Was Done This Session", verify it is truly end-to-end complete (code written + deployed + live in cluster). If any part of a feature remains in the To-Do list, the feature is NOT complete — label it **"Partially Complete"** and split its description between the two sections.
 3. **Cross-check To-Do vs What Was Done** — No item should appear in both sections. Any completed To-Do item must be removed from To-Do and moved to What Was Done.
+4. **Run the verification block** — Paste actual command output into the "Current Cluster State" section. Never write what you expect the state to be; write what the commands actually returned.
+5. **Known Integrity State table** — Include a table of any place where the display/UI shows something different from reality. If there are none, write "None — all displays match reality." Do not skip this section.
 
 ### Document Structure
 - The document must include, in order:
   1. **Header** — date, live URL, project/cluster/namespace, current image tag, git head (include "⚠ Uncommitted changes in working directory" if `git status` shows any)
-  2. **What Was Done This Session** — only **fully deployed, live work**. Use "Partially Complete" for features where the code was written but not fully wired or deployed.
-  3. **Current Cluster State** — running pods with one-line descriptions, any IMPORTANT caveats (e.g. actual vs display model mismatch)
-  4. **Outstanding Development Items (To-Do)** — numbered, prioritised (High / Medium / Low), with implementation plan for High items. Remove items that were completed this session. Carry forward only what remains.
-  5. **Constraints** — the permanent "never violate" list (unchanged unless a constraint is explicitly retired)
-  6. **Rebuild & Deploy Commands** — exact copy-paste commands for the next session
-  7. **Key Lessons Learned** — session-specific only; replace, do not accumulate across sessions
+  2. **MANDATORY SESSION OPENER** — the 4 verification commands with their expected output. This must be the first thing a new session runs.
+  3. **Known Integrity State** — table of any display vs reality mismatches. "None" is acceptable but must be stated explicitly.
+  4. **NEXT SESSION PLAN** — exactly what the next session will work on, in this format:
+     ```
+     | Fix | Change (one sentence) | Verification test (one command or action) | Est. complexity |
+     |-----|----------------------|------------------------------------------|-----------------|
+     | 8b  | random.sample in intel feed | Inject gas_lock twice; confirm different 3 items each run | Small |
+     | 10  | get_gemma_finding() dynamic | Check gemma_finding varies between runs | Small |
+     ```
+     - "Small" = one function, <30 lines, one verification step
+     - "Medium" = 2-3 functions, one deploy needed, 2-3 verification steps
+     - "Large" = schema change, multiple files, own session required
+     - A session with token budget of ~200K fits: 3-5 Small, 2-3 Medium, 1 Large (never mix Large with others)
+  5. **What Was Done This Session** — only **fully deployed, live work**. Use "Partially Complete" for features where the code was written but not fully wired or deployed.
+  6. **Current Cluster State** — running pods with one-line descriptions. Use VERIFIED ACTUAL OUTPUT, not what you expect.
+  7. **Outstanding Development Items (Backlog)** — everything NOT in the next session plan. Numbered, prioritised (High / Medium / Low). Items not in the next plan should include a one-line implementation note so future sessions can pick them up.
+  8. **Constraints** — the permanent "never violate" list (unchanged unless a constraint is explicitly retired)
+  9. **Rebuild & Deploy Commands** — exact copy-paste commands for the next session
+  10. **Key Lessons Learned** — session-specific only; replace, do not accumulate across sessions
 
 - The document must be **clean**: no historical "What Was Done in Session N-2" sections, no completed to-do items, no outdated caveats. Each handoff should read as if written fresh for a new reader.
 - The next session is started by pasting the entire contents of this file as the first message in a new conversation. Optimise for that use case — be precise, not exhaustive.

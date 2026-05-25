@@ -34,7 +34,7 @@ spec:
       serviceAccountName: ml-inference-ksa
       containers:
         - name: inference-api
-          image: GCR_IMAGE_PLACEHOLDER
+          image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest
           ports:
             - containerPort: 8080
           env:

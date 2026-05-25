@@ -18,7 +18,7 @@ import os
 import random
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
@@ -54,11 +54,11 @@ OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.
 # Phase 6.2: Reduced to gemma3:12b for faster demo response time.
 # gemma:2b was too small; gemma3:27b is too slow. 12b hits the sweet spot.
 # Override via OLLAMA_MODEL env var if a different model is pulled.
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:27b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma:27b")
 # Phase 16: Separate display label from actual model call.
-# Allows showing "gemma4:27b" in the UI even while gemma:2b is actually loaded
-# (until the L4 GPU node pool is provisioned and gemma4:27b is pulled).
-# Override: kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_DISPLAY_MODEL="gemma4:27b"
+# Allows showing "gemma:27b" in the UI even while gemma:2b is actually loaded
+# (until the L4 GPU node pool is provisioned and gemma:27b is pulled).
+# Override: kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_DISPLAY_MODEL="gemma:27b"
 OLLAMA_DISPLAY_MODEL = os.environ.get("OLLAMA_DISPLAY_MODEL", OLLAMA_MODEL)
 
 # ── Health Score Model Registry (Phase 5.1) ───────────────────────────────────
@@ -137,24 +137,27 @@ threading.Thread(target=_ollama_keepalive, daemon=True, name="ollama-keepalive")
 log.info(f"🔥 Ollama keepalive thread started — model: {OLLAMA_MODEL}, interval: 5min")
 
 
-# ── ChromaDB Setup ────────────────────────────────────────────────────────────
-try:
-    import chromadb
-    chroma_client = chromadb.Client()
-    static_collection = chroma_client.create_collection("static_corpus")
-    dynamic_collection = chroma_client.create_collection("dynamic_evidence")
+# ── Embed Model Singleton (Sprint 5 v8 Fix 7) ─────────────────────────────────
+# Lazy-loaded SentenceTransformer for AlloyDB pgvector RAG.
+# Same pattern as event-processor.py. Falls back gracefully if unavailable.
+_embed_model = None
 
-    STATIC_CHUNKS = [
-        "API RP 11S2: High water cut in ESP operations significantly reduces the cooling capacity of the fluid passing the motor. If water cut exceeds 60%, heat transfer degrades and motor winding temperature will rapidly climb.",
-        "SPE-174536: Gas lock occurs when the gas void fraction at the pump intake exceeds the pump's handling capacity. This is characterized by a rapid decline in intake pressure and a sharp drop in motor current as the pump unloads.",
-        "API RP 11S3: Sand ingress leads to abrasive wear on impeller stages. Over time, this erosion causes vibration levels to slowly rise across days while pressure may initially hold steady before hydraulic failure.",
-        "SPE-181193: Bearing wear in ESPs presents as a steady increase in vibration. Unlike sand erosion, bearing wear may cause slight increases in motor temperature and current due to increased mechanical friction, while pressure remains flat."
-    ]
-    static_collection.add(documents=STATIC_CHUNKS, ids=[f"static_{i}" for i in range(len(STATIC_CHUNKS))])
-    log.info("✅ ChromaDB initialized with static corpus")
-except ImportError:
-    chroma_client = None
-    log.warning("⚠️ ChromaDB not installed — RAG disabled")
+
+def _get_embed_model_singleton():
+    """Return the SentenceTransformer model, loading it once on first call."""
+    global _embed_model
+    if _embed_model is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            _embed_model = SentenceTransformer('all-MiniLM-L6-v2')
+            log.info("✅ SentenceTransformer loaded: all-MiniLM-L6-v2")
+        except Exception as e:
+            log.warning(f"SentenceTransformer unavailable — static RAG disabled: {e}")
+    return _embed_model
+
+
+# ChromaDB removed (Sprint 5 v8 Fix 7) — now using AlloyDB rag_documents with pgvector
+chroma_client = None
 
 
 # ── Document Generator ────────────────────────────────────────────────────────
@@ -181,7 +184,7 @@ def generate_dynamic_documents(asset_id: str, fault_type: str, sensors: dict) ->
             "timestamp": (now - timedelta(hours=random.randint(2, 6))).isoformat() + "Z"
         })
     elif fault_type == "gas_lock":
-        gvf = random.randint(60, 85)
+        gvf = random.randint(71, 85)  # guaranteed > 70 → always triggers 0.6x RUL adjustment in adjust_rul_with_documents
         docs.append({
             "doc_type": "well_test",
             "content": f"Well Test: Gas Void Fraction (GVF) at intake for {asset_id} estimated at {gvf}%. Current intake pressure: {sensors.get('psi', 0):.1f} PSI.",
@@ -231,6 +234,113 @@ def generate_dynamic_documents(asset_id: str, fault_type: str, sensors: dict) ->
             "content": f"Vibration Report: BPFI defect frequency confirmed on {asset_id}. Amplitude rising.",
             "timestamp": (now - timedelta(hours=random.randint(12, 24))).isoformat() + "Z"
         })
+    elif fault_type == "valve_failure":
+        # Fix 9: valve_failure — gas lift check valve chattering / disk fracture
+        cyclic_dp = random.randint(38, 48)
+        overdue_mo = random.randint(15, 22)
+        h2s_ppm = random.randint(1100, 1400)
+        templates = [
+            {
+                "doc_type": "process_historian",
+                "content": random.choice([
+                    f"Discharge Pressure Historian: Cyclic ΔP amplitude {cyclic_dp} psi peak-to-peak on {asset_id} (nominal <8 psi). Frequency 1.8 Hz — valve disk flutter signature. Mean pressure {sensors.get('psi', 978):.0f} psi (normal range). SCADA: NO ALARM.",
+                    f"Process Historian: {asset_id} discharge pressure oscillating ±{cyclic_dp//2} psi at 1.8 Hz. Cyclic amplitude {cyclic_dp} psi is {cyclic_dp//8}× normal. Mean pressure within limits — SCADA blind to this pattern.",
+                    f"Pressure Historian: {asset_id} valve chatter confirmed — {cyclic_dp} psi cyclic amplitude at 1.8 Hz. Disk flutter precedes fracture. Current discharge: {sensors.get('psi', 978):.0f} psi.",
+                ]),
+                "timestamp": (now - timedelta(hours=random.randint(1, 3))).isoformat() + "Z"
+            },
+            {
+                "doc_type": "maximo_service",
+                "content": random.choice([
+                    f"Maximo Asset Record: {asset_id} check valve last replaced {overdue_mo} months ago (interval: 12 months H2S service). H2S: {h2s_ppm} ppm — accelerated corrosion. Part CVD-1200-PSI-4IN in local stock.",
+                    f"Maximo PM: Check valve on {asset_id} overdue by {overdue_mo - 12} months. Sour service ({h2s_ppm} ppm H2S) accelerates disk corrosion. Replacement part confirmed in local inventory.",
+                    f"Service History: {asset_id} valve WO-2024-1840 completed {overdue_mo} months ago. H2S {h2s_ppm} ppm — 12-month interval exceeded. Chattering signature consistent with disk cracking.",
+                ]),
+                "timestamp": (now - timedelta(days=random.randint(1, 3))).isoformat() + "Z"
+            },
+            {
+                "doc_type": "shift_note",
+                "content": random.choice([
+                    f"Shift Note: Operator reported unusual noise from {asset_id} compressor discharge. Pressure gauge showing minor fluctuations. No SCADA alarm active.",
+                    f"Shift Handover: {asset_id} — 'Discharge pressure seems a bit unsteady, nothing alarming.' No action taken. SCADA normal.",
+                    f"Operator Log: {asset_id} compressor running but discharge pressure slightly erratic last 2 hours. Monitoring.",
+                ]),
+                "timestamp": (now - timedelta(hours=random.randint(2, 5))).isoformat() + "Z"
+            },
+        ]
+        docs.extend(templates)
+    elif fault_type == "thermal_runaway":
+        # Fix 9: thermal_runaway — gas lift compressor fin-fan cooling failure
+        delta_t = random.randint(46, 56)
+        overdue_mo = random.randint(13, 16)
+        discharge_temp = sensors.get('temp', 187)
+        templates = [
+            {
+                "doc_type": "process_historian",
+                "content": random.choice([
+                    f"Cooling System Historian: {asset_id} fin-fan delta-T {delta_t}°F (design: 35°F, deviation +{delta_t-35}%). Discharge temp {discharge_temp:.0f}°F trending +2.1°F/hr. SCADA alarm: 230°F. Projected crossing: ~{int((230 - discharge_temp) / 2.1)}h.",
+                    f"Process Historian: {asset_id} cylinder jacket cooling degraded. Inlet 98°F, outlet {98 + delta_t}°F, delta-T {delta_t}°F vs 35°F design. Fin-fan airflow restriction suspected.",
+                    f"Cooling Water Log: {asset_id} heat exchanger efficiency declining. Delta-T {delta_t}°F ({int((delta_t/35-1)*100)}% above design). Discharge temp {discharge_temp:.0f}°F and rising.",
+                ]),
+                "timestamp": (now - timedelta(hours=random.randint(2, 6))).isoformat() + "Z"
+            },
+            {
+                "doc_type": "maximo_pm",
+                "content": random.choice([
+                    f"Maximo PM Record: {asset_id} aerial fin-fan cooler last cleaned {overdue_mo} months ago (interval: 6 months per Ariel manual). Overdue by {overdue_mo - 6} months. CREW-BRAVO-B on-site tomorrow — can append at zero travel cost.",
+                    f"Preventive Maintenance: {asset_id} fin-fan cleaning WO-PM-0194 completed {overdue_mo} months ago. PM interval 6 months — overdue {overdue_mo - 6} months. Fouling consistent with observed delta-T increase.",
+                    f"Maximo: {asset_id} cooler PM overdue {overdue_mo - 6} months. Ariel JGP design limit 250°F discharge. Current {discharge_temp:.0f}°F. Crew scheduled on-site tomorrow for transmitter calibration.",
+                ]),
+                "timestamp": (now - timedelta(days=random.randint(1, 5))).isoformat() + "Z"
+            },
+            {
+                "doc_type": "shift_note",
+                "content": random.choice([
+                    f"Shift Note: {asset_id} running warmer than usual. Discharge temp higher than last week but no alarm. Mentioned to day tour.",
+                    f"Operator Log: {asset_id} — 'Compressor feels hot, discharge temp climbing slowly. No SCADA alarm yet.' Monitoring.",
+                    f"Shift Handover: {asset_id} discharge temp trending up over last 6 hours. No alarm. Crew to watch.",
+                ]),
+                "timestamp": (now - timedelta(hours=random.randint(3, 8))).isoformat() + "Z"
+            },
+        ]
+        docs.extend(templates)
+    elif fault_type == "bearing_wear_glift":
+        iron_ppm = random.randint(40, 80)
+        docs.extend([
+            {"doc_type": "oil_analysis", "content": f"Oil Analysis: Iron at {iron_ppm} ppm for {asset_id}. Impending bearing spalling.", "timestamp": (now - timedelta(hours=24)).isoformat() + "Z"},
+            {"doc_type": "maximo_pm", "content": f"Maximo PM: {asset_id} bearing replacement overdue.", "timestamp": (now - timedelta(days=60)).isoformat() + "Z"},
+            {"doc_type": "vibration_report", "content": f"Vibration: {asset_id} shows BPFI peak amplitude rising. Current vib: {sensors.get('vib', 0):.2f} mm/s.", "timestamp": (now - timedelta(hours=12)).isoformat() + "Z"}
+        ])
+    elif fault_type == "pulsation_dampener_failure":
+        docs.extend([
+            {"doc_type": "shift_note", "content": f"Shift Note: Extreme pressure hammer observed on {asset_id}.", "timestamp": (now - timedelta(minutes=5)).isoformat() + "Z"},
+            {"doc_type": "vibration_report", "content": f"Vibration: Massive spike on {asset_id} dampener manifold.", "timestamp": (now - timedelta(minutes=10)).isoformat() + "Z"},
+            {"doc_type": "process_historian", "content": f"Historian: {asset_id} discharge pressure wild oscillations. Pressure at {sensors.get('psi', 0):.0f} PSI.", "timestamp": (now - timedelta(minutes=15)).isoformat() + "Z"}
+        ])
+    elif fault_type == "valve_washout":
+        docs.extend([
+            {"doc_type": "process_historian", "content": f"Historian: {asset_id} SPM rising while PSI holds at {sensors.get('psi', 0):.0f} PSI. Valve leak suspected.", "timestamp": (now - timedelta(hours=1)).isoformat() + "Z"},
+            {"doc_type": "shift_note", "content": f"Shift Note: Driller increasing strokes on {asset_id} to maintain flow.", "timestamp": (now - timedelta(hours=2)).isoformat() + "Z"},
+            {"doc_type": "maximo_pm", "content": f"Maximo PM: {asset_id} fluid end inspection overdue.", "timestamp": (now - timedelta(days=10)).isoformat() + "Z"}
+        ])
+    elif fault_type == "piston_seal_wear":
+        docs.extend([
+            {"doc_type": "process_historian", "content": f"Historian: {asset_id} fluid end temp rising to {sensors.get('temp', 0):.0f}°F. Seal bypass likely.", "timestamp": (now - timedelta(hours=3)).isoformat() + "Z"},
+            {"doc_type": "shift_note", "content": f"Shift Note: Minor pressure drop noticed on {asset_id}. SPM steady.", "timestamp": (now - timedelta(hours=4)).isoformat() + "Z"},
+            {"doc_type": "maximo_pm", "content": f"Maximo PM: {asset_id} liner seal replacement overdue.", "timestamp": (now - timedelta(days=14)).isoformat() + "Z"}
+        ])
+    elif fault_type == "gearbox_bearing_spalling":
+        docs.extend([
+            {"doc_type": "oil_analysis", "content": f"Oil Analysis: Iron at {random.randint(55, 80)} ppm in {asset_id} gearbox. Spalling active.", "timestamp": (now - timedelta(hours=48)).isoformat() + "Z"},
+            {"doc_type": "vibration_report", "content": f"Vibration: {asset_id} shows BPFI defect frequency. Amplitude: {sensors.get('vib', 0):.2f} mm/s.", "timestamp": (now - timedelta(hours=8)).isoformat() + "Z"},
+            {"doc_type": "shift_note", "content": f"Shift Note: Rough rotation reported from {asset_id} during drilling.", "timestamp": (now - timedelta(hours=2)).isoformat() + "Z"}
+        ])
+    elif fault_type == "hydraulic_leak":
+        docs.extend([
+            {"doc_type": "rig_log", "content": f"Rig Log: Added 1.2 gal hydraulic fluid to {asset_id}. Pressure {sensors.get('psi', 0):.0f} PSI.", "timestamp": (now - timedelta(hours=4)).isoformat() + "Z"},
+            {"doc_type": "shift_note", "content": f"Shift Note: Visible sheen near {asset_id} swivel. Slow leak suspected.", "timestamp": (now - timedelta(hours=2)).isoformat() + "Z"},
+            {"doc_type": "maximo_pm", "content": f"Maximo PM: {asset_id} hydraulic hose replacement overdue.", "timestamp": (now - timedelta(days=30)).isoformat() + "Z"}
+        ])
     else:
         # Fallback for non-ESP faults or others
         docs.append({
@@ -239,19 +349,6 @@ def generate_dynamic_documents(asset_id: str, fault_type: str, sensors: dict) ->
             "timestamp": now.isoformat() + "Z"
         })
 
-    # Clear old evidence for this asset and insert new
-    if chroma_client:
-        try:
-            dynamic_collection.delete(where={"asset_id": asset_id})
-            dynamic_collection.add(
-                documents=[d["content"] for d in docs],
-                metadatas=[{"asset_id": asset_id, "doc_type": d["doc_type"], "timestamp": d["timestamp"]} for d in docs],
-                ids=[f"{asset_id}_{i}" for i in range(len(docs))]
-            )
-            log.info(f"✅ Inserted {len(docs)} dynamic docs into ChromaDB for {asset_id}")
-        except Exception as e:
-            log.error(f"ChromaDB insert error: {e}")
-            
     return docs
 
 def adjust_rul_with_documents(rul_minutes: float, documents: list) -> float:
@@ -305,7 +402,7 @@ def adjust_rul_with_documents(rul_minutes: float, documents: list) -> float:
 # UI polls /api/field-intelligence every 60s and prepends new rows with .act-new.
 
 def _ensure_field_intel_table() -> None:
-    """Live migration — create field_intel table if not yet present."""
+    """Live migration — create field_intel table and fault_sessions table if not yet present."""
     try:
         conn = get_db()
         with conn.cursor() as cur:
@@ -330,10 +427,27 @@ def _ensure_field_intel_table() -> None:
                   ON field_intel(asset_id, created_at DESC);
                 CREATE INDEX IF NOT EXISTS idx_field_intel_fault
                   ON field_intel(fault_context, created_at DESC);
+
+                -- Fix 11b: fault_sessions audit log
+                CREATE TABLE IF NOT EXISTS fault_sessions (
+                  id            SERIAL PRIMARY KEY,
+                  injected_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  asset_id      TEXT NOT NULL,
+                  asset_class   TEXT NOT NULL,
+                  fault_type    TEXT NOT NULL,
+                  resolved_at   TIMESTAMPTZ,
+                  resolution    TEXT,
+                  cost_avoided  NUMERIC DEFAULT 0,
+                  operator      TEXT DEFAULT 'system'
+                );
+                CREATE INDEX IF NOT EXISTS idx_fault_sessions_injected
+                  ON fault_sessions(injected_at DESC);
+                CREATE INDEX IF NOT EXISTS idx_fault_sessions_asset
+                  ON fault_sessions(asset_id, injected_at DESC);
             """)
         conn.commit()
         conn.close()
-        log.info("✅ field_intel table ready")
+        log.info("✅ field_intel + fault_sessions tables ready")
     except Exception as e:
         log.warning(f"field_intel table check (non-fatal): {e}")
 
@@ -427,6 +541,10 @@ ASSETS = [
     # Pad Alpha (ESP Production — Pure ESP Pad)
     "ESP-ALPHA-1", "ESP-ALPHA-2", "ESP-ALPHA-3",
     "ESP-ALPHA-4", "ESP-ALPHA-5", "ESP-ALPHA-6",
+    # Pad Bravo (Gas Lift Compressors)
+    "GLIFT-BRAVO-1", "GLIFT-BRAVO-2", "GLIFT-BRAVO-3", "GLIFT-BRAVO-4",
+    # Rig 42 (Mud Pumps + Top Drive)
+    "MUD-RIG42-1", "MUD-RIG42-2", "MUD-RIG42-3", "TOPDRIVE-RIG42-1"
 ]
 
 ASSET_REGISTRY = {
@@ -615,8 +733,8 @@ FAULT_PROFILES = {
         "psi_range": (1300, 1400), "temp_range": (265, 295), "vib_range": (1.0, 2.0),
         "amps_range": (88, 105),
     },
-    "bearing_wear": {
-        "label": "Bearing Wear", "asset_class": "esp",
+    "bearing_wear_esp": {
+        "label": "Bearing Wear (ESP)", "asset_class": "esp",
         "description": "Vibration rises significantly, Temp/Amps slight rise, PSI flat",
         "color": "#fdd835",
         "psi_range": (1350, 1450), "temp_range": (210, 230), "vib_range": (8.5, 14.5),
@@ -635,7 +753,7 @@ FAULT_PROFILES = {
         "color": "#ff6f00",
         "psi_range": (940, 1040), "temp_range": (210, 248), "vib_range": (3.0, 5.5),
     },
-    "bearing_wear": {
+    "bearing_wear_glift": {
         "label": "Journal Bearing Wear", "asset_class": "gas_lift",
         "description": "Crankshaft bearing wear — frame vibration rises slowly over hours, pressure/temp stable",
         "color": "#f9a825",
@@ -681,7 +799,7 @@ FAULT_PROFILES = {
 # Faults valid per asset class
 FAULTS_BY_CLASS = {
     "esp":       ["gas_lock", "sand_ingress", "motor_overheat"],
-    "gas_lift":  ["valve_failure", "thermal_runaway", "bearing_wear"],
+    "gas_lift":  ["valve_failure", "thermal_runaway", "bearing_wear_glift"],
     "mud_pump":  ["pulsation_dampener_failure", "valve_washout", "piston_seal_wear"],
     "top_drive": ["gearbox_bearing_spalling", "hydraulic_leak"],
 }
@@ -696,7 +814,9 @@ PNR_MINUTES = {
     "motor_overheat":             30,   # Winding insulation fails above 280°F
     "valve_failure":               5,   # Instantaneous pressure crash
     "thermal_runaway":            40,   # Thermal mass buys ~40min before seizure
-    "bearing_wear":               240,  # Gradual spalling — longest window
+    "bearing_wear_esp":           240,  # ESP radial bearing spalling
+    "bearing_wear_glift":         240,  # Gas lift crankshaft journal bearing
+    "bearing_wear":               240,  # Legacy alias
     "pulsation_dampener_failure":  0,   # Instantaneous — pipe-rupture risk
     "valve_washout":               60,  # Mud circulation loss develops over ~1h
     "piston_seal_wear":           180,  # Slow seal degradation
@@ -742,7 +862,13 @@ REMEDIATION_TIERED = {
         "critical": {"action": "Emergency compressor shutdown — thermal seizure imminent; flush cooling system",     "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 25000},
         "post_pnr": {"action": "Replace cylinder head and cooling jacket; full compressor rebuild required",         "type": "workover", "time_to_execute": "5–8 days", "cost_incurred": 150000},
     },
-    "bearing_wear": {   # PNR=240m
+    "bearing_wear_glift": {   # PNR=240m — gas lift crankshaft journal bearing
+        "early":    {"action": "Reduce RPM 10% to lower bearing load; schedule planned bearing swap within 48h",   "type": "software_command", "time_to_execute": "<10 min", "cost_incurred": 5000},
+        "urgent":   {"action": "Reduce to 70% rated speed + mobilise bearing replacement crew for next slot",       "type": "field_notification", "time_to_execute": "30–60 min", "cost_incurred": 20000},
+        "critical": {"action": "Compressor to minimum-load idle; bearing replacement within 4 hours required",     "type": "emergency_procedure", "time_to_execute": "30 min", "cost_incurred": 40000},
+        "post_pnr": {"action": "Emergency bearing and shaft replacement; inspect crankshaft for scoring damage",    "type": "workover", "time_to_execute": "3–5 days", "cost_incurred": 85000},
+    },
+    "bearing_wear": {   # Legacy alias → same as bearing_wear_glift for backward compat
         "early":    {"action": "Reduce RPM 10% to lower bearing load; schedule planned bearing swap within 48h",   "type": "software_command", "time_to_execute": "<10 min", "cost_incurred": 5000},
         "urgent":   {"action": "Reduce to 70% rated speed + mobilise bearing replacement crew for next slot",       "type": "field_notification", "time_to_execute": "30–60 min", "cost_incurred": 20000},
         "critical": {"action": "Compressor to minimum-load idle; bearing replacement within 4 hours required",     "type": "emergency_procedure", "time_to_execute": "30 min", "cost_incurred": 40000},
@@ -789,7 +915,9 @@ REMEDIATION_COSTS = {
     "motor_overheat":             200000,  # Motor burnout + replacement
     "valve_failure":               42500,  # Valve replacement + downtime
     "thermal_runaway":            150000,  # Compressor rebuild
-    "bearing_wear":                85000,  # Bearing replacement + rig-down
+    "bearing_wear_esp":            85000,  # ESP radial bearing replacement
+    "bearing_wear_glift":          85000,  # Gas lift crankshaft journal bearing
+    "bearing_wear":                85000,  # Legacy alias
     "pulsation_dampener_failure": 500000,  # Pipeline damage + emergency response
     "valve_washout":               52500,  # Fluid end rebuild
     "piston_seal_wear":            15000,  # Seal kit + 8h maintenance
@@ -1184,13 +1312,23 @@ FAULT_PHYSICS = {
         "primary_sensor": "psi",
         "intervention_type": "operational_control",
     },
+    "bearing_wear_glift": {
+        "horizon_label": "Hours",
+        "total_hours": 16,
+        "scada_alarm_health": 0.20,
+        "pnr_health": 0.08,
+        "scada_sensor": "vib",        # Vibration high alarm (crankshaft bearing)
+        "pnr_sensor": "temp",         # Thermal runaway as bearing seizes
+        "primary_sensor": "vib",
+        "intervention_type": "maintenance_scheduling",
+    },
     "bearing_wear": {
         "horizon_label": "Hours",
         "total_hours": 16,
         "scada_alarm_health": 0.20,
         "pnr_health": 0.08,
-        "scada_sensor": "vib",        # Vibration high alarm (bearing roughness)
-        "pnr_sensor": "temp",         # Thermal runaway as bearing seizes
+        "scada_sensor": "vib",
+        "pnr_sensor": "temp",
         "primary_sensor": "vib",
         "intervention_type": "maintenance_scheduling",
     },
@@ -1512,19 +1650,26 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
     nr = NORMAL_RANGES.get(asset_class, NORMAL_RANGES["esp"])
     steps = max(1, duration_seconds // 5)
 
+    # Randomize target severity within fault profile range — drawn once so each run feels different
+    _psi_target  = random.uniform(*profile["psi_range"])
+    _temp_target = random.uniform(*profile["temp_range"])
+    _vib_target  = random.uniform(*profile["vib_range"])
+    _k           = random.uniform(3.0, 4.0)  # randomize ramp exponent slightly
+
     active_degrades[asset_id] = {
         "running": True, "fault_type": fault_type, "step": 0, "steps": steps,
         "fault_onset_utc": datetime.utcnow().isoformat() + "Z",  # Task 7: authoritative onset for PNR/Cloud calc
+        "ramp_k": _k, "ramp_target_psi": _psi_target,
     }
     log.info(f"▶ Gradual degrade: {fault_type} on {asset_id} ({steps} steps)")
 
     for i in range(steps):
         if not active_degrades.get(asset_id, {}).get("running"):
             break
-        t = ((i + 1) / steps) ** 3.5
-        psi  = (nr["psi"][0] + nr["psi"][1]) / 2 + t * (profile["psi_range"][0]  - (nr["psi"][0] + nr["psi"][1]) / 2)
-        temp = (nr["temp"][0] + nr["temp"][1]) / 2 + t * (profile["temp_range"][0] - (nr["temp"][0] + nr["temp"][1]) / 2)
-        vib  = (nr["vib"][0] + nr["vib"][1]) / 2  + t * (profile["vib_range"][0]  - (nr["vib"][0] + nr["vib"][1]) / 2)
+        t    = ((i + 1) / steps) ** _k
+        psi  = (nr["psi"][0]  + nr["psi"][1])  / 2 + t * (_psi_target  - (nr["psi"][0]  + nr["psi"][1])  / 2)
+        temp = (nr["temp"][0] + nr["temp"][1]) / 2 + t * (_temp_target - (nr["temp"][0] + nr["temp"][1]) / 2)
+        vib  = (nr["vib"][0]  + nr["vib"][1])  / 2 + t * (_vib_target  - (nr["vib"][0]  + nr["vib"][1])  / 2)
 
         # ── 4th-sensor ramp (ESP: motor_amps, Mud Pump: spm) ──────────────────
         _s4c = SENSOR4_CONFIG.get(asset_class)
@@ -1575,10 +1720,10 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
     if asset_id in active_degrades:
         active_degrades[asset_id].update({"running": False, "held": True, "step": steps})
 
-    # Final fault-level values (end of ramp = 100% of the way to fault range)
-    final_psi  = (nr["psi"][0]  + nr["psi"][1])  / 2 + (profile["psi_range"][0]  - (nr["psi"][0]  + nr["psi"][1])  / 2)
-    final_temp = (nr["temp"][0] + nr["temp"][1]) / 2 + (profile["temp_range"][0] - (nr["temp"][0] + nr["temp"][1]) / 2)
-    final_vib  = (nr["vib"][0]  + nr["vib"][1])  / 2 + (profile["vib_range"][0]  - (nr["vib"][0]  + nr["vib"][1])  / 2)
+    # Final fault-level values — match the randomized targets drawn at thread startup
+    final_psi  = _psi_target
+    final_temp = _temp_target
+    final_vib  = _vib_target
 
     # Final 4th-sensor value (hold at fault midpoint for hold phase)
     _s4c_hold = SENSOR4_CONFIG.get(asset_class)
@@ -1625,6 +1770,20 @@ def inject_degrade(req: DegradeRequest):
         raise HTTPException(status_code=400, detail=f"Unknown fault type: {req.fault_type}")
     if req.asset_id not in ASSETS:
         raise HTTPException(status_code=400, detail=f"Unknown asset: {req.asset_id}")
+    # Pre-clear old field_intel docs for this asset (fresh start every injection)
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM field_intel WHERE asset_id = %s", (req.asset_id,))
+            asset_class = ASSET_REGISTRY[req.asset_id]["asset_class"]
+            cur.execute(
+                "INSERT INTO fault_sessions (asset_id, asset_class, fault_type) VALUES (%s, %s, %s)",
+                (req.asset_id, asset_class, req.fault_type)
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"field_intel pre-clear / fault_sessions write failed (non-fatal): {e}")
     t = threading.Thread(target=_run_degrade_thread,
                          args=(req.asset_id, req.fault_type, req.duration_seconds), daemon=True)
     t.start()
@@ -2095,8 +2254,7 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     recent_labels = [str(r.get("predicted_label") or "normal").lower() for r in rows[-10:]]
     fault_count   = sum(1 for l in recent_labels if l not in ("normal", ""))
     fault_fraction = fault_count / max(len(recent_labels), 1)
-    # Removing `or is_degrading` so the XGBoost model detects natively
-    classifier_active = (fault_fraction > 0.20)
+    classifier_active = (fault_fraction > 0.20) or is_degrading
     # Phase 5.2: pre-initialize health score + FAULT_PHYSICS vars at function scope
     # so they're accessible in the timeline section below even if try block raises.
     _health_score = None   # health_score from HEALTH_MODELS predict (1.0 → 0.0)
@@ -2645,7 +2803,7 @@ AGENT_CONTEXTS = {
             "emergency_dispatch_cost_usd": 1800,
         },
     },
-    "bearing_wear": {
+    "bearing_wear_glift": {
         "enterprise_source": "FSM_MAXIMO", "source_label": "IBM Maximo Field Service",
         "scenario": "workforce_scheduling",
         "site": "pad_bravo",
@@ -3189,11 +3347,24 @@ def get_degrade_status_for_asset(asset_id: str):
     fp_pnr_hs   = fp.get("pnr_health",         0.05)
     fp_hlabel   = fp.get("horizon_label",       "Hours")
 
-    # Time to SCADA alarm = (health − scada_threshold) × total_hours × 60
-    ttscada_min = round(max(0.0, (health_score - fp_scada_hs) * fp_total_h) * 60.0, 1)
-    # Time to PNR = (health − pnr_threshold) × total_hours × 60
+    # ── Elapsed-time countdown (always live from moment of GDC detection) ──────────
+    # The cubic ramp sends near-nominal sensors for first 10+ minutes.
+    # Use wall-clock elapsed time so the bridge countdown ticks from injection.
+    initial_ttscada = (1.0 - fp_scada_hs) * fp_total_h * 60.0
+    fault_onset_str  = dg.get("fault_onset_utc")
+    elapsed_ttscada  = initial_ttscada
+    if fault_onset_str:
+        try:
+            _onset = datetime.fromisoformat(fault_onset_str.replace("Z", ""))
+            elapsed_min = (datetime.utcnow() - _onset).total_seconds() / 60.0
+            elapsed_ttscada = round(max(0.0, initial_ttscada - elapsed_min), 1)
+        except Exception:
+            pass
+
+    # ML estimate when health has dropped meaningfully; elapsed-time otherwise
+    ml_ttscada  = round(max(0.0, (health_score - fp_scada_hs) * fp_total_h) * 60.0, 1)
+    ttscada_min = ml_ttscada if health_score < 0.85 else elapsed_ttscada
     ttpnr_min   = round(max(0.0, (health_score - fp_pnr_hs)   * fp_total_h) * 60.0, 1)
-    # Total time to failure = health × total_hours × 60 (health → 0 at full failure)
     ttf_min     = round(health_score * fp_total_h * 60.0, 1)
 
     _, adjusted_rul_minutes = get_rag_context_and_adjusted_rul(asset_id, fault_type, ttscada_min)
@@ -3275,7 +3446,9 @@ def get_forecast_data(asset_id: str):
     is_degrading  = _deg_state.get("running", False) or _deg_state.get("held", False)
     recent_labels = [str(r.get("predicted_label") or "normal").lower() for r in rows[-10:]]
     fault_fraction = sum(1 for l in recent_labels if l not in ("normal", "")) / max(len(recent_labels), 1)
-    classifier_active = (fault_fraction > 0.20)
+    # Sprint 5 v5: same fix as plot_forecast — include is_degrading so any injected fault
+    # immediately populates HEALTH_HISTORY and drives a live, declining RUL for any asset.
+    classifier_active = (fault_fraction > 0.20) or is_degrading
 
     _fp_fault_type = (
         _deg_state.get("fault_type") or
@@ -3502,6 +3675,78 @@ SITE_KPI_BASE = {
 }
 
 INTELLIGENCE_FEED = {
+    "gas_lock": [
+        {
+            "id": "gl_1a", "type": "well_test", "source": "Daily Well Test Report",
+            "ts_label": "06:00 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "GVF at intake: 68% ↑  ·  Intake PSI: 1,040 PSI ↓  ·  Declining",
+            "ai_relevance": "GVF 68% exceeds pump handling threshold — intake PSI declining confirms early gas lock",
+            "detail": (
+                "Well Test — ESP-ALPHA-5 / Well A-5\n"
+                "· Gas Void Fraction (GVF) at pump intake: 68% (threshold: 60%)\n"
+                "· Intake pressure: 1,040 PSI (nominal: 1,400 PSI; declining at -18 PSI/hr)\n"
+                "· Motor current: 58A (nominal: 75A; declining — pump unloading)\n"
+                "· Note: 'Higher than usual GVF this morning — possibly gas migration from upper zone.'\n"
+                "· SCADA: All readings within alarm limits. No alarm active."
+            ),
+        },
+        {
+            "id": "gl_1b", "type": "separator_test", "source": "Separator Gas Test",
+            "ts_label": "04:30 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "Separator gas rate: 142 Mscf/d ↑  ·  GOR rising  ·  Casing pressure climbing",
+            "ai_relevance": "Rising GOR and casing pressure confirm free gas migrating into pump intake",
+            "detail": (
+                "Separator Test — Pad Alpha production header\n"
+                "· A-5 separator gas rate: 142 Mscf/d (was 98 Mscf/d yesterday)\n"
+                "· GOR: 1,310 scf/bbl (nominal: 1,104 scf/bbl)\n"
+                "· Casing annulus pressure: 142 PSI (rising since 0200h)\n"
+                "· Note: GOR increase + casing pressure buildup = gas migrating past perforations into pump intake.\n"
+                "· No SCADA alarm. SCADA monitors total header pressure only."
+            ),
+        },
+        {
+            "id": "gl_2a", "type": "vfd_log", "source": "VFD Surface Control Panel",
+            "ts_label": "last 2 hours", "icon": "⚡", "is_anomaly": True,
+            "headline": "Motor current: 58A ↓  (nominal 75A)  ·  Soft unload events × 3",
+            "ai_relevance": "Current declining below 60A with stable VFD frequency = pump hydraulic efficiency loss = gas lock",
+            "detail": (
+                "VFD Log — ESP-ALPHA-5 surface panel\n"
+                "· Current: 58A (nominal: 75A; declining)\n"
+                "· VFD frequency: 52 Hz (unchanged)\n"
+                "· Soft unload events: 3 in last 90 minutes\n"
+                "· Power factor: 0.71 (declining from 0.85)\n"
+                "· SCADA low-current alarm: 40A — not triggered yet.\n"
+                "· GDC detects the soft unload pattern before SCADA hard-trip threshold."
+            ),
+        },
+        {
+            "id": "gl_2b", "type": "power_monitor", "source": "Surface Power Monitor",
+            "ts_label": "continuous — last 3h", "icon": "⚡", "is_anomaly": True,
+            "headline": "Power factor: 0.71 ↓  (nominal 0.85)  ·  Current trend: -2.3A/hr",
+            "ai_relevance": "Power factor decline at stable frequency = reduced hydraulic load = gas entrainment in impeller stages",
+            "detail": (
+                "Power quality monitor — ESP-ALPHA-5 VFD panel\n"
+                "· Power factor: 0.71 (nominal: 0.85; trending down at -0.05/hr)\n"
+                "· Motor current trend: -2.3A/hr over last 3 hours\n"
+                "· VFD frequency: 52 Hz (stable — not a speed change)\n"
+                "· Analysis: declining PF at constant frequency = pump doing less hydraulic work = gas void rising\n"
+                "· SCADA: No alarm. Current still above 40A hard-trip threshold."
+            ),
+        },
+        {
+            "id": "gl_3", "type": "shift_note", "source": "Shift Handover — Day Tour",
+            "ts_label": "07:00 shift handover", "icon": "📋", "is_anomaly": False,
+            "headline": "\"A-5 running rough this morning — seems light on the pump\"",
+            "ai_relevance": "Operator 'light pump' observation is the tactile signature of gas entrainment — confirms AI sensor trend",
+            "detail": (
+                "Shift Handover — Pad Alpha Day Tour Pusher: M. Garza\n"
+                "· ESP-ALPHA-5: 'Pump running rough and lighter than usual since around 0400h.'\n"
+                "· 'No hard alarms on SCADA. Production rate slightly lower.'\n"
+                "· Suggested monitoring intake pressure trend — 'might be gassing up.'\n"
+                "· ⚠ This observation exists only in the handover note — NOT in SCADA."
+            ),
+        },
+    ],
     "sand_ingress": [
         {
             "id": "si_1", "type": "lab_report", "source": "Daily Well Test Report",
@@ -3638,7 +3883,7 @@ INTELLIGENCE_FEED = {
             ),
         },
     ],
-    "bearing_wear": [
+    "bearing_wear_glift": [
         {
             "id": "bw_1", "type": "vibration_report", "source": "Online Vibration Analysis — ISO 10816",
             "ts_label": "continuous monitoring", "icon": "〰", "is_anomaly": True,
@@ -3822,6 +4067,56 @@ INTELLIGENCE_FEED = {
     ],
 }
 
+# ── Fix 10: Dynamic Gemma Finding Templates ───────────────────────────────────
+# Replaces static GEMMA_FINDINGS strings with sensor-interpolated templates for
+# gas_lock. Other fault types fall back to the static GEMMA_FINDINGS dict.
+GEMMA_FINDING_TEMPLATES = {
+    "gas_lock": [
+        "🤖 Gemma: Intake PSI at {psi:.0f} PSI (↓ from 1,400 nominal) with motor current {amps:.0f}A — gas void fraction estimated {gvf}%. VFD frequency reduction available immediately. Act before {pnr}m PNR.",
+        "🤖 Gemma: Current-pressure-vibration correlation matches gas lock at {conf}% confidence. PSI {psi:.0f} and amps {amps:.0f}A both declining — pump unloading. SCADA has no active alarm.",
+        "🤖 Gemma: Gas entrainment confirmed at {psi:.0f} PSI intake. Declining amps ({amps:.0f}A) projects pump lock within {pnr} minutes at current trend rate. Reduce VFD to 44 Hz.",
+    ],
+    "thermal_runaway": [
+        "🤖 Gemma: Fin-fan cooling degraded. Discharge temp at {temp:.0f}°F and rising. SCADA alarm at 230°F. Schedule maintenance.",
+        "🤖 Gemma: Thermal runaway detected with {conf}% confidence. Current temp {temp:.0f}°F. Cooling system failure imminent.",
+        "🤖 Gemma: Discharge temp {temp:.0f}°F is trending up. Heat exchanger efficiency declining. Crew dispatch recommended.",
+    ],
+    "valve_failure": [
+        "🤖 Gemma: Valve chattering signature detected. Mean discharge pressure {psi:.0f} PSI. SCADA shows no alarm.",
+        "🤖 Gemma: Cyclic pressure oscillation confirms valve disk failure at {conf}% confidence. Current pressure {psi:.0f} PSI.",
+        "🤖 Gemma: Reverse flow imminent due to check valve failure. Discharge pressure at {psi:.0f} PSI. Shut down immediately.",
+    ],
+    "bearing_wear_glift": [
+        "🤖 Gemma: Bearing spalling confirmed. Current vibration {vib:.2f} mm/s. SCADA overall vibration alarm not triggered.",
+        "🤖 Gemma: BPFI spectral peak detected. Vibration at {vib:.2f} mm/s and rising. Schedule bearing replacement.",
+        "🤖 Gemma: Crankshaft bearing wear active ({conf}% confidence). Vibration {vib:.2f} mm/s. Impending failure if not addressed.",
+    ],
+}
+
+
+def get_gemma_finding(fault_type: str, asset_id: str) -> str:
+    """Return a dynamic, sensor-interpolated Gemma finding string for the given fault type.
+    Falls back to static GEMMA_FINDINGS for fault types without templates.
+    """
+    templates = GEMMA_FINDING_TEMPLATES.get(fault_type)
+    if not templates:
+        return GEMMA_FINDINGS.get(fault_type, "")
+    cs = active_degrades.get(asset_id, {}).get("current_sensors", {})
+    template = random.choice(templates)
+    try:
+        return template.format(
+            psi=cs.get("psi", 1000),
+            amps=random.randint(25, 62),
+            temp=cs.get("temp", 150),
+            vib=cs.get("vib", 1.0),
+            gvf=random.randint(71, 85),
+            conf=random.randint(88, 97),
+            pnr=PNR_MINUTES.get(fault_type, 30),
+        )
+    except Exception:
+        return random.choice(templates)
+
+
 GEMMA_FINDINGS = {
     "sand_ingress": (
         "🤖 Gemma: Correlating 3-day BS&W trend (+0.41%), salinity increase (+17%), and shift handover note with 1.2 mm/s vibration slope — "
@@ -3838,6 +4133,10 @@ GEMMA_FINDINGS = {
     "valve_failure": (
         "🤖 Gemma: 42-psi cyclic amplitude (5× normal) in discharge pressure combined with overdue valve replacement (18mo vs 12mo) and H2S service conditions — "
         "valve disk fracture is imminent within 15 minutes. SCADA shows normal mean pressure."
+    ),
+    "bearing_wear_glift": (
+        "🤖 Gemma: BPFI spectral peak 40% above ISO alert threshold plus 4× increase in oil ferrous debris confirms active bearing race spalling. "
+        "SCADA overall vibration alarm not triggered. Failure within 16h if not addressed."
     ),
     "bearing_wear": (
         "🤖 Gemma: BPFI spectral peak 40% above ISO alert threshold plus 4× increase in oil ferrous debris confirms active bearing race spalling. "
@@ -3903,8 +4202,10 @@ def get_intelligence_feed(asset_id: str, fault_type: str = None):
     """
     if not fault_type:
         fault_type = (active_degrades.get(asset_id) or {}).get("fault_type")
-    canned_items = list(INTELLIGENCE_FEED.get(fault_type, []))
-    finding = GEMMA_FINDINGS.get(fault_type, "")
+    pool = INTELLIGENCE_FEED.get(fault_type, [])
+    canned_items = random.sample(pool, min(3, len(pool))) if len(pool) > 3 else list(pool)
+    random.shuffle(canned_items)
+    finding = get_gemma_finding(fault_type, asset_id)
 
     # ── Phase 16: Prepend live AlloyDB field_intel documents ─────────────────
     live_items = []
@@ -3963,34 +4264,60 @@ def get_intelligence_feed(asset_id: str, fault_type: str = None):
 
 
 def get_rag_context_and_adjusted_rul(asset_id: str, fault_type: str, base_rul: float) -> tuple[str, float]:
-    """Retrieves top-k chunks from ChromaDB and calculates Adjusted RUL."""
-    rag_context = ""
+    """AlloyDB pgvector RAG — Sprint 5 v8 Fix 7.
+    Replaces ChromaDB in-memory collections with persistent AlloyDB rag_documents + field_intel.
+    """
+    rag_context  = ""
     adjusted_rul = base_rul
-    if not chroma_client:
-        return rag_context, adjusted_rul
-        
+    asset_class  = ASSET_REGISTRY.get(asset_id, {}).get("asset_class", "esp")
+
+    # ── Static corpus — top-3 manual sections from rag_documents (pgvector) ──
     try:
-        # Get dynamic evidence for this asset
-        dynamic_results = dynamic_collection.get(where={"asset_id": asset_id})
-        dynamic_docs = [{"content": doc} for doc in dynamic_results.get("documents", [])] if dynamic_results and "documents" in dynamic_results else []
-        
-        # Adjust RUL based on dynamic evidence
-        if dynamic_docs:
-            adjusted_rul = adjust_rul_with_documents(base_rul, dynamic_docs)
-            rag_context += "DYNAMIC SESSION EVIDENCE:\n" + "\n".join([d["content"] for d in dynamic_docs]) + "\n\n"
-            
-        # Get static O&G corpus (top 2 chunks based on fault_type)
-        if fault_type:
-            static_results = static_collection.query(
-                query_texts=[fault_type.replace("_", " ")],
-                n_results=2
-            )
-            if static_results and "documents" in static_results and static_results["documents"]:
-                rag_context += "STATIC O&G CORPUS:\n" + "\n".join(static_results["documents"][0]) + "\n\n"
-                
+        model = _get_embed_model_singleton()
+        if model and fault_type:
+            query = f"{fault_type.replace('_', ' ')} {asset_class}"
+            emb   = model.encode(query).tolist()
+            emb_s = "[" + ",".join(str(x) for x in emb) + "]"
+            conn  = get_db()
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT content FROM rag_documents
+                    WHERE asset_class = %s
+                    ORDER BY embedding <-> %s::vector
+                    LIMIT 3
+                """, (asset_class, emb_s))
+                rows = cur.fetchall()
+                if not rows:
+                    cur.execute("""
+                        SELECT content FROM rag_documents
+                        ORDER BY embedding <-> %s::vector LIMIT 3
+                    """, (emb_s,))
+                    rows = cur.fetchall()
+            conn.close()
+            if rows:
+                rag_context += "STATIC O&G CORPUS:\n" + "\n\n".join(r[0] for r in rows) + "\n\n"
     except Exception as e:
-        log.warning(f"RAG retrieval failed: {e}")
-        
+        log.debug(f"Static RAG retrieval skipped (non-fatal): {e}")
+
+    # ── Dynamic docs — field_intel rows for this asset + fault ──────────────
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute("""
+                SELECT headline, detail, doc_type FROM field_intel
+                WHERE asset_id = %s AND fault_context = %s
+                ORDER BY created_at DESC LIMIT 5
+            """, (asset_id, fault_type))
+            rows = cur.fetchall()
+        conn.close()
+        if rows:
+            docs = [{"content": f"{r['doc_type'].upper()}: {r['detail']}"} for r in rows]
+            adjusted_rul = adjust_rul_with_documents(base_rul, docs)
+            rag_context += "DYNAMIC SESSION EVIDENCE:\n"
+            rag_context += "\n".join(d["content"] for d in docs) + "\n\n"
+    except Exception as e:
+        log.debug(f"Dynamic RAG retrieval skipped (non-fatal): {e}")
+
     return rag_context, adjusted_rul
 
 # ── Phase 16: Live Field Intelligence API ─────────────────────────────────────
@@ -4063,9 +4390,19 @@ def get_field_intelligence(limit: int = 20, fault_context: str = None):
 def get_mlops_status():
     """Simulated WAN + edge model status for the MLOps indicator on the dashboard."""
     import random
+    import requests as _req
     active_count = len([d for d in active_degrades.values() if d])
     wan_bw = round(random.uniform(0.8, 2.4), 1)
     wan_state = "degraded" if wan_bw < 1.2 else "intermittent" if wan_bw < 1.8 else "stable"
+
+    # Probe Ollama — show honest status, not a permanent display label
+    ollama_online = False
+    try:
+        r = _req.get(f"{OLLAMA_URL}/api/tags", timeout=2)
+        ollama_online = r.status_code == 200
+    except Exception:
+        pass
+
     return {
         "wan_bandwidth_mbps": wan_bw,
         "wan_state": wan_state,
@@ -4073,8 +4410,9 @@ def get_mlops_status():
         "models_loaded": list(HEALTH_MODELS.keys()),
         "model_drift_detected": False,
         "last_cloud_sync": "2026-05-13T14:30:00Z",
-        "ollama_model": OLLAMA_DISPLAY_MODEL,   # Phase 16: show display label, not actual model name
-        "inference_latency_ms": random.randint(28, 95),
+        "ollama_model": OLLAMA_DISPLAY_MODEL if ollama_online else "offline",
+        "ollama_online": ollama_online,
+        "inference_latency_ms": random.randint(28, 95) if ollama_online else None,
         "ts": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -4142,6 +4480,23 @@ def hitl_approve(req: HitlApproveRequest):
     fault_label  = FAULT_PROFILES.get(req.fault_type, {}).get("label", req.fault_type)
     fp = FAULT_PHYSICS.get(req.fault_type, {})
     intervention_type = fp.get("intervention_type", "maintenance_scheduling")
+    
+    # Update fault_sessions
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE fault_sessions
+                SET resolved_at = NOW(),
+                    resolution = %s,
+                    cost_avoided = %s,
+                    operator = 'system'
+                WHERE asset_id = %s AND fault_type = %s AND resolved_at IS NULL
+            """, (req.action_taken, cost_avoided, req.asset_id, req.fault_type))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"fault_sessions update failed (non-fatal): {e}")
     outcome_msgs = {
         "supply_chain": f"SAP Purchase Order submitted. Part lead time per logistics — production protected.",
         "maintenance_scheduling": f"Maximo Work Order updated. Crew dispatch amended — zero additional travel cost.",
@@ -4369,6 +4724,27 @@ def get_pad_mockup():
 
     return Response(content=svg, media_type="image/svg+xml",
                     headers={"Cache-Control": "no-cache", "X-GDC-Mockup": "V2-API"})
+
+
+# ── Fix 11b: Fault Sessions Audit Log Endpoint ───────────────────────────────
+@app.get("/api/fault-sessions")
+def get_fault_sessions(limit: int = 50):
+    """
+    Fix 11b: Return fault session audit log from AlloyDB.
+    Records each fault injection with asset, fault type, timestamps, and resolution.
+    """
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                "SELECT * FROM fault_sessions ORDER BY injected_at DESC LIMIT %s",
+                (limit,),
+            )
+            rows = cur.fetchall()
+        conn.close()
+        return {"sessions": [dict(r) for r in rows], "count": len(rows)}
+    except Exception as e:
+        return {"sessions": [], "count": 0, "error": str(e)}
 
 
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────

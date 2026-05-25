@@ -3,8 +3,8 @@
 # Ollama LLM Inference Server
 # GPU-accelerated pod running Gemma 4:27B for disconnected Edge AI RAG pipeline.
 #
-# Phase 14 upgrade: gemma:2b (A2) → gemma4:27b (L4).
-# L4 has 24GB VRAM — sufficient for gemma4:27b at Q4_K_M quantization (~17GB).
+# Phase 14 upgrade: gemma:2b (A2) → gemma:27b (L4).
+# L4 has 24GB VRAM — sufficient for gemma:27b at Q4_K_M quantization (~17GB).
 #
 # Portable design — works on GKE AND GDC Software-Only:
 #   - PVC uses the cluster's default StorageClass (no GKE-specific class).
@@ -12,7 +12,7 @@
 #     On GDC Software-Only, install the NVIDIA GPU Operator; it will label
 #     GPU nodes with nvidia.com/gpu.present="true" automatically.
 #
-# STORAGE NOTE: gemma4:27b Q4_K_M model is ~15GB. This PVC requests 50Gi.
+# STORAGE NOTE: gemma:27b Q4_K_M model is ~15GB. This PVC requests 50Gi.
 #   If upgrading from an existing 10Gi PVC, resize or delete/recreate:
 #     kubectl patch pvc ollama-models-pvc -n gdc-pm -p '{"spec":{"resources":{"requests":{"storage":"50Gi"}}}}'
 #   (only works if the StorageClass supports volume expansion)
@@ -54,7 +54,7 @@ spec:
         app: ollama
     spec:
       # GKE: target L4 GPU node pool (24GB VRAM, Ada Lovelace architecture).
-      # L4 handles gemma4:27b Q4_K_M (~17GB VRAM) with 7GB headroom for context.
+      # L4 handles gemma:27b Q4_K_M (~17GB VRAM) with 7GB headroom for context.
       # For GDC Software-Only with A100s, comment out this nodeSelector entirely.
       nodeSelector:
         cloud.google.com/gke-accelerator: nvidia-l4
@@ -64,7 +64,7 @@ spec:
           effect: "NoSchedule"
 
       # ── Init container: pull model before the server starts ───────────────
-      # gemma4:27b Q4_K_M is ~15GB — first pull takes 5–15 minutes depending
+      # gemma:27b Q4_K_M is ~15GB — first pull takes 5–15 minutes depending
       # on network. Model is persisted to PVC; subsequent restarts skip pull.
       #
       # For air-gapped GDC Software-Only deployments, see options in the
@@ -78,8 +78,8 @@ spec:
             - -c
             - |
               # Skip pull if model already exists on the PVC
-              if ollama list 2>/dev/null | grep -q "gemma4:27b"; then
-                echo "✅ gemma4:27b already present on PVC — skipping pull"
+              if ollama list 2>/dev/null | grep -q "gemma:27b"; then
+                echo "✅ gemma:27b already present on PVC — skipping pull"
                 exit 0
               fi
               echo "Starting Ollama server temporarily to pull model..."
@@ -93,8 +93,8 @@ spec:
                 fi
                 sleep 2
               done
-              echo "Pulling gemma4:27b (Q4_K_M, ~15GB) — this may take several minutes..."
-              ollama pull gemma4:27b
+              echo "Pulling gemma:27b (Q4_K_M, ~15GB) — this may take several minutes..."
+              ollama pull gemma:27b
               echo "✅ Model pulled successfully — stopping temporary server"
               kill $OLLAMA_PID
               wait $OLLAMA_PID 2>/dev/null || true

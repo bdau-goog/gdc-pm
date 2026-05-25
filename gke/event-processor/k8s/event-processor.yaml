@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: event-processor
-          image: GCR_IMAGE_PLACEHOLDER
+          image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/event-processor:latest
           env:
             - name: RABBITMQ_HOST
               valueFrom:

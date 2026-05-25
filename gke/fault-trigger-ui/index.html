@@ -91,12 +91,15 @@
     .dd-horizon-badge.hours{color:var(--orange);border-color:var(--orange);background:rgba(255,109,0,0.1)}
     .dd-horizon-badge.minutes{color:var(--red);border-color:var(--red);background:rgba(244,67,54,0.1)}
     .dd-health-lbl{font-size:0.68rem;font-family:var(--mono);color:var(--muted);margin-left:4px}
-    /* ── Deep Dive Layout (Session 9): vertical comparison stack ──────────────
-       Row 1: GDC AI forecast chart (top)
-               Horizontal time-advantage bridge (middle)
-               Traditional SCADA chart (bottom)
-       Row 2: 3-column evidence / agent / action bottom half                   */
-    .dd-compare-row{flex-shrink:0;display:flex;flex-direction:column;border-bottom:none}
+    /* ── Deep Dive Layout (Sprint 5 v7): side-by-side — charts left, panels right ──
+       Left:  dd-compare-col  (GDC AI chart + amber handle + SCADA chart, stacked vertically)
+       Right: dd-right-panels (3 independently-resizable stacked panels)            */
+    .dd-main-body{flex:1;min-height:0;display:flex;flex-direction:row;overflow:hidden}
+    .dd-compare-col{flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+    .dd-right-panels{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;border-left:1px solid var(--border)}
+    .dd-intel-panel{flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+    .dd-agent-panel{flex-shrink:0;display:flex;flex-direction:column;overflow:hidden}
+    .dd-action-panel{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden}
     .dd-view-panel{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
     .dd-scada-panel{border-top:1px solid var(--border)}
     .chart-view-hdr{flex-shrink:0;min-height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-bottom:1px solid var(--border);background:var(--surf);position:relative}
@@ -126,10 +129,6 @@
     .afp-row{font-size:0.63rem;color:var(--text2);padding:2px 0;display:flex;align-items:center;gap:6px;line-height:1.4}
     .afp-row::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:rgba(255,140,0,0.7);flex-shrink:0}
     .afp-footer{font-size:0.58rem;color:var(--muted);margin-top:7px;padding-top:7px;border-top:1px solid var(--border);line-height:1.5}
-    .dd-bottom-row{flex:1;min-height:0;display:flex;overflow:hidden}
-    .dd-intel-col{flex-shrink:0;border-right:none;display:flex;flex-direction:column;overflow:hidden}
-    .dd-agent-col{flex-shrink:0;border-right:none;display:flex;flex-direction:column;overflow:hidden}
-    .dd-action-col{flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden}
     .dd-col-hdr{font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);padding:5px 10px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--surf)}
 
     /* Fusion body (reused inside dd-intel-col) */
@@ -264,14 +263,12 @@
     .canvas-splitter::before{content:'';display:block;width:2px;height:32px;border-radius:2px;background:rgba(255,255,255,0.15)}
 
     /* Site Zones — larger, more spacious */
-    .site-zone{border:1px solid var(--border);border-radius:12px;background:var(--surf);padding:16px 18px;transition:border-color 0.2s;flex-shrink:0}
+    .site-zone{border:1px solid var(--border);border-radius:12px;background:var(--surf);padding:16px 18px;transition:border-color 0.2s;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
     .site-zone.has-alert{border-color:rgba(255,109,0,0.45);box-shadow:0 0 16px rgba(255,109,0,0.09)}
-    .zone-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .zone-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-shrink:0}
     .zone-icon{font-size:22px}
     .zone-name{font-size:1.0rem;font-weight:700;color:var(--text2)}
     .zone-type{font-size:0.65rem;color:var(--muted)}
-    .zone-dot{width:10px;height:10px;border-radius:50%;background:var(--green);box-shadow:0 0 5px var(--green);margin-left:auto;transition:all 0.4s;flex-shrink:0}
-    .zone-dot.active{background:var(--orange);box-shadow:0 0 7px var(--orange);animation:pulse-warn 1.5s ease-in-out infinite}
 
     /* Zone Metric Grid — replaces zone-kpis */
     .zone-metric-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:7px;margin-bottom:14px}
@@ -312,10 +309,6 @@
     .node-pulse-ring{position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--orange);opacity:0;animation:node-pulse 2s ease-in-out infinite;pointer-events:none}
     @keyframes node-pulse{0%,100%{opacity:0;transform:scale(1)}50%{opacity:0.55;transform:scale(1.08)}}
 
-    /* Canvas Legend */
-    .canvas-legend{display:flex;align-items:center;gap:14px;padding:6px 2px 0;flex-wrap:wrap}
-    .leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;display:inline-block}
-    .canvas-legend span{font-size:0.62rem;color:var(--muted)}
 
     /* Activity Stream */
     .activity-stream{flex-shrink:0;border-left:none;display:flex;flex-direction:column;overflow:hidden}
@@ -374,16 +367,21 @@
     .ai-lead-val{font-family:var(--mono);font-size:1.4rem;font-weight:800;color:var(--blue);line-height:1}
     .ai-lead-label{font-size:0.68rem;color:var(--text2);line-height:1.3}
 
-    /* ── Compare Row Resize Handle ── */
-    .compare-resize-handle{flex-shrink:0;height:9px;cursor:ns-resize;background:rgba(30,144,255,0.1);border-top:1px solid var(--border2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background 0.15s;position:relative;z-index:10;user-select:none}
-    .compare-resize-handle:hover,.compare-resize-handle.dragging{background:rgba(30,144,255,0.32)}
-    .compare-resize-handle::before{content:'';display:block;width:40px;height:3px;border-radius:2px;background:rgba(30,144,255,0.45)}
+    /* ── Chart Column Resize Handle (EW — resizes chart column vs right panels) ── */
+    .compare-col-resize-handle{flex-shrink:0;width:9px;cursor:ew-resize;background:rgba(30,144,255,0.1);border-left:1px solid var(--border);border-right:1px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:background 0.15s;position:relative;z-index:10;user-select:none}
+    .compare-col-resize-handle:hover,.compare-col-resize-handle.dragging{background:rgba(30,144,255,0.32)}
+    .compare-col-resize-handle::before{content:'';display:block;width:3px;height:40px;border-radius:2px;background:rgba(30,144,255,0.45)}
 
-    /* ── Bottom Panel Column Resize Handles ── */
-    .col-resize-handle{width:8px;flex-shrink:0;background:rgba(30,42,56,0.8);border-left:1px solid var(--border2);border-right:1px solid var(--border2);cursor:col-resize;display:flex;align-items:center;justify-content:center;transition:background 0.15s;user-select:none}
-    .col-resize-handle:hover,.col-resize-handle.dragging{background:rgba(30,144,255,0.35);border-left-color:rgba(30,144,255,0.5);border-right-color:rgba(30,144,255,0.5)}
-    .col-resize-handle::before{content:'⋮';font-size:14px;color:rgba(255,255,255,0.3);line-height:1}
-    .col-resize-handle:hover::before,.col-resize-handle.dragging::before{color:rgba(30,144,255,0.9)}
+    /* ── GDC AI / SCADA internal split handle (inner — redistributes GDC vs SCADA height) ── */
+    .gdc-scada-handle{flex-shrink:0;height:7px;cursor:ns-resize;background:rgba(255,140,0,0.07);border-top:1px solid rgba(255,140,0,0.18);border-bottom:1px solid rgba(255,140,0,0.18);display:flex;align-items:center;justify-content:center;transition:background 0.15s;position:relative;z-index:10;user-select:none}
+    .gdc-scada-handle:hover,.gdc-scada-handle.dragging{background:rgba(255,140,0,0.28)}
+    .gdc-scada-handle::before{content:'';display:block;width:32px;height:3px;border-radius:2px;background:rgba(255,140,0,0.45)}
+
+    /* ── Right Panel Row Resize Handles (NS — resize panels against each other) ── */
+    .row-resize-handle{flex-shrink:0;height:7px;cursor:ns-resize;background:rgba(30,42,56,0.8);border-top:1px solid var(--border2);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:center;transition:background 0.15s;user-select:none}
+    .row-resize-handle:hover,.row-resize-handle.dragging{background:rgba(30,144,255,0.35);border-top-color:rgba(30,144,255,0.5);border-bottom-color:rgba(30,144,255,0.5)}
+    .row-resize-handle::before{content:'···';font-size:12px;color:rgba(255,255,255,0.3);line-height:1;letter-spacing:2px}
+    .row-resize-handle:hover::before,.row-resize-handle.dragging::before{color:rgba(30,144,255,0.9)}
 
     /* ── Telemetry Tab ── */
     #grafana-iframe{width:100%;height:100%;border:none}
@@ -402,25 +400,30 @@
     .modal-close-btn{margin-top:12px;padding:7px 14px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);color:var(--text2);cursor:pointer;font-size:0.72rem}
 
     /* ══ Sprint 5 — Pad Alpha Digital Twin: Pure CSS Flexbox Layout ══ */
-    /* Top-level diagram container — stacks all tiers vertically */
-    .twin-diagram{width:100%;margin-bottom:6px;border-radius:6px;background:rgba(8,14,22,0.6);border:1px solid rgba(42,70,100,0.5);padding:10px 12px;box-sizing:border-box}
+    /* Top-level diagram container — fills remaining site-zone height */
+    .twin-diagram{border-radius:6px;background:rgba(8,14,22,0.6);border:1px solid rgba(42,70,100,0.5);padding:10px 12px;box-sizing:border-box;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;max-height:420px}
 
-    /* ── Tier 1: Top row — external-left | structure | external-right ── */
-    .twin-top-row{display:flex;align-items:flex-end;gap:0;width:100%}
+    /* ── Main row: external-left | center-col | external-right ── */
+    .twin-top-row{display:flex;align-items:stretch;gap:10px;width:100%;flex:1;min-height:0}
 
     /* External assets (Generator, A/C) sit left of the structure */
-    .twin-external-left{display:flex;flex-direction:column;gap:6px;padding-right:10px;flex-shrink:0;align-self:flex-end;padding-bottom:4px}
+    .twin-external-left{display:flex;flex-direction:column;gap:6px;flex-shrink:0;justify-content:center}
     /* Starlink sits right of the structure */
-    .twin-external-right{display:flex;flex-direction:column;align-items:center;padding-left:10px;flex-shrink:0;align-self:flex-end;padding-bottom:4px}
+    .twin-external-right{display:flex;flex-direction:column;align-items:center;flex-shrink:0;justify-content:center}
+
+    /* Centre column: structure → wells → pipeline stack */
+    .twin-center-col{flex:1;min-width:0;display:flex;flex-direction:column}
 
     /* The main "site structure" — dashed light grey border enclosing broker, GDC, SCADA + network segment */
-    .twin-structure{flex:1;min-width:0;border:1.5px dashed #5a6a7a;border-radius:8px;padding:8px 10px 0 10px;display:flex;flex-direction:column;gap:0}
+    .twin-structure{border:1.5px dashed #5a6a7a;border-bottom:none;border-radius:8px 8px 0 0;padding:8px 0 0 0;display:flex;flex-direction:column;flex-shrink:0}
 
     /* Equipment row inside the structure */
-    .twin-equip-row{display:flex;align-items:center;gap:8px;justify-content:space-around;padding-bottom:6px}
+    .twin-equip-row{display:flex;align-items:flex-end;gap:8px;justify-content:space-around;padding:0 10px}
 
     /* Individual equipment boxes inside the structure */
-    .twin-equip-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 8px;border-radius:5px;font-family:var(--mono);text-align:center;flex-shrink:0}
+    .twin-equip-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px 8px;border-radius:5px;font-family:var(--mono);text-align:center;flex-shrink:0;position:relative;margin-bottom:0}
+    /* Dashed subscription stubs from each box down to the network bar */
+    .twin-structure .twin-equip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);width:0;border-left:1.5px dashed rgba(42,128,192,0.55);height:28px}
     .twin-equip-label{font-size:0.58rem;font-weight:700;letter-spacing:0.05em;white-space:nowrap}
     .twin-equip-sub{font-size:0.5rem;margin-top:2px;white-space:nowrap}
     .twin-equip-broker{background:#0e1828;border:1.2px solid #2a5888;color:#4a88a8}
@@ -435,27 +438,21 @@
     .twin-starlink-mast{width:2px;height:10px;background:#1a3858;margin:0 auto}
     .twin-starlink-base{width:18px;height:2px;background:#1a3858;margin:0 auto}
 
-    /* Shared network segment bar at the BOTTOM INSIDE of the structure — all equipmnt connects here */
-    .twin-network-bar{height:6px;background:rgba(30,90,160,0.5);border-radius:2px;margin:4px 0 0 0;border:1px solid rgba(42,128,192,0.4);position:relative}
-    .twin-network-label{font-family:var(--mono);font-size:0.45rem;color:#2a5070;text-align:center;padding:2px 0 6px;letter-spacing:0.04em}
+    /* Network label + bar — flush bottom of structure */
+    .twin-network-label{font-family:var(--mono);font-size:0.45rem;color:#2a5070;text-align:center;padding:14px 0 3px;letter-spacing:0.04em;flex-shrink:0}
+    .twin-network-bar{height:6px;background:rgba(30,90,160,0.6);border-radius:0;margin:0;border:1px solid rgba(42,128,192,0.5);flex-shrink:0}
 
-    /* ── Tier 2: Vertical lines from network segment down to wells (network color) ── */
-    .twin-network-lines-row{display:flex;align-items:flex-start;padding:0 0 0 0;width:100%;box-sizing:border-box}
-    /* Spacer to align lines with structure interior — matches external-left padding + structure left padding + distribution */
-    .twin-line-spacer-left{flex-shrink:0}
-    .twin-line-spacer-right{flex-shrink:0}
-    .twin-net-lines{flex:1;display:flex;justify-content:space-around}
-    .twin-net-line{display:flex;flex-direction:column;align-items:center}
-    .twin-net-line-seg{width:2px;height:20px;background:rgba(42,100,180,0.5);border-radius:1px}
-    .twin-net-junction{width:6px;height:6px;border-radius:50%;background:#2a6090;border:1px solid #3a88c0;flex-shrink:0}
+    /* ── Wells row: flex stretches to fill remaining vertical space ── */
+    /* Each well-col is a full-height flex column: network-line / ESP node / fluid-line */
+    .twin-wells-row{display:flex;justify-content:space-around;flex:1;min-height:60px;background:rgba(8,14,22,0.4);border-left:1.5px dashed #5a6a7a;border-right:1.5px dashed #5a6a7a}
+    .twin-well-col{display:flex;flex-direction:column;align-items:center;flex:1}
+    /* Network line from bar down to ESP top */
+    .twin-net-line-seg{width:2px;flex:1;background:rgba(42,100,180,0.55);min-height:8px}
+    /* Fluid line from ESP bottom down to pipeline — brown, thicker */
+    .twin-fluid-line-seg{width:4px;flex:1;background:#8d6e63;min-height:8px;border-radius:0}
 
-    /* ── Tier 3: Wells row ── */
-    .twin-wells-row{display:flex;justify-content:space-around;padding:0}
-    .twin-well-col{display:flex;flex-direction:column;align-items:center;gap:0}
-    .twin-well-label{font-family:var(--mono);font-size:0.52rem;color:var(--muted);margin-top:4px;font-weight:700;user-select:none}
-
-    /* Override asset-node size for digital twin wells — larger and opaque */
-    .twin-wells-row .asset-node{width:72px;height:72px;background:var(--bg)!important}
+    /* Override asset-node size for digital twin wells — opaque, no shrink */
+    .twin-wells-row .asset-node{width:72px;height:72px;background:var(--bg)!important;flex-shrink:0}
     .twin-wells-row .health-green{background:#05120a!important;border-color:rgba(0,230,118,0.55)!important}
     .twin-wells-row .health-amber{background:#141008!important;border-color:rgba(255,179,0,0.65)!important}
     .twin-wells-row .health-red{background:#160508!important;border-color:rgba(244,67,54,0.7)!important}
@@ -463,18 +460,11 @@
     .twin-wells-row .node-label{font-size:0.6rem}
     .twin-wells-row .node-pulse-ring{inset:-8px}
 
-    /* ── Tier 4: Gas lines (Google Blue) from bottom of wells to pipeline ── */
-    .twin-gas-lines-row{display:flex;justify-content:space-around;padding:0}
-    .twin-gas-line{display:flex;flex-direction:column;align-items:center}
-    .twin-gas-line-seg{width:2px;height:18px;background:rgba(138,180,248,0.65);border-radius:1px}
-    .twin-gas-junction{width:6px;height:6px;border-radius:50%;background:#8ab4f8;flex-shrink:0;box-shadow:0 0 3px rgba(138,180,248,0.5)}
-
-    /* ── Tier 5: Production manifold pipeline ── */
-    .twin-pipeline-row{display:flex;align-items:center;padding:0 0 4px 0}
-    .twin-pipeline-spacer{flex-shrink:0}
-    .twin-pipeline-line{flex:1;height:5px;background:linear-gradient(90deg,#2a4a6a,#1e3a5e);border-radius:2px;position:relative}
-    .twin-pipeline-arrow{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:10px solid #2a4a6a;flex-shrink:0}
-    .twin-pipeline-labels{display:flex;justify-content:space-between;padding:0;font-family:var(--mono);font-size:0.43rem;color:#2a4060;padding-bottom:4px}
+    /* ── Production manifold pipeline ── */
+    .twin-pipeline-row{display:flex;align-items:center;flex-shrink:0}
+    .twin-pipeline-line{flex:1;height:7px;background:linear-gradient(90deg,#5d4037,#3e2723);border-radius:2px}
+    .twin-pipeline-arrow{width:0;height:0;border-top:7px solid transparent;border-bottom:7px solid transparent;border-left:12px solid #5d4037;flex-shrink:0}
+    .twin-pipeline-labels{display:flex;justify-content:space-between;padding:3px 8px 0 8px;font-family:var(--mono);font-size:0.44rem;color:#5d4037;flex-shrink:0;font-weight:700;letter-spacing:0.04em}
 
     /* Legend strip */
     .twin-legend{display:flex;align-items:center;gap:12px;padding:4px 2px 0;flex-wrap:wrap;border-top:1px solid rgba(42,70,100,0.3);margin-top:2px}
@@ -518,11 +508,12 @@
       <div class="edge-bar">
         <div class="edge-pill">
           <span>⚡</span><strong>GDC Edge</strong>
-          <span class="ep-sep">·</span><span>Models:</span>
-          <span class="ep-val">{{ mlops.models_loaded ? mlops.models_loaded.join(', ') : 'esp, gas_lift, mud_pump, top_drive' }}</span>
           <span class="ep-sep">·</span><span>Compute:</span><span class="ep-val">{{ mlops.edge_compute_pct || 42 }}%</span>
           <span class="ep-sep">·</span><span>Inference:</span><span class="ep-val">{{ mlops.inference_latency_ms || 48 }}ms</span>
-          <span class="ep-sep">·</span><span>LLM:</span><span class="ep-val">{{ mlops.ollama_model || 'gemma4:27b' }}</span>
+          <span class="ep-sep">·</span><span>LLM:</span>
+          <span class="ep-val" :style="{color: mlops.ollama_online === false ? 'var(--red)' : 'var(--blue)'}">
+            {{ mlops.ollama_online === false ? '⛔ offline' : (mlops.ollama_model || '…') }}
+          </span>
         </div>
         <div class="cloud-pill" style="margin-left:auto">
           <span>☁ Vertex AI</span><span class="ep-sep">·</span>
@@ -586,7 +577,6 @@
                 <span class="zone-icon">🛢</span>
                 <span class="zone-name">Pad Alpha</span>
                 <span class="zone-type">ESP Production</span>
-                <span class="zone-dot" :class="{active: hasAlert('pad_alpha')}"></span>
               </div>
               <div class="zone-metric-grid" v-if="kpis.pad_alpha">
                 <div class="zm-card" :class="kpiColor(kpis.pad_alpha.production_boed, 1600, 1200)">
@@ -610,18 +600,15 @@
                   <div class="zm-lbl">GOR</div>
                 </div>
               </div>
-              <!-- ══ Sprint 5: Pad Alpha Digital Twin — Pure CSS Flexbox Layout ══
-                   Architecture: External assets flank the dashed "structure" enclosure.
-                   Inside: Edge Broker, GDC Edge AI, SCADA RTU connected to shared network segment.
-                   Outside: Generator, A/C (left), Starlink (right).
-                   Wells sit below the structure with network lines above and gas lines below.
-                   GDC and SCADA independently subscribe to the same Pub/Sub bus.             ══ -->
+              <!-- ══ Sprint 5 v2: Pad Alpha Digital Twin — Latched Column Layout ══
+                   Each well-col is a single flex column: [network line] → [ESP node] → [fluid line].
+                   Lines are guaranteed to be centred on the node regardless of resize.
+                   External assets (Generator, A/C, Starlink) flank the centre column.
+                   GDC and SCADA independently subscribe to the shared Pub/Sub bus.       ══ -->
               <div class="twin-diagram">
-
-                <!-- Tier 1: Top row — external-left | structure | external-right -->
                 <div class="twin-top-row">
 
-                  <!-- External left: Generator + A/C (not connected to network) -->
+                  <!-- External left: Generator + A/C -->
                   <div class="twin-external-left">
                     <div class="twin-equip-box twin-equip-ext">
                       <span class="twin-equip-label">GENERATOR</span>
@@ -632,32 +619,65 @@
                     </div>
                   </div>
 
-                  <!-- The site structure boundary (dashed light-grey border) -->
-                  <div class="twin-structure">
-                    <!-- Equipment row: Broker, GDC, SCADA — all independently subscribe to bus -->
-                    <div class="twin-equip-row">
-                      <div class="twin-equip-box twin-equip-broker">
-                        <span class="twin-equip-label">EDGE BROKER</span>
-                        <span class="twin-equip-sub">RabbitMQ / MQTT</span>
-                      </div>
-                      <div class="twin-equip-box twin-equip-gdc">
-                        <span style="display:flex;align-items:center;justify-content:center">
-                          <span class="gdc-led"></span><span class="gdc-led2"></span>
-                        </span>
-                        <span class="twin-equip-label" style="color:#4ab8e0">GDC EDGE AI</span>
-                        <span class="twin-equip-sub" style="color:#2a80a8">XGBoost · Gemma4 · RAG</span>
-                      </div>
-                      <div class="twin-equip-box twin-equip-scada">
-                        <span class="twin-equip-label">SCADA RTU</span>
-                        <span class="twin-equip-sub" style="color:#2a4840">Threshold Only</span>
-                      </div>
-                    </div>
-                    <!-- Shared network segment bar at bottom of structure -->
-                    <div class="twin-network-bar"></div>
-                    <div class="twin-network-label">SHARED EDGE NETWORK — Pub/Sub Data Bus</div>
-                  </div>
+                  <!-- Centre column: structure → latched wells → pipeline -->
+                  <div class="twin-center-col">
 
-                  <!-- External right: Starlink (WAN uplink, outside structure) -->
+                    <!-- Structure: Broker, GDC AI, SCADA + shared network bar -->
+                    <div class="twin-structure">
+                      <div class="twin-equip-row">
+                        <div class="twin-equip-box twin-equip-broker">
+                          <span class="twin-equip-label">EDGE BROKER</span>
+                          <span class="twin-equip-sub">RabbitMQ / MQTT</span>
+                        </div>
+                        <div class="twin-equip-box twin-equip-gdc">
+                          <span style="display:flex;align-items:center;justify-content:center">
+                            <span class="gdc-led"></span><span class="gdc-led2"></span>
+                          </span>
+                          <span class="twin-equip-label" style="color:#4ab8e0">GDC EDGE AI</span>
+                          <span class="twin-equip-sub" style="color:#2a80a8">XGBoost · Gemma4 · RAG</span>
+                        </div>
+                        <div class="twin-equip-box twin-equip-scada">
+                          <span class="twin-equip-label">SCADA RTU</span>
+                          <span class="twin-equip-sub" style="color:#2a4840">Threshold Only</span>
+                        </div>
+                      </div>
+                      <div class="twin-network-label">SHARED EDGE NETWORK — Pub/Sub Data Bus</div>
+                      <div class="twin-network-bar"></div>
+                    </div><!-- end twin-structure -->
+
+                    <!-- Wells: each column = network-line / ESP node / fluid-line (all centred) -->
+                    <div class="twin-wells-row">
+                      <div class="twin-well-col" v-for="(assetId, idx) in SITES.pad_alpha.assets" :key="assetId">
+                        <!-- Network line from bar down to top of ESP -->
+                        <div class="twin-net-line-seg"></div>
+                        <!-- ESP node — interactive -->
+                        <div class="asset-node esp-node"
+                             :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
+                             @contextmenu.prevent="showAssetContextMenu($event, assetId)"
+                             @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
+                             :title="'Right-click: inject fault · Left-click: deep dive'">
+                          <span class="node-label">{{ ASSET_META[assetId].label }}</span>
+                          <div v-if="isAssetActive(assetId)" class="node-pulse-ring"
+                               :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
+                        </div>
+                        <!-- Fluid line from bottom of ESP down to manifold -->
+                        <div class="twin-fluid-line-seg"></div>
+                      </div>
+                    </div><!-- end twin-wells-row -->
+
+                    <!-- Production manifold pipeline -->
+                    <div class="twin-pipeline-row">
+                      <div class="twin-pipeline-line"></div>
+                      <div class="twin-pipeline-arrow"></div>
+                    </div>
+                    <div class="twin-pipeline-labels">
+                      <span>PRODUCTION HEADER</span>
+                      <span>→ SEPARATOR</span>
+                    </div>
+
+                  </div><!-- end twin-center-col -->
+
+                  <!-- External right: Starlink -->
                   <div class="twin-external-right">
                     <div class="twin-starlink">
                       <div class="twin-starlink-dish"></div>
@@ -666,54 +686,8 @@
                       <span style="font-family:var(--mono);font-size:0.48rem;color:#2a5870;margin-top:2px">STARLINK</span>
                     </div>
                   </div>
+
                 </div><!-- end twin-top-row -->
-
-                <!-- Tier 2: Network lines from structure down to wells -->
-                <div class="twin-network-lines-row">
-                  <div class="twin-line-spacer-left" style="width:80px"></div>
-                  <div class="twin-net-lines">
-                    <div class="twin-net-line" v-for="n in 6" :key="'nl'+n">
-                      <div class="twin-net-line-seg"></div>
-                      <div class="twin-net-junction"></div>
-                    </div>
-                  </div>
-                  <div class="twin-line-spacer-right" style="width:56px"></div>
-                </div>
-
-                <!-- Tier 3: Interactive well nodes (opaque, larger, health-coloured) with labels -->
-                <div class="twin-wells-row">
-                  <div class="twin-well-col" v-for="(assetId, idx) in SITES.pad_alpha.assets" :key="assetId">
-                    <div class="asset-node esp-node"
-                         :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
-                         @contextmenu.prevent="showAssetContextMenu($event, assetId)"
-                         @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
-                         :title="'Right-click: inject fault · Left-click: deep dive'">
-                      <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                      <div v-if="isAssetActive(assetId)" class="node-pulse-ring"
-                           :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
-                    </div>
-                    <span class="twin-well-label">A-{{ idx + 1 }}</span>
-                  </div>
-                </div>
-
-                <!-- Tier 4: Google Blue gas lines from wells down to manifold -->
-                <div class="twin-gas-lines-row">
-                  <div class="twin-gas-line" v-for="n in 6" :key="'gl'+n">
-                    <div class="twin-gas-junction"></div>
-                    <div class="twin-gas-line-seg"></div>
-                  </div>
-                </div>
-
-                <!-- Tier 5: Production manifold pipeline -->
-                <div class="twin-pipeline-row">
-                  <div class="twin-pipeline-spacer" style="width:24px"></div>
-                  <div class="twin-pipeline-line"></div>
-                  <div class="twin-pipeline-arrow"></div>
-                </div>
-                <div class="twin-pipeline-labels" style="padding-left:28px;padding-right:14px">
-                  <span>PRODUCTION HEADER</span>
-                  <span>→ SEPARATOR</span>
-                </div>
 
                 <!-- Legend strip -->
                 <div class="twin-legend">
@@ -722,8 +696,8 @@
                     <span>Network / Data</span>
                   </div>
                   <div class="twin-leg-item">
-                    <div class="twin-leg-line" style="background:rgba(138,180,248,0.8)"></div>
-                    <span>Gas / Fluid Line</span>
+                    <div class="twin-leg-line" style="background:#8d6e63;height:3px"></div>
+                    <span>Fluid Line</span>
                   </div>
                   <div class="twin-leg-item">
                     <div class="twin-leg-dot" style="background:var(--green);border:2px solid rgba(0,230,118,0.4)"></div>
@@ -742,13 +716,6 @@
 
               </div><!-- end twin-diagram -->
             </div><!-- end site-zone -->
-
-            <!-- Canvas Legend — updated for distinct per-type shapes -->
-            <div class="canvas-legend">
-              <span class="leg-dot" style="border-radius:50%;background:#00e676"></span><span>ESP</span>
-              <span class="leg-dot" style="border-radius:50%;background:#ff6d00"></span><span>AI Alert Active</span>
-              <span style="margin-left:auto;font-style:italic">Right-click asset to trigger scenarios · Left-click to inspect</span>
-            </div>
           </div>
         </div><!-- fleet-canvas-layout -->
 
@@ -842,15 +809,18 @@
           <button v-if="!injectionRunning && !hitlOutcome" @click="craftModalOpen=true"
                   style="margin-left:auto;font-size:0.7rem;padding:4px 12px;border-radius:6px;border:1px solid rgba(30,144,255,0.4);background:rgba(30,144,255,0.08);color:var(--blue);cursor:pointer;transition:all 0.15s"
                   onmouseover="this.style.background='rgba(30,144,255,0.18)'" onmouseout="this.style.background='rgba(30,144,255,0.08)'">
-            ✏️ Craft Fault
+            ⚡ Inject Fault
           </button>
         </div>
 
-        <!-- ── Row 1: Vertical GDC AI (top) → Time Bridge (middle) → SCADA (bottom) ── -->
-        <div class="dd-compare-row" :style="{height: compareRowHeight + 'px'}" @click="showAiFactors=false">
+        <!-- ── Sprint 5 v7: Side-by-Side Layout — Charts Left, Panels Right ── -->
+        <div class="dd-main-body">
+
+          <!-- LEFT: Charts column (GDC AI forecast + amber handle + SCADA) -->
+          <div class="dd-compare-col" :style="{width: compareColWidth + 'px'}" @click="showAiFactors=false">
 
           <!-- TOP: GDC Edge AI Forecast chart -->
-          <div class="dd-view-panel dd-gdc-panel">
+          <div class="dd-view-panel dd-gdc-panel" :style="gdcPanelHeight ? {height: gdcPanelHeight + 'px', flex: 'none'} : {}">
             <!-- Header row 1: title + status + asset + ⓘ -->
             <div class="chart-view-hdr">
               <span class="chart-view-title gdc-hdr-title">⚡ GDC Edge AI Forecast</span>
@@ -885,6 +855,9 @@
               <div id="forecast-chart"></div>
             </div>
           </div>
+
+          <!-- ── Internal split handle — drag to redistribute GDC AI vs SCADA chart heights ── -->
+          <div class="gdc-scada-handle" ref="gdcScadaHandle" title="Drag to resize GDC AI / SCADA · Double-click to reset equal split"></div>
 
           <!-- MIDDLE: Horizontal Time Advantage Bridge -->
           <div class="dd-delta-bridge">
@@ -921,9 +894,9 @@
           <!-- BOTTOM: Traditional SCADA chart — historical only, no projection -->
           <div class="dd-view-panel dd-scada-panel">
             <div class="chart-view-hdr">
-              <span class="chart-view-title">🛢 Traditional SCADA</span>
+              <span class="chart-view-title">📊 SCADA Metrics</span>
               <span class="chart-view-status" :style="{color: injectionRunning ? 'var(--green)' : 'var(--muted)'}">
-                {{ injectionRunning ? '✓ STATUS NORMAL — No Alarms' : '— Waiting for data' }}
+                {{ injectionRunning ? '✓ STATUS NORMAL — No Alarms' : '' }}
               </span>
             </div>
             <div class="dd-chart-wrap">
@@ -935,17 +908,17 @@
             </div>
           </div>
 
-        </div><!-- dd-compare-row -->
+          </div><!-- dd-compare-col -->
 
-        <!-- ── Chart area resize handle — drag down to enlarge charts, push evidence panels off-screen ── -->
-        <div class="compare-resize-handle" ref="compareResizeHandle" title="Drag to resize · Double-click to toggle full/split"></div>
+          <!-- Vertical EW handle — drag to resize chart column vs right panels -->
+          <div class="compare-col-resize-handle" ref="compareColHandle" title="Drag to resize charts vs panels · Double-click to reset"></div>
 
-        <!-- ── Row 2: Evidence / Agent / Action — 3-column bottom half (resizable) ── -->
-        <div class="dd-bottom-row">
+          <!-- RIGHT: 3 stacked independently-resizable panels -->
+          <div class="dd-right-panels">
 
-          <!-- Column 1: Intelligence Feed & Sensor Data -->
-          <div class="dd-intel-col" :style="{width: intelColWidth + 'px'}">
-            <div class="dd-col-hdr">📡 Evidence & Intelligence
+            <!-- Panel 1: Intelligence Feed & Sensor Data -->
+            <div class="dd-intel-panel" :style="{height: intelPanelHeight + 'px'}">
+            <div class="dd-col-hdr">📊 Metrics & Intelligence
               <template v-if="injectionRunning && ddFaultType">
                 <span class="live-dot" style="margin-left:6px"></span>
                 <span style="font-size:0.56rem;font-weight:600;color:var(--orange);margin-left:4px;text-transform:none">{{ FAULT_META[ddFaultType]?.label }}</span>
@@ -994,16 +967,18 @@
               <div v-if="feedItems.length === 0 && ddFaultType && injectionRunning" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:6px 0">Ingesting unstructured data sources…</div>
               <div v-if="gemmaFinding" class="gemma-finding">{{ gemmaFinding }}</div>
             </div>
-          </div>
 
-          <!-- Resizer between Evidence and Agent columns -->
-          <div class="col-resize-handle" ref="intelResizer" title="Drag to resize"></div>
+            </div><!-- dd-intel-panel -->
+            <div class="row-resize-handle" ref="intelRowHandle" title="Drag to resize"></div>
 
-          <!-- Column 2: GDC Operations Agent Chat -->
-          <div class="dd-agent-col" :style="{width: agentColWidth + 'px'}">
+            <!-- Panel 2: GDC Operations Agent Chat -->
+            <div class="dd-agent-panel" :style="{height: agentPanelHeight + 'px'}">
             <div class="copilot-hdr">
               🤖 GDC Ops Agent
-              <span style="font-size:0.54rem;margin-left:3px;opacity:0.7;text-transform:none;font-weight:400">{{ mlops.ollama_model || 'gemma:2b' }} @ Edge</span>
+              <span style="font-size:0.54rem;margin-left:3px;text-transform:none;font-weight:400"
+                    :style="{color: mlops.ollama_online === false ? 'var(--red)' : 'var(--muted)', opacity: mlops.ollama_online === false ? 1 : 0.7}">
+                {{ mlops.ollama_online === false ? '⛔ LLM offline — rule-based mode' : (mlops.ollama_model || 'gemma:27b') + ' @ Edge' }}
+              </span>
               <span v-if="agentTyping" style="font-size:0.54rem;color:var(--muted);text-transform:none;font-weight:400;margin-left:3px">streaming…</span>
             </div>
             <div class="chat-log" ref="chatLog">
@@ -1014,20 +989,18 @@
               <input id="agent-input" type="text" v-model="agentInput" placeholder="Ask the Operations Agent…" @keydown.enter="sendAgentMessage" :disabled="agentTyping">
               <button class="btn-send" @click="sendAgentMessage" :disabled="agentTyping || !agentInput.trim()">Send</button>
             </div>
-          </div>
 
-          <!-- Resizer between Agent and Resolution columns -->
-          <div class="col-resize-handle" ref="agentResizer" title="Drag to resize"></div>
+            </div><!-- dd-agent-panel -->
+            <div class="row-resize-handle" ref="agentRowHandle" title="Drag to resize"></div>
 
-          <!-- Column 3: Resolution & Action -->
-          <div class="dd-action-col">
+            <!-- Panel 3: Resolution & Action -->
+            <div class="dd-action-panel">
             <div class="dd-col-hdr">⚙ Resolution & Action
               <button @click="fetchJustification()" v-if="ddFaultType" style="margin-left:auto;font-size:0.55rem;padding:1px 6px;border-radius:4px;border:1px solid rgba(138,180,248,0.35);background:rgba(138,180,248,0.07);color:var(--g-blue);cursor:pointer">ⓘ Cost Basis</button>
             </div>
             <div style="flex:1;min-height:0;padding:10px 12px;overflow-y:auto">
               <!-- Consult button -->
               <div v-if="!hitlAction && !hitlOutcome">
-                <div class="hitl-action-lbl">⚙ Recommended Action</div>
                 <button class="hitl-consult-btn" :disabled="!ddFaultType || !injectionRunning || agentTyping" @click="consultAgent">💬 Consult Operations Agent</button>
                 <div v-if="!injectionRunning" style="font-size:0.62rem;color:var(--muted);text-align:center;margin-top:4px">Inject a fault first to enable agent consultation</div>
               </div>
@@ -1069,9 +1042,11 @@
                 </div>
               </div>
             </div>
-          </div>
 
-        </div><!-- dd-bottom-row -->
+            </div><!-- dd-action-panel -->
+
+          </div><!-- dd-right-panels -->
+        </div><!-- dd-main-body -->
 
         <!-- ── CRAFT FAULT MODAL ── -->
         <div v-if="craftModalOpen" @click.self="craftModalOpen=false"
@@ -1287,7 +1262,7 @@
       <button class="modal-close-btn" @click="feedModalOpen=false">Close</button>
     </div>
     <div class="feed-modal-card" v-else>
-      <div class="feed-modal-title">All Intelligence Feed Items</div>
+      <div class="feed-modal-title">All RAG Context Documents</div>
       <div v-for="item in feedItems" :key="item.id" style="margin-bottom:12px">
         <div style="font-size:0.7rem;font-weight:600;color:var(--text2);margin-bottom:3px">{{ item.icon }} {{ item.source }} — {{ item.ts_label }}</div>
         <pre class="feed-modal-pre" style="font-size:0.62rem">{{ item.detail }}</pre>
@@ -1486,12 +1461,13 @@ createApp({
       // initialRulMap: per-asset map of original advance notice — persists across navigation
       // so that when you go to fleet and back, the original advance notice is preserved
       initialRulMap: {},
-      // Column widths for the 3 bottom panels — resizable, saved in sessionStorage
-      intelColWidth: (() => { try { const v=sessionStorage.getItem('gdc_intelColWidth'); return v ? parseInt(v,10) : 295; } catch { return 295; } })(),
-      agentColWidth: (() => { try { const v=sessionStorage.getItem('gdc_agentColWidth'); return v ? parseInt(v,10) : 255; } catch { return 255; } })(),
-      compareRowHeight: (() => {
-        try { const v = sessionStorage.getItem('gdc_compareRowHeight'); return v ? parseInt(v, 10) : 520; } catch { return 520; }
-      })(),   // Session 10: resizable via drag handle — push bottom panels down (default 520px)
+      // Sprint 5 v7: Side-by-side layout — chart column width (EW) and right panel heights (NS)
+      compareColWidth: (() => { try { const v=sessionStorage.getItem('gdc_compareColWidth'); return v ? parseInt(v,10) : 720; } catch { return 720; } })(),
+      intelPanelHeight: (() => { try { const v=sessionStorage.getItem('gdc_intelPanelHeight'); return v ? parseInt(v,10) : 260; } catch { return 260; } })(),
+      agentPanelHeight: (() => { try { const v=sessionStorage.getItem('gdc_agentPanelHeight'); return v ? parseInt(v,10) : 280; } catch { return 280; } })(),
+      gdcPanelHeight: (() => {
+        try { const v = sessionStorage.getItem('gdc_gdcPanelHeight'); return v ? parseInt(v, 10) : 0; } catch { return 0; }
+      })(),   // Sprint 5 v4: 0 = equal flex:1 split; >0 = explicit px for GDC AI chart
       // Sprint 4: Pad Alpha Digital Twin — no runtime state needed (integrated V1 only)
     };
   },
@@ -1578,7 +1554,7 @@ createApp({
         }
       }
       this.startDegPoll();
-      this.$nextTick(() => { this.initCopilotResize(); this.initCompareResize(); this.initColResizers(); });
+      this.$nextTick(() => { this.initCompareColResize(); this.initRowResizers(); this.initGdcScadaResize(); });
     },
     backToDashboard() {
       this.currentView = 'dashboard';
@@ -1647,7 +1623,13 @@ createApp({
       return full;
     },
     sensorTabPrimary(sensor) { return this.degStatus?.primary_sensor === sensor; },
-    isSensorAnomaly() { return this.injectionRunning && this.degStatus?.is_active; },
+    isSensorAnomaly(sensor) {
+      if (!this.injectionRunning || !this.degStatus?.is_active) return false;
+      const primary = this.degStatus?.primary_sensor;
+      if (!primary) return true;
+      if (sensor === 's4') return primary === this.sensor4TabKey;
+      return primary === sensor;
+    },
     sensorTrend(sensor) {
       const curr = this.lastSensorVals[sensor], prev = this.lastSensorPrev[sensor];
       if (curr===null||prev===null) return 'stable';
@@ -1860,6 +1842,7 @@ createApp({
       this.showAiFactors=false;
       this.agentMessages=[{role:'system',content:'Fault cleared. Asset reset to nominal baseline.'}];
       Plotly.purge('forecast-chart');
+      Plotly.purge('scada-chart');
       this.showToast(`↺ ${this.ddAssetId} reset to normal`,'var(--green)');
     },
     async resetAllFaults() {
@@ -1934,6 +1917,7 @@ createApp({
           this.agentMessages.push({role:'agent',content:`Action executed. $${(d.net_savings||0).toLocaleString()} net saved. The ${d.fault_label} fault on ${this.ddAssetId} has been resolved.`});
           this.$nextTick(()=>this.scrollChat());
           Plotly.purge('forecast-chart');
+          Plotly.purge('scada-chart');
           this.showToast(`✅ Approved — $${(d.net_savings||0).toLocaleString()} saved`,'var(--green)');
         }
       } catch(e){ this.showToast('Error approving action','var(--red)'); }
@@ -2001,22 +1985,34 @@ createApp({
       handle.addEventListener('mousedown',(e)=>{e.preventDefault();startY=e.clientY;startH=this.copilotHeight;handle.classList.add('dragging');document.body.style.cursor='ns-resize';document.body.style.userSelect='none';document.addEventListener('mousemove',onMouseMove);document.addEventListener('mouseup',onMouseUp);});
     },
 
-    // ── Chart area resize handle — Session 10 ──────────────────────────────
-    // Dragging the handle between the chart row and evidence panels adjusts
-    // compareRowHeight, pushing the evidence/agent/action panels down or off-screen.
-    // Min 180px (enough for two mini charts), max 90% of viewport for full-screen mode.
-    initCompareResize() {
-      const handle = this.$refs.compareResizeHandle;
+    // ── GDC AI / SCADA internal split handle — Sprint 5 v4 ────────────────
+    // Drag between the GDC AI chart and the Time Bridge to redistribute
+    // height between the GDC forecast and SCADA chart panels.
+    // gdcPanelHeight = 0 means natural flex:1 equal split (double-click to reset).
+    initGdcScadaResize() {
+      const handle = this.$refs.gdcScadaHandle;
       if (!handle) return;
+      if (handle.dataset.resizerInit === '1') return;
+      handle.dataset.resizerInit = '1';
       let startY = 0, startH = 0;
+      const minH = 60;
+      const getColH = () => {
+        // Use document.querySelector — this.$el may not expose querySelector in Vue 3 prod builds
+        const colEl = document.querySelector('.dd-compare-col');
+        return (colEl ? colEl.getBoundingClientRect().height : 0) || 600;
+      };
       const onMove = (e) => {
-        const delta = e.clientY - startY;
-        this.compareRowHeight = Math.min(
-          Math.round(window.innerHeight * 0.9),
-          Math.max(180, startH + delta)
-        );
-        // Re-render charts on every mousemove so they fill the new height
-        if (this.chartData) this.renderChart();
+        const colH = getColH();
+        const maxH = colH - 62 - 7 - minH; // 62=bridge height, 7=handle height
+        this.gdcPanelHeight = Math.min(maxH, Math.max(minH, startH + (e.clientY - startY)));
+        // $nextTick ensures Vue has updated dd-gdc-panel height in the DOM before Plotly
+        // measures the container — otherwise Plotly resizes to the OLD height.
+        this.$nextTick(() => {
+          const fg = document.getElementById('forecast-chart');
+          const sc = document.getElementById('scada-chart');
+          try { if (fg) Plotly.Plots.resize(fg); } catch {}
+          try { if (sc) Plotly.Plots.resize(sc); } catch {}
+        });
       };
       const onUp = () => {
         handle.classList.remove('dragging');
@@ -2024,26 +2020,76 @@ createApp({
         document.removeEventListener('mouseup', onUp);
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
-        // Persist height across page refreshes
-        try { sessionStorage.setItem('gdc_compareRowHeight', String(this.compareRowHeight)); } catch {}
-        // Final re-render after mouse release
+        try { sessionStorage.setItem('gdc_gdcPanelHeight', String(this.gdcPanelHeight)); } catch {}
         if (this.chartData) this.$nextTick(() => this.renderChart());
       };
       handle.addEventListener('mousedown', (e) => {
         e.preventDefault();
         startY = e.clientY;
-        startH = this.compareRowHeight;
+        // Derive startH from the actual rendered GDC panel height (getBoundingClientRect is reliable)
+        const gdcPanel = document.querySelector('.dd-gdc-panel');
+        const gdcH = gdcPanel ? gdcPanel.getBoundingClientRect().height : 0;
+        startH = this.gdcPanelHeight || gdcH || Math.round((getColH() - 62 - 7) / 2);
         handle.classList.add('dragging');
         document.body.style.cursor = 'ns-resize';
         document.body.style.userSelect = 'none';
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
       });
-      // Double-click to toggle between default split (430px) and near-full-screen
+      // Double-click resets to natural equal split
       handle.addEventListener('dblclick', () => {
-        const fullH = Math.round(window.innerHeight * 0.88);
-        this.compareRowHeight = (this.compareRowHeight >= fullH - 20) ? 430 : fullH;
-        try { sessionStorage.setItem('gdc_compareRowHeight', String(this.compareRowHeight)); } catch {}
+        this.gdcPanelHeight = 0;
+        try { sessionStorage.removeItem('gdc_gdcPanelHeight'); } catch {}
+        if (this.chartData) this.$nextTick(() => this.renderChart());
+      });
+    },
+
+    // ── Chart column resize handle — Sprint 5 v7 ──────────────────────────
+    // Dragging the handle between the chart column and the right panels adjusts
+    // compareColWidth (EW). Plotly must be resized via $nextTick during drag.
+    // Min 300px (both charts visible), max 85% of viewport width.
+    initCompareColResize() {
+      const handle = this.$refs.compareColHandle;
+      if (!handle) return;
+      if (handle.dataset.resizerInit === '1') return;
+      handle.dataset.resizerInit = '1';
+      let startX = 0, startW = 0;
+      const onMove = (e) => {
+        this.compareColWidth = Math.min(
+          Math.round(window.innerWidth * 0.85),
+          Math.max(300, startW + (e.clientX - startX))
+        );
+        // $nextTick: Vue must paint the new width on dd-compare-col before Plotly measures
+        this.$nextTick(() => {
+          const fg = document.getElementById('forecast-chart');
+          const sc = document.getElementById('scada-chart');
+          try { if (fg) Plotly.Plots.resize(fg); } catch {}
+          try { if (sc) Plotly.Plots.resize(sc); } catch {}
+        });
+      };
+      const onUp = () => {
+        handle.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        try { sessionStorage.setItem('gdc_compareColWidth', String(this.compareColWidth)); } catch {}
+        if (this.chartData) this.$nextTick(() => this.renderChart());
+      };
+      handle.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startW = this.compareColWidth;
+        handle.classList.add('dragging');
+        document.body.style.cursor = 'ew-resize';
+        document.body.style.userSelect = 'none';
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+      // Double-click resets to default 720px
+      handle.addEventListener('dblclick', () => {
+        this.compareColWidth = 720;
+        try { sessionStorage.setItem('gdc_compareColWidth', '720'); } catch {}
         if (this.chartData) this.$nextTick(() => this.renderChart());
       });
     },
@@ -2111,27 +2157,17 @@ createApp({
       if (value < orangeThreshold) return 'zm-orange';
       return 'zm-red';
     },
-    // ── Sprint 4: Pad Alpha Digital Twin — well node absolute positioning ──────
-    // Maps each well index (0–5) to CSS absolute-position within .pad-svg-bg.
-    // SVG well centers: x=[80,188,296,404,512,620]/760, y=118/185
-    // translate(-50%,-50%) centres the 62×62px node on the exact SVG coordinate.
-    padWellStyle(idx) {
-      const XS = [10.53, 24.74, 38.95, 53.16, 67.37, 81.58]; // x%
-      return { left: XS[idx] + '%', top: '63.78%', transform: 'translate(-50%,-50%)' };
+    // ── Right panel row resizers — NS drag to resize each panel independently ──
+    initRowResizers() {
+      this._initRowResizer(this.$refs.intelRowHandle, 'intelPanelHeight', 100, 700, 'gdc_intelPanelHeight');
+      this._initRowResizer(this.$refs.agentRowHandle, 'agentPanelHeight', 100, 600, 'gdc_agentPanelHeight');
     },
-    // ── Column resizers for bottom panels (Evidence / Agent / Resolution) ──
-    initColResizers() {
-      this._initColResizer(this.$refs.intelResizer, 'intelColWidth', 150, 600, 'gdc_intelColWidth');
-      this._initColResizer(this.$refs.agentResizer, 'agentColWidth', 120, 500, 'gdc_agentColWidth');
-    },
-    _initColResizer(el, prop, min, max, key) {
+    _initRowResizer(el, prop, min, max, key) {
       if (!el) return;
-      // Guard: skip if already initialized — prevents duplicate listeners when
-      // openDeepDive() calls initColResizers() on every navigation back to deep dive.
       if (el.dataset.resizerInit === '1') return;
       el.dataset.resizerInit = '1';
-      let startX = 0, startW = 0;
-      const onMove = (e) => { this[prop] = Math.min(max, Math.max(min, startW + (e.clientX - startX))); };
+      let startY = 0, startH = 0;
+      const onMove = (e) => { this[prop] = Math.min(max, Math.max(min, startH + (e.clientY - startY))); };
       const onUp = () => {
         el.classList.remove('dragging');
         document.removeEventListener('mousemove', onMove);
@@ -2142,17 +2178,17 @@ createApp({
       };
       el.addEventListener('mousedown', (e) => {
         e.preventDefault();
-        startX = e.clientX;
-        startW = this[prop];
+        startY = e.clientY;
+        startH = this[prop];
         el.classList.add('dragging');
-        document.body.style.cursor = 'col-resize';
+        document.body.style.cursor = 'ns-resize';
         document.body.style.userSelect = 'none';
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
       });
       // Double-click resets to default
       el.addEventListener('dblclick', () => {
-        this[prop] = prop === 'intelColWidth' ? 295 : 255;
+        this[prop] = prop === 'intelPanelHeight' ? 260 : 280;
         try { sessionStorage.setItem(key, String(this[prop])); } catch {}
       });
     },
