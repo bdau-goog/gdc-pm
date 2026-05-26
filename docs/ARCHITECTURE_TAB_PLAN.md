@@ -27,41 +27,37 @@ Reading left to right, in one glance:
 > Paste the diagram into the **Code tab only.** The Config tab expects JSON — pasting Mermaid syntax there produces `SyntaxError: Unexpected token 'l', "flowchart L"... is not valid JSON`. This is a UI mistake, not a syntax error.
 
 ```
-flowchart LR
+graph LR
 
   subgraph SRC["Data Sources"]
-    direction TB
-    Sensors["Field Sensors\nESP · Compressor · Turbine · Transformer"]
-    OpsRec["Operations Records\nShift Notes · Work Orders · Lab Reports"]
-    Corpus["Industry Corpus\nISO Standards · OEM Manuals · Failure Libraries"]
+    Sensors["Field Sensors<br/>ESP, Compressor, Turbine, Transformer"]
+    OpsRec["Operations Records<br/>Shift Notes, Work Orders, Lab Reports"]
+    Corpus["Industry Corpus<br/>ISO Standards, OEM Manuals, Failure Libraries"]
   end
 
-  subgraph OT["Legacy OT  (unchanged)"]
-    direction TB
-    SCADA["SCADA\nThreshold Monitoring"]
+  subgraph OT["Legacy OT - unchanged"]
+    SCADA["SCADA<br/>Threshold Monitoring"]
     HMI["Operator HMIs"]
-    TRUL["Threshold-Based RUL\nStatic Alarm"]
+    TRUL["Threshold-Based RUL<br/>Static Alarm"]
   end
 
-  subgraph GDC["GDC Edge Cluster — On-Premises · No WAN Required"]
-    direction TB
-    MQ["RabbitMQ\nReal-Time Telemetry Bus"]
-    AlloyDB[("AlloyDB Omni\nPostgreSQL + pgvector\nUnified Asset Data Store")]
-    XGB["XGBoost ML\nHealth Score · Fault Probability\nInitial RUL"]
+  subgraph GDC["GDC Edge Cluster - On-Premises, No WAN Required"]
+    MQ["RabbitMQ<br/>Real-Time Telemetry Bus"]
+    AlloyDB[("AlloyDB Omni<br/>PostgreSQL + pgvector<br/>Unified Asset Data Store")]
+    XGB["XGBoost ML<br/>Health Score, Fault Probability, Initial RUL"]
     subgraph GPU["NVIDIA L4 GPU"]
-      Gemma["Gemma 27b\nLLM + RAG Engine"]
+      Gemma["Gemma 27b<br/>LLM + RAG Engine"]
     end
   end
 
   subgraph OUT["Operator Interface"]
-    direction TB
-    RUL["AI-Informed RUL\nvs. SCADA Estimate"]
-    Recs["Recommended Action\n+ HITL Approval"]
-    Ledger["Cost Avoided\nFinancial Ledger"]
-    Chat["Asset Chatbot\nOperator Q&A · Insights"]
+    RUL["AI-Informed RUL<br/>vs. SCADA Estimate"]
+    Recs["Recommended Action<br/>HITL Approval"]
+    Ledger["Cost Avoided<br/>Financial Ledger"]
+    Chat["Asset Chatbot<br/>Operator Q&A, Insights"]
   end
 
-  FI["Fault Injector\n(Demo Only)"]:::demo
+  FI["Fault Injector<br/>Demo Only"]:::demo
 
   Sensors -->|live telemetry| MQ
   MQ -->|sensor stream| SCADA
