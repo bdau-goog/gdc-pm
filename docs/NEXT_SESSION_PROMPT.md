@@ -1,4 +1,4 @@
-# Next Session Prompt — ESP v2 Redesign (Stage 2 COMPLETE)
+# Next Session Prompt — ESP v2 Redesign (Architecture Polish & rag_documents Fix)
 
 ## Header
 **Date:** May 26, 2026
@@ -6,9 +6,9 @@
 **Project:** gdc-pm (esp-v2-redesign branch)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `41253bd` — clean working tree ✅
-**Note:** Branch is 9 commits ahead of `origin/esp-v2-redesign` — push to origin at session start.
-**Image:** `sha256:9f7e623c6e3ee1...` (deployed 12:49 UTC May 26 — includes Architecture tab)
+**Git Head:** `d63a4e1` — clean working tree ✅
+**Note:** Pushed to origin/esp-v2-redesign.
+**Image:** `sha256:d58e3a7bb4364c7256e68cc25cc6108ec02be183f974944237cc79a217831bfc` (deployed May 26 — includes Architecture tab fixes)
 
 ---
 
@@ -35,22 +35,21 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 **Expected results when healthy:**
 - All pods: `1/1 Running`
 - Ollama: `1` replica, `ollama_online: True  model: gemma:27b`
-- rag_documents: **11 rows** ⚠️ was 0 at last check — investigate before any demo
+- rag_documents: **18 rows** ✅ (Was 0, fixed)
 - fault_sessions: ≥ 3 rows ✅
 
 ---
 
-## ⚠️ Known Integrity State (VERIFIED May 26, 2026 ~12:55 UTC)
+## ⚠️ Known Integrity State (VERIFIED May 26, 2026)
 
 | Item | Actual State | Action Required |
 |------|-------------|-----------------|
-| **rag_documents** | **0 rows** (expected 11) | HIGH — investigate before demo. Check if init-schema job ran correctly. Re-seed if needed. |
-| Architecture tab | **Visually confirmed ✅** (screenshot May 26) | Needs polish — see Priority 1 |
+| **RUL Detection Flow** | UI shows AI-enhanced RUL logic, but backend (`event-processor` / `inference-api`) still records un-enhanced RUL first. | Needs logic refactor: enforce synchronous RAG synthesis before saving RUL (never show un-enhanced RUL). |
+| Architecture tab | **Visually confirmed ✅** | Flow updated to match: Telemetry -> XGBoost ML -> AlloyDB -> Gemma -> UI. |
 | fault_sessions | 3 rows ✅ | Working |
 | field_intel | 100 rows ✅ | Active |
 | Ollama / gemma:27b | `ollama_online: True` ✅ | Running on GPU |
 | GPU CronJobs | SUSPENDED ✅ | Use manual scripts only |
-| git origin | 9 commits behind | Push at session start: `git push` |
 
 ---
 
@@ -65,72 +64,33 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ## NEXT SESSION OBJECTIVES
 
-### Priority 1 — Architecture Tab Polish (confirmed rendering, specific issues)
+### Priority 1 — Backend Flow Change (Never Show Un-Enhanced RUL)
 
-**CONFIRMED RENDERING (screenshot May 26):** The 4-tier layout, dark theme cards, GDC EDGE CLUSTER dashed box, and NVIDIA GPU box all render correctly. The tab looks like a native part of the UI.
+**Current Logic:**
+- `event-processor` subscribes to RabbitMQ.
+- `event-processor` calls `inference-api` for `health_score` (XGBoost).
+- `event-processor` saves `health_score` and `Initial RUL` to AlloyDB `telemetry_events`.
+- UI polls `telemetry_events` and shows the un-enhanced RUL.
+- Later, the AI agent endpoint enhances the RUL with doc context.
 
-**Specific issues to fix (small CSS/HTML changes only):**
-
-| Issue | Root Cause | Fix |
-|-------|-----------|-----|
-| **SCADA node has arrow-right pointing toward AI Engine** | `class="arch-node arrow-right"` on SCADA is incorrect — SCADA is a separate legacy path, not an input to GDC AI | Remove `arrow-right` from SCADA node |
-| **Fault Injector arrow is visually unmoored** | Fault Injector is at the bottom of Tier 1 far from RabbitMQ in Tier 2 | Remove `arrow-right` from Fault Injector; add note label instead |
-| **No HMI/threshold output shown from SCADA** | SCADA → HMI path exists in the narrative but only SCADA is visible | Add "Operator HMIs" and "Threshold-Based RUL" as small subdescription lines inside the SCADA card (not separate nodes) to avoid layout complexity |
-| **Vertical alignment between tiers** | SCADA sits at top of Tier 2, GDC box fills the rest — no visual connector | Add a thin connector line or note text between SCADA and the GDC box to show they receive the same telemetry stream |
+**Requested Logic (from User):**
+- "Never show the RUL until it has been enhanced with the docs that pertain."
+- Modify `inference-api` (or `event-processor`) to block the final save of the RUL until the RAG synthesis/Gemma LLM step is completed. 
+- Ensure `telemetry_events` (or a dedicated table) stores the combined RUL, so the UI only ever displays the enhanced version.
 
 **File surgery approach:**
-- All CSS is in `<head>` → search for `/* ══ Architecture Tab ══ */`
-- All HTML is in `<div id="tab-architecture">`
-- For multi-block HTML edits, use Python regex (NOT `replace_in_file`)
+- Inspect `gke/event-processor/processor.py` and `gke/inference-api/app.py`.
+- Adjust the detection flow to trigger RAG synthesis synchronously.
+- Verify `rag_documents` are being queried at detection time.
 
 ---
 
-### Priority 2 — Investigate rag_documents = 0 (High, ~15 min)
-
-```bash
-# Check what tables exist and their row counts
-kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability \
-  -c "\dt" \
-  -c "SELECT COUNT(*) FROM rag_documents;"
-
-# Check if the init-schema job completed successfully
-kubectl get job alloydb-init-schema -n gdc-pm
-
-# Check init job logs for seeding errors
-kubectl logs -n gdc-pm job/alloydb-init-schema 2>&1 | tail -30
-
-# If empty, re-seed manually:
-# python3 scripts/ingest_manuals.py
-```
-
-The `rag_documents` table is critical — it stores the industry corpus (ESP/gas_lift/mud_pump/top_drive manuals) used by Gemma for RAG. Expected: 11 rows (esp:3, gas_lift:3, mud_pump:3, top_drive:2).
-
----
-
-## What IS Working (deployed and verified)
+## What Was Done This Session
 
 | Feature | Status |
 |---------|--------|
-| All 4 XGBoost health models | ✅ |
-| Fix 9: Dynamic docs all 11 fault types | ✅ |
-| Fix 10: Dynamic Gemma finding | ✅ |
-| Fix 11b: fault_sessions write path | ✅ |
-| HITL approve → savings → financials | ✅ |
-| gpu-start.sh / gpu-stop.sh | ✅ |
-| Honest Gemma status (⛔ offline) | ✅ |
-| Architecture tab (HTML/CSS, native) | ✅ Deployed — visual confirmation pending |
-
----
-
-## Architecture Tab — Technical Notes for Next Session
-
-**CSS location:** Global `<head>` `<style>` block, search for `/* ══ Architecture Tab ══ */`
-
-**Root cause of the styling failure this session:** `<style>` tags placed inside the Vue `#app` root div are silently ignored by browsers. All CSS must live in the `<head>` `<style>` block.
-
-**File surgery approach:** For large multi-block edits to `index.html`, use Python (`python3 -c "..."` or heredoc) instead of `replace_in_file`. The file is 2400 lines and `replace_in_file` fails on large exact-match blocks.
-
-**`--purple` CSS variable:** Not defined in `:root`. The arch CSS uses `#b388ff` directly instead.
+| `rag_documents` table | ✅ 18 rows restored via `ingest_manuals.py` |
+| Architecture tab visuals | ✅ Perfected flow: RabbitMQ -> XGBoost -> AlloyDB -> Gemma -> UI |
 
 ---
 
@@ -156,41 +116,35 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Current Cluster State (VERIFIED May 26, 2026 ~12:55 UTC)
+## Current Cluster State (VERIFIED May 26, 2026)
 
 ```
-fault-trigger-ui-6b689c5f47-8rlwd   1/1  Running  5m   (Architecture tab deployed)
-alloydb-omni-5fcfc68fdb-x9xc8       1/1  Running  4d
-event-processor-7d9b594b6b-wjlkc    1/1  Running  3d23h
-gdc-pm-rabbitmq-server-0            1/1  Running  3d23h
-grafana-655b6f5c7c-mtmtw            1/1  Running  4d
-inference-api-5697b79566-4q8tm      1/1  Running  3d22h
-ollama-5bc5db749b-jf997             1/1  Running  24h   ← GPU
-telemetry-simulator-6b9668648b-ddc66 1/1 Running  4d
+fault-trigger-ui-84dd4cbc6c-2lwtf   1/1  Running  (Architecture fix deployed)
+alloydb-omni-5fcfc68fdb-x9xc8       1/1  Running  
+event-processor-7d9b594b6b-wjlkc    1/1  Running  
+gdc-pm-rabbitmq-server-0            1/1  Running  
+grafana-655b6f5c7c-mtmtw            1/1  Running  
+inference-api-5697b79566-4q8tm      1/1  Running  
+ollama-5bc5db749b-jf997             1/1  Running   ← GPU
+telemetry-simulator-6b9668648b-ddc66 1/1 Running  
 
 Ollama replicas: 1
 API: ollama_online: True  model: gemma:27b ✅
-AlloyDB: field_intel=100, rag_documents=0 ⚠️, fault_sessions=3
-git: 9 commits ahead of origin, working tree clean
+AlloyDB: field_intel=100, rag_documents=18 ✅, fault_sessions=3
+git: working tree clean (d63a4e1 pushed to origin)
 ```
 
 ---
 
-## Outstanding Backlog (post-Architecture tab)
+## Outstanding Development Items (Backlog)
 
-| Priority | Item | Note |
-|----------|------|------|
-| High | Restore rag_documents (0→11 rows) | Re-seed with `scripts/ingest_manuals.py` if needed |
-| High | Push 9 commits to origin | `git push` at session start |
-| Medium | Architecture tab visual confirmation | User to review at live URL |
-| Medium | Architecture tab polish | Once visual confirmed, decide if further tuning needed |
-| Low | Demo narrative improvements | `docs/DEMO_NARRATIVE_UPDATE.md` has context |
+1. Enforce synchronous RAG synthesis on RUL generation.
+2. Demo narrative improvements (`docs/DEMO_NARRATIVE_UPDATE.md`).
 
 ---
 
 ## Key Lessons Learned (May 26 session)
 
-- **`<style>` tags inside `#app` are silently ignored** — always put CSS in the global `<head>` `<style>` block. This was the root cause of 3 failed deploys.
-- **Use Python for large file surgery** — `replace_in_file` fails on 2400-line files with multi-block patterns. Python regex/string replacement is safer and gives explicit success/failure output.
-- **Don't mix tooling experiments with integration** — the Mermaid.js exploration (Code tab vs Config tab confusion, syntax errors) consumed significant tokens. When a tool has a known working alternative (HTML/CSS), use it.
-- **Architecture tab CSS:** `--purple` is not in the app's `:root`. Use `#b388ff` directly.
+- `python3 scripts/ingest_manuals.py` must be run with a venv that contains `psycopg2-binary` and `sentence-transformers`, with `AlloyDB` port-forwarded locally if executed from the SSH host. 
+- Python string-replacement (`re.sub`) is safer than `replace_in_file` for large HTML block edits where spacing/formatting is complex, preventing matching errors.
+- Visual flow logic correctly places XGBoost inference before the DB and LLM enhancement, representing realistic edge telemetry paths.
