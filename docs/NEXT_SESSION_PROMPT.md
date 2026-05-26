@@ -58,10 +58,8 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ## NEXT SESSION OBJECTIVE: "How It Works" Architecture Tab
 
-Full implementation plan (approved diagram, insertion points, verification sequence, session rules):
+Full implementation plan (HTML/CSS Flexbox approach, exact code blocks, insertion points):
 → **`docs/ARCHITECTURE_TAB_PLAN.md`**
-
-**Before starting any code:** preview the Mermaid diagram at https://mermaid.live using the definition in that doc. Confirm the story is right. Then follow the plan.
 
 ---
 
