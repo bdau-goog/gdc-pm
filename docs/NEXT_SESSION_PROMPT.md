@@ -45,7 +45,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 | Item | Actual State | Action Required |
 |------|-------------|-----------------|
 | **rag_documents** | **0 rows** (expected 11) | HIGH — investigate before demo. Check if init-schema job ran correctly. Re-seed if needed. |
-| Architecture tab CSS | **Deployed but unconfirmed visually** | User to confirm rendering at http://34.138.32.109 and report back |
+| Architecture tab | **Visually confirmed ✅** (screenshot May 26) | Needs polish — see Priority 1 |
 | fault_sessions | 3 rows ✅ | Working |
 | field_intel | 100 rows ✅ | Active |
 | Ollama / gemma:27b | `ollama_online: True` ✅ | Running on GPU |
@@ -65,16 +65,23 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ## NEXT SESSION OBJECTIVES
 
-### Priority 1 — Verify Architecture Tab Visual (5 min)
-Open http://34.138.32.109, click "How It Works". The tab should show 4 styled tier columns (Data Sources → Legacy OT & Edge Bus → AI Engine → Operator Interface) with dark-themed cards, colored borders, and arrow indicators. If it looks correct, move on. If still broken, see the CSS fix notes below.
+### Priority 1 — Architecture Tab Polish (confirmed rendering, specific issues)
 
-**Architecture tab key facts:**
-- CSS is in the global `<head>` `<style>` block (NOT in a body `<style>` tag)
-- HTML is in `<div id="tab-architecture">` inserted before `</div><!-- app-body -->`
-- Tab button added after the "Fleet Telemetry" hdr-tab
-- No external dependencies (no Mermaid, no CDN)
+**CONFIRMED RENDERING (screenshot May 26):** The 4-tier layout, dark theme cards, GDC EDGE CLUSTER dashed box, and NVIDIA GPU box all render correctly. The tab looks like a native part of the UI.
 
-**If the tab needs visual tuning** — the CSS classes are now all in the global `<style>` block (search for `/* ══ Architecture Tab ══ */`). Edit there, not in the body.
+**Specific issues to fix (small CSS/HTML changes only):**
+
+| Issue | Root Cause | Fix |
+|-------|-----------|-----|
+| **SCADA node has arrow-right pointing toward AI Engine** | `class="arch-node arrow-right"` on SCADA is incorrect — SCADA is a separate legacy path, not an input to GDC AI | Remove `arrow-right` from SCADA node |
+| **Fault Injector arrow is visually unmoored** | Fault Injector is at the bottom of Tier 1 far from RabbitMQ in Tier 2 | Remove `arrow-right` from Fault Injector; add note label instead |
+| **No HMI/threshold output shown from SCADA** | SCADA → HMI path exists in the narrative but only SCADA is visible | Add "Operator HMIs" and "Threshold-Based RUL" as small subdescription lines inside the SCADA card (not separate nodes) to avoid layout complexity |
+| **Vertical alignment between tiers** | SCADA sits at top of Tier 2, GDC box fills the rest — no visual connector | Add a thin connector line or note text between SCADA and the GDC box to show they receive the same telemetry stream |
+
+**File surgery approach:**
+- All CSS is in `<head>` → search for `/* ══ Architecture Tab ══ */`
+- All HTML is in `<div id="tab-architecture">`
+- For multi-block HTML edits, use Python regex (NOT `replace_in_file`)
 
 ---
 
@@ -97,17 +104,6 @@ kubectl logs -n gdc-pm job/alloydb-init-schema 2>&1 | tail -30
 ```
 
 The `rag_documents` table is critical — it stores the industry corpus (ESP/gas_lift/mud_pump/top_drive manuals) used by Gemma for RAG. Expected: 11 rows (esp:3, gas_lift:3, mud_pump:3, top_drive:2).
-
----
-
-### Priority 3 — Architecture Tab Polish (if time permits)
-
-If the tab visual needs further improvement:
-- The 4 tiers are: Data Sources | Legacy OT & Edge Bus | AI Engine | Operator Interface
-- Tier 2 contains a dashed "GDC EDGE CLUSTER" box grouping RabbitMQ + AlloyDB
-- Tier 3 contains a dashed "NVIDIA L4 GPU ACCELERATED" box grouping XGBoost + Gemma
-- The SCADA node is OUTSIDE the GDC box (showing it's legacy, separate)
-- The Fault Injector node has `.node-demo` class (dashed, dimmed)
 
 ---
 
