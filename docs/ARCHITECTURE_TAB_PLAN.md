@@ -23,6 +23,9 @@ Reading left to right, in one glance:
 
 **Preview at https://mermaid.live before any coding session begins.**
 
+> ⚠️ **mermaid.live has three tabs: Code · Config · Docs.**
+> Paste the diagram into the **Code tab only.** The Config tab expects JSON — pasting Mermaid syntax there produces `SyntaxError: Unexpected token 'l', "flowchart L"... is not valid JSON`. This is a UI mistake, not a syntax error.
+
 ```
 flowchart LR
 
@@ -58,7 +61,7 @@ flowchart LR
     Chat["Asset Chatbot\nOperator Q&A · Insights"]
   end
 
-  FI["⚙ Fault Injector\n(Demo Only)"]:::demo
+  FI["Fault Injector\n(Demo Only)"]:::demo
 
   Sensors -->|live telemetry| MQ
   MQ -->|sensor stream| SCADA
@@ -81,7 +84,7 @@ flowchart LR
 
   FI -.->|simulated event| MQ
 
-  classDef demo fill:#1e1e1e,stroke:#444,color:#555,stroke-dasharray:5 5
+  classDef demo fill:#1e1e1e,stroke:#555,color:#666
 ```
 
 ---
