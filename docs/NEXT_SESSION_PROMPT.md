@@ -64,20 +64,24 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ## NEXT SESSION OBJECTIVES
 
-### Priority 1 — User Review of Guided Tour
+### Priority 1 — Guided Tour Content Review + Iteration
 
-Review the live Architecture tab at http://34.138.32.109 → "How It Works":
-- Tab 1: System Overview (horizontal pipeline + SCADA vs GDC comparison)
-- Tab 2: Data Ingestion (sensors → payload → broker)
-- Tab 3: ML Detection (6-feature input → XGBoost output + SCADA blind comparison)
-- Tab 4: Context Fusion (AlloyDB triple-layer RAG diagram)
-- Tab 5: AI Reasoning (prompt assembly → Gemma GPU → output)
-- Tab 6: Operator Value (alert → HITL tiers → ledger)
+Review the live Architecture tab at http://34.138.32.109 → "How It Works" and plan changes.
 
-After review, decide which panes need:
-- Content changes (narrative text, values)
-- Visual layout adjustments
-- Additional context/callouts
+**Known feedback from user (May 28):**
+- **System Overview pane:** The `SCADA RTU` chip label should be replaced with a list of the actual physical sensors (PSI, Temp, Vibration, Motor Amps) rather than the RTU acronym. The point is to show what the sensors ARE, not the protocol device that reads them.
+
+**Review checklist per pane:**
+| Pane | Review focus |
+|------|-------------|
+| 1 — System Overview | Replace "SCADA RTU" chip with sensor list chips |
+| 2 — Data Ingestion | Verify sensor physics descriptions are accurate |
+| 3 — ML Detection | Confirm 6-feature list matches actual model features |
+| 4 — Context Fusion | Verify AlloyDB row counts match live cluster (18 rag_docs, 100+ field_intel) |
+| 5 — AI Reasoning | Confirm Gemma latency claim (<8s) is realistic |
+| 6 — Operator Value | Review financial figures |
+
+**File surgery approach:** Use Python regex to replace the arch tab, as before.
 
 ### Priority 2 — Live Data Wiring (Optional Enhancement)
 
