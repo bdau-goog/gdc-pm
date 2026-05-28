@@ -1,14 +1,13 @@
-# Next Session Prompt — ESP v2 Redesign (Architecture Polish & rag_documents Fix)
+# Next Session Prompt — ESP v2 Redesign (Guided Tour Architecture Tab)
 
 ## Header
-**Date:** May 26, 2026
+**Date:** May 28, 2026
 **Live URL:** http://34.138.32.109 (us-east1 cluster)
 **Project:** gdc-pm (esp-v2-redesign branch)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `d63a4e1` — clean working tree ✅
-**Note:** Pushed to origin/esp-v2-redesign.
-**Image:** `sha256:d58e3a7bb4364c7256e68cc25cc6108ec02be183f974944237cc79a217831bfc` (deployed May 26 — includes Architecture tab fixes)
+**Git Head:** `a224143` — clean working tree ✅
+**Image:** `sha256:b95558ae8b82a2c7977a621587fb1ae09a2283f683ccb61cf62d4f214a972d4e` (deployed May 28 — includes 6-pane Guided Tour)
 
 ---
 
@@ -35,17 +34,18 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 **Expected results when healthy:**
 - All pods: `1/1 Running`
 - Ollama: `1` replica, `ollama_online: True  model: gemma:27b`
-- rag_documents: **18 rows** ✅ (Was 0, fixed)
+- rag_documents: **18 rows** ✅
 - fault_sessions: ≥ 3 rows ✅
 
 ---
 
-## ⚠️ Known Integrity State (VERIFIED May 26, 2026)
+## ⚠️ Known Integrity State (VERIFIED May 28, 2026)
 
 | Item | Actual State | Action Required |
 |------|-------------|-----------------|
-| **RUL Detection Flow** | UI shows AI-enhanced RUL logic, but backend (`event-processor` / `inference-api`) still records un-enhanced RUL first. | Needs logic refactor: enforce synchronous RAG synthesis before saving RUL (never show un-enhanced RUL). |
-| Architecture tab | **Visually confirmed ✅** | Flow updated to match: Telemetry -> XGBoost ML -> AlloyDB -> Gemma -> UI. |
+| Architecture tab | ✅ 6-pane Guided Tour deployed and verified at 34.138.32.109 | Visual review by user recommended |
+| Guided Tour content | Static (hardcoded example values) | Could be made live-data-aware in a future session |
+| rag_documents | 18 rows ✅ | Healthy |
 | fault_sessions | 3 rows ✅ | Working |
 | field_intel | 100 rows ✅ | Active |
 | Ollama / gemma:27b | `ollama_online: True` ✅ | Running on GPU |
@@ -64,24 +64,24 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ## NEXT SESSION OBJECTIVES
 
-### Priority 1 — Backend Flow Change (Never Show Un-Enhanced RUL)
+### Priority 1 — User Review of Guided Tour
 
-**Current Logic:**
-- `event-processor` subscribes to RabbitMQ.
-- `event-processor` calls `inference-api` for `health_score` (XGBoost).
-- `event-processor` saves `health_score` and `Initial RUL` to AlloyDB `telemetry_events`.
-- UI polls `telemetry_events` and shows the un-enhanced RUL.
-- Later, the AI agent endpoint enhances the RUL with doc context.
+Review the live Architecture tab at http://34.138.32.109 → "How It Works":
+- Tab 1: System Overview (horizontal pipeline + SCADA vs GDC comparison)
+- Tab 2: Data Ingestion (sensors → payload → broker)
+- Tab 3: ML Detection (6-feature input → XGBoost output + SCADA blind comparison)
+- Tab 4: Context Fusion (AlloyDB triple-layer RAG diagram)
+- Tab 5: AI Reasoning (prompt assembly → Gemma GPU → output)
+- Tab 6: Operator Value (alert → HITL tiers → ledger)
 
-**Requested Logic (from User):**
-- "Never show the RUL until it has been enhanced with the docs that pertain."
-- Modify `inference-api` (or `event-processor`) to block the final save of the RUL until the RAG synthesis/Gemma LLM step is completed. 
-- Ensure `telemetry_events` (or a dedicated table) stores the combined RUL, so the UI only ever displays the enhanced version.
+After review, decide which panes need:
+- Content changes (narrative text, values)
+- Visual layout adjustments
+- Additional context/callouts
 
-**File surgery approach:**
-- Inspect `gke/event-processor/processor.py` and `gke/inference-api/app.py`.
-- Adjust the detection flow to trigger RAG synthesis synchronously.
-- Verify `rag_documents` are being queried at detection time.
+### Priority 2 — Live Data Wiring (Optional Enhancement)
+
+The guided tour currently uses static/illustrative values (e.g., "Health: 0.34", "RUL: 22.1 min"). If desired, these could be updated to show live values from the active cluster state on specific panes.
 
 ---
 
@@ -89,8 +89,11 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 | Feature | Status |
 |---------|--------|
-| `rag_documents` table | ✅ 18 rows restored via `ingest_manuals.py` |
-| Architecture tab visuals | ✅ Perfected flow: RabbitMQ -> XGBoost -> AlloyDB -> Gemma -> UI |
+| Architecture tab Vue context bug (orphaned HTML) | ✅ Fixed — modals were outside #app, template syntax was rendering raw |
+| Architecture tab: broken 4-tier flat layout | ✅ Replaced with 6-pane Guided Tour |
+| Guided Tour: 6 focused sub-tabs | ✅ Deployed — System Overview, Data Ingestion, ML Detection, Context Fusion, AI Reasoning, Operator Value |
+| `archPane` Vue state variable | ✅ Injected into data() |
+| New CSS component library | ✅ `.arch-stage`, `.arch-chip`, `.arch-connector`, `.arch-narrative-card`, `.arch-compare-row` etc. |
 
 ---
 
@@ -102,6 +105,7 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 - **No browser on SSH remote** — `browser_action` must NOT be used
 - **Commit after every verified deployment**
 - **CSS goes in `<head>` — never in a `<style>` tag inside `#app`**
+- **Use Python regex for large HTML block replacements** — `replace_in_file` fails on 2500+ line files
 
 ---
 
@@ -116,10 +120,10 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Current Cluster State (VERIFIED May 26, 2026)
+## Current Cluster State (VERIFIED May 28, 2026)
 
 ```
-fault-trigger-ui-84dd4cbc6c-2lwtf   1/1  Running  (Architecture fix deployed)
+fault-trigger-ui-86b7d49c95-6pcq9   1/1  Running  (Guided Tour deployed)
 alloydb-omni-5fcfc68fdb-x9xc8       1/1  Running  
 event-processor-7d9b594b6b-wjlkc    1/1  Running  
 gdc-pm-rabbitmq-server-0            1/1  Running  
@@ -131,20 +135,13 @@ telemetry-simulator-6b9668648b-ddc66 1/1 Running
 Ollama replicas: 1
 API: ollama_online: True  model: gemma:27b ✅
 AlloyDB: field_intel=100, rag_documents=18 ✅, fault_sessions=3
-git: working tree clean (d63a4e1 pushed to origin)
+git: a224143 clean, pushed to origin/esp-v2-redesign
 ```
 
 ---
 
-## Outstanding Development Items (Backlog)
+## Key Lessons Learned (May 28 session)
 
-1. Enforce synchronous RAG synthesis on RUL generation.
-2. Demo narrative improvements (`docs/DEMO_NARRATIVE_UPDATE.md`).
-
----
-
-## Key Lessons Learned (May 26 session)
-
-- `python3 scripts/ingest_manuals.py` must be run with a venv that contains `psycopg2-binary` and `sentence-transformers`, with `AlloyDB` port-forwarded locally if executed from the SSH host. 
-- Python string-replacement (`re.sub`) is safer than `replace_in_file` for large HTML block edits where spacing/formatting is complex, preventing matching errors.
-- Visual flow logic correctly places XGBoost inference before the DB and LLM enhancement, representing realistic edge telemetry paths.
+- **Orphaned HTML outside `#app` silently breaks Vue compilation** — Vue3 production builds don't throw console errors, they just stop compiling templates. Modals showing `{{ template }}` raw syntax is the symptom. Always verify `</div><!-- app-body -->` is the last thing before the modals.
+- **Python regex replacement is the only reliable approach for large HTML files** — The `replace_in_file` tool consistently fails to match multi-line blocks in 2500+ line files due to whitespace/character edge cases.
+- **Verify with `curl | grep -c` not just `kubectl get pods`** — Pod running doesn't mean the right code is live. `curl -s http://34.138.32.109/ | grep -c "archPane"` confirms the actual deployed content.
