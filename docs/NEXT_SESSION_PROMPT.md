@@ -1,4 +1,4 @@
-# Next Session Prompt — ESP v2 Redesign (Guided Tour Architecture Tab)
+# Next Session Prompt — ESP v2 Redesign (Guided Tour Polish)
 
 ## Header
 **Date:** May 28, 2026
@@ -6,8 +6,8 @@
 **Project:** gdc-pm (esp-v2-redesign branch)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `a224143` — clean working tree ✅
-**Image:** `sha256:b95558ae8b82a2c7977a621587fb1ae09a2283f683ccb61cf62d4f214a972d4e` (deployed May 28 — includes 6-pane Guided Tour)
+**Git Head:** `6fe5880` — clean working tree (untracked: `update_arch.py` — scratch file, safe to ignore or delete)
+**Image:** `sha256:b95558ae8b82a2c7977a621587fb1ae09a2283f683ccb61cf62d4f214a972d4e` (deployed May 28 — 6-pane Guided Tour)
 
 ---
 
@@ -35,6 +35,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - All pods: `1/1 Running`
 - Ollama: `1` replica, `ollama_online: True  model: gemma:27b`
 - rag_documents: **18 rows** ✅
+- field_intel: **100 rows** ✅
 - fault_sessions: ≥ 3 rows ✅
 
 ---
@@ -43,8 +44,9 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 | Item | Actual State | Action Required |
 |------|-------------|-----------------|
-| Architecture tab | ✅ 6-pane Guided Tour deployed and verified at 34.138.32.109 | Visual review by user recommended |
-| Guided Tour content | Static (hardcoded example values) | Could be made live-data-aware in a future session |
+| Architecture tab | ✅ 6-pane Guided Tour live at 34.138.32.109 | Polish pass required — see next session plan |
+| "SCADA RTU" chip | Incorrect label in Pane 1 (System Overview) | Replace with individual sensor chips (PSI, Temp, Vib, Amps) |
+| Guided Tour values | Static/illustrative (e.g. Health: 0.34) | Acceptable for now; live-data wiring is optional |
 | rag_documents | 18 rows ✅ | Healthy |
 | fault_sessions | 3 rows ✅ | Working |
 | field_intel | 100 rows ✅ | Active |
@@ -62,30 +64,15 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ---
 
-## NEXT SESSION OBJECTIVES
+## NEXT SESSION PLAN
 
-### Priority 1 — Guided Tour Content Review + Iteration
+| Fix | Change (one sentence) | Verification | Est. complexity |
+|-----|----------------------|--------------|-----------------|
+| Pane 1 sensor chips | Replace "SCADA RTU" chip with 4 sensor chips: Intake PSI, Winding Temp, Vibration mm/s, Motor Amps | View System Overview pane — chips visible | Small |
+| Full pane review | Walk through all 6 panes and capture any other content/label issues | User review at live URL | Small |
+| Content iteration | Apply any agreed content changes from review | User confirms panes look correct | Small–Medium |
 
-Review the live Architecture tab at http://34.138.32.109 → "How It Works" and plan changes.
-
-**Known feedback from user (May 28):**
-- **System Overview pane:** The `SCADA RTU` chip label should be replaced with a list of the actual physical sensors (PSI, Temp, Vibration, Motor Amps) rather than the RTU acronym. The point is to show what the sensors ARE, not the protocol device that reads them.
-
-**Review checklist per pane:**
-| Pane | Review focus |
-|------|-------------|
-| 1 — System Overview | Replace "SCADA RTU" chip with sensor list chips |
-| 2 — Data Ingestion | Verify sensor physics descriptions are accurate |
-| 3 — ML Detection | Confirm 6-feature list matches actual model features |
-| 4 — Context Fusion | Verify AlloyDB row counts match live cluster (18 rag_docs, 100+ field_intel) |
-| 5 — AI Reasoning | Confirm Gemma latency claim (<8s) is realistic |
-| 6 — Operator Value | Review financial figures |
-
-**File surgery approach:** Use Python regex to replace the arch tab, as before.
-
-### Priority 2 — Live Data Wiring (Optional Enhancement)
-
-The guided tour currently uses static/illustrative values (e.g., "Health: 0.34", "RUL: 22.1 min"). If desired, these could be updated to show live values from the active cluster state on specific panes.
+**File surgery approach:** Use Python regex to replace arch tab block (as in `update_arch.py` pattern). Do NOT use `replace_in_file` on the 2600-line `index.html`.
 
 ---
 
@@ -93,11 +80,12 @@ The guided tour currently uses static/illustrative values (e.g., "Health: 0.34",
 
 | Feature | Status |
 |---------|--------|
-| Architecture tab Vue context bug (orphaned HTML) | ✅ Fixed — modals were outside #app, template syntax was rendering raw |
+| Architecture tab Vue context bug | ✅ Fixed — orphaned HTML was pushing modals outside `#app`, breaking Vue compilation |
 | Architecture tab: broken 4-tier flat layout | ✅ Replaced with 6-pane Guided Tour |
-| Guided Tour: 6 focused sub-tabs | ✅ Deployed — System Overview, Data Ingestion, ML Detection, Context Fusion, AI Reasoning, Operator Value |
+| Guided Tour: 6 focused sub-tabs | ✅ Deployed and verified live |
 | `archPane` Vue state variable | ✅ Injected into data() |
-| New CSS component library | ✅ `.arch-stage`, `.arch-chip`, `.arch-connector`, `.arch-narrative-card`, `.arch-compare-row` etc. |
+| New CSS component library | ✅ `.arch-stage`, `.arch-chip`, `.arch-connector`, `.arch-narrative-card`, `.arch-compare-row` |
+| `rag_documents` (was 0 rows) | ✅ Re-seeded to 18 rows via `scripts/ingest_manuals.py` |
 
 ---
 
@@ -109,7 +97,7 @@ The guided tour currently uses static/illustrative values (e.g., "Health: 0.34",
 - **No browser on SSH remote** — `browser_action` must NOT be used
 - **Commit after every verified deployment**
 - **CSS goes in `<head>` — never in a `<style>` tag inside `#app`**
-- **Use Python regex for large HTML block replacements** — `replace_in_file` fails on 2500+ line files
+- **Use Python regex for large HTML block replacements** — `replace_in_file` fails on 2600+ line files
 
 ---
 
@@ -124,28 +112,39 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Current Cluster State (VERIFIED May 28, 2026)
+## Current Cluster State (VERIFIED May 28, 2026 ~21:53 UTC)
 
 ```
-fault-trigger-ui-86b7d49c95-6pcq9   1/1  Running  (Guided Tour deployed)
-alloydb-omni-5fcfc68fdb-x9xc8       1/1  Running  
-event-processor-7d9b594b6b-wjlkc    1/1  Running  
-gdc-pm-rabbitmq-server-0            1/1  Running  
-grafana-655b6f5c7c-mtmtw            1/1  Running  
-inference-api-5697b79566-4q8tm      1/1  Running  
-ollama-5bc5db749b-jf997             1/1  Running   ← GPU
-telemetry-simulator-6b9668648b-ddc66 1/1 Running  
+alloydb-omni-5fcfc68fdb-9vm2z          1/1  Running
+event-processor-7d9b594b6b-j5jp8       1/1  Running
+fault-trigger-ui-86b7d49c95-2jqgr      1/1  Running  ← Guided Tour deployed
+gdc-pm-rabbitmq-server-0               1/1  Running
+grafana-655b6f5c7c-w2h84               1/1  Running
+inference-api-5697b79566-zqdpl         1/1  Running
+ollama-5bc5db749b-jf997                1/1  Running   ← GPU (3d9h uptime)
+telemetry-simulator-6b9668648b-x6622   1/1  Running
 
 Ollama replicas: 1
 API: ollama_online: True  model: gemma:27b ✅
-AlloyDB: field_intel=100, rag_documents=18 ✅, fault_sessions=3
-git: a224143 clean, pushed to origin/esp-v2-redesign
+AlloyDB: field_intel=100 ✅, rag_documents=18 ✅, fault_sessions=3 ✅
+git: 6fe5880 clean, pushed to origin/esp-v2-redesign
 ```
+
+---
+
+## Outstanding Development Items (Backlog)
+
+| Priority | Item | Note |
+|----------|------|------|
+| High | Guided Tour content polish | Pane 1: "SCADA RTU" → sensor chips; review all 6 panes for label accuracy |
+| Medium | Live data wiring for Tour | Fetch active health score / RUL from `/api/degrade-status` to populate Pane 3 cards |
+| Low | Demo narrative doc update | `docs/DEMO_NARRATIVE_UPDATE.md` has context; may want to align with new Tour structure |
 
 ---
 
 ## Key Lessons Learned (May 28 session)
 
-- **Orphaned HTML outside `#app` silently breaks Vue compilation** — Vue3 production builds don't throw console errors, they just stop compiling templates. Modals showing `{{ template }}` raw syntax is the symptom. Always verify `</div><!-- app-body -->` is the last thing before the modals.
-- **Python regex replacement is the only reliable approach for large HTML files** — The `replace_in_file` tool consistently fails to match multi-line blocks in 2500+ line files due to whitespace/character edge cases.
-- **Verify with `curl | grep -c` not just `kubectl get pods`** — Pod running doesn't mean the right code is live. `curl -s http://34.138.32.109/ | grep -c "archPane"` confirms the actual deployed content.
+- **Orphaned HTML outside `#app` silently breaks Vue compilation.** Vue3 production builds don't throw console errors — they just stop processing templates. Modals rendering `{{ raw template }}` text is the symptom. Always verify that `</div><!-- app-body -->` is the last element before the modals.
+- **Python regex is the only reliable approach for large HTML file surgery.** `replace_in_file` consistently fails to match multi-line blocks in 2600+ line files.
+- **Verify content is live with `curl | grep -c`.** `kubectl get pods` shows the pod is running; `curl -s http://host/ | grep -c "archPane"` confirms the right code is actually served.
+- **"SCADA RTU" is too technical for a demo audience.** Show what the sensors measure, not the protocol device that reads them.
