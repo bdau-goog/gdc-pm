@@ -1,4 +1,4 @@
-# Next Session Prompt — ESP v2 Redesign (Architecture Tab v2)
+# Next Session Prompt — ESP v2 Redesign (Architecture Tab v3)
 
 ## Header
 **Date:** May 28, 2026
@@ -6,8 +6,8 @@
 **Project:** gdc-pm (esp-v2-redesign branch)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `526990b` — clean working tree (untracked: `rewrite_arch.py`, `update_arch.py` — scratch files, safe to delete)
-**Image:** `sha256:a632953176694cd12d605c35e12a5e643fbdc33e302ea7116cd519c0f089af16` (deployed May 28 — Architecture Tab v2)
+**Git Head:** `7873322` — clean working tree (untracked: `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3.py` — scratch files, safe to delete)
+**Image:** `sha256:2ac9c3f00f12c5dbc205cf4cebe46270ff84259d93c4af52bcb900e0f02e4f9b` (deployed May 28 — Architecture Tab v3)
 
 ---
 
@@ -44,7 +44,8 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 | Item | Actual State | Action Required |
 |------|-------------|-----------------|
-| Architecture tab | ✅ v2 live at 34.138.32.109 — full-width diagrams, ⓘ popups | Visual review with user to confirm layout satisfactory |
+| Architecture tab | ✅ v3 live at 34.138.32.109 | Visual review with user to confirm layout satisfactory |
+| Pane 2 ⓘ info sensor list | Still says "Intake PSI" in the bullet text (inside ⓘ panel) | Minor: rename to "Pump Intake Pressure (PIP)" in Pane 2 info panel |
 | Guided Tour values | Static/illustrative (Health: 0.34, RUL: 22.1 min) | Acceptable for now; live-data wiring is optional |
 | rag_documents | 18 rows ✅ | Healthy |
 | fault_sessions | 3 rows ✅ | Working |
@@ -67,49 +68,58 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 | Fix | Change (one sentence) | Verification | Est. complexity |
 |-----|----------------------|--------------|-----------------|
-| Visual review | Walk through all 6 panes with user at live URL, capture any content/layout issues | User confirms panes look correct | Small |
-| ⓘ panel review | Confirm ⓘ info popups display correctly, content is accurate per pane | Click ⓘ on each of 6 panes | Small |
+| Visual review | Walk through all 6 panes with user at live URL, confirm layout is acceptable | User confirms | Small |
+| Pane 2 ⓘ sensor bullet | Rename "Intake PSI" → "Pump Intake Pressure (PIP)" and add note that PIP is positive (reservoir) pressure, not vacuum | Check ⓘ panel on Pane 2 | Small |
 | Live data wiring | Fetch active health score / RUL from `/api/degrade-status` to populate Pane 3 cards dynamically | Health score chip shows live value | Medium |
-| Pane 2 connector label | "MQTT" is slightly misleading (it's AMQP via RabbitMQ); consider updating to "AMQP/RabbitMQ" | Visual check | Small |
 
-**File surgery approach:** Use Python regex to replace specific blocks. Do NOT use `replace_in_file` on the 3000+ line `index.html`.
+**File surgery approach:** Use Python regex for replacements. Do NOT use `replace_in_file` on the 3000+ line `index.html`.
 
 ---
 
 ## What Was Done This Session
 
+### Architecture Tab v2 (deployed May 28)
 | Feature | Status |
 |---------|--------|
-| Arch tab v2: Narrative → ⓘ info popups | ✅ Deployed and verified live |
-| All 6 panes: full-width diagram layout | ✅ Deployed and verified live |
-| Pane 1: SCADA RTU → 4 sensor chips | ✅ Deployed: Intake PSI, Winding Temp, Vibration mm/s, Motor Amps |
-| Pane 1: step 3 label → "ML Anomaly Detection" | ✅ Deployed — distinguishes XGBoost from LLM (Pane 5) |
-| Pane 1: SCADA comparison updated | ✅ "15-min downsampled WAN poll" vs "5s local stream — no WAN needed" |
-| Pane 2: 6 wells → 38 wells across 6 pads | ✅ Deployed: Pad Alpha (6W) through Pad Foxtrot (6W) |
-| Pane 4: parallel-stream AlloyDB layout | ✅ Deployed: ML / RAG / Field Intel shown as 3 independent input streams |
-| ⓘ info panels: E-House/GDC Software Only context | ✅ Deployed across all 6 panes |
-| ⓘ info panels: Local vs WAN network explanation | ✅ In Pane 1 and Pane 2 info panels |
-| Vue `archInfoOpen` state + CSS component | ✅ arch-info-btn, arch-info-panel, arch-info-section |
-| Architecture domain validation | ✅ Confirmed: Multi-Well Pad E-House is the correct O&G deployment pattern for GDC Software Only |
+| All 6 panes: full-width diagram layout, narrative → ⓘ info popups | ✅ |
+| Pane 1: 4 sensor chips, ML Anomaly Detection label, E-House narrative in ⓘ | ✅ |
+| Pane 2: 38 wells across 6 pads (field-of-pads) | ✅ |
+| Pane 4: 3-column parallel-stream AlloyDB input layout | ✅ |
+| Vue `archInfoOpen` state + CSS info panel components | ✅ |
+
+### Architecture Tab v3 (deployed May 28 — same session, second pass)
+| Feature | Status |
+|---------|--------|
+| Pane 1 sensors: removed ESP Wells + Fault Injector; Intake PSI → Pump Intake Pressure | ✅ |
+| Pane 1 Edge Bus: simplified to RabbitMQ Broker only | ✅ |
+| Pane 1 ML stage: simplified to XGBoost Health Score only | ✅ |
+| Pane 1 Context Store: Field Intel → Operations Reports; ML Assessments → Model-Based RUL | ✅ |
+| Pane 1 AI Fusion: separated Gemma engine from outputs with explicit "Outputs →" divider | ✅ |
+| Pane 4 Stream 1: relabeled Real-Time ML → Model-Based RUL; added ↓ arrows on each box | ✅ |
+| Pane 4 Stream 3: Field Intelligence → Operations Reports | ✅ |
+| Pane 5: two side-by-side output cards (AI-Informed RUL + Action Recommendation) | ✅ |
+| Pane 5: removed bottom "Why the RUL Changed" explanatory callout | ✅ |
+| Layout: `align-items:flex-start` fixes inner-box overflow bug | ✅ |
+| Architecture domain validation | ✅ Multi-Well Pad E-House confirmed as correct GDC Software Only deployment pattern |
 
 ---
 
-## Current Cluster State (VERIFIED May 28, 2026 ~22:57 UTC)
+## Current Cluster State (VERIFIED May 28, 2026 ~23:57 UTC)
 
 ```
-alloydb-omni-5fcfc68fdb-9vm2z          1/1  Running  ← PostgreSQL + pgvector
-event-processor-7d9b594b6b-j5jp8       1/1  Running  ← RabbitMQ consumer
-fault-trigger-ui-59c9bb56c7-b2g7r      1/1  Running  ← Arch Tab v2 deployed (69s)
+alloydb-omni-5fcfc68fdb-9vm2z          1/1  Running
+event-processor-7d9b594b6b-j5jp8       1/1  Running
+fault-trigger-ui-<new pod>             1/1  Running  ← Arch Tab v3 deployed
 gdc-pm-rabbitmq-server-0               1/1  Running
 grafana-655b6f5c7c-w2h84               1/1  Running
 inference-api-5697b79566-zqdpl         1/1  Running
-ollama-5bc5db749b-jf997                1/1  Running   ← GPU (3d10h uptime)
+ollama-5bc5db749b-jf997                1/1  Running   ← GPU (3d10h+ uptime)
 telemetry-simulator-6b9668648b-x6622   1/1  Running
 
 Ollama replicas: 1
 API: ollama_online: True  model: gemma:27b ✅
 AlloyDB: field_intel=100 ✅, rag_documents=18 ✅, fault_sessions=3 ✅
-git: 526990b clean, pushed to origin/esp-v2-redesign
+git: 7873322 clean, pushed to origin/esp-v2-redesign
 ```
 
 ---
@@ -118,9 +128,9 @@ git: 526990b clean, pushed to origin/esp-v2-redesign
 
 | Priority | Item | Note |
 |----------|------|------|
+| High | Pane 2 ⓘ bullet: "Intake PSI" → "Pump Intake Pressure (PIP)" | Add note clarifying PIP is positive reservoir pressure (not vacuum) — ~5-line Python replace |
 | High | Live data wiring for Tour panes | Pane 3 health score / RUL cards could fetch from `/api/degrade-status` |
-| Medium | Pane 2 connector label: "via MQTT" → "via AMQP" | Minor correctness fix — RabbitMQ uses AMQP, not raw MQTT |
-| Medium | Demo narrative doc update | `docs/DEMO_NARRATIVE_UPDATE.md` may need alignment with new 6-pane Guided Tour |
+| Medium | Demo narrative doc update | `docs/DEMO_NARRATIVE_UPDATE.md` may need alignment with v3 arch tab terminology |
 | Low | `random.sample` in intel feed | Inject gas_lock twice; confirm different 3 items each run |
 | Low | `get_gemma_finding()` dynamic | Check gemma_finding varies between runs |
 
@@ -151,9 +161,9 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ## Key Lessons Learned (May 28 session)
 
-- **Domain realism > demo polish.** A 10-minute architecture discussion about where the compute physically lives produced a far stronger demo story than any amount of visual tweaking. Validate O&G physical topology before finalizing any architecture diagram.
-- **"SCADA is local" is a frequent misconception.** Central SCADA is often hundreds of miles away in a regional operations centre. The physical compute (GDC) lives in the well-pad E-House alongside the VFDs and motor control centres. This is the key differentiator.
-- **"5s telemetry cadence" is the local edge stream** — not a bandwidth-intensive WAN uplink. The WAN only carries low-bandwidth insights. This distinction is important for the demo narrative.
-- **XGBoost vs LLM responsibility is frequently confused.** XGBoost does purely numerical anomaly detection. The LLM synthesises documents + ML output. Keeping these clearly labelled (ML Anomaly Detection vs AI Context Fusion) prevents audience confusion.
-- **ⓘ info popups are the right UX for demo environments.** Cluttered sidebars distract the presenter. On-demand technical detail lets the presenter control the depth of explanation.
-- **Python regex replacement scripts are the only safe approach** for surgery on 3000+ line HTML files. Keep rewrite scripts in the repo root for reuse.
+- **Domain realism > demo polish.** A 10-minute architecture discussion about where the compute physically lives produced a far stronger demo story than any visual tweaking.
+- **"Intake for a pump is suction so it should be a vacuum, right?"** — For surface pumps, yes. For a downhole ESP 3km underground, the pump intake (PIP) is under positive reservoir pressure (220–280 PSI). The fluid enters the pump under hydrostatic head from the reservoir, not suction. Always use the domain-accurate term "Pump Intake Pressure (PIP)."
+- **XGBoost vs LLM responsibility distinction:** XGBoost performs purely numerical anomaly detection (Model-Based RUL). The LLM synthesises documents + ML output into AI-Informed RUL and Action Recommendations. Keep these clearly separated in the UI and labelled accordingly.
+- **"Operations Reports" is clearer than "Field Intel"** for a general demo audience — it maps directly to what operators understand (shift notes, lab reports, work orders).
+- **Python regex scripts are the only safe approach** for surgery on 3000+ line HTML files. Keep all fix scripts in the repo root with descriptive names for traceability.
+- **Two-pass sessions are normal.** First pass deploys the big change; second pass applies the user's visual review corrections. Plan for it.
