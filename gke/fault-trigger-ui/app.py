@@ -54,7 +54,7 @@ OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.
 # Phase 6.2: Reduced to gemma3:12b for faster demo response time.
 # gemma:2b was too small; gemma3:27b is too slow. 12b hits the sweet spot.
 # Override via OLLAMA_MODEL env var if a different model is pulled.
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma3:27b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:latest")
 # Phase 16: Separate display label from actual model call.
 # Allows showing "gemma:27b" in the UI even while gemma:2b is actually loaded
 # (until the L4 GPU node pool is provisioned and gemma:27b is pulled).

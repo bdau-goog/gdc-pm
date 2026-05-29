@@ -78,8 +78,8 @@ spec:
             - -c
             - |
               # Skip pull if model already exists on the PVC
-              if ollama list 2>/dev/null | grep -q "gemma3:27b"; then
-                echo "✅ gemma3:27b already present on PVC — skipping pull"
+              if ollama list 2>/dev/null | grep -q "gemma4:latest"; then
+                echo "✅ gemma4:latest already present on PVC — skipping pull"
                 exit 0
               fi
               echo "Starting Ollama server temporarily to pull model..."
@@ -93,8 +93,8 @@ spec:
                 fi
                 sleep 2
               done
-              echo "Pulling gemma3:27b (~17GB) — this may take several minutes..."
-              ollama pull gemma3:27b
+              echo "Pulling gemma4:latest (~17GB) — this may take several minutes..."
+              ollama pull gemma4:latest
               echo "✅ Model pulled successfully — stopping temporary server"
               kill $OLLAMA_PID
               wait $OLLAMA_PID 2>/dev/null || true
