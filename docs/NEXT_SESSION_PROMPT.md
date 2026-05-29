@@ -64,12 +64,11 @@ kubectl exec -n gdc-pm deployment/ollama -- ollama list
 ```
 gemma4:latest    9.6 GB   ← ACTIVE (running)  Gemma 4 8B, 128K ctx
 gemma3:27b       17 GB    ← fallback           Gemma 3 27B
-gemma4:31b       ~in progress 22% when last checked (28 MB/s, ~9 min remaining)
-                            → will be ~19 GB when complete
+gemma4:31b       19 GB    ← READY (downloaded May 29)   Gemma 4 31B, 128K ctx
 ```
 
 Disk: 49GB PVC, 33GB used (17GB free) before gemma4:31b completes.
-After gemma4:31b: ~33 + ~15 more = ~48GB (tight — may need to delete gemma3:27b afterward)
+Disk after all models: 44GB used / 49GB (5.1GB free). Tight but all models complete.
 
 ---
 
@@ -132,7 +131,7 @@ kubectl exec -n gdc-pm deployment/ollama -- ollama rm gemma3:27b
 | arch v2–v5 | Full architecture tab overhaul: ⓘ popups, field-of-pads, SCADA subscriber, Gemma 4 labels, tab reorder, Grafana URL fix, Field Link | ✅ |
 | gemma3:27b | Pulled Gemma 3 27B as interim upgrade | ✅ (kept as fallback) |
 | **gemma4:latest** | **Gemma 4 8B with 128K context — live and running** | ✅ |
-| gemma4:31b | Background pull in progress | ⏳ ~9 min from last check |
+| gemma4:31b | **Gemma 4 31B — fully downloaded, ready for comparison** | ✅ |
 | Code integrity | All labels match running model throughout | ✅ CLEAN |
 
 ---
