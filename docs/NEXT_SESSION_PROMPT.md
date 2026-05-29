@@ -7,7 +7,7 @@
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
 **Git Head:** `5c2dd5a` — clean working tree (scratch files in root: `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3–v5.py` — safe to delete)
-**Image:** `sha256:665806d558db7224edb430abf82b5c7a0c7486b2b61e636188c0feb3c125aff5` (deployed May 29 — Gemma 4 8B)
+**Image:** `sha256:51afea6558db7224edb430abf82b5c7a0c7486b2b61e636188c0feb3c125aff5` (deployed May 29 — Gemma 4 8B)
 
 ---
 
