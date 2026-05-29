@@ -626,14 +626,14 @@
     <span class="hdr-title">GDC Predictive Maintenance</span>
     <span class="hdr-badge">O&G EDGE AI</span>
     <div class="hdr-tabs">
-      <div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations'">Fleet Operations</div>
-      <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
-      <div class="hdr-tab" :class="{active: mainTab==='telemetry'}" @click="mainTab='telemetry';loadGrafana()" style="color:var(--muted);opacity:0.7">Fleet Telemetry</div>
       <div class="hdr-tab" :class="{active: mainTab==='architecture'}" @click="mainTab='architecture'">How It Works</div>
+      <div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations'">Fleet Operations</div>
+      <div class="hdr-tab" :class="{active: mainTab==='telemetry'}" @click="mainTab='telemetry';loadGrafana()">Fleet Telemetry</div>
+      <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
     </div>
     <div class="hdr-right">
       <span class="wan-badge" :class="'wan-' + (mlops.wan_state||'stable')">
-        {{ mlops.wan_state === 'stable' ? '⚡ WAN' : mlops.wan_state === 'intermittent' ? '⚠ WAN' : '⬇ WAN' }}
+        {{ mlops.wan_state === 'stable' ? '⚡ Field Link' : mlops.wan_state === 'intermittent' ? '⚠ Field Link' : '⬇ Field Link' }}
         {{ mlops.wan_bandwidth_mbps }} Mbps
       </span>
       <span class="ts-lbl">{{ lastRefresh }}</span>
@@ -1115,7 +1115,7 @@
               🤖 GDC Ops Agent
               <span style="font-size:0.54rem;margin-left:3px;text-transform:none;font-weight:400"
                     :style="{color: mlops.ollama_online === false ? 'var(--red)' : 'var(--muted)', opacity: mlops.ollama_online === false ? 1 : 0.7}">
-                {{ mlops.ollama_online === false ? '⛔ LLM offline — rule-based mode' : (mlops.ollama_model || 'gemma:27b') + ' @ Edge' }}
+                {{ mlops.ollama_online === false ? '⛔ LLM offline — rule-based mode' : (mlops.ollama_model || 'gemma4:27b') + ' @ Edge' }}
               </span>
               <span v-if="agentTyping" style="font-size:0.54rem;color:var(--muted);text-transform:none;font-weight:400;margin-left:3px">streaming…</span>
             </div>
@@ -1443,7 +1443,7 @@
                 <li><strong>RabbitMQ</strong> — Durable message broker; survives pod restarts without data loss</li>
                 <li><strong>Inference API</strong> — XGBoost ML model serving via FastAPI; deterministic, explainable anomaly detection</li>
                 <li><strong>AlloyDB Omni</strong> — PostgreSQL + pgvector; unified store for telemetry, ML outputs, and RAG documents</li>
-                <li><strong>Ollama + Gemma 27b</strong> — Local LLM on NVIDIA L4 GPU; RAG synthesis and fault reasoning</li>
+                <li><strong>Ollama + Gemma 4 27B</strong> — Local LLM on NVIDIA L4 GPU; RAG synthesis and fault reasoning</li>
                 <li><strong>Fault Trigger UI</strong> — Demo control console + live operator interface</li>
                 <li><strong>Event Processor</strong> — RabbitMQ consumer; routes telemetry to ML inference and AlloyDB</li>
               </ul>
@@ -1495,11 +1495,14 @@
 
               <div class="arch-stage stage-db" style="flex:1;min-width:110px;overflow:hidden">
                 <div class="arch-stage-title">🗄 4. Context Store</div>
-                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
-                  <div class="arch-chip chip-blue"><span>AlloyDB</span></div>
-                  <div class="arch-chip chip-purple"><span>RAG Manuals</span></div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:3px">
+                  <div class="arch-chip chip-purple"><span>Technical Library</span></div>
                   <div class="arch-chip chip-blue"><span>Operations Reports</span></div>
                   <div class="arch-chip chip-orange"><span>Model-Based RUL</span></div>
+                </div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.2);text-align:center;margin:3px 0">↓</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:3px">
+                  <div class="arch-chip chip-blue" style="border-width:2px"><span>AlloyDB</span></div>
                 </div>
               </div>
 
@@ -1508,7 +1511,7 @@
               <div class="arch-stage stage-llm" style="flex:1;min-width:110px;overflow:hidden">
                 <div class="arch-stage-title">🧠 5. AI Context Fusion</div>
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
-                  <div class="arch-chip chip-purple"><span>Gemma 27b (GPU)</span></div>
+                  <div class="arch-chip chip-purple"><span>Gemma 4 27B</span></div>
                 </div>
                 <div style="font-size:1.1rem;color:rgba(255,255,255,0.2);text-align:center;margin:4px 0">↓</div>
                 <div style="display:flex;flex-direction:column;gap:3px">
@@ -1637,14 +1640,40 @@
               </div>
             </div>
 
-            <div class="arch-connector">↓ <span class="arch-connector-label">Consumed by Event Processor pod</span></div>
+            <!-- Two parallel consumers -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+
+              <!-- Path A: GDC AI -->
+              <div>
+                <div class="arch-connector" style="margin-bottom:8px">↓ <span class="arch-connector-label">GDC Edge AI path</span></div>
+                <div class="arch-stage stage-ml">
+                  <div class="arch-stage-title" style="font-size:0.65rem">⚡ Event Processor (GDC)</div>
+                  <div class="arch-stage-body" style="flex-direction:column;gap:4px;margin-top:4px">
+                    <div class="arch-chip chip-orange"><span style="font-size:0.62rem">XGBoost inference → AI-Based RUL</span></div>
+                    <div class="arch-chip chip-purple"><span style="font-size:0.62rem">RAG context → Gemma 4 27B</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Path B: SCADA HMI -->
+              <div>
+                <div class="arch-connector" style="margin-bottom:8px">↓ <span class="arch-connector-label">SCADA path (legacy)</span></div>
+                <div class="arch-stage stage-scada" style="opacity:0.85">
+                  <div class="arch-stage-title" style="font-size:0.65rem">🖥 SCADA RTU Subscriber</div>
+                  <div class="arch-stage-body" style="flex-direction:column;gap:4px;margin-top:4px">
+                    <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Downsampled 15-min averages</span></div>
+                    <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Threshold alarms → Operator HMI</span></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
 
             <!-- Demo note -->
-            <div class="arch-stage stage-scada" style="opacity:0.75;border-style:dashed">
+            <div class="arch-stage stage-scada" style="opacity:0.65;border-style:dashed;margin-top:12px">
               <div class="arch-stage-title" style="color:var(--muted)">⚙️ Fault Injector (Demo Only)</div>
               <div class="arch-stage-body">
                 <div class="arch-chip chip-muted"><span>Overrides nominal sensor values to simulate fault conditions</span></div>
-                <div class="arch-chip chip-muted"><span>Simulates gas_lock, sand_ingress, overheat signatures</span></div>
                 <div class="arch-chip chip-muted"><span>In production: replaced by real VFD/PLC OPC-UA feed</span></div>
               </div>
             </div>
@@ -1866,8 +1895,8 @@
         <div class="arch-pane" :class="{active: archPane==='reasoning'}">
           <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
             <div style="flex:1">
-              <h2>AI Reasoning — Gemma 27b Edge LLM</h2>
-              <p>The assembled context (sensor data + ML prediction + retrieved documents) is submitted to Gemma 27b, running on an NVIDIA L4 GPU within the edge cluster, with no WAN dependency.</p>
+              <h2>AI Reasoning — Gemma 4 27B Edge LLM</h2>
+              <p>The assembled context (sensor data + ML prediction + retrieved documents) is submitted to Gemma 4 27B, running on an NVIDIA L4 GPU within the edge cluster, with no internet dependency.</p>
             </div>
             <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
           </div>
@@ -1882,7 +1911,7 @@
                 <li>A wellsite with 4G failover may have packet loss during a storm — exactly when you need the AI most</li>
                 <li>Sensitive operational data (well test reports, production rates, lab results) never leaves the E-House premises</li>
               </ul>
-              <div class="arch-callout callout-purple">Gemma 27b on the L4 GPU achieves comparable reasoning quality to Gemini Flash for structured O&G fault diagnosis, with zero cloud dependency and full offline operation.</div>
+              <div class="arch-callout callout-purple">Gemma 4 27B on the L4 GPU achieves comparable reasoning quality to Gemini Flash for structured O&G fault diagnosis, with zero cloud dependency and full offline operation.</div>
             </div>
             <div class="arch-info-section">
               <div class="arch-info-title">🎯 What the LLM Actually Does</div>
@@ -1907,13 +1936,13 @@
               </div>
             </div>
 
-            <div class="arch-connector">↓ <span class="arch-connector-label">Submitted to Ollama API · gemma:27b · NVIDIA L4 GPU · on-cluster · no WAN</span></div>
+            <div class="arch-connector">↓ <span class="arch-connector-label">Submitted to Ollama API · gemma4:27b · NVIDIA L4 GPU · on-cluster · no WAN</span></div>
 
             <!-- GPU box -->
             <div class="arch-stage stage-llm" style="margin-bottom:12px">
-              <div class="arch-stage-title">🧠 Gemma 27b (NVIDIA L4 GPU — 24GB VRAM)</div>
+              <div class="arch-stage-title">🧠 Gemma 4 27B (NVIDIA L4 GPU)</div>
               <div class="arch-stage-body">
-                <div class="arch-chip chip-purple"><span class="arch-chip-label">Model</span><span class="arch-chip-val">gemma:27b</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Model</span><span class="arch-chip-val">gemma4:27b</span></div>
                 <div class="arch-chip chip-purple"><span class="arch-chip-label">Backend</span><span class="arch-chip-val">Ollama (on-cluster)</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">Latency</span><span class="arch-chip-val">< 8 seconds</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">WAN required</span><span class="arch-chip-val" style="color:var(--green)">None</span></div>
@@ -2763,7 +2792,7 @@ createApp({
 
     loadGrafana() {
       const metaTag=document.querySelector('meta[name="grafana-url"]');
-      const grafUrl=metaTag?metaTag.content:'http://136.115.220.48';
+      const grafUrl=metaTag?metaTag.content:'http://35.190.137.145';
       const iframe=document.getElementById('grafana-iframe');
       if(iframe){
         this.grafanaLoaded=false;
