@@ -1411,7 +1411,7 @@
             <span class="ast-num">5</span> AI Reasoning
           </div>
           <div class="arch-sub-tab" :class="{active: archPane==='operator'}" @click="archPane='operator';archInfoOpen=false">
-            <span class="ast-num">6</span> Operator Value
+            <span class="ast-num">6</span> Operations
           </div>
         </div>
 
@@ -1468,7 +1468,7 @@
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
                   <div class="arch-chip chip-blue"><span>Pump Intake Pressure</span></div>
                   <div class="arch-chip chip-orange"><span>Winding Temp</span></div>
-                  <div class="arch-chip chip-orange"><span>Vibration mm/s</span></div>
+                  <div class="arch-chip chip-orange"><span>Vibration</span></div>
                   <div class="arch-chip chip-blue"><span>Motor Amps</span></div>
                 </div>
               </div>
@@ -1476,7 +1476,7 @@
               <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
 
               <div class="arch-stage stage-broker" style="flex:1;min-width:110px;overflow:hidden">
-                <div class="arch-stage-title">📨 2. Edge Bus</div>
+                <div class="arch-stage-title">📨 2. Message Bus</div>
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
                   <div class="arch-chip chip-orange"><span>RabbitMQ Broker</span></div>
                 </div>
@@ -1496,7 +1496,7 @@
               <div class="arch-stage stage-db" style="flex:1;min-width:110px;overflow:hidden">
                 <div class="arch-stage-title">🗄 4. Context Store</div>
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
-                  <div class="arch-chip chip-blue"><span>AlloyDB + pgvector</span></div>
+                  <div class="arch-chip chip-blue"><span>AlloyDB</span></div>
                   <div class="arch-chip chip-purple"><span>RAG Manuals</span></div>
                   <div class="arch-chip chip-blue"><span>Operations Reports</span></div>
                   <div class="arch-chip chip-orange"><span>Model-Based RUL</span></div>
@@ -1510,17 +1510,17 @@
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
                   <div class="arch-chip chip-purple"><span>Gemma 27b (GPU)</span></div>
                 </div>
-                <div style="font-size:0.55rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;margin:6px 0 3px">Outputs →</div>
+                <div style="font-size:1.1rem;color:rgba(255,255,255,0.2);text-align:center;margin:4px 0">↓</div>
                 <div style="display:flex;flex-direction:column;gap:3px">
-                  <div class="arch-chip chip-orange"><span>AI-Informed RUL</span></div>
-                  <div class="arch-chip chip-green"><span>Action Recommendation</span></div>
+                  <div class="arch-chip chip-orange"><span>AI-Based RUL</span></div>
+                  <div class="arch-chip chip-green"><span>Actions</span></div>
                 </div>
               </div>
 
               <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
 
               <div class="arch-stage stage-ui" style="flex:1;min-width:110px">
-                <div class="arch-stage-title">👤 6. Operator</div>
+                <div class="arch-stage-title">👤 6. Operations</div>
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
                   <div class="arch-chip chip-green"><span>HITL Decision</span></div>
                   <div class="arch-chip chip-green"><span>ROI Ledger</span></div>
@@ -1806,7 +1806,7 @@
 
               <!-- Stream 2: RAG Documents -->
               <div class="arch-stage stage-llm" style="background:rgba(179,136,255,0.05);border-color:rgba(179,136,255,0.3)">
-                <div class="arch-stage-title" style="font-size:0.65rem;color:#b388ff">📚 Stream 2 · OEM Manuals (RAG)</div>
+                <div class="arch-stage-title" style="font-size:0.65rem;color:#b388ff">📚 Stream 2 · Industry Corpus</div>
                 <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
                   <div class="arch-chip chip-purple"><span style="font-size:0.62rem">ESP System Overview</span></div>
                   <div class="arch-chip chip-purple"><span style="font-size:0.62rem">Gas Lock — OEM Section</span></div>
@@ -1829,15 +1829,20 @@
               </div>
             </div>
 
-            <!-- Converging arrow -->
-            <div class="arch-connector" style="text-align:center">↓ <span class="arch-connector-label">All three streams unified in AlloyDB · semantic query via pgvector (all-MiniLM-L6-v2)</span></div>
+            <!-- Converging arrows from 3 streams -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px">
+              <div style="text-align:center;font-size:1.2rem;color:rgba(255,109,0,0.5)">↓</div>
+              <div style="text-align:center;font-size:1.2rem;color:rgba(179,136,255,0.5)">↓</div>
+              <div style="text-align:center;font-size:1.2rem;color:rgba(30,144,255,0.5)">↓</div>
+            </div>
+            <div class="arch-connector" style="text-align:center;margin-bottom:8px"><span class="arch-connector-label">All three streams unified · semantic query via pgvector</span></div>
 
             <!-- AlloyDB unified store -->
             <div class="arch-stage stage-db" style="margin-bottom:12px">
-              <div class="arch-stage-title">🗄 AlloyDB Omni — Unified Context (PostgreSQL + pgvector)</div>
+              <div class="arch-stage-title">🗄 AlloyDB Omni — Unified Context Store</div>
               <div class="arch-stage-body">
                 <div class="arch-chip chip-orange"><span class="arch-chip-label">Table</span><span class="arch-chip-val">telemetry_events</span></div>
-                <div class="arch-chip chip-purple"><span class="arch-chip-label">Table</span><span class="arch-chip-val">rag_documents (18 rows)</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Table</span><span class="arch-chip-val">industry_corpus (18 rows)</span></div>
                 <div class="arch-chip chip-blue"><span class="arch-chip-label">Table</span><span class="arch-chip-val">ops_reports (100+ rows)</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">Index</span><span class="arch-chip-val">HNSW · <10ms retrieval</span></div>
               </div>
@@ -1849,7 +1854,7 @@
             <div class="arch-stage stage-llm">
               <div class="arch-stage-title">📄 Context Assembled for Gemma Prompt</div>
               <div class="arch-stage-body" style="flex-direction:column;gap:5px">
-                <div class="arch-chip chip-purple"><span>📚 [OEM Manual] Gas Lock — causes pump cavitation via gas void fraction exceeding 30%...</span></div>
+                <div class="arch-chip chip-purple"><span>📚 [Industry Corpus] Gas Lock — causes pump cavitation via gas void fraction exceeding 30%...</span></div>
                 <div class="arch-chip chip-blue"><span>📋 [Shift Note] Operator noted elevated GOR on ESP-A1 during previous afternoon tour...</span></div>
                 <div class="arch-chip chip-blue"><span>📋 [Lab Report] Fluid analysis shows 8.4% free gas at pump intake, trending up from 5.1% last week...</span></div>
               </div>
@@ -1928,12 +1933,12 @@
             <!-- Outputs -->
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="background:rgba(255,109,0,0.08);border:1px solid rgba(255,109,0,0.4);border-radius:8px;padding:12px 14px">
-                <div style="font-size:0.6rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">📊 Output — AI-Informed RUL</div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">📊 Output — AI-Based RUL</div>
                 <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--orange)">14.2 min</div>
                 <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Refined from Model Base RUL (22.1 min) using retrieved lab report context</div>
               </div>
               <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.35);border-radius:8px;padding:12px 14px">
-                <div style="font-size:0.6rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">✅ Output — Action Recommendation</div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">✅ Output — Actions</div>
                 <div style="font-size:0.7rem;color:var(--text2);line-height:1.4">"Reduce VFD frequency from 52Hz to 44Hz immediately to allow gas to break out through the annulus before pump cavitation occurs."</div>
               </div>
             </div>
@@ -1944,7 +1949,7 @@
         <div class="arch-pane" :class="{active: archPane==='operator'}">
           <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
             <div style="flex:1">
-              <h2>Operator Interface — Human-in-the-Loop & ROI</h2>
+              <h2>Operations Interface — Human-in-the-Loop & ROI</h2>
               <p>The AI recommendation is presented to the operator with full financial context. The human retains final control — but now has expert-level intelligence to inform every decision.</p>
             </div>
             <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
