@@ -1,4 +1,4 @@
-# Next Session Prompt — ESP v2 Redesign (Architecture Tab v4)
+# Next Session Prompt — ESP v2 Redesign (Architecture Tab v5)
 
 ## Header
 **Date:** May 29, 2026
@@ -6,8 +6,8 @@
 **Project:** gdc-pm (esp-v2-redesign branch)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `293b861` — clean working tree (untracked: `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3.py`, `fix_arch_v4.py` — scratch files, safe to delete)
-**Image:** `sha256:f054c1b22f42a8ed81747df5e84a740ddc5a95729ae314bdc1f458a02507e85e` (deployed May 29 — Architecture Tab v4)
+**Git Head:** `12f62b1` — clean working tree (scratch files in root: `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3.py`, `fix_arch_v4.py`, `fix_arch_v5.py` — safe to delete)
+**Image:** `sha256:8bf32b3551852396af6c2e49137681f0f8fc9528adaea50c1744993b99815e3f` (deployed May 29 — Architecture Tab v5)
 
 ---
 
@@ -33,7 +33,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 **Expected results when healthy:**
 - All pods: `1/1 Running`
-- Ollama: `1` replica, `ollama_online: True  model: gemma:27b`
+- Ollama: `1` replica, `ollama_online: True  model: gemma:27b` (⚠ see integrity table below)
 - rag_documents: **18 rows** ✅
 - field_intel: **100 rows** ✅
 - fault_sessions: ≥ 3 rows ✅
@@ -42,16 +42,17 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ## ⚠️ Known Integrity State (VERIFIED May 29, 2026)
 
-| Item | Actual State | Action Required |
-|------|-------------|-----------------|
-| Architecture tab | ✅ v4 live at 34.138.32.109 | Visual review to confirm all changes acceptable |
-| Pane 2 ⓘ sensor bullet | Still says "Intake PSI" in Pane 2 ⓘ info panel text | Minor: update to "Pump Intake Pressure (PIP)" and clarify positive pressure |
-| Guided Tour values | Static/illustrative (Health: 0.34, RUL: 22.1 min) | Acceptable for demo; live-data wiring is backlog |
-| rag_documents | 18 rows ✅ | Healthy |
-| fault_sessions | 3 rows ✅ | Working |
-| field_intel | 100 rows ✅ | Active |
-| Ollama / gemma:27b | `ollama_online: True` ✅ | Running on GPU |
-| GPU CronJobs | SUSPENDED ✅ | Use manual scripts only |
+| Item | Display Says | Reality | Action Required |
+|------|-------------|---------|-----------------|
+| **Gemma label (HIGH)** | UI shows "Gemma 4 27B" | API reports `model: gemma:27b` = Gemma **2** 27B | Pull `gemma4:27b` in Ollama and update `OLLAMA_MODEL` env var — see plan below |
+| Architecture tab | ✅ v5 live at 34.138.32.109 | Deployed | None |
+| Grafana URL | ✅ Fixed to 35.190.137.145 | Live Grafana LB IP | None |
+| Guided Tour values | Static (Health: 0.34) | Illustrative | Acceptable for demo |
+| rag_documents | 18 rows ✅ | Healthy | None |
+| fault_sessions | 3 rows ✅ | Working | None |
+| field_intel | 100 rows ✅ | Active | None |
+| Ollama replicas | 1 ✅ | Running on GPU | None |
+| GPU CronJobs | SUSPENDED ✅ | Manual only | None |
 
 ---
 
@@ -66,42 +67,59 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 
 ## NEXT SESSION PLAN
 
-| Fix | Change (one sentence) | Verification | Est. complexity |
-|-----|----------------------|--------------|-----------------|
-| Visual review | Final walk-through with user at live URL | User confirms layout acceptable | Small |
-| Pane 2 ⓘ bullet | "Intake PSI" → "Pump Intake Pressure (PIP)" + note that PIP is positive reservoir pressure, not vacuum | Check ⓘ on Pane 2 | Small |
-| Live data wiring | Fetch health score / RUL from `/api/degrade-status` to populate Pane 3 cards dynamically | Pane 3 chip shows live value | Medium |
+| Fix | Change | Verification | Est. complexity |
+|-----|--------|--------------|-----------------|
+| **#1 CRITICAL: Pull Gemma 4** | `kubectl exec -n gdc-pm deployment/ollama -- ollama pull gemma4:27b` then update model env var | API reports `model: gemma4:27b` | Medium (model download ~18GB) |
+| Visual review | Walk all panes + Grafana tab now that URL is fixed | User confirms layout | Small |
+| Pane 2 ⓘ bullet | "Intake PSI" → "Pump Intake Pressure (PIP)" + note positive reservoir pressure | Check ⓘ on Pane 2 | Small |
+| Live data wiring | Fetch health score / RUL from `/api/degrade-status` for Pane 3 | Pane 3 chip shows live value | Medium |
 
-**File surgery approach:** Use Python regex for all replacements. Do NOT use `replace_in_file` on the 3000+ line `index.html`.
+### How to pull Gemma 4 27B (resolve integrity issue):
+```bash
+# Check available disk space first
+kubectl exec -n gdc-pm deployment/ollama -- df -h /root/.ollama
+
+# Pull gemma4:27b (requires ~18GB, GPU node must have space)
+kubectl exec -n gdc-pm deployment/ollama -- ollama pull gemma4:27b
+
+# Verify it loaded
+kubectl exec -n gdc-pm deployment/ollama -- ollama list
+
+# Update app.py OLLAMA_MODEL constant and redeploy if needed
+grep -n "OLLAMA_MODEL\|gemma" gke/fault-trigger-ui/app.py
+```
+
+**File surgery approach:** Use Python regex for HTML changes. Do NOT use `replace_in_file` on the 3000+ line `index.html`.
 
 ---
 
-## What Was Done This Session (all deployed, all live)
+## What Was Done This Session (all deployed, live, committed)
 
 | Version | Change | Status |
 |---------|--------|--------|
 | v2 | Full arch tab overhaul: ⓘ popups, full-width diagrams, 38-well field-of-pads, parallel AlloyDB streams | ✅ |
-| v3 | Flow polish: sensor chips cleaned up, Edge Bus simplified, Context Store relabelled, Pane 5 output cards, overflow bug fixed | ✅ |
-| v4 | Final terminology polish: Vibration (no units), Message Bus, AlloyDB chip, Industry Corpus, AI-Based RUL, Actions, Operations | ✅ |
+| v3 | Flow polish: sensor chips, simplified stages, Pane 5 output cards, overflow bug fixed | ✅ |
+| v4 | Terminology: Vibration, Message Bus, AlloyDB, Industry Corpus, AI-Based RUL, Actions, Operations | ✅ |
+| v5 | Gemma 4 27B label, Context Store arrow, tab reorder, Grafana URL fix, Field Link, SCADA subscriber | ✅ |
 
 ---
 
-## Current Cluster State (VERIFIED May 29, 2026 ~00:12 UTC)
+## Current Cluster State (VERIFIED May 29, 2026 ~13:31 UTC)
 
 ```
-alloydb-omni-5fcfc68fdb-9vm2z          1/1  Running
-event-processor-7d9b594b6b-j5jp8       1/1  Running
-fault-trigger-ui-9dbd94597-xgh4f       1/1  Running  ← Arch Tab v4 deployed
-gdc-pm-rabbitmq-server-0               1/1  Running
-grafana-655b6f5c7c-w2h84               1/1  Running
-inference-api-5697b79566-zqdpl         1/1  Running
-ollama-5bc5db749b-jf997                1/1  Running   ← GPU
-telemetry-simulator-6b9668648b-x6622   1/1  Running
+alloydb-omni-5fcfc68fdb-9vm2z           1/1  Running
+event-processor-7d9b594b6b-j5jp8        1/1  Running
+fault-trigger-ui (new pod)              1/1  Running  ← Arch Tab v5 deployed
+gdc-pm-rabbitmq-server-0                1/1  Running
+grafana-655b6f5c7c-w2h84                1/1  Running  ← LB IP 35.190.137.145
+inference-api-5697b79566-zqdpl          1/1  Running
+ollama-5bc5db749b-n6tb8                 1/1  Running  ← model: gemma:27b (Gemma 2 — needs upgrade)
+telemetry-simulator-6b9668648b-x6622    1/1  Running
 
 Ollama replicas: 1
-API: ollama_online: True  model: gemma:27b ✅
+API: ollama_online: True  model: gemma:27b ⚠ (label says Gemma 4 — integrity gap)
 AlloyDB: field_intel=100 ✅, rag_documents=18 ✅, fault_sessions=3 ✅
-git: 293b861 clean, pushed to origin/esp-v2-redesign
+git: 12f62b1 clean, pushed to origin/esp-v2-redesign
 ```
 
 ---
@@ -110,11 +128,12 @@ git: 293b861 clean, pushed to origin/esp-v2-redesign
 
 | Priority | Item | Note |
 |----------|------|------|
-| High | Pane 2 ⓘ: "Intake PSI" → "Pump Intake Pressure (PIP)" + clarify positive pressure | ~5-line Python replace in Pane 2 info panel |
+| **Critical** | Pull and switch to gemma4:27b | UI labels say Gemma 4 but Gemma 2 is running — integrity violation |
+| High | Pane 2 ⓘ bullet: "Intake PSI" → "Pump Intake Pressure (PIP)" | ~5-line Python replace; add note that PIP is positive reservoir pressure |
 | High | Live data wiring | Pane 3 health score / Base RUL from `/api/degrade-status` |
-| Medium | Demo narrative doc update | `docs/DEMO_NARRATIVE_UPDATE.md` — align with v4 terminology |
+| Medium | Clean up scratch scripts in repo root | `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3.py`, `fix_arch_v4.py`, `fix_arch_v5.py` |
+| Medium | Demo narrative doc update | `docs/DEMO_NARRATIVE_UPDATE.md` — align with v5 terminology |
 | Low | `random.sample` in intel feed | Inject gas_lock twice; confirm different items each run |
-| Low | `get_gemma_finding()` dynamic | Confirm gemma_finding varies between runs |
 
 ---
 
@@ -127,6 +146,7 @@ git: 293b861 clean, pushed to origin/esp-v2-redesign
 - **Commit after every verified deployment**
 - **CSS goes in `<head>` — never in a `<style>` tag inside `#app`**
 - **Use Python regex for large HTML block replacements** — `replace_in_file` fails on 3000+ line files
+- **Never display X when Y is running** — label reality, or document the gap immediately
 
 ---
 
@@ -141,12 +161,9 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Key Lessons Learned (May 28–29 session)
+## Key Lessons Learned (May 29 session)
 
-- **Pump Intake Pressure (PIP) is NOT suction/vacuum.** For downhole ESPs, the pump intake is submerged in wellbore fluid under positive reservoir pressure (220–280 PSI). Only surface pumps drawing from below may see sub-atmospheric suction. Always use "Pump Intake Pressure (PIP)" — the industry-standard term.
-- **"Operations" > "Operator"** for the output stage — it describes the function, not a person.
-- **"Industry Corpus" > "OEM Manuals (RAG)"** for a general demo audience — it's more accessible and still accurate.
-- **"Actions" > "Action Recommendation"** when space is constrained — truncated labels that overflow their boxes undermine visual credibility.
-- **Domain realism validates the architecture.** The multi-well pad E-House deployment pattern is real, common in the Permian/Bakken, and completely defensible to O&G engineers.
-- **Three-pass sessions are normal for UI work.** First pass = big structural change, second pass = content corrections from first review, third pass = terminology polish from second review. Each pass should be its own commit.
-- **Python replace scripts accumulate.** Clean up `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3.py`, `fix_arch_v4.py` from repo root at the start of next session.
+- **Gemma 4 = intended deployment target, Gemma 2 = current reality.** The label was updated at user direction to match the intended model, but the actual pull is pending. Always document this gap explicitly — never leave it silent.
+- **Grafana URL drift**: When a LoadBalancer pod is recreated, its external IP may change. The hardcoded fallback in `loadGrafana()` drifted from the live IP. Future: consider fetching the URL from the backend API (`/api/mlops/status`) rather than hardcoding.
+- **"Field Link" > "WAN"** for operator-facing terminology — it describes the physical communications link back to central HQ rather than a technical acronym.
+- **Parallel consumer patterns** (GDC AI path + SCADA path from same RabbitMQ broker) is the architecturally correct and realistic O&G deployment model — both consumers receive the same high-frequency stream, with SCADA doing downsampled threshold polling and GDC doing full ML inference.
