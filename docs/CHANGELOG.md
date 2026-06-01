@@ -1,5 +1,19 @@
 # GDC-PM — Change Log
 
+## Phase 16 (2026-05-29) — Architecture Tab Redesign & Gemma 4 128K Upgrade
+
+### Full Architecture Tab Overhaul
+- **Dual-Reality Design V5:** Reordered tabs and rebuilt the Fleet Operations architecture tab to full-width panes.
+- **Interactive Tooltips:** Added "ⓘ" popups that provide economic scenarios and impacts rather than walls of text.
+- **SCADA Subscriber Simulation:** Added visual contrast showing Edge AI anomaly detections versus traditional SCADA reactive limits.
+- **Field Link Integration:** Integrated WAN state indicator and field-of-pads overview for robust monitoring visualization.
+- **Grafana URL Fix:** Directed the Grafana live telemetry link directly to the correct load balancer IP (35.190.137.145).
+
+### Edge LLM Upgrades (Gemma 4 with 128K Context)
+- **Model Upgrade:** Upgraded from Gemma 3 (27B) to Gemma 4 (8B, 128K context) as the active live-running model, enabling long-context retention of full fault session history within a single prompt.
+- **Gemma 4 31B Readiness:** Successfully completed background downloading of `gemma4:31b` to the Ollama PVC (19 GB downloaded) to serve as a comparison upgrade for higher quality reasoning.
+- **UI Label Alignment:** Updated application labels and API routing to strictly reflect Gemma 4 active statuses across the board, enforcing "No Silent Lies" architectural integrity.
+
 ## Phase 15 (2026-05-18 — Session 5) — Dual-Reality UI Redesign
 
 ### Fleet Operations Tab — Visual Overhaul (in progress)
