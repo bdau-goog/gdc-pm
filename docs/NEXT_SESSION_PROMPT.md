@@ -1,30 +1,19 @@
 # Next Session Prompt — ESP v2 Redesign (Gemma 4 Live) & Git Remote Migration Handoff
 
 ## Header
-**Date:** June 1, 2026
+**Date:** June 2, 2026
 **Live URL:** http://34.138.32.109 (us-east1 cluster)
 **Project:** gdc-pm (esp-v2-redesign branch)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** Clean working tree. *NOTE: This task-stream is migrating to a new git remote. All documentation (CHANGELOG.md, DEVELOPMENT_DECISIONS.md) has been fully updated to reflect the latest decisions before this move.*
-**Image:** `sha256:51afea6558db7224edb430abf82b5c7a0c7486b2b61e636188c0feb3c125aff5` (deployed May 29 — Gemma 4 8B)
-
----
-
-## ⚠️ Repository Migration Notice
-
-This project is migrating to a new Git remote. To maintain context and all development decisions seamlessly on the new remote:
-1. **Documents Updated:** All recent architectural changes (Architecture Tab V5, Field Link, Gemma 4 128K migration) have been documented in `docs/CHANGELOG.md` and `docs/DEVELOPMENT_DECISIONS.md`.
-2. **First Action on New Remote:** When resuming work on the new remote, start by verifying the cluster state against the expected baseline defined below. If you've just cloned the repository, execute the 4 mandatory session opener checks first to confirm live integrity.
+**Git Head:** `09595c03593f4b711c0df828259c2b89c03c951c` (Clean working tree)
+**Image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest` (deployed June 2, 2026 — Gemma 4 8B)
 
 ---
 
 ## ⚠️ MANDATORY SESSION OPENER — Run this BEFORE writing any code
 
 ```bash
-# 0. Push uncommitted commits to origin
-cd ~/gdc-pm && git push
-
 # 1. Verify cluster truth
 kubectl get pods -n gdc-pm --no-headers
 
@@ -32,13 +21,13 @@ kubectl get pods -n gdc-pm --no-headers
 kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
 
 # 3. API truth
-curl -s http://34.138.32.109/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
+curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
 
 # 4. Database truth
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability \
   -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents; SELECT COUNT(*) FROM fault_sessions;"
 
-# 5. Check Ollama PVC models (gemma4:31b background pull is complete)
+# 5. Check Ollama PVC models
 kubectl exec -n gdc-pm deployment/ollama -- ollama list
 ```
 
@@ -47,11 +36,11 @@ kubectl exec -n gdc-pm deployment/ollama -- ollama list
 - Ollama: `1` replica, `ollama_online: True  model: gemma4:latest`
 - rag_documents: **18 rows** ✅
 - field_intel: **100 rows** ✅
-- fault_sessions: ≥ 4 rows ✅
+- fault_sessions: **4 rows** ✅
 
 ---
 
-## ⚠️ Known Integrity State (VERIFIED June 1, 2026)
+## ⚠️ Known Integrity State (VERIFIED June 2, 2026)
 
 | Item | Display Says | Reality | Status |
 |------|-------------|---------|--------|
@@ -93,37 +82,8 @@ cd /home/brian/gdc-pm && ./scripts/gpu-stop.sh    # end of day
 | Fix | Change | Verification | Est. complexity |
 |-----|--------|--------------|-----------------|
 | Switch to gemma4:31b (optional) | `kubectl set env + rebuild` if higher quality needed for next phase | API reports gemma4:31b | Small |
-| Pane 2 ⓘ bullet | "Intake PSI" → "Pump Intake Pressure (PIP)" + note positive reservoir pressure | Check ⓘ on Pane 2 | Small |
 | Live data wiring | Fetch health score / RUL from `/api/degrade-status` for Pane 3 | Pane 3 chip shows live value | Medium |
-| Clean up scratch scripts | Delete `rewrite_arch.py`, `update_arch.py`, `fix_arch_v3–v5.py` from repo root | git status clean | Small |
-
-### Upgrading to gemma4:31b (model already pulled):
-```bash
-# Switch model env var (no image rebuild needed)
-kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_MODEL=gemma4:31b OLLAMA_DISPLAY_MODEL=gemma4:31b
-
-# Update HTML labels: Gemma 4 8B → Gemma 4 31B
-python3 -c "
-FILE='gke/fault-trigger-ui/index.html'
-with open(FILE) as f: h = f.read()
-h = h.replace('Gemma 4 8B','Gemma 4 31B').replace('gemma4:latest','gemma4:31b')
-with open(FILE,'w') as f: f.write(h)
-print('done')
-"
-
-# Update app.py default
-sed -i 's/gemma4:latest/gemma4:31b/g' gke/fault-trigger-ui/app.py
-
-# Rebuild and deploy (then delete gemma3:27b to free space)
-REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
-docker build -t ${REGISTRY}/fault-trigger-ui:latest gke/fault-trigger-ui
-docker push ${REGISTRY}/fault-trigger-ui:latest
-kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
-kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
-
-# Free space after upgrade (delete old models)
-kubectl exec -n gdc-pm deployment/ollama -- ollama rm gemma3:27b
-```
+| Update Demo Narrative | Update `docs/DEMO_NARRATIVE_UPDATE.md` with v5 architecture terms | Check markdown file contents | Small |
 
 ---
 
@@ -131,15 +91,13 @@ kubectl exec -n gdc-pm deployment/ollama -- ollama rm gemma3:27b
 
 | Version | Change | Status |
 |---------|--------|--------|
-| arch v2–v5 | Full architecture tab overhaul: ⓘ popups, field-of-pads, SCADA subscriber, Gemma 4 labels, tab reorder, Grafana URL fix, Field Link | ✅ |
-| gemma4:latest | **Gemma 4 8B with 128K context — live and running** | ✅ |
-| gemma4:31b | **Gemma 4 31B — fully downloaded, ready for comparison** | ✅ |
-| Docs Update | **CHANGELOG and DEVELOPMENT_DECISIONS updated to capture all context for Git Remote Migration** | ✅ |
-| Code integrity | All labels match running model throughout | ✅ CLEAN |
+| Clean up scratch scripts | **Removed rewrite_arch.py, update_arch.py, fix_arch_v3.py, fix_arch_v4.py, and fix_arch_v5.py from the repository root** | ✅ |
+| Pane 2 Terminology | **Updated Intake PSI to Pump Intake Pressure (PIP) and noted positive reservoir pressure must be maintained inside Pane 2 info popup** | ✅ |
+| GKE Rollout | **Rebuilt fault-trigger-ui image, pushed to GCR, restarted deployment, and verified live UI changes via HTTP curl** | ✅ |
 
 ---
 
-## Current Cluster State (VERIFIED June 1, 2026 ~12:25 UTC)
+## Current Cluster State (VERIFIED June 2, 2026 ~19:28 UTC)
 
 ```
 alloydb-omni-5fcfc68fdb-9vm2z           1/1   Running
@@ -153,7 +111,7 @@ telemetry-simulator-6b9668648b-x6622    1/1   Running
 
 Ollama: 1 replica, model: gemma4:latest, online: True ✅
 AlloyDB: field_intel=100 ✅, rag_documents=18 ✅, fault_sessions=4 ✅
-git: clean, ready for remote migration
+git: clean, ready for next session
 ```
 
 ---
@@ -162,10 +120,8 @@ git: clean, ready for remote migration
 
 | Priority | Item | Note |
 |----------|------|------|
-| High | Upgrade to gemma4:31b (optional) | Model ready; see switch commands above; free gemma3:27b to make space |
-| High | Pane 2 ⓘ: "Intake PSI" → "Pump Intake Pressure (PIP)" | 5-line Python replace |
+| High | Upgrade to gemma4:31b (optional) | Model ready; see switch commands in prior prompt history; free gemma3:27b to make space |
 | High | Live data wiring | Pane 3 from `/api/degrade-status` |
-| Medium | Clean up scratch Python scripts | `rewrite_arch.py`, `fix_arch_v3–v5.py` in repo root |
 | Medium | Demo narrative doc update | `docs/DEMO_NARRATIVE_UPDATE.md` — align with v5 terminology |
 
 ---
@@ -194,12 +150,7 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
 ---
 
-## Key Lessons Learned (June 1 session)
+## Key Lessons Learned (June 2 session)
 
-- **Documentation Parity for Migrations**: When migrating repositories or resetting AI sessions across remotes, ensuring `CHANGELOG.md` and `DEVELOPMENT_DECISIONS.md` strictly track the `NEXT_SESSION_PROMPT.md` state avoids loss of architectural context.
-- **Gemma 4 parameter counts are different from Gemma 3.** Gemma 4's sizes are: 8B, 12B (unclear), 31B — NOT 27B. Always check HuggingFace before assuming the Ollama tag.
-- **`gemma4:latest` = 8B in Ollama.** The default is not the largest model. Use `gemma4:31b` for the largest.
-- **128K context is the Gemma 4 headline feature** — 16× larger than Gemma 3's 8K. For edge AI demos, this is a stronger story than parameter count because it means the full fault session history fits in a single prompt.
-- **GPU scheduling deadlock**: Rolling update of the Ollama deployment fails because the GPU is exclusive. Use `Recreate` strategy or manually delete old pod + rollback if needed.
-- **Disk management matters on model PVCs**: At 49GB PVC with multiple 15-17GB models, always check `df -h` before pulling a new model. Delete old models before pulling new ones.
-- **`ollama pull` resumes from partial blobs**: If a pull is interrupted, Ollama caches partial blobs. Resume with the same pull command and it picks up from the last complete chunk.
+- **Context Verification & Alignment**: Always verify the active kubectl context. The developer host VM had context set to an older `us-central1` cluster which resulted in timeouts, but switching to the `gke_gdc-pm-v2_us-east1_gdc-edge-simulation` context resolved all networking issues instantly.
+- **Project Isolation**: Data Sources in Terraform prevent overlap with central resources and allow developers to deploy without modifying foundational networking or cross-contaminating sibling workspaces.
