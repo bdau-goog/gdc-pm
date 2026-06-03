@@ -49,7 +49,7 @@ INFERENCE_API_URL = os.environ.get(
 )
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://ollama.gdc-pm.svc.cluster.local:11434")
-OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma:2b")
+OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:latest")
 
 # Narrative mode: "false" | "rule_based" | "gemini" | "rag"
 AI_NARRATIVE_ENABLED = os.environ.get("AI_NARRATIVE_ENABLED", "rag").lower().strip()

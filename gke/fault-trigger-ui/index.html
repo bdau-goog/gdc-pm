@@ -1225,7 +1225,9 @@
             </div>
           </div>
           <div class="h3-card active-opt">
-            <div class="h3-card-title">⚡ Vizier Optimal ({{ optVizierOptimal.vfd_hz }} Hz)</div>
+            <div class="h3-card-title">⚡ Vizier Optimal ({{ optVizierOptimal.vfd_hz }} Hz)
+              <span v-if="vizierDeployed" style="margin-left:8px;font-size:0.58rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.5);color:var(--green);text-transform:none;letter-spacing:0">✅ Applied: {{ optOptimalHz }} Hz</span>
+            </div>
             <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optVizierOptimal.flow_rate||0).toLocaleString() }} bbl/d</span></div>
             <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val">{{ optVizierOptimal.motor_temp_f || 0 }}°F</span></div>
             <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val">{{ optVizierOptimal.rul_days || 0 }} days</span></div>
@@ -3342,10 +3344,10 @@ createApp({
       const successes=this.optTrials.filter(t=>!t.is_failure&&!t.is_optimal);
       const optimal=this.optTrials.filter(t=>t.is_optimal);
       const traces=[
-        {type:'scatter',mode:'markers',x:successes.map(t=>t.vfd_hz),y:successes.map(t=>t.cash_flow),name:'Trial (No Burnout)',marker:{color:'rgba(30,144,255,0.7)',size:10}},
-        {type:'scatter',mode:'markers',x:failures.map(t=>t.vfd_hz),y:failures.map(t=>t.cash_flow),name:'Trial (Pump Burnout)',marker:{color:'rgba(244,67,54,0.7)',size:10,symbol:'x'}},
-        {type:'scatter',mode:'markers',x:optimal.map(t=>t.vfd_hz),y:optimal.map(t=>t.cash_flow),name:'⭐ Optimal',marker:{color:'#ff8c00',size:16,symbol:'star'}},
-        {type:'scatter',mode:'markers',x:[this.optScadaNominal.vfd_hz],y:[this.optScadaNominal.cash_flow],name:'SCADA Nominal',marker:{color:'#5a6a7a',size:12,symbol:'diamond'}},
+        {type:'scatter',mode:'markers',x:successes.map(t=>t.vfd_hz),y:successes.map(t=>t.cash_flow),name:'Trial (No Burnout)',customdata:successes.map(t=>t.rul_days),hovertemplate:'<b>%{x} Hz</b><br>Cash Flow: $%{y:,.0f}<br>RUL: %{customdata}d<extra>Trial (No Burnout)</extra>',marker:{color:'rgba(30,144,255,0.7)',size:10}},
+        {type:'scatter',mode:'markers',x:failures.map(t=>t.vfd_hz),y:failures.map(t=>t.cash_flow),name:'Trial (Pump Burnout)',customdata:failures.map(t=>t.rul_days),hovertemplate:'<b>%{x} Hz</b><br>Cash Flow: $%{y:,.0f}<br>RUL: %{customdata}d ⚠ BURNOUT<extra>Trial (Pump Burnout)</extra>',marker:{color:'rgba(244,67,54,0.7)',size:10,symbol:'x'}},
+        {type:'scatter',mode:'markers',x:optimal.map(t=>t.vfd_hz),y:optimal.map(t=>t.cash_flow),name:'⭐ Optimal',customdata:optimal.map(t=>t.rul_days),hovertemplate:'<b>⭐ OPTIMAL: %{x} Hz</b><br>Cash Flow: $%{y:,.0f}<br>RUL: %{customdata}d<extra>Vizier Optimal</extra>',marker:{color:'#ff8c00',size:16,symbol:'star'}},
+        {type:'scatter',mode:'markers',x:[this.optScadaNominal.vfd_hz],y:[this.optScadaNominal.cash_flow],name:'SCADA Nominal',customdata:[this.optScadaNominal.rul_days||0],hovertemplate:'<b>SCADA Nominal: %{x} Hz</b><br>Cash Flow: $%{y:,.0f}<br>RUL: %{customdata}d<extra>SCADA Nominal</extra>',marker:{color:'#5a6a7a',size:12,symbol:'diamond'}},
       ];
       const layout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:60,r:20,t:20,b:50},xaxis:{title:'VFD Frequency (Hz)',gridcolor:'#1e2a38'},yaxis:{title:'Net Cash Flow ($)',gridcolor:'#1e2a38'},legend:{bgcolor:'rgba(11,12,16,0.7)',bordercolor:'#1e2a38',borderwidth:1}};
       Plotly.react(el,traces,layout,{displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(el,traces,layout,{displayModeBar:false,responsive:true}));
