@@ -626,6 +626,25 @@
     .hb-btn.btn-inject:hover { background: rgba(30,144,255,0.18); }
     .hb-btn.btn-reset { background: rgba(244,67,54,0.08); border-color: rgba(244,67,54,0.3); color: var(--red); }
     .hb-btn.btn-reset:hover { background: rgba(244,67,54,0.18); }
+    .hb-btn.btn-info { background: rgba(94,92,230,0.08); border-color: rgba(94,92,230,0.35); color: #9d9bf4; }
+    .hb-btn.btn-info:hover { background: rgba(94,92,230,0.18); }
+    .hb-btn.btn-info.active { background: rgba(94,92,230,0.22); border-color: rgba(94,92,230,0.6); }
+    /* ── Physics & Logic Info Panels ── */
+    .physics-panel { background: var(--surf2); border-bottom: 1px solid var(--border2); padding: 18px 24px; flex-shrink: 0; overflow-y: auto; max-height: 370px; }
+    .pp-section { margin-bottom: 14px; }
+    .pp-section-title { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+    .pp-text { font-size: 0.71rem; color: var(--text2); line-height: 1.6; margin: 0 0 5px; }
+    .pp-list { font-size: 0.71rem; color: var(--text2); line-height: 1.6; padding-left: 16px; margin: 0 0 5px; }
+    .pp-list li { margin-bottom: 2px; }
+    .pp-table { width: 100%; border-collapse: collapse; font-size: 0.67rem; margin-top: 6px; }
+    .pp-table th { text-align: left; color: var(--muted); font-weight: 600; padding: 4px 12px 4px 0; border-bottom: 1px solid var(--border2); white-space: nowrap; }
+    .pp-table td { padding: 5px 12px 5px 0; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+    .pp-table td:first-child { color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .pp-em { color: var(--green); font-weight: 600; }
+    .pp-warn { color: var(--yellow); font-weight: 600; }
+    .pp-danger { color: var(--red); font-weight: 600; }
+    .pp-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 900px) { .pp-cols { grid-template-columns: 1fr; } }
     
     .h3-dashboard { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 20px; background: var(--bg); }
     .h3-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
@@ -1004,6 +1023,52 @@
         <div class="hb-actions">
           <button class="hb-btn btn-inject" @click="launchHorizon1">⚡ Inject Gas Lock Fault</button>
           <button class="hb-btn btn-reset" @click="resetHorizon1" v-if="h1Injected">↺ Reset</button>
+          <button class="hb-btn btn-info" :class="{active: showH1Info}" @click="showH1Info=!showH1Info">ⓘ Physics &amp; Logic</button>
+        </div>
+      </div>
+      <!-- H1 Physics & Logic Info Panel -->
+      <div v-if="showH1Info" class="physics-panel">
+        <div class="pp-cols">
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚙ The Physics — Why the Pump Fails</div>
+              <p class="pp-text">Gas Void Fraction (GVF) exceeds ~70% of pump stage volume. The pump stages spin through gas rather than fluid and unload: Pump Intake Pressure (PIP) collapses and motor current (Amps) drops simultaneously. If uncorrected for &gt;25 minutes, the motor runs dry, overheats, and winding insulation fails <em>(Class H insulation threshold: 284°F per API RP 11S)</em>.</p>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">🔎 Why Engineers Miss It In Time</div>
+              <p class="pp-text">An experienced engineer manually cross-correlates PIP decline with motor current decline. If both drop in sync, it's gas lock — not mechanical wear. But:</p>
+              <ul class="pp-list">
+                <li>Requires manually pulling trend plots from the SCADA historian</li>
+                <li>Only happens if someone <em>notices</em> PIP is drifting low first</li>
+                <li>By the time SCADA fires a low-PIP alarm, the Point of No Return may have passed</li>
+                <li>One production engineer manages 300–500 wells — this correlation cannot happen for every well continuously</li>
+              </ul>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚡ How GDC Improves Detection</div>
+              <ul class="pp-list">
+                <li>Continuously calculates <em>dPSI/dt</em> and <em>dAmps/dt</em> slopes at 5s cadence across all wells simultaneously</li>
+                <li>XGBoost detects the correlated 4-sensor signature (falling PIP, falling amps, stable temp, stable vibration) at 94% confidence — before any single sensor crosses an alarm threshold</li>
+                <li><span class="pp-em">Lead time: 25 minutes</span> before SCADA would alarm</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">💰 Cost Avoidance</div>
+              <table class="pp-table">
+                <thead><tr><th></th><th>Reactive (SCADA)</th><th>Proactive (GDC)</th></tr></thead>
+                <tbody>
+                  <tr><td>Detection</td><td>Single-threshold alarm when PIP &lt; 180 PSI</td><td>Multivariate XGBoost slope correlation</td></tr>
+                  <tr><td>Timing</td><td>~5 min before lockup</td><td class="pp-em">25 min advance notice</td></tr>
+                  <tr><td>Action</td><td>Emergency shut-in + pump pull evaluation</td><td>VFD reduction 52Hz → 44Hz via SCADA</td></tr>
+                  <tr><td>Capital</td><td class="pp-danger">$150,000 pump replacement</td><td>$2,500 VFD software command</td></tr>
+                  <tr><td>Downtime</td><td class="pp-danger">5–7 days (pull + replace)</td><td class="pp-em">Zero downtime</td></tr>
+                  <tr><td>Net avoided</td><td>—</td><td class="pp-em">$147,500</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
       <div class="h3-dashboard">
@@ -1099,6 +1164,59 @@
         <div class="hb-actions">
           <button class="hb-btn btn-inject" @click="launchHorizon2">⚡ Inject Slug Flow Fault</button>
           <button class="hb-btn btn-reset" @click="resetHorizon2" v-if="h2Injected">↺ Reset</button>
+          <button class="hb-btn btn-info" :class="{active: showH2Info}" @click="showH2Info=!showH2Info">ⓘ Physics &amp; Logic</button>
+        </div>
+      </div>
+      <!-- H2 Physics & Logic Info Panel -->
+      <div v-if="showH2Info" class="physics-panel">
+        <div class="pp-cols">
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚙ The Physics — Why the Pump Looks Broken</div>
+              <p class="pp-text">High Gas-Liquid Ratio (GLR) causes intermittent gas pockets and liquid slugs to cycle through the surface flowline. Heavy liquid slugs impacting the wellhead piping transmit mechanical shocks down the tubing string, vibrating the downhole sensor (1.1 → 2.4 mm/s rise). <span class="pp-warn">The downhole pump is completely healthy.</span> The fault is entirely at the surface choke manifold.</p>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">🔎 Why the Default Action Is a $150k Well Pull</div>
+              <p class="pp-text">When vibration alarms fire in a SCADA environment, the default assumption is downhole mechanical wear. Distinguishing slug flow from bearing damage requires thermal correlation:</p>
+              <ul class="pp-list">
+                <li><strong>Slug flow:</strong> vibration rises + motor temperature stays flat (healthy pump)</li>
+                <li><strong>Bearing wear:</strong> vibration rises + motor temperature climbs (friction)</li>
+                <li>This data exists in 3–5 separate systems — SCADA, downhole portal, lab reports, shift notes</li>
+                <li>Lease operators are trained to be conservative — vibration alarm = shut in and order pull</li>
+                <li>Even senior engineers do this correlation <em>after</em> SCADA alarms — GDC does it 12–24h earlier</li>
+              </ul>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚡ How GDC Distinguishes Surface vs Downhole</div>
+              <ul class="pp-list">
+                <li>XGBoost correlates vibration rise vs. winding temperature stability in real-time across all wells</li>
+                <li>52% confidence "slug_flow" (ambiguous, surface issue) vs high-confidence downhole fault</li>
+                <li>Gemma retrieves OEM troubleshooting guide: <em>"Vibration drift without motor temperature elevation indicates surface flowline slugging"</em></li>
+                <li>Synthesized assessment: <span class="pp-em">Do NOT pull. Dispatch surface technician to adjust choke valve.</span></li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">💰 Cost Avoidance</div>
+              <table class="pp-table">
+                <thead><tr><th></th><th>Conservative SCADA</th><th>Proactive (GDC)</th></tr></thead>
+                <tbody>
+                  <tr><td>Detection</td><td>Single vibration threshold alarm</td><td>Multivariate temp + vibration correlation</td></tr>
+                  <tr><td>Default action</td><td class="pp-danger">Shut in + schedule pump pull</td><td>Dispatch lease operator to choke valve</td></tr>
+                  <tr><td>What's wrong?</td><td>Surface flowline slugging</td><td>Surface flowline slugging</td></tr>
+                  <tr><td>Pump pull cost</td><td class="pp-danger">$150,000 (unnecessary)</td><td class="pp-em">$0 — pump confirmed healthy</td></tr>
+                  <tr><td>Truck roll cost</td><td>$1,500</td><td>$1,500 (or $0 if batched)</td></tr>
+                  <tr><td>Net avoided</td><td>—</td><td class="pp-em">$148,500</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="pp-section" style="margin-top:14px">
+              <div class="pp-section-title">⚠ Why H2 Is the Most Vulnerable Scenario</div>
+              <p class="pp-text">A technically sophisticated audience will say: <em>"An experienced engineer can look at flat winding temperature and rising vibration and know it's not downhole."</em></p>
+              <p class="pp-text">The correct answer: <span class="pp-warn">Yes — for one well.</span> One engineer manages 300–500 wells. GDC does this correlation continuously across all wells simultaneously with sub-second latency. The math changes at scale.</p>
+            </div>
+          </div>
         </div>
       </div>
       <div class="h3-dashboard">
@@ -1193,6 +1311,54 @@
         <div class="hb-actions">
           <button class="hb-btn btn-inject" @click="runVizierOptimize">⚡ Run Vizier Optimization</button>
           <button class="hb-btn btn-reset" v-if="optTrials.length > 0" @click="deployVizierOptimal" :disabled="vizierDeploying" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.4);color:var(--green)">{{ vizierDeployed ? '✅ Deployed' : (vizierDeploying ? 'Deploying…' : '✔ Deploy Recommendation') }}</button>
+          <button class="hb-btn btn-info" :class="{active: showH3Info}" @click="showH3Info=!showH3Info">ⓘ Physics &amp; Logic</button>
+        </div>
+      </div>
+      <!-- H3 Physics & Logic Info Panel -->
+      <div v-if="showH3Info" class="physics-panel">
+        <div class="pp-cols">
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚙ The Physics — The VFD Tradeoff</div>
+              <p class="pp-text">Running an ESP at higher VFD frequency (Hz) increases flow rate and revenue. However, motor winding temperature increases non-linearly with frequency — at high frequencies, excess heat degrades Class H polyimide insulation exponentially. Once winding temperature exceeds 270°F consistently, RUL drops from years to weeks. Burnout costs $150,000 in capital + $45,000/day in deferred production.</p>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">🔎 Why Manual Optimization Fails</div>
+              <ul class="pp-list">
+                <li>Engineers set a conservative, static VFD setpoint (48–52Hz) to stay well within thermal limits</li>
+                <li>Manual "Hz trials" require 48-hour stabilization periods each — weeks of testing per well</li>
+                <li>Manually correlating flow rate gains against temperature trends requires lab data, not just SCADA</li>
+                <li>The high oil-price window may last only days — the optimization window closes before analysis completes</li>
+              </ul>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚡ How GDC Vizier Solves This</div>
+              <ul class="pp-list">
+                <li>XGBoost RUL model projects thermal degradation trajectories at each hypothetical Hz setpoint (milliseconds vs 48-hour field trials)</li>
+                <li>OEM Class H insulation limit (284°F per API RP 11S) retrieved from AlloyDB pgvector and used as hard constraint</li>
+                <li><strong>Google Vizier (Bayesian Optimization)</strong> executes 15 targeted trials — each balancing exploration vs exploitation</li>
+                <li>Converges on the <span class="pp-em">Pareto Frontier</span> — the maximum Hz that maximizes net cash flow without triggering motor burnout</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">📐 Financial Model (per Vizier trial)</div>
+              <p class="pp-text" style="font-family:var(--mono);font-size:0.65rem;background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:8px;line-height:1.8">Net Cash Flow =<br>(Flow Rate × Oil Price × Horizon Days)<br>− Power Costs<br>− (Burnout Penalty if RUL &lt; Horizon)</p>
+              <p class="pp-text" style="margin-top:8px">Where Burnout Penalty = $150,000 (replacement) + (Days × $45,000/day). The OEM-retrieved temperature limit determines whether a given Hz setpoint crosses into burnout territory.</p>
+            </div>
+            <div class="pp-section" style="margin-top:6px">
+              <div class="pp-section-title">💰 Strategy Comparison</div>
+              <table class="pp-table">
+                <thead><tr><th>Strategy</th><th>Hz</th><th>Outcome</th></tr></thead>
+                <tbody>
+                  <tr><td>SCADA Conservative</td><td>50 Hz</td><td>Safe — leaves revenue on the table</td></tr>
+                  <tr><td class="pp-em">Vizier Optimal</td><td class="pp-em">~57.5 Hz</td><td class="pp-em">Max cash flow without burnout</td></tr>
+                  <tr><td class="pp-danger">Aggressive (no AI)</td><td class="pp-danger">65 Hz</td><td class="pp-danger">Motor burnout — $150k+ penalty applied</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
       <div class="h3-dashboard">
@@ -2300,11 +2466,12 @@ const ASSET_META = {
 };
 const FAULT_META = {
   gas_lock:                   {label:'Gas Lock',                color:'#f44336',desc:'Gas entrainment — pump efficiency degrading',aclass:'esp'},
+  slug_flow:                  {label:'Slug Flow',               color:'#ffb300',desc:'Flowline slugging — surface choke valve backpressure',aclass:'esp'},
   sand_ingress:               {label:'Sand Ingress',             color:'#f9a825',desc:'Formation sand erodes impeller stages',aclass:'esp'},
   motor_overheat:             {label:'Motor Over-Temp',          color:'#ff6d00',desc:'Winding temp climbs toward insulation failure',aclass:'esp'},
 };
 const FAULTS_BY_CLASS = {
-  esp:       ['gas_lock','sand_ingress','motor_overheat'],
+  esp:       ['gas_lock','slug_flow','sand_ingress','motor_overheat'],
 };
 const SENSOR_LABELS = {
   esp:       {psi:'Intake Pres. (PSI)',temp:'Winding Temp (°F)',vib:'Vibration (mm/s)',s4:'Motor Current (A)'},
@@ -2358,6 +2525,11 @@ createApp({
       h2GemmaFinding: '',
       h2TruckRollInterval: null,
       h2DegPollTimer: null,
+
+      // Physics & Logic Info Panel state (Fix 10)
+      showH1Info: false,
+      showH2Info: false,
+      showH3Info: false,
       
       // Horizon 2 Truck Roll State (legacy compat)
       truckRollDispatched: false,

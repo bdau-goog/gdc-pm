@@ -4472,6 +4472,21 @@ def get_field_intelligence(limit: int = 20, fault_context: str = None):
         return {"items": [], "count": 0, "error": str(e)}
 
 
+def _get_last_event_time() -> str:
+    """Return the most recent telemetry event timestamp from AlloyDB, or 'unknown'."""
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(event_time) FROM telemetry_events")
+            row = cur.fetchone()
+        conn.close()
+        if row and row[0]:
+            return row[0].isoformat() + "Z"
+    except Exception:
+        pass
+    return "unknown"
+
+
 @app.get("/api/mlops/status")
 def get_mlops_status():
     """Simulated WAN + edge model status for the MLOps indicator on the dashboard."""
@@ -4495,7 +4510,7 @@ def get_mlops_status():
         "edge_compute_pct": min(95, 38 + active_count * 12 + random.randint(-3, 3)),
         "models_loaded": list(HEALTH_MODELS.keys()),
         "model_drift_detected": False,
-        "last_cloud_sync": "2026-05-13T14:30:00Z",
+        "last_cloud_sync": _get_last_event_time(),
         "ollama_model": OLLAMA_DISPLAY_MODEL if ollama_online else "offline",
         "ollama_online": ollama_online,
         "inference_latency_ms": random.randint(28, 95) if ollama_online else None,
