@@ -3,13 +3,11 @@
 ## Header
 **Date:** June 3, 2026
 **Live URL:** http://gdc-pm.bdau.io (us-east1 cluster)
-**Project:** gdc-pm (`feature-trio-scenarios` branch — git head `592eb16`)
+**Project:** gdc-pm (`feature-trio-scenarios` branch — git head `e10bebc`)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `592eb16` — clean working tree, no uncommitted changes
-**fault-trigger-ui Image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+**Git Head:** `e10bebc` — clean working tree, no uncommitted changes
 **fault-trigger-ui Digest:** `sha256:63c2ade64e8496a19a46310bd3a27b945145b67b7e72e6f18cf0b04cbd636661` (Fix 9, June 3)
-**event-processor Image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/event-processor:latest`
 **event-processor Digest:** `sha256:7de3fab05e65530524137ae944cc871ca6f4baab6d709898a530298a6d7b48d1` (Fix 7, June 3)
 **Branch Policy:** `feature-trio-scenarios` stays **separate from main** — do NOT merge.
 
@@ -31,121 +29,231 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability \
   -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents; SELECT COUNT(*) FROM fault_sessions;"
 
-# 5. Check sentence_transformers (Fix 1)
+# 5. Check sentence_transformers
 kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "from sentence_transformers import SentenceTransformer; print('sentence_transformers: OK')" 2>&1
 
-# 6. Check Fix 7 live (event-processor model default)
-kubectl exec -n gdc-pm deployment/event-processor -- grep "OLLAMA_MODEL" /app/processor.py | head -1
-
-# 7. Check Fix 9 live (polling timer leak fix)
-curl -s http://gdc-pm.bdau.io/ | grep -c "polling timers"
-
-# 8. Verify no uncommitted changes
+# 6. Verify no uncommitted changes
 cd ~/gdc-pm && git status && git log --oneline -3
 ```
 
 **Expected results when healthy:**
 - All pods: `1/1 Running`
 - Ollama: `1` replica, `ollama_online: True  model: gemma4:latest`
-- rag_documents: **18 rows** ✅
-- field_intel: **~100 rows** ✅
-- fault_sessions: **≥4 rows** ✅
-- sentence_transformers: **OK** ✅
-- Fix 7 — event-processor: `OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:latest")` ✅
-- Fix 9 — polling timers: **1** ✅
-- git status: **clean** ✅
+- rag_documents: **18 rows**, field_intel: **~100 rows**, fault_sessions: **≥4 rows**
+- sentence_transformers: **OK**
+- git status: **clean**
 
 ---
 
-## ⚠️ Known Integrity State (VERIFIED June 3, 2026 — Post Fixes 1-9)
+## ⚠️ Known Integrity State — ALL CLEAR (Post Fixes 1-9)
 
-| Item | Display Says | Reality | Status |
-|------|-------------|---------|--------|
-| Gemma model | "gemma4:latest" | `gemma4:latest` running | ✅ CLEAN |
-| Architecture Pane 4 | "Static O&G Corpus: 18 chunks retrieved" | `sentence_transformers==2.7.0` installed | ✅ **FIXED (Fix 1)** |
-| Fleet Operations nav tab | Accessible from header | Tab exists → `mainTab='operations'` | ✅ **FIXED (Fix 2)** |
-| H1 Motor Amps card | Live declining value | `motor_amps` in `current_sensors` + H1 polling | ✅ **FIXED (Fix 3)** |
-| slug_flow registry | Registered in all 4 dicts | FAULTS_BY_CLASS, FAULT_PHYSICS, INTELLIGENCE_FEED, GEMMA_FINDINGS | ✅ **FIXED (Fix 4)** |
-| H2 Truck Roll DB write | Fleet Financials shows $148,500 | `dispatchTruckRoll()` calls `/api/agent/truck-roll` with real event_id | ✅ **FIXED (Fix 5)** |
-| Pareto chart tooltip | Blank on hover | `hovertemplate` with Hz, Cash Flow, RUL per trace | ✅ **FIXED (Fix 6)** |
-| event-processor model default | `gemma:2b` (wrong — not in cluster) | Now `gemma4:latest` — Ollama RAG now functional | ✅ **FIXED (Fix 7)** |
-| VFD deploy badge | No feedback after "Deploy Recommendation" | `✅ Applied: XX Hz` badge in Vizier Optimal card | ✅ **FIXED (Fix 8)** |
-| H1/H2 polling timer leak | `setInterval` runs forever after tab nav | `setMainTab()` now clears & conditionally restarts timers | ✅ **FIXED (Fix 9)** |
-| Vizier "Bayesian" trials | 15 Bayesian exploration trials | Hardcoded `trial_hz_values` list — deterministic, not adaptive | ⚠️ Demo-acceptable |
-| `last_cloud_sync` in MLOps | Live sync timestamp | Hardcoded `"2026-05-13T14:30:00Z"` | ⚠️ Low priority |
+All 9 integrity violations from prior sessions have been resolved and verified live. The only remaining items are polish/enhancement work (listed below). No display vs. reality mismatches remain in the demo-critical path.
 
-**All known integrity violations are resolved.** The Known Integrity State table is clean.
+| Residual item | Status |
+|---------------|--------|
+| Vizier "Bayesian" trials — deterministic | ⚠️ Demo-acceptable |
+| `last_cloud_sync` hardcoded | Fix 10 below |
 
 ---
 
-## Ollama PVC Model Inventory
+## NEXT SESSION PLAN — All 6 Remaining Fixes
 
-```
-gemma4:latest    9.6 GB   ← ACTIVE (running)  Gemma 4 8B, 128K ctx
-gemma3:27b       17 GB    ← fallback           Gemma 3 27B
-gemma4:31b       19 GB    ← READY (downloaded) Gemma 4 31B, 128K ctx (upgrade candidate)
+### Fix 10 — `slug_flow` in frontend `FAULT_META` (Small · HTML-only deploy)
+
+**Problem:** `slug_flow` is registered in `app.py` (Fixes 4 done) but is NOT in the frontend `FAULT_META` or `FAULTS_BY_CLASS.esp` JS constants in `index.html`. When a user opens a Fleet Operations deep-dive for a slug_flow fault, the label shows the raw key `"slug_flow"` instead of `"Slug Flow"`.
+
+**Exact code change** — in `index.html`, in the `FAULT_META` const:
+```javascript
+// ADD this entry to FAULT_META:
+slug_flow: {label:'Slug Flow', color:'#ffb300', desc:'Flowline slugging — surface choke valve backpressure', aclass:'esp'},
 ```
 
----
+And in `FAULTS_BY_CLASS.esp` array:
+```javascript
+esp: ['gas_lock', 'slug_flow', 'sand_ingress', 'motor_overheat'],
+```
 
-## NEXT SESSION PLAN — Session E
-
-**Branch stays separate from main. All 9 integrity fixes done.**
-
-| Item | Exact change | Verification | Complexity |
-|------|-------------|--------------|------------|
-| **Frontend FAULT_META** | Add `slug_flow` to `FAULT_META` and `FAULTS_BY_CLASS.esp` in `index.html` JS constants — currently missing from the frontend, so the Fleet Operations deep-dive label shows the raw key | Open Fleet Ops → inject slug_flow → fault label shows "Slug Flow" not raw key | Small |
-| **`last_cloud_sync` fix** | In `app.py`, replace hardcoded `"2026-05-13T14:30:00Z"` with a live query: `SELECT MAX(event_time) FROM telemetry_events` | `/api/mlops/status` → `last_cloud_sync` shows recent timestamp | Small |
-| **Upgrade to gemma4:31b** | Change `OLLAMA_MODEL=gemma4:31b` env var in event-processor deployment YAML, rollout, verify Ollama generates richer narratives | `kubectl logs deployment/event-processor` shows `gemma4:31b` being used | Medium |
-
-**Sequencing:** Frontend FAULT_META fix first (no deploy needed? check if it's just a JS const). `last_cloud_sync` next. gemma4:31b upgrade last (GPU warm-up time).
+**Verification:** Open Fleet Operations → navigate to a deep-dive → select "slug_flow" from the fault type menu → confirm it shows "Slug Flow" label with amber dot.
 
 ---
 
-## What Was Done This Session (June 3, 2026 — Fixes 5-9)
+### Fix 11 — `last_cloud_sync` live timestamp (Small · app.py rebuild)
 
-- **Fix 5 (H2 Truck Roll DB write)** (`a96f41a`) — `dispatchTruckRoll()` now fetches the real `event_id` from `/api/recent-events` and POSTs to `/api/agent/truck-roll`, writing the Fleet Financials ledger entry.
+**Problem:** `/api/mlops/status` returns `last_cloud_sync: "2026-05-13T14:30:00Z"` — hardcoded 3 weeks ago.
 
-- **Fix 6 (Pareto hovertemplate)** (`1fdb394`) — Added `customdata` (RUL days) and rich `hovertemplate` to all 4 Vizier scatter traces. Hovering now shows Hz, Cash Flow, and RUL.
+**File:** `gke/fault-trigger-ui/app.py`  
+**Search for:** `"last_cloud_sync"` or `"2026-05-13T14:30:00Z"`
 
-- **Fix 7 (event-processor OLLAMA_MODEL default)** (`1fdb394`) — Changed default from `"gemma:2b"` (not installed) to `"gemma4:latest"`. Ollama RAG narrative generation now functional. **Deploy note:** `imagePullPolicy: IfNotPresent` requires `kubectl set image @sha256:<digest>` to force pull.
+**Exact fix:** Replace the hardcoded value with a live DB query:
+```python
+# Replace:
+"last_cloud_sync": "2026-05-13T14:30:00Z",
 
-- **Fix 8 (VFD deploy badge)** (`1fdb394`) — `✅ Applied: XX Hz` badge appears in Vizier Optimal card title after clicking "Deploy Recommendation".
+# With:
+"last_cloud_sync": _get_last_event_time(),
+```
 
-- **Fix 9 (polling timer leaks)** (`592eb16`) — `setMainTab()` now clears `h1DegPollTimer` and `h2DegPollTimer` on every tab navigation, and conditionally restarts them if returning to an active unresolved scenario. Prevents runaway background polling intervals.
+Add this helper function near the top of the mlops endpoint:
+```python
+def _get_last_event_time() -> str:
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("SELECT MAX(event_time) FROM telemetry_events")
+            row = cur.fetchone()
+        conn.close()
+        if row and row[0]:
+            return row[0].isoformat() + "Z"
+    except Exception:
+        pass
+    return "unknown"
+```
 
-- **Ollama RAG 404 root cause found** — The `404 Not Found` errors on `/api/generate` were caused by Fix 7's problem (wrong model name). After deploying Fix 7, direct testing confirmed Ollama responds correctly (tested via `python3 -c "import requests; requests.post('http://ollama:11434/api/generate', ...)"` — got `200 OK`). The event-processor RAG pipeline now succeeds.
+**Verification:** `curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('last_cloud_sync'))"` → shows a recent timestamp (within the last few minutes).
+
+---
+
+### Fix 12 — Upgrade Ollama to gemma4:31b (Medium · deployment YAML change)
+
+**Problem:** Currently using `gemma4:latest` (8B). The `gemma4:31b` model is already downloaded on the Ollama PVC (19GB). Upgrading produces significantly richer RAG narratives.
+
+**File:** `gke/event-processor/k8s/event-processor.yaml`  
+**Change:** Add or update the `OLLAMA_MODEL` env var:
+```yaml
+env:
+- name: OLLAMA_MODEL
+  value: "gemma4:31b"
+```
+
+**Deploy:** Only the deployment YAML needs to change — no Python code, no Docker rebuild.
+```bash
+kubectl apply -f gke/event-processor/k8s/event-processor.yaml -n gdc-pm
+kubectl rollout status deployment/event-processor -n gdc-pm
+```
+
+**Verification:** 
+```bash
+kubectl logs deployment/event-processor -n gdc-pm | grep -i "model\|gemma"
+# Should show gemma4:31b being passed to Ollama
+```
+
+**Note:** First inference after rollout may take 3–5 minutes while the 19GB model loads into VRAM. The L4 GPU (24GB) has enough capacity.
+
+---
+
+### Fix 13 — Frontend `ASSET_META` expansion (Medium · HTML-only deploy)
+
+**Problem:** Only `pad_alpha` ESP assets (ESP-ALPHA-1 through 6) are defined in the frontend `ASSET_META` and `SITES` constants. Gas lift (GLIFT-*), mud pump (PUMP-*), and top drive (TDRIVE-*) assets are invisible to Fleet Operations UI.
+
+**Exact additions needed** in `index.html` JS constants:
+
+```javascript
+// Add to SITES:
+pad_bravo: { name:'Pad Bravo', icon:'⛽', type:'Gas Lift Production', assets:['GLIFT-BRAVO-1','GLIFT-BRAVO-2','GLIFT-BRAVO-3','GLIFT-BRAVO-4'] },
+pad_charlie: { name:'Pad Charlie', icon:'🔧', type:'Mud Pump / Drilling', assets:['PUMP-CHARLIE-1','PUMP-CHARLIE-2'] },
+
+// Add to ASSET_META:
+'GLIFT-BRAVO-1':{label:'GL-B1',site:'pad_bravo',aclass:'gas_lift',type:'Gas Lift Well'},
+'GLIFT-BRAVO-2':{label:'GL-B2',site:'pad_bravo',aclass:'gas_lift',type:'Gas Lift Well'},
+// ... (replicate pattern for all GLIFT-BRAVO-* seen in telemetry logs)
+'PUMP-CHARLIE-1':{label:'MP-C1',site:'pad_charlie',aclass:'mud_pump',type:'Mud Pump'},
+
+// Add to FAULTS_BY_CLASS:
+gas_lift: ['valve_failure','valve_washout','thermal_runaway'],
+mud_pump: ['pulsation_dampener_failure','piston_seal_wear','bearing_wear'],
+
+// Add to FAULT_META:
+valve_failure: {label:'Valve Failure', color:'#f9a825', desc:'Gas lift valve stuck — injection inefficiency', aclass:'gas_lift'},
+valve_washout:  {label:'Valve Washout', color:'#ff6d00', desc:'High-velocity erosion — valve seat damaged', aclass:'gas_lift'},
+// ... etc.
+
+// Add to SENSOR_LABELS:
+gas_lift: {psi:'Tubing Pressure (PSI)', temp:'Wellhead Temp (°F)', vib:'Valve Vibration (mm/s)', s4:'Injection Rate (Mscf/d)'},
+mud_pump: {psi:'Discharge Pressure (PSI)', temp:'Fluid Temp (°F)', vib:'Vibration (g)', s4:'Stroke Rate (SPM)'},
+```
+
+**Verification:** Fleet Operations shows Pad Bravo and Pad Charlie site zones with their assets.
+
+---
+
+### Fix 14 — `last_cloud_sync` in MLOps tab display (Low · bundled with Fix 11)
+
+This is the same as Fix 11 — bundle both into a single deploy.
+
+---
+
+### Fix 15 — H3 RAG constraint for Vizier (Low · app.py + HTML)
+
+**Problem:** The Vizier optimization uses hardcoded motor temperature limits. It should query the RAG corpus (AlloyDB pgvector) for the OEM-specified max motor temperature for the ESP asset class, then use that as the burnout threshold in the cash flow model.
+
+**File:** `gke/fault-trigger-ui/app.py` — find `@app.get("/api/vizier/optimize")`
+
+**Exact change:** Before the trial loop, add:
+```python
+# Retrieve OEM max motor temp from RAG corpus
+oem_max_temp = 284.0  # fallback: Class H insulation limit per API RP 11S
+try:
+    conn = get_db()
+    with conn.cursor() as cur:
+        query_embedding = embed_query("ESP motor maximum temperature insulation Class H")
+        cur.execute("""
+            SELECT content FROM rag_documents
+            WHERE asset_class = 'esp'
+            ORDER BY embedding <-> %s::vector LIMIT 1
+        """, (query_embedding,))
+        row = cur.fetchone()
+        if row:
+            import re
+            match = re.search(r'(\d{2,3})\s*[°º]?F', row[0])
+            if match:
+                oem_max_temp = float(match.group(1))
+    conn.close()
+except Exception:
+    pass
+# Use oem_max_temp in the trial burnout threshold (replace hardcoded 270°F)
+```
+
+**Verification:** `/api/vizier/optimize` response includes `oem_temp_limit` field showing a value pulled from the RAG corpus.
+
+---
+
+## Implementation Order for Session E
+
+1. **Fix 10** (slug_flow FAULT_META) — 2-line JS change, HTML-only build, ~1 min deploy
+2. **Fix 11** (last_cloud_sync) — 1 helper function in app.py, requires rebuild (~15 min)
+3. **Fix 12** (gemma4:31b upgrade) — YAML-only, no rebuild, kubectl apply only (~3 min)
+4. **Fix 13** (ASSET_META expansion) — larger JS change, HTML-only build, ~1 min deploy
+5. **Fix 15** (H3 RAG constraint) — app.py change, requires rebuild (~15 min)
+
+Fixes 10 + 13 can be batched into a single HTML deploy. Fixes 11 + 15 can be batched into a single app.py deploy.
+
+**Recommended batching:**
+- **Deploy A:** Fix 10 + Fix 13 (HTML-only, ~1 min)
+- **Deploy B:** Fix 11 + Fix 15 (app.py rebuild, ~15 min)
+- **Deploy C:** Fix 12 (kubectl apply only, ~3 min)
+
+---
+
+## What Was Done Last Session (June 3, 2026)
+
+All 9 integrity fixes (Fixes 1–9) are deployed and verified. The demo is fully functional with no display vs. reality mismatches in the critical path. See git log for commit history.
 
 ---
 
 ## Current Cluster State (VERIFIED June 3, 2026 16:07)
 
 ```
-alloydb-omni-5fcfc68fdb-9vm2z           1/1   Running   0      5d19h
-event-processor-5bfb656765-b9s7q        1/1   Running   1      13m    ← Fix 7 (1 restart is normal)
-fault-trigger-ui-cf7bf4444-vw9s6        1/1   Running   0      57s    ← Fix 9 pod
-gdc-pm-rabbitmq-server-0                1/1   Running   0      5d19h
-grafana-655b6f5c7c-w2h84                1/1   Running   0      5d19h
-inference-api-5697b79566-zqdpl          1/1   Running   0      5d19h
-ollama-5bc5db749b-n6tb8                 1/1   Running   0      5d16h
-telemetry-simulator-867677f784-h55wd    1/1   Running   0      4h52m
+alloydb-omni-5fcfc68fdb-9vm2z           1/1   Running
+event-processor-5bfb656765-b9s7q        1/1   Running   ← Fix 7 (gemma4:latest default)
+fault-trigger-ui-cf7bf4444-vw9s6        1/1   Running   ← Fix 9 (timer leak fix)
+gdc-pm-rabbitmq-server-0                1/1   Running
+grafana-655b6f5c7c-w2h84                1/1   Running
+inference-api-5697b79566-zqdpl          1/1   Running
+ollama-5bc5db749b-n6tb8                 1/1   Running
+telemetry-simulator-867677f784-h55wd    1/1   Running
 ```
 
-DB counts: field_intel: 100, rag_documents: 18, fault_sessions: 4  
-Git: clean, head `592eb16`
-
----
-
-## Outstanding Development Items (Backlog)
-
-**Medium Priority**
-1. **Frontend `FAULT_META` / `ASSET_META` expansion** — `slug_flow` missing from frontend JS `FAULT_META` constant. Fleet Operations deep-dive shows raw key instead of human label. Also: gas lift, mud pump, top drive assets not in `ASSET_META`.
-2. **`last_cloud_sync` hardcoded** — Replace `"2026-05-13T14:30:00Z"` with `SELECT MAX(event_time)` query from AlloyDB.
-3. **Upgrade to gemma4:31b** — Change env var in event-processor deployment. Richer reasoning but 19GB model — allow 5min warm-up on first inference.
-
-**Low Priority**
-4. **H3 — RAG constraint** — Add pgvector retrieval of motor temperature limits to Vizier prompt for physics-grounded optimization.
-5. **Frontend FAULT_META/ASSET_META** — only Pad Alpha ESP defined. Other asset types invisible to frontend.
+DB: field_intel: 100, rag_documents: 18, fault_sessions: 4
 
 ---
 
@@ -154,24 +262,34 @@ Git: clean, head `592eb16`
 - `terraform/gke.tf` must NOT be applied — would destroy the live cluster.
 - All demo changes go into `gke/fault-trigger-ui/index.html` and `gke/fault-trigger-ui/app.py`.
 - After changes: `docker build → docker push → kubectl rollout restart`.
-- No browser available on SSH remote — no `browser_action` tool.
-- XGBoost `*.ubj` models are correct and validated. Do not retrain without explicit reason.
-- Existing `/api/*` endpoints remain backward-compatible.
-- **`feature-trio-scenarios` branch stays separate from `main`.**
+- No browser on SSH remote — no `browser_action` tool.
+- `feature-trio-scenarios` stays **separate from `main`**.
+- XGBoost `*.ubj` models — do not retrain.
 
 ---
 
 ## Rebuild & Deploy Commands
 
 ```bash
-# fault-trigger-ui (HTML/Python changes) — imagePullPolicy: IfNotPresent but node doesn't cache
+# HTML-only changes (Fix 10, Fix 13)
 REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
 docker build -t ${REGISTRY}/fault-trigger-ui:latest gke/fault-trigger-ui
 docker push ${REGISTRY}/fault-trigger-ui:latest
 kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
-# event-processor — MUST use set image with digest (imagePullPolicy: IfNotPresent, node caches old image)
+# app.py changes (Fix 11, Fix 15)
+REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
+docker build -t ${REGISTRY}/fault-trigger-ui:latest gke/fault-trigger-ui
+docker push ${REGISTRY}/fault-trigger-ui:latest
+kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
+
+# gemma4:31b upgrade (Fix 12) — NO REBUILD, YAML only
+kubectl apply -f gke/event-processor/k8s/event-processor.yaml -n gdc-pm
+kubectl rollout status deployment/event-processor -n gdc-pm
+
+# event-processor Python changes — use digest (imagePullPolicy: IfNotPresent)
 REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
 docker build -t ${REGISTRY}/event-processor:latest gke/event-processor
 docker push ${REGISTRY}/event-processor:latest
@@ -180,14 +298,11 @@ kubectl set image deployment/event-processor event-processor=${REGISTRY}/event-p
 kubectl rollout status deployment/event-processor -n gdc-pm
 ```
 
-**Deploy timing:** fault-trigger-ui HTML-only: build ~20s, push ~14s, rollout ~24s = ~1 min total.  
-event-processor (5.49GB): push ~7 min, rollout ~2 min = ~9 min total.
-
 ---
 
-## Key Lessons Learned (June 3, 2026 — Fixes 5-9 Session)
+## Key Lessons (carry-forward)
 
-- **Ollama 404 = wrong model name:** When `OLLAMA_MODEL` pointed to `gemma:2b` (not installed), Ollama returned 404 for every `/api/generate` request. Fixed by changing the default to `gemma4:latest`. Lesson: test the Ollama generate endpoint directly with `python3 -c "import requests; requests.post('http://ollama:11434/api/generate', ...)"` to distinguish model-missing 404 from routing issues.
-- **`imagePullPolicy: IfNotPresent` + `:latest` tag = stale deploys for event-processor:** When `rollout restart` creates a new pod, GKE checks if the image tag is already present on the node. Since `:latest` was already pulled, it used the cached (old) image. Always use `kubectl set image @sha256:<digest>` for the event-processor.
-- **`setMainTab()` is the single chokepoint for horizon tab navigation** — it's called by H1, H2, H3 tabs but NOT by "Fleet Operations" or "Fleet Financials" (those use inline `@click`). The timer cleanup only needs to go in `setMainTab()`.
-- **Timer restart logic must mirror the original `launchHorizonX()` body exactly** — the poll callback in `setMainTab()` is a copy of the one in `launchHorizon1/2()`. Keep them in sync if the poll logic changes.
+- **event-processor requires `kubectl set image @sha256:<digest>`** — `imagePullPolicy: IfNotPresent` means `rollout restart` uses cached old image on the node.
+- **event-processor image is 5.49GB** — push takes ~7 min; plan accordingly.
+- **fault-trigger-ui HTML-only changes** — build ~20s, push ~14s, rollout ~24s total.
+- **`setMainTab()` is the nav chokepoint for H1/H2/H3** — "Fleet Operations" and "Fleet Financials" use inline `@click` and bypass it.
