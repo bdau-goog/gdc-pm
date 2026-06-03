@@ -3261,7 +3261,27 @@ createApp({
       if(this.h2TruckRollDispatched) return;
       this.h2TruckRollDispatched = true;
       this.h2TruckRollCountdown = 5;
-      // Start countdown
+      // Find the most recent unacknowledged slug_flow event for ESP-ALPHA-3
+      let eventId = 0;
+      try {
+        const evResp = await fetch('/api/recent-events?limit=50');
+        const evData = await evResp.json();
+        const match = (evData.events || []).find(e =>
+          e.asset_id === 'ESP-ALPHA-3' &&
+          (e.failure_type || '').toLowerCase() === 'slug_flow' &&
+          !e.acknowledged
+        );
+        if(match) eventId = match.id;
+      } catch(e) { console.warn('truck-roll event lookup failed', e); }
+      // POST to backend — writes DB entry, starts 5s resolution timer server-side
+      try {
+        await fetch('/api/agent/truck-roll', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({asset_id: 'ESP-ALPHA-3', event_id: eventId})
+        });
+      } catch(e) { console.warn('truck-roll dispatch failed', e); }
+      // Start UI countdown (mirrors backend 5s timer)
       this.h2TruckRollInterval = setInterval(() => {
         this.h2TruckRollCountdown--;
         if(this.h2TruckRollCountdown <= 0) {
