@@ -569,6 +569,13 @@ def main():
     log.info(f"AlloyDB:             {ALLOYDB_HOST}:{ALLOYDB_PORT}/{ALLOYDB_DB}")
     log.info(f"AI Narrative mode:   {AI_NARRATIVE_ENABLED}")
 
+    # Pre-load the embedding model BEFORE opening the RabbitMQ connection.
+    # Loading all-MiniLM-L6-v2 blocks the thread for ~15s. If this happens
+    # inside handle_message() (lazy-load on first call), the RabbitMQ heartbeat
+    # times out → ConnectionResetError(104) → StreamLostError on basic_ack →
+    # exit 1 → crash loop. Pre-loading here eliminates that race entirely.
+    _get_embed_model()
+
     db_conn  = connect_db()
     rmq_conn = connect_rabbitmq()
     channel  = rmq_conn.channel()
