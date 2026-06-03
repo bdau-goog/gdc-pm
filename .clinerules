@@ -68,6 +68,17 @@ execute_on_start:
 - Never start a fix that cannot be completed and verified within the remaining context budget.
 - The task_progress checklist in each tool call must reflect true state — mark nothing complete until it is deployed and verified.
 
+## Token Conservation — Large File Edits
+The two primary files in this project are extremely large and their full content is returned into the context window after every edit:
+- `gke/fault-trigger-ui/index.html`: ~3,500 lines (~150K tokens per return)
+- `gke/fault-trigger-ui/app.py`: ~5,100 lines (~250K tokens per return)
+
+**Mandatory practices to contain token spend:**
+1. **Batch all edits to the same file into a single `replace_in_file` call** using multiple SEARCH/REPLACE blocks in one tool invocation. Never make sequential single-block edits to the same file — each invocation returns the full file, multiplying cost proportionally to the number of calls.
+2. **Never read entire large files cold.** Use `grep -n` to locate exact line numbers first, then `read_file` with `start_line`/`end_line` to read only the targeted section. Never call `read_file` on app.py or index.html without line bounds unless the entire file content is genuinely needed.
+3. **Two edits = two full-file returns = ~400-500K tokens consumed.** Before making any edit, ask: can this be combined with the next planned edit? If yes, defer until all planned edits are ready, then execute as one batched call.
+4. **Parallel `replace_in_file` calls to the same file are permitted** but must target non-overlapping sections. Verify correctness with `grep -n` after, not by re-reading the full final_file_content output from the tool response.
+
 ## Session Handoff (NEXT_SESSION_PROMPT.md)
 - At the end of every session, rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` as a complete, self-contained handoff for the next session. Do NOT append — always rewrite from scratch.
 
