@@ -33,27 +33,69 @@ cd ~/gdc-pm && git log --oneline -3
 
 ---
 
-## ⛔ Known Integrity State — CRITICAL VIOLATION
+## ⛔ Known Integrity State — TWO CRITICAL VIOLATIONS
 
 | Item | Violation | Fix |
 |------|-----------|-----|
-| **H3 Vizier tab** | UI says "Google Vizier (Bayesian Optimization)" but `vizier_optimize()` is pure local Python math with hardcoded trial Hz values. No Vertex AI API calls. No Gaussian Process. No actual Bayesian trial selection. | **Implement real Vertex AI Vizier (Fix V1) — HIGH PRIORITY** |
+| **H3 Vizier tab** | UI says "Google Vizier (Bayesian Optimization)" but `vizier_optimize()` is pure local Python math with hardcoded trial Hz values. No Vertex AI API calls. No Gaussian Process. No actual Bayesian trial selection. | **Fix V1: Implement real Vertex AI Vizier — HIGH PRIORITY** |
+| **Field intel documents** | `_intel_generator()` docstring says "calls Ollama" but actually calls `generate_dynamic_documents()` (Python f-string templates). Output is stored with `lbl="AI"`, `lbl_type="ai"`. The "📄 RAG Context Documents" panel in the deep dive shows these as live AI-generated intelligence — they are not. | **Fix V2: Make `_intel_generator()` actually call Gemma — HIGH PRIORITY** |
 
-**Other simulated elements (acceptable for demo, not integrity violations):**
-- SAP/Maximo/Pason data in agent context — hardcoded Python dicts, not live API calls. Industry-standard for POC demos.
-- Field intel documents — template-generated, not LLM-written. Minor concern.
-- SCADA chart — shows the same simulator data as GDC, trimmed to historical. Acceptable framing.
+**What IS genuinely Gemma-generated:**
+- Agent chat responses (SSE stream to `/api/agent/recommend-stream`) ✅
+- `telemetry_events.ai_narrative` (event-processor calls Ollama for each fault message) ✅
+
+**Acceptable simulations (not integrity violations):**
+- SAP/Maximo/Pason context data — hardcoded Python dicts, not live API calls. Industry-standard for POC demos.
+- SCADA chart — same simulator data as GDC, trimmed to historical. Acceptable framing.
+- `INTELLIGENCE_FEED` static items (pre-written shift notes, lab reports) — these are honest reference documents, not claimed to be AI-generated.
 
 ---
 
-## NEXT SESSION PLAN — Fix V1: Real Vertex AI Vizier
+## NEXT SESSION PLAN — Fix V1 + V2: Integrity Repairs
 
 | Fix | Change | Verification | Complexity |
 |-----|--------|--------------|------------|
 | **V1a** | Verify Vertex AI API is enabled and fault-trigger-ui service account has `roles/aiplatform.user` | `gcloud services list --enabled | grep aiplatform` | Small |
 | **V1b** | Add `google-cloud-aiplatform` to fault-trigger-ui requirements.txt | pip install works in Dockerfile build | Small |
-| **V1c** | Replace hardcoded trial loop in `vizier_optimize()` with real Vertex AI Vizier Study + suggest_trials() + add_measurement() | Endpoint returns different optimal Hz on each run; trials have adaptive selection pattern | Large |
-| **V1d** | Update H3 UI physics panel text to correctly describe the real Vizier flow | Visual check — description matches actual implementation | Trivial |
+| **V1c** | Replace hardcoded trial loop in `vizier_optimize()` with real Vertex AI Vizier | Endpoint returns different optimal Hz on each run | Large |
+| **V1d** | Update H3 UI physics panel text to match real implementation | Visual check | Trivial |
+| **V2** | Replace `generate_dynamic_documents()` in `_intel_generator()` with actual Ollama call | field_intel rows have natural-language variation, not identical structure each cycle | Medium |
+
+### Implementation Guide for Fix V2 (Field Intel LLM Generation)
+
+The `_intel_generator()` in `app.py` (line 467) currently calls `generate_dynamic_documents()` and stores the template output as `lbl="AI"`. Replace with a real Gemma call:
+
+```python
+# In _intel_generator(), replace the generate_dynamic_documents() block with:
+import requests as _req
+
+prompt = f"""You are a field engineer writing a brief operational note for asset {asset_id}.
+Active fault: {fault_context.replace('_', ' ')}.
+Current sensors: PSI={cs.get('psi', 0):.0f}, Temp={cs.get('temp', 0):.0f}°F, Vib={cs.get('vib', 0):.3f}mm/s.
+
+Write one realistic operational document (shift note, lab report, or maintenance record).
+Be specific with numbers. Maximum 120 words. No preamble."""
+
+try:
+    resp = _req.post(
+        f"{OLLAMA_URL}/api/generate",
+        json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+              "options": {"num_predict": 150, "temperature": 0.7}},
+        timeout=15,
+    )
+    if resp.status_code == 200:
+        body = resp.json().get("response", "").strip()
+        doc_type = random.choice(["shift_note", "lab_report", "pm_record"])
+        headline = f"{fault_label.replace('_',' ').title()} — {doc_type.replace('_',' ').title()}"
+        # Insert into field_intel (same INSERT as before)
+        ...
+except Exception as e:
+    log.debug(f"Intel generator Ollama call failed — skipping cycle: {e}")
+    # Do NOT fall back to templates — skip this cycle entirely.
+    # If Ollama is down, the static INTELLIGENCE_FEED items are still shown.
+```
+
+**Key design decision**: On Ollama failure, skip the cycle (don't fall back to templates). The UI already has the static `INTELLIGENCE_FEED` items per fault type, which are honest pre-written reference documents. Only insert into `field_intel` when Gemma actually generates the content.
 
 ### Implementation Guide for Fix V1
 
