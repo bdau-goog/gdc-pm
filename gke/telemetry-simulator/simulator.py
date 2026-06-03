@@ -191,6 +191,20 @@ def motor_overheat_reading(asset_id: str) -> dict:
     }
 
 
+def slug_flow_reading(asset_id: str) -> dict:
+    """Slug Flow: multiphase fluid slugging in flowline causes downhole tubing vibration drift.
+    Downhole motor temperature remains flat/nominal. motor_amps is nominal (70–80 A)."""
+    return {
+        "asset_id": asset_id, "asset_type": "esp",
+        "psi":        round(random.gauss(1400, 65), 1),
+        "temp_f":     round(random.gauss(198, 8), 1),
+        "vibration":  round(max(0.5, random.gauss(2.7, 0.25)), 3),
+        "motor_amps": round(max(40.0, random.gauss(75.0, 6.0)), 1),
+        "failure_type": "slug_flow", "source": "simulator",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
 # ── Gas Lift Fault Generators ─────────────────────────────────────────────────
 def valve_failure_reading(asset_id: str) -> dict:
     """Valve Failure: check valve breaks. Discharge pressure crashes, vibration spikes."""
@@ -302,6 +316,7 @@ FAULT_GENERATORS = {
     "gas_lock":                       gas_lock_reading,
     "sand_ingress":                   sand_ingress_reading,
     "motor_overheat":                 motor_overheat_reading,
+    "slug_flow":                      slug_flow_reading,
     # Gas Lift
     "valve_failure":                  valve_failure_reading,
     "thermal_runaway":                thermal_runaway_reading,

@@ -615,6 +615,46 @@
     .acc-items li.yes::before{content:"✅ "}
     .acc-items li.no{color:var(--muted)}
     .acc-items li.yes{color:var(--text2)}
+    
+    /* ── 3-Horizon Overhaul Styles ── */
+    .horizon-banner { background: var(--surf); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 20px; flex-shrink: 0; }
+    .hb-title { font-size: 0.95rem; font-weight: 700; color: var(--text2); margin-bottom: 4px; margin-top: 0; }
+    .hb-desc { font-size: 0.72rem; color: var(--muted); margin: 0; line-height: 1.5; }
+    .hb-actions { display: flex; gap: 10px; flex-shrink: 0; margin-left: auto; }
+    .hb-btn { padding: 7px 16px; border-radius: 6px; font-size: 0.72rem; font-weight: 600; cursor: pointer; border: 1px solid; transition: all 0.15s; white-space: nowrap; }
+    .hb-btn.btn-inject { background: rgba(30,144,255,0.08); border-color: rgba(30,144,255,0.3); color: var(--blue); }
+    .hb-btn.btn-inject:hover { background: rgba(30,144,255,0.18); }
+    .hb-btn.btn-reset { background: rgba(244,67,54,0.08); border-color: rgba(244,67,54,0.3); color: var(--red); }
+    .hb-btn.btn-reset:hover { background: rgba(244,67,54,0.18); }
+    
+    .h3-dashboard { flex: 1; display: flex; flex-direction: column; overflow-y: auto; padding: 20px; background: var(--bg); }
+    .h3-card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .h3-card { background: var(--surf); border: 1px solid var(--border); border-radius: 8px; padding: 16px; display: flex; flex-direction: column; position: relative; }
+    .h3-card.active-opt { border-color: rgba(255,140,0,0.6); background: linear-gradient(145deg, var(--surf) 0%, rgba(255,140,0,0.03) 100%); }
+    .h3-card-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin-bottom: 8px; }
+    .h3-card.active-opt .h3-card-title { color: var(--orange); }
+    .h3-card-row { display: flex; justify-content: space-between; font-size: 0.72rem; margin-bottom: 6px; }
+    .h3-card-val { font-weight: 700; color: var(--text2); }
+    .h3-card-outcome { margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--border); display: flex; flex-direction: column; }
+    .h3-card-cash { font-size: 1.15rem; font-weight: 700; color: var(--blue); margin-top: 4px; }
+    .h3-card.active-opt .h3-card-cash { color: var(--orange); }
+    
+    .h3-main-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
+    .h3-chart-pane { flex: 1.3; background: var(--surf); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; padding: 12px; }
+    .h3-trials-pane { flex: 1; background: var(--surf); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; padding: 12px; }
+    
+    .h3-slider-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; background: var(--surf); border: 1px solid var(--border); padding: 14px 20px; border-radius: 8px; }
+    .h3-slider-container { display: flex; flex-direction: column; }
+    .h3-slider-label { font-size: 0.72rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; justify-content: space-between; }
+    .h3-slider-container input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: var(--border); outline: none; }
+    .h3-slider-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--blue); cursor: pointer; transition: transform 0.1s; }
+    .h3-slider-container input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+    
+    .h3-trials-table { width: 100%; border-collapse: collapse; font-size: 0.65rem; }
+    .h3-trials-table th, .h3-trials-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    .h3-trials-table th { color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; background: var(--surf2); }
+    .h3-trials-table tr.optimal-row { background: rgba(255,140,0,0.08); font-weight: 700; }
+    .h3-trials-table tr.optimal-row td { color: var(--orange); }
   </style>
 </head>
 <body>
@@ -627,8 +667,9 @@
     <span class="hdr-badge">O&G EDGE AI</span>
     <div class="hdr-tabs">
       <div class="hdr-tab" :class="{active: mainTab==='architecture'}" @click="mainTab='architecture'">How It Works</div>
-      <div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations'">Fleet Operations</div>
-      <div class="hdr-tab" :class="{active: mainTab==='telemetry'}" @click="mainTab='telemetry';loadGrafana()">Fleet Telemetry</div>
+      <div class="hdr-tab" :class="{active: mainTab==='horizon1'}" @click="setMainTab('horizon1')">Horizon 1: Gas Lock</div>
+      <div class="hdr-tab" :class="{active: mainTab==='horizon2'}" @click="setMainTab('horizon2')">Horizon 2: Slug Flow</div>
+      <div class="hdr-tab" :class="{active: mainTab==='horizon3'}" @click="setMainTab('horizon3')">Horizon 3: Optimization</div>
       <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
     </div>
     <div class="hdr-right">
@@ -644,286 +685,6 @@
 
     <!-- ══ TAB: OPERATIONS ══ -->
     <div id="tab-operations" class="main-tab-content" :class="{active: mainTab==='operations'}">
-
-      <!-- Edge/Cloud Status Bar -->
-      <div class="edge-bar">
-        <div class="edge-pill">
-          <span>⚡</span><strong>GDC Edge</strong>
-          <span class="ep-sep">·</span><span>Compute:</span><span class="ep-val">{{ mlops.edge_compute_pct || 42 }}%</span>
-          <span class="ep-sep">·</span><span>Inference:</span><span class="ep-val">{{ mlops.inference_latency_ms || 48 }}ms</span>
-          <span class="ep-sep">·</span><span>LLM:</span>
-          <span class="ep-val" :style="{color: mlops.ollama_online === false ? 'var(--red)' : 'var(--blue)'}">
-            {{ mlops.ollama_online === false ? '⛔ offline' : (mlops.ollama_model || '…') }}
-          </span>
-        </div>
-        <div class="cloud-pill" style="margin-left:auto">
-          <span>☁ Vertex AI</span><span class="ep-sep">·</span>
-          <span>Last sync:</span><span class="cp-val">{{ mlops.last_cloud_sync ? mlops.last_cloud_sync.substring(11,16) : '14:30' }} UTC</span>
-          <span class="ep-sep">·</span>
-          <span :style="{color: mlops.model_drift_detected ? 'var(--orange)' : 'var(--green)'}">{{ mlops.model_drift_detected ? '⚠ Model Drift' : '✓ Models Stable' }}</span>
-        </div>
-      </div>
-
-      <!-- ── DASHBOARD VIEW — Phase 15 Dual-Reality Layout ── -->
-      <div v-if="currentView === 'dashboard'" class="dashboard-view">
-
-        <!-- High-Level Alert Banners -->
-        <div v-if="horizonAlerts.length > 0" style="background:rgba(255,109,0,0.15);border-bottom:1px solid rgba(255,109,0,0.4);padding:8px 16px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
-          <span style="font-size:16px">⚠️</span>
-          <span style="font-size:0.75rem;font-weight:700;color:var(--orange)">
-            {{ horizonAlerts.length }} Active AI Detection{{ horizonAlerts.length > 1 ? 's' : '' }} — Action Required
-          </span>
-          <span style="font-size:0.65rem;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-            {{ horizonAlerts.map(a => a.asset_id + ' (' + a.fault_label + ')').join(', ') }}
-          </span>
-        </div>
-
-        <!-- KPI Banner -->
-        <div class="kpi-banner">
-          <div class="kpi-item">
-            <span class="kpi-val">{{ Object.keys(ASSET_META).length }}</span>
-            <span class="kpi-lbl">Assets Online</span>
-          </div>
-          <div class="kpi-sep"></div>
-          <div class="kpi-item">
-            <span class="kpi-val" :class="{ka: horizonAlerts.length > 0}">{{ horizonAlerts.length }}</span>
-            <span class="kpi-lbl">⚡ AI Detections</span>
-          </div>
-          <div class="kpi-sep"></div>
-          <div class="kpi-item">
-            <span class="kpi-val kg">0</span>
-            <span class="kpi-lbl">SCADA Alarms</span>
-          </div>
-          <div class="kpi-sep"></div>
-          <div class="kpi-item">
-            <span class="kpi-val ks">${{ totalSaved.toLocaleString() }}</span>
-            <span class="kpi-lbl">Savings Protected</span>
-          </div>
-          <div style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:4px">
-            <button @click="resetAllFaults"
-                    style="font-size:0.6rem;padding:2px 9px;border-radius:6px;border:1px solid rgba(244,67,54,0.35);background:rgba(244,67,54,0.06);color:var(--red);cursor:pointer"
-                    onmouseover="this.style.background='rgba(244,67,54,0.15)'" onmouseout="this.style.background='rgba(244,67,54,0.06)'">♻ Reset All</button>
-          </div>
-        </div>
-
-        <!-- Fleet Canvas + Activity Stream -->
-        <div class="fleet-canvas-layout">
-
-          <!-- LEFT: 2D Spatial Fleet Map -->
-          <div class="fleet-canvas">
-
-            <!-- PAD ALPHA -->
-            <div class="site-zone" :class="{'has-alert': hasAlert('pad_alpha')}">
-              <div class="zone-header">
-                <span class="zone-icon">🛢</span>
-                <span class="zone-name">Pad Alpha</span>
-                <span class="zone-type">ESP Production</span>
-              </div>
-              <div class="zone-metric-grid" v-if="kpis.pad_alpha">
-                <div class="zm-card" :class="kpiColor(kpis.pad_alpha.production_boed, 1600, 1200)">
-                  <div class="zm-val">{{ kpis.pad_alpha.production_boed.toLocaleString() }}</div>
-                  <div class="zm-lbl">Production <span class="zm-unit">BOE/d</span></div>
-                </div>
-                <div class="zm-card" :class="kpiColor(kpis.pad_alpha.uptime_pct, 99, 95)">
-                  <div class="zm-val">{{ kpis.pad_alpha.uptime_pct }}<span class="zm-unit">%</span></div>
-                  <div class="zm-lbl">Uptime</div>
-                </div>
-                <div class="zm-card" :class="kpiColorInv(kpis.pad_alpha.water_cut_pct, 30, 40)">
-                  <div class="zm-val">{{ kpis.pad_alpha.water_cut_pct }}<span class="zm-unit">%</span></div>
-                  <div class="zm-lbl">Water Cut</div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val">245<span class="zm-unit"> PSI</span></div>
-                  <div class="zm-lbl">Wellhead P</div>
-                </div>
-                <div class="zm-card zm-neutral">
-                  <div class="zm-val">1,104<span class="zm-unit"> scf</span></div>
-                  <div class="zm-lbl">GOR</div>
-                </div>
-              </div>
-              <!-- ══ Sprint 5 v2: Pad Alpha Digital Twin — Latched Column Layout ══
-                   Each well-col is a single flex column: [network line] → [ESP node] → [fluid line].
-                   Lines are guaranteed to be centred on the node regardless of resize.
-                   External assets (Generator, A/C, Starlink) flank the centre column.
-                   GDC and SCADA independently subscribe to the shared Pub/Sub bus.       ══ -->
-              <div class="twin-diagram">
-                <div class="twin-top-row">
-
-                  <!-- External left: Generator + A/C -->
-                  <div class="twin-external-left">
-                    <div class="twin-equip-box twin-equip-ext">
-                      <span class="twin-equip-label">GENERATOR</span>
-                      <span class="twin-equip-sub" style="color:#2a4030">500 kVA</span>
-                    </div>
-                    <div class="twin-equip-box twin-equip-ac">
-                      <span class="twin-equip-label">A/C UNIT</span>
-                    </div>
-                  </div>
-
-                  <!-- Centre column: structure → latched wells → pipeline -->
-                  <div class="twin-center-col">
-
-                    <!-- Structure: Broker, GDC AI, SCADA + shared network bar -->
-                    <div class="twin-structure">
-                      <div class="twin-equip-row">
-                        <div class="twin-equip-box twin-equip-broker">
-                          <span class="twin-equip-label">EDGE BROKER</span>
-                          <span class="twin-equip-sub">RabbitMQ / MQTT</span>
-                        </div>
-                        <div class="twin-equip-box twin-equip-gdc">
-                          <span style="display:flex;align-items:center;justify-content:center">
-                            <span class="gdc-led"></span><span class="gdc-led2"></span>
-                          </span>
-                          <span class="twin-equip-label" style="color:#4ab8e0">GDC EDGE AI</span>
-                          <span class="twin-equip-sub" style="color:#2a80a8">XGBoost · Gemma4 · RAG</span>
-                        </div>
-                        <div class="twin-equip-box twin-equip-scada">
-                          <span class="twin-equip-label">SCADA RTU</span>
-                          <span class="twin-equip-sub" style="color:#2a4840">Threshold Only</span>
-                        </div>
-                      </div>
-                      <div class="twin-network-label">SHARED EDGE NETWORK — Pub/Sub Data Bus</div>
-                      <div class="twin-network-bar"></div>
-                    </div><!-- end twin-structure -->
-
-                    <!-- Wells: each column = network-line / ESP node / fluid-line (all centred) -->
-                    <div class="twin-wells-row">
-                      <div class="twin-well-col" v-for="(assetId, idx) in SITES.pad_alpha.assets" :key="assetId">
-                        <!-- Network line from bar down to top of ESP -->
-                        <div class="twin-net-line-seg"></div>
-                        <!-- ESP node — interactive -->
-                        <div class="asset-node esp-node"
-                             :class="[getAssetHealthClass(assetId), {selected: ddAssetId === assetId}]"
-                             @contextmenu.prevent="showAssetContextMenu($event, assetId)"
-                             @click="openDeepDive(assetId, activeDegradesMap[assetId]?.fault_type || null)"
-                             :title="'Right-click: inject fault · Left-click: deep dive'">
-                          <span class="node-label">{{ ASSET_META[assetId].label }}</span>
-                          <div v-if="isAssetActive(assetId)" class="node-pulse-ring"
-                               :style="{borderColor: getAssetHealthClass(assetId) === 'health-red' ? 'var(--red)' : 'var(--orange)'}"></div>
-                        </div>
-                        <!-- Fluid line from bottom of ESP down to manifold -->
-                        <div class="twin-fluid-line-seg"></div>
-                      </div>
-                    </div><!-- end twin-wells-row -->
-
-                    <!-- Production manifold pipeline -->
-                    <div class="twin-pipeline-row">
-                      <div class="twin-pipeline-line"></div>
-                      <div class="twin-pipeline-arrow"></div>
-                    </div>
-                    <div class="twin-pipeline-labels">
-                      <span>PRODUCTION HEADER</span>
-                      <span>→ SEPARATOR</span>
-                    </div>
-
-                  </div><!-- end twin-center-col -->
-
-                  <!-- External right: Starlink -->
-                  <div class="twin-external-right">
-                    <div class="twin-starlink">
-                      <div class="twin-starlink-dish"></div>
-                      <div class="twin-starlink-mast"></div>
-                      <div class="twin-starlink-base"></div>
-                      <span style="font-family:var(--mono);font-size:0.48rem;color:#2a5870;margin-top:2px">STARLINK</span>
-                    </div>
-                  </div>
-
-                </div><!-- end twin-top-row -->
-
-                <!-- Legend strip -->
-                <div class="twin-legend">
-                  <div class="twin-leg-item">
-                    <div class="twin-leg-line" style="background:rgba(42,100,180,0.6)"></div>
-                    <span>Network / Data</span>
-                  </div>
-                  <div class="twin-leg-item">
-                    <div class="twin-leg-line" style="background:#8d6e63;height:3px"></div>
-                    <span>Fluid Line</span>
-                  </div>
-                  <div class="twin-leg-item">
-                    <div class="twin-leg-dot" style="background:var(--green);border:2px solid rgba(0,230,118,0.4)"></div>
-                    <span>Nominal</span>
-                  </div>
-                  <div class="twin-leg-item">
-                    <div class="twin-leg-dot" style="background:rgba(255,179,0,0.8);border:2px solid rgba(255,179,0,0.4)"></div>
-                    <span>Degrading</span>
-                  </div>
-                  <div class="twin-leg-item">
-                    <div class="twin-leg-dot" style="background:var(--red);border:2px solid rgba(244,67,54,0.4)"></div>
-                    <span>Critical</span>
-                  </div>
-                  <span style="margin-left:auto;font-size:0.5rem;color:var(--muted);font-style:italic">Right-click: inject · Left-click: deep dive</span>
-                </div>
-
-              </div><!-- end twin-diagram -->
-            </div><!-- end site-zone -->
-          </div>
-        </div><!-- fleet-canvas-layout -->
-
-        <!-- Asset Context Menu -->
-        <div v-if="assetContextMenu.visible"
-             class="asset-ctx-menu"
-             :style="{left: assetContextMenu.x + 'px', top: assetContextMenu.y + 'px'}"
-             @click.stop>
-          <div class="ctx-hdr">
-            <span class="ctx-asset-id">{{ assetContextMenu.assetId }}</span>
-            <span class="ctx-asset-type">{{ ASSET_META[assetContextMenu.assetId]?.type }}</span>
-            <button class="ctx-close" @click="assetContextMenu.visible=false">✕</button>
-          </div>
-          <!-- Active fault banner + mini sensor grid -->
-          <div v-if="isAssetActive(assetContextMenu.assetId)">
-            <div style="padding:6px 14px;background:rgba(255,109,0,0.08);border-bottom:1px solid var(--border);font-size:0.65rem;color:var(--orange);display:flex;align-items:center;gap:6px">
-              ⚡ AI Fault Active — {{ (activeDegradesMap[assetContextMenu.assetId]?.fault_type||'').replace(/_/g,' ') }}
-              <button @click="openDeepDive(assetContextMenu.assetId, activeDegradesMap[assetContextMenu.assetId]?.fault_type); assetContextMenu.visible=false"
-                      style="margin-left:auto;font-size:0.6rem;padding:2px 8px;border-radius:4px;border:1px solid rgba(255,109,0,0.4);background:rgba(255,109,0,0.1);color:var(--orange);cursor:pointer">
-                Deep Dive →
-              </button>
-            </div>
-            <!-- Mini sensor grid — shows live degraded values from active_degrades current_sensors -->
-            <div v-if="activeDegradesMap[assetContextMenu.assetId]?.current_sensors"
-                 style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:7px 10px;border-bottom:1px solid var(--border)">
-              <div style="background:rgba(255,109,0,0.06);border:1px solid rgba(255,109,0,0.2);border-radius:4px;padding:4px 7px">
-                <div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">PSI</div>
-                <div style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:var(--orange)">{{ activeDegradesMap[assetContextMenu.assetId].current_sensors.psi?.toFixed(0) || '—' }}</div>
-              </div>
-              <div style="background:rgba(255,109,0,0.06);border:1px solid rgba(255,109,0,0.2);border-radius:4px;padding:4px 7px">
-                <div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Temp °F</div>
-                <div style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:var(--orange)">{{ activeDegradesMap[assetContextMenu.assetId].current_sensors.temp?.toFixed(0) || '—' }}</div>
-              </div>
-              <div style="background:rgba(255,109,0,0.06);border:1px solid rgba(255,109,0,0.2);border-radius:4px;padding:4px 7px">
-                <div style="font-size:0.52rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">Vib mm/s</div>
-                <div style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:var(--orange)">{{ activeDegradesMap[assetContextMenu.assetId].current_sensors.vib?.toFixed(2) || '—' }}</div>
-              </div>
-            </div>
-          </div>
-          <div style="padding:6px 0">
-            <div style="font-size:0.58rem;color:var(--muted);padding:4px 14px;text-transform:uppercase;letter-spacing:0.07em;font-weight:700">Inject Fault Scenario</div>
-            <div v-for="ft in faultsForAsset(assetContextMenu.assetId)" :key="ft">
-              <div class="ctx-fault-row" @click="launchFromContext(assetContextMenu.assetId, ft)">
-                <span class="ctx-fault-dot" :style="{background: FAULT_META[ft]?.color}"></span>
-                <span class="ctx-fault-name">{{ FAULT_META[ft]?.label }}</span>
-                <button class="ctx-info-btn" :class="{active: faultTooltipFt===ft}" @click.stop="toggleFaultTooltip(ft)">ⓘ</button>
-              </div>
-              <!-- Inline tooltip -->
-              <div v-if="faultTooltipFt===ft && faultTooltipData" class="ctx-fault-tooltip">
-                <div class="ctx-tt-name">{{ faultTooltipData.name }}</div>
-                <div class="ctx-tt-desc">{{ faultTooltipData.description }}</div>
-                <div class="ctx-tt-row">📡 <strong>Data fusion:</strong> {{ faultTooltipData.dataFusion }}</div>
-                <div class="ctx-tt-row">💰 <strong>${{ (faultTooltipData.costAvoided||0).toLocaleString() }}</strong> at risk · {{ faultTooltipData.horizon }} horizon</div>
-              </div>
-            </div>
-          </div>
-          <div class="ctx-footer">
-            <button class="ctx-dashboard-btn" @click="openDeepDive(assetContextMenu.assetId, null); assetContextMenu.visible=false">
-              📊 Open Asset Dashboard (no fault)
-            </button>
-          </div>
-        </div>
-        <!-- Click-away overlay -->
-        <div v-if="assetContextMenu.visible" class="ctx-overlay" @click="assetContextMenu.visible=false"></div>
-
-      </div><!-- end dashboard -->
-
       <!-- ── DEEP DIVE VIEW ── -->
       <div v-if="currentView === 'deepdive'" class="deepdive-view">
 
@@ -1227,6 +988,300 @@
 
     </div><!-- tab-operations -->
 
+    <!-- ══ TAB: HORIZON 1 — Gas Lock Emergency ══ -->
+    <div class="main-tab-content" :class="{active: mainTab==='horizon1'}">
+      <div class="horizon-banner">
+        <div>
+          <h2 class="hb-title">🔴 Horizon 1 — Near-Term: ESP Gas Lock Emergency</h2>
+          <p class="hb-desc">
+            <strong>Asset:</strong> ESP-ALPHA-1 &nbsp;·&nbsp;
+            <strong>Physics:</strong> Gas entrainment in pump stages (GVF > 70%). Motor Amps drop as pump unloads. PIP collapses toward lock-up. PNR = 25 minutes. &nbsp;·&nbsp;
+            <strong>SCADA status:</strong> <span style="color:var(--green)">✓ No alarm (still within thresholds)</span> &nbsp;·&nbsp;
+            <strong>GDC AI lead time:</strong> <span style="color:var(--orange)">25 min early warning</span>
+          </p>
+        </div>
+        <div class="hb-actions">
+          <button class="hb-btn btn-inject" @click="launchHorizon1">⚡ Inject Gas Lock Fault</button>
+          <button class="hb-btn btn-reset" @click="resetHorizon1" v-if="h1Injected">↺ Reset</button>
+        </div>
+      </div>
+      <div class="h3-dashboard">
+        <!-- SCADA vs GDC value cards -->
+        <div class="h3-card-grid">
+          <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
+            <div class="h3-card-title">📊 SCADA (Current Reading)</div>
+            <div class="h3-card-row"><span>PIP Reading:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorPsi || '1,041 PSI' }}</span></div>
+            <div class="h3-card-row"><span>Winding Temp:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorTemp || '202°F' }}</span></div>
+            <div class="h3-card-row"><span>Motor Amps:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorAmps || '64.1 A' }}</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em">✓ SCADA Assessment</span>
+              <span class="h3-card-cash" style="color:var(--green)">ALL NOMINAL</span>
+              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">No alarm. No action recommended.</span>
+            </div>
+          </div>
+          <div class="h3-card" :class="h1Injected ? 'active-opt' : ''">
+            <div class="h3-card-title">⚡ GDC Edge AI Prediction</div>
+            <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--orange)">{{ h1Injected ? '94.2% gas_lock' : '—' }}</span></div>
+            <div class="h3-card-row"><span>Health Score:</span><span class="h3-card-val">{{ h1HealthScore || '—' }}</span></div>
+            <div class="h3-card-row"><span>Motor Amps Trend:</span><span class="h3-card-val" style="color:var(--orange)">{{ h1Injected ? '−2.3A/min ↓' : '—' }}</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.07em">⚡ GDC Assessment</span>
+              <span class="h3-card-cash">{{ h1Injected ? 'INTERVENE NOW' : 'Monitoring…' }}</span>
+              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">{{ h1Injected ? 'PNR in ~25 min — act immediately' : 'Inject fault to run scenario' }}</span>
+            </div>
+          </div>
+          <div class="h3-card" style="border-color:rgba(0,230,118,0.3)">
+            <div class="h3-card-title">💰 Financial Impact</div>
+            <div class="h3-card-row"><span>Well pull if ignored:</span><span class="h3-card-val" style="color:var(--red)">$150,000</span></div>
+            <div class="h3-card-row"><span>VFD adjustment cost:</span><span class="h3-card-val" style="color:var(--green)">$2,500</span></div>
+            <div class="h3-card-row"><span>Intervention window:</span><span class="h3-card-val" style="color:var(--orange)">25 min</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;font-weight:700;color:var(--g-green);text-transform:uppercase;letter-spacing:0.07em">Net Savings</span>
+              <span class="h3-card-cash" style="color:var(--g-green)">$147,500</span>
+            </div>
+          </div>
+        </div>
+        <!-- Live Chart + Intelligence Feed side by side -->
+        <div class="h3-main-body">
+          <div class="h3-chart-pane">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ GDC AI Forecast Chart — ESP-ALPHA-1</div>
+            <div id="h1-gdc-chart" style="height:300px"></div>
+            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+              <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">📊 SCADA Chart (Historical Only)</div>
+              <div id="h1-scada-chart" style="height:200px"></div>
+            </div>
+            <!-- Action Approval Button -->
+            <div v-if="h1Injected && !h1Resolved" style="margin-top:16px;padding:14px;background:rgba(255,109,0,0.06);border:2px solid rgba(255,109,0,0.4);border-radius:8px">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--orange);margin-bottom:6px">⚡ Recommended Action: Reduce VFD Frequency 15%</div>
+              <div style="font-size:0.7rem;color:var(--text2);margin-bottom:10px">Reduce VFD from 52 Hz → 44 Hz via SCADA to allow gas void to migrate up the casing annulus and clear the pump intake. GDC has autonomously calculated the safe setpoint.</div>
+              <button @click="approveH1VFD" style="padding:9px 20px;border-radius:6px;border:none;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer">✔ Approve Autonomous VFD Tuning — Save $147,500</button>
+            </div>
+            <div v-if="h1Resolved" style="margin-top:16px;padding:14px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:8px">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ Gas Lock Resolved — VFD Tuned Successfully</div>
+              <div style="font-size:0.7rem;color:var(--text2)">VFD reduced to 44 Hz. Gas void migrated up annulus. PIP recovering. Motor stabilized. $147,500 capital preserved.</div>
+            </div>
+          </div>
+          <div class="h3-trials-pane" style="overflow-y:auto">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">📄 RAG Context & Field Intelligence</div>
+            <div v-for="item in h1FeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
+              <div class="fi-top">
+                <span class="fi-icon">{{ item.icon }}</span>
+                <div style="flex:1">
+                  <div class="fi-headline">{{ item.headline }}</div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
+                    <span class="fi-source">{{ item.source }}</span>
+                    <span class="fi-ts">{{ item.ts_label }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
+            </div>
+            <div v-if="h1GemmaFinding" class="gemma-finding" style="margin-top:8px">{{ h1GemmaFinding }}</div>
+            <div v-if="!h1Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:12px 0">Click "Inject Gas Lock Fault" above to run this scenario and see live RAG context documents.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- tab-horizon1 -->
+
+    <!-- ══ TAB: HORIZON 2 — Flowline Slug Flow & Truck Roll ══ -->
+    <div class="main-tab-content" :class="{active: mainTab==='horizon2'}">
+      <div class="horizon-banner">
+        <div>
+          <h2 class="hb-title">🟡 Horizon 2 — Mid-Term: Flowline Slug Flow & Choke Adjustment</h2>
+          <p class="hb-desc">
+            <strong>Asset:</strong> ESP-ALPHA-3 &nbsp;·&nbsp;
+            <strong>Physics:</strong> Flowline slug flow causes hydraulic tubing vibration (1.1→2.4 mm/s). Motor temp nominal. AI Confidence: 52%. &nbsp;·&nbsp;
+            <strong>SCADA trip limit:</strong> 5.0 mm/s — not triggered &nbsp;·&nbsp;
+            <strong>Correct action:</strong> Surface choke adjustment, NOT a $150k well pull
+          </p>
+        </div>
+        <div class="hb-actions">
+          <button class="hb-btn btn-inject" @click="launchHorizon2">⚡ Inject Slug Flow Fault</button>
+          <button class="hb-btn btn-reset" @click="resetHorizon2" v-if="h2Injected">↺ Reset</button>
+        </div>
+      </div>
+      <div class="h3-dashboard">
+        <div class="h3-card-grid">
+          <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
+            <div class="h3-card-title">📊 SCADA Telemetry</div>
+            <div class="h3-card-row"><span>Vibration:</span><span class="h3-card-val" style="color:var(--yellow)">{{ h2SensorVib || '2.4 mm/s ↑' }}</span></div>
+            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val" style="color:var(--green)">{{ h2SensorTemp || '198°F — Nominal' }}</span></div>
+            <div class="h3-card-row"><span>SCADA Trip:</span><span class="h3-card-val" style="color:var(--green)">5.0 mm/s — Not Triggered</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">SCADA Assessment</span>
+              <span class="h3-card-cash" style="color:var(--green)">NOMINAL</span>
+              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">Below 5.0 mm/s trip limit.</span>
+            </div>
+          </div>
+          <div class="h3-card" :class="h2Injected ? 'active-opt' : ''">
+            <div class="h3-card-title">⚡ GDC AI Analysis</div>
+            <div class="h3-card-row"><span>Vibration Drift:</span><span class="h3-card-val" style="color:var(--yellow)">1.1 → 2.4 mm/s</span></div>
+            <div class="h3-card-row"><span>Motor Temp Correlation:</span><span class="h3-card-val" style="color:var(--green)">✓ Flat — No Motor Damage</span></div>
+            <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--yellow)">52% (Ambiguous)</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:0.07em">⚠ Inconclusive</span>
+              <span class="h3-card-cash" style="color:var(--yellow)">SURFACE ISSUE</span>
+              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">Do NOT pull well — dispatch technician</span>
+            </div>
+          </div>
+          <div class="h3-card" style="border-color:rgba(0,230,118,0.3)">
+            <div class="h3-card-title">💰 Decision Value</div>
+            <div class="h3-card-row"><span>Premature well pull:</span><span class="h3-card-val" style="color:var(--red)">$150,000</span></div>
+            <div class="h3-card-row"><span>Truck roll dispatch:</span><span class="h3-card-val" style="color:var(--green)">$1,500</span></div>
+            <div class="h3-card-row"><span>Choke adjustment:</span><span class="h3-card-val" style="color:var(--green)">$0</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;font-weight:700;color:var(--g-green);text-transform:uppercase;letter-spacing:0.07em">Net Savings</span>
+              <span class="h3-card-cash" style="color:var(--g-green)">$148,500</span>
+            </div>
+          </div>
+        </div>
+        <div class="h3-main-body">
+          <div class="h3-chart-pane">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ GDC AI Forecast — ESP-ALPHA-3 Vibration (Low Confidence)</div>
+            <div id="h2-gdc-chart" style="height:260px"></div>
+            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
+              <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">📊 SCADA Chart — Vibration Below Trip Limit</div>
+              <div id="h2-scada-chart" style="height:180px"></div>
+            </div>
+            <!-- Dispatch Button -->
+            <div v-if="h2Injected && !h2TruckRollDispatched && !h2Resolved" style="margin-top:16px;padding:14px;background:rgba(255,179,0,0.06);border:2px solid rgba(255,179,0,0.4);border-radius:8px">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--yellow);margin-bottom:6px">⚠ Recommended Action: Dispatch Truck Roll</div>
+              <div style="font-size:0.7rem;color:var(--text2);margin-bottom:10px">RAG Troubleshooting Guide: <em>"Vibration drift without motor temperature elevation indicates surface flowline slugging. Adjust surface choke valve to stabilize backpressure. Do not pull well."</em></div>
+              <button @click="dispatchTruckRoll" style="padding:9px 20px;border-radius:6px;border:none;background:linear-gradient(135deg,#e65100,#bf360c);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer">🚛 Dispatch Truck Roll — Adjust Choke Valve</button>
+            </div>
+            <div v-if="h2TruckRollDispatched && !h2Resolved" style="margin-top:16px;padding:14px;background:rgba(255,179,0,0.06);border:1px solid rgba(255,179,0,0.3);border-radius:8px">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--yellow);margin-bottom:4px">🚛 Technician En-Route ({{ h2TruckRollCountdown }}s)…</div>
+              <div style="font-size:0.7rem;color:var(--text2)">Lease operator heading to wellhead to adjust surface choke valve. Vibration should drop to 1.1 mm/s once backpressure is stabilized.</div>
+            </div>
+            <div v-if="h2Resolved" style="margin-top:16px;padding:14px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:8px">
+              <div style="font-size:0.8rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ Choke Valve Adjusted — Slug Flow Suppressed</div>
+              <div style="font-size:0.7rem;color:var(--text2)">Surface choke adjusted. Flow regime stabilized. Downhole vibration dropped to 1.1 mm/s. Mechanically sound ESP confirmed. $148,500 avoided well pull cost.</div>
+            </div>
+          </div>
+          <div class="h3-trials-pane" style="overflow-y:auto">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">📄 RAG Context & Troubleshooting Evidence</div>
+            <div v-for="item in h2FeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
+              <div class="fi-top">
+                <span class="fi-icon">{{ item.icon }}</span>
+                <div style="flex:1">
+                  <div class="fi-headline">{{ item.headline }}</div>
+                  <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
+                    <span class="fi-source">{{ item.source }}</span>
+                    <span class="fi-ts">{{ item.ts_label }}</span>
+                  </div>
+                </div>
+              </div>
+              <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
+            </div>
+            <div v-if="h2GemmaFinding" class="gemma-finding" style="margin-top:8px">{{ h2GemmaFinding }}</div>
+            <div v-if="!h2Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:12px 0">Click "Inject Slug Flow Fault" above to run this scenario.</div>
+          </div>
+        </div>
+      </div>
+    </div><!-- tab-horizon2 -->
+
+    <!-- ══ TAB: HORIZON 3 — Bayesian Optimization Game ══ -->
+    <div class="main-tab-content" :class="{active: mainTab==='horizon3'}">
+      <div class="horizon-banner">
+        <div>
+          <h2 class="hb-title">📈 Horizon 3 — Long-Term: Oil Price Optimization (Vizier)</h2>
+          <p class="hb-desc">
+            Oil prices jumped 40%. Drag the sliders to find the optimal VFD Hz that maximizes Net Cash Flow without burning out the ESP pump before your operating horizon. Bayesian search over 15 trials.
+          </p>
+        </div>
+        <div class="hb-actions">
+          <button class="hb-btn btn-inject" @click="runVizierOptimize">⚡ Run Vizier Optimization</button>
+          <button class="hb-btn btn-reset" v-if="optTrials.length > 0" @click="deployVizierOptimal" :disabled="vizierDeploying" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.4);color:var(--green)">{{ vizierDeployed ? '✅ Deployed' : (vizierDeploying ? 'Deploying…' : '✔ Deploy Recommendation') }}</button>
+        </div>
+      </div>
+      <div class="h3-dashboard">
+        <!-- Sliders -->
+        <div class="h3-slider-row">
+          <div class="h3-slider-container">
+            <div class="h3-slider-label"><span>Oil Price ($/bbl)</span><span style="font-family:var(--mono);color:var(--blue)">${{ oilPriceSlider }}</span></div>
+            <input type="range" v-model.number="oilPriceSlider" min="60" max="160" step="5" @change="runVizierOptimize">
+          </div>
+          <div class="h3-slider-container">
+            <div class="h3-slider-label"><span>Operating Horizon (Days)</span><span style="font-family:var(--mono);color:var(--blue)">{{ horizonSlider }}d</span></div>
+            <input type="range" v-model.number="horizonSlider" min="30" max="365" step="15" @change="runVizierOptimize">
+          </div>
+          <div class="h3-slider-container">
+            <div class="h3-slider-label"><span>Net Cash Flow Model</span><span style="font-family:var(--mono);color:var(--green)">Live</span></div>
+            <div style="font-size:0.68rem;color:var(--text2);padding-top:6px;line-height:1.6">Revenue − Power Costs − ESP Failure CAPEX ($150k if RUL < horizon)</div>
+          </div>
+        </div>
+        <!-- Value Cards -->
+        <div class="h3-card-grid" v-if="optTrials.length > 0">
+          <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
+            <div class="h3-card-title">🛢 SCADA Nominal ({{ optScadaNominal.vfd_hz }} Hz)</div>
+            <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optScadaNominal.flow_rate||0).toLocaleString() }} bbl/d</span></div>
+            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val">{{ optScadaNominal.motor_temp_f || 0 }}°F</span></div>
+            <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val" style="color:var(--green)">{{ optScadaNominal.rul_days || 0 }} days</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;color:var(--muted)">Net Cash Flow ({{ horizonSlider }}d horizon)</span>
+              <span class="h3-card-cash" style="color:var(--text2)">${{ (optScadaNominal.cash_flow||0).toLocaleString() }}</span>
+              <span style="font-size:0.6rem;color:var(--muted)">Safe — leaves money on the table</span>
+            </div>
+          </div>
+          <div class="h3-card active-opt">
+            <div class="h3-card-title">⚡ Vizier Optimal ({{ optVizierOptimal.vfd_hz }} Hz)</div>
+            <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optVizierOptimal.flow_rate||0).toLocaleString() }} bbl/d</span></div>
+            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val">{{ optVizierOptimal.motor_temp_f || 0 }}°F</span></div>
+            <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val">{{ optVizierOptimal.rul_days || 0 }} days</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;color:var(--orange)">Net Cash Flow ({{ horizonSlider }}d horizon)</span>
+              <span class="h3-card-cash">${{ (optVizierOptimal.cash_flow||0).toLocaleString() }}</span>
+              <span style="font-size:0.6rem;color:var(--green)">↑ Maximized without pump burnout</span>
+            </div>
+          </div>
+          <div class="h3-card" style="border-color:rgba(244,67,54,0.4)">
+            <div class="h3-card-title">🔴 Aggressive Run-to-Failure ({{ optRunToFailure.vfd_hz }} Hz)</div>
+            <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optRunToFailure.flow_rate||0).toLocaleString() }} bbl/d</span></div>
+            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val" style="color:var(--red)">{{ optRunToFailure.motor_temp_f || 0 }}°F</span></div>
+            <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val" style="color:var(--red)">{{ optRunToFailure.rul_days || 0 }} days ⚠ BURNS OUT</span></div>
+            <div class="h3-card-outcome">
+              <span style="font-size:0.62rem;color:var(--red)">Net Cash Flow (with $150k penalty)</span>
+              <span class="h3-card-cash" style="color:var(--red)">${{ (optRunToFailure.cash_flow||0).toLocaleString() }}</span>
+              <span style="font-size:0.6rem;color:var(--red)">Pump burnout penalty applied</span>
+            </div>
+          </div>
+        </div>
+        <div class="h3-main-body" v-if="optTrials.length > 0">
+          <!-- Pareto Chart -->
+          <div class="h3-chart-pane">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ Pareto Frontier — VFD Hz vs Net Cash Flow ({{ optTrials.length }} Bayesian Trials)</div>
+            <div id="vizier-pareto-chart" style="height:350px"></div>
+          </div>
+          <!-- Trials Log -->
+          <div class="h3-trials-pane">
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">📊 Bayesian Optimization Trial Log</div>
+            <div style="overflow-y:auto;flex:1">
+              <table class="h3-trials-table">
+                <thead><tr><th>#</th><th>Hz</th><th>Flow (bbl/d)</th><th>Temp (°F)</th><th>RUL (d)</th><th>Net Cash Flow</th></tr></thead>
+                <tbody>
+                  <tr v-for="t in optTrials" :key="t.trial_num" :class="{'optimal-row': t.is_optimal}">
+                    <td>{{ t.trial_num }}{{ t.is_optimal ? ' ★' : '' }}</td>
+                    <td>{{ t.vfd_hz }}</td>
+                    <td>{{ t.flow_rate.toLocaleString() }}</td>
+                    <td :style="{color: t.motor_temp_f > 270 ? 'var(--red)' : 'inherit'}">{{ t.motor_temp_f }}</td>
+                    <td :style="{color: t.is_failure ? 'var(--red)' : 'var(--green)'}">{{ t.rul_days }}{{ t.is_failure ? ' ⚠' : '' }}</td>
+                    <td :style="{color: t.is_optimal ? 'var(--orange)' : (t.is_failure ? 'var(--red)' : 'inherit')}">
+                      ${{ t.cash_flow.toLocaleString() }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div v-if="optTrials.length === 0" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted)">
+          <span style="font-size:44px;opacity:0.3">📈</span>
+          <div style="font-size:0.9rem;font-weight:700;color:var(--text2)">Bayesian Optimization Ready</div>
+          <div style="font-size:0.75rem;max-width:500px;text-align:center;line-height:1.6">Adjust the Oil Price and Horizon sliders above, then click "Run Vizier Optimization" to see 15 Bayesian trial runs converging on the optimal VFD frequency for maximum net cash flow.</div>
+        </div>
+      </div>
+    </div><!-- tab-horizon3 -->
+
     <!-- ══ TAB: FINANCIALS ══ -->
     <div id="tab-financials" class="main-tab-content" :class="{active: mainTab==='financials'}">
       <div class="fin-tab">
@@ -1367,27 +1422,6 @@
       </div>
     </div><!-- tab-financials -->
 
-    <!-- ══ TAB: TELEMETRY ══ -->
-    <div id="tab-telemetry" class="main-tab-content" :class="{active: mainTab==='telemetry'}" style="position:relative">
-      <iframe id="grafana-iframe" src="" style="width:100%;height:100%;border:none" @load="grafanaLoaded=true"></iframe>
-      <!-- Floating Reset View button — reloads iframe to restore all-assets view after legend isolation -->
-      <div v-if="grafanaLoaded" style="position:absolute;bottom:16px;right:16px;z-index:10">
-        <button @click="loadGrafana()"
-                style="padding:6px 14px;border-radius:6px;border:1px solid rgba(30,144,255,0.4);background:rgba(11,12,16,0.88);color:var(--blue);font-size:0.68rem;font-weight:600;cursor:pointer;backdrop-filter:blur(4px);transition:all 0.15s"
-                onmouseover="this.style.background='rgba(30,144,255,0.15)'" onmouseout="this.style.background='rgba(11,12,16,0.88)'"
-                title="Reload dashboard to restore all-assets view">
-          ↺ All Assets
-        </button>
-      </div>
-      <div v-if="!grafanaLoaded" class="grafana-fallback">
-        <div style="font-size:44px;opacity:0.3">📊</div>
-        <div style="text-align:center;max-width:460px">
-          <div style="font-size:0.96rem;font-weight:700;color:var(--text2);margin-bottom:8px">Grafana Live Telemetry</div>
-          <div style="font-size:0.75rem;line-height:1.8;color:var(--muted);margin-bottom:14px">Connecting to Grafana dashboard…</div>
-          <button @click="loadGrafana" style="margin-top:12px;padding:7px 18px;border-radius:5px;border:1px solid var(--border2);background:var(--surf2);color:var(--text2);cursor:pointer;font-size:0.73rem">↺ Retry Connection</button>
-        </div>
-      </div>
-    </div>
 
         <!-- ══ TAB: ARCHITECTURE ══ -->
     <div id="tab-architecture" class="main-tab-content" :class="{active: mainTab==='architecture'}">
@@ -2281,10 +2315,52 @@ const DEMO_SCENARIOS = [
 createApp({
   data() {
     return {
-      mainTab: 'operations',
+      mainTab: 'architecture',
       archPane: 'overview',
       archInfoOpen: false,
       currentView: 'dashboard',
+      
+      // Horizon 3 (Bayesian Optimization Game)
+      oilPriceSlider: 112,
+      horizonSlider: 90,
+      vfdFrequencySlider: 50.0,
+      optTrials: [],
+      optOptimalHz: null,
+      optOptimalCashFlow: null,
+      optScadaNominal: {},
+      optRunToFailure: {},
+      optVizierOptimal: {},
+      vizierDeployed: false,
+      vizierDeploying: false,
+      
+      // Horizon 1 State
+      h1Injected: false,
+      h1Resolved: false,
+      h1SensorPsi: null,
+      h1SensorTemp: null,
+      h1SensorAmps: null,
+      h1HealthScore: null,
+      h1FeedItems: [],
+      h1GemmaFinding: '',
+      h1DegPollTimer: null,
+      
+      // Horizon 2 State
+      h2Injected: false,
+      h2Resolved: false,
+      h2SensorVib: null,
+      h2SensorTemp: null,
+      h2TruckRollDispatched: false,
+      h2TruckRollCountdown: 5,
+      h2FeedItems: [],
+      h2GemmaFinding: '',
+      h2TruckRollInterval: null,
+      h2DegPollTimer: null,
+      
+      // Horizon 2 Truck Roll State (legacy compat)
+      truckRollDispatched: false,
+      truckRollTimer: 0,
+      truckRollInterval: null,
+      truckRollComplete: false,
       horizonAlerts: [],
       kpis: {},
       mlops: {},
@@ -3082,6 +3158,177 @@ createApp({
     },
 
     // ── Horizontal splitter between fleet canvas and activity stream ──
+    // ── Horizon Tab Methods ──
+    setMainTab(tab) {
+      this.mainTab = tab;
+      if (tab === 'horizon3' && this.optTrials.length === 0) {
+        this.$nextTick(() => this.runVizierOptimize());
+      }
+    },
+    
+    // ── Horizon 1: Gas Lock ──
+    async launchHorizon1() {
+      if (this.h1Injected) return;
+      this.h1Injected = true;
+      this.h1Resolved = false;
+      this.h1HealthScore = '0.82';
+      try {
+        await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', duration_seconds:900})});
+        this.showToast('⚡ Gas Lock injected on ESP-ALPHA-1','var(--orange)');
+        const feed = await fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock');
+        if (feed.ok) { const d=await feed.json(); this.h1FeedItems=d.items||[]; this.h1GemmaFinding=d.gemma_finding||''; }
+        this.h1DegPollTimer = setInterval(async()=>{
+          const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
+          if(r.ok){const d=await r.json(); if(d.is_active){
+            this.h1HealthScore=(d.health_score*100).toFixed(1)+'%';
+            const cs=this.activeDegradesMap['ESP-ALPHA-1']?.current_sensors||{};
+            if(cs.psi) this.h1SensorPsi=cs.psi.toFixed(0)+' PSI';
+            if(cs.temp) this.h1SensorTemp=cs.temp.toFixed(0)+'°F';
+          }}
+          const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
+          if(rfd.ok){const d=await rfd.json();if(d.sensors){
+            this._renderH1Charts(d);
+          }}
+        }, 5000);
+      } catch(e) { this.showToast('Error injecting gas lock','var(--red)'); }
+    },
+    async resetHorizon1() {
+      if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer=null; }
+      try { await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}); } catch{}
+      this.h1Injected=false; this.h1Resolved=false;
+      this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
+      this.h1FeedItems=[]; this.h1GemmaFinding='';
+      try { Plotly.purge('h1-gdc-chart'); Plotly.purge('h1-scada-chart'); } catch{}
+      this.showToast('↺ Horizon 1 reset','var(--green)');
+    },
+    async approveH1VFD() {
+      this.h1Resolved = true;
+      if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer=null; }
+      try {
+        await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({asset_id:'ESP-ALPHA-1',fault_type:'gas_lock',action_taken:'VFD reduced to 44Hz via SCADA — gas void migrating up annulus',cost_incurred:2500})});
+        this.showToast('✅ VFD Tuned — Gas Lock Resolved. $147,500 saved.','var(--green)');
+        await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}).catch(()=>{});
+      } catch(e) {}
+    },
+    _renderH1Charts(d) {
+      const s=d.sensors?.psi; if(!s) return;
+      const darkLayout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e2a38'},yaxis:{gridcolor:'#1e2a38'}};
+      const gdcEl=document.getElementById('h1-gdc-chart');
+      if(gdcEl) { Plotly.react(gdcEl, s.traces, {...darkLayout,...(s.layout||{})}, {displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(gdcEl,s.traces,darkLayout,{displayModeBar:false,responsive:true})); }
+      const scadaEl=document.getElementById('h1-scada-chart');
+      if(scadaEl && s.traces?.length>0) {
+        const histTraces=[{...s.traces[0]}];
+        Plotly.react(scadaEl, histTraces, {...darkLayout, title:{text:'SCADA View — No Alarm Triggered',font:{color:'var(--green)',size:11}}}, {displayModeBar:false,responsive:true}).catch(()=>{});
+      }
+    },
+    
+    // ── Horizon 2: Slug Flow ──
+    async launchHorizon2() {
+      if (this.h2Injected) return;
+      this.h2Injected = true;
+      this.h2Resolved = false;
+      this.h2TruckRollDispatched = false;
+      this.h2SensorVib = '2.4 mm/s ↑';
+      this.h2SensorTemp = '198°F — Nominal';
+      try {
+        await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({asset_id:'ESP-ALPHA-3', fault_type:'slug_flow', duration_seconds:3600})});
+        this.showToast('⚡ Slug Flow injected on ESP-ALPHA-3','var(--yellow)');
+        const feed=await fetch('/api/intelligence-feed/ESP-ALPHA-3?fault_type=slug_flow');
+        if(feed.ok) { const d=await feed.json(); this.h2FeedItems=d.items||[]; this.h2GemmaFinding=d.gemma_finding||'🤖 Gemma: Vibration drift 1.1→2.4 mm/s with flat motor temperature (198°F). Flowline slugging signature — not downhole motor failure. Dispatch surface technician to adjust choke valve. Do NOT pull well.'; }
+        this.h2DegPollTimer = setInterval(async()=>{
+          const r=await fetch('/api/degrade-status/ESP-ALPHA-3');
+          if(r.ok){const d=await r.json();if(d.is_active){const cs=this.activeDegradesMap['ESP-ALPHA-3']?.current_sensors||{};if(cs.vib)this.h2SensorVib=cs.vib.toFixed(2)+' mm/s ↑';}}
+          const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-3');
+          if(rfd.ok){const d=await rfd.json();if(d.sensors)this._renderH2Charts(d);}
+        }, 5000);
+      } catch(e) { this.showToast('Error injecting slug flow','var(--red)'); }
+    },
+    async resetHorizon2() {
+      if(this.h2DegPollTimer){clearInterval(this.h2DegPollTimer);this.h2DegPollTimer=null;}
+      if(this.h2TruckRollInterval){clearInterval(this.h2TruckRollInterval);this.h2TruckRollInterval=null;}
+      try { await fetch('/api/cancel-degrade/ESP-ALPHA-3',{method:'POST'}); } catch{}
+      this.h2Injected=false; this.h2Resolved=false; this.h2TruckRollDispatched=false; this.h2TruckRollCountdown=5;
+      this.h2SensorVib=null; this.h2SensorTemp=null; this.h2FeedItems=[]; this.h2GemmaFinding='';
+      try { Plotly.purge('h2-gdc-chart'); Plotly.purge('h2-scada-chart'); } catch{}
+      this.showToast('↺ Horizon 2 reset','var(--green)');
+    },
+    async dispatchTruckRoll() {
+      if(this.h2TruckRollDispatched) return;
+      this.h2TruckRollDispatched = true;
+      this.h2TruckRollCountdown = 5;
+      // Start countdown
+      this.h2TruckRollInterval = setInterval(() => {
+        this.h2TruckRollCountdown--;
+        if(this.h2TruckRollCountdown <= 0) {
+          clearInterval(this.h2TruckRollInterval);
+          this.h2TruckRollInterval = null;
+          this.h2Resolved = true;
+          if(this.h2DegPollTimer){clearInterval(this.h2DegPollTimer);this.h2DegPollTimer=null;}
+          fetch('/api/cancel-degrade/ESP-ALPHA-3',{method:'POST'}).catch(()=>{});
+          this.showToast('✅ Choke valve adjusted — Slug flow suppressed. $148,500 saved.','var(--green)');
+        }
+      }, 1000);
+      this.showToast('🚛 Technician dispatched to ESP-ALPHA-3 wellsite','var(--yellow)');
+    },
+    _renderH2Charts(d) {
+      const s=d.sensors?.vib; if(!s) return;
+      const darkLayout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e2a38'},yaxis:{gridcolor:'#1e2a38',title:'Vibration (mm/s)'}};
+      const gdcEl=document.getElementById('h2-gdc-chart');
+      if(gdcEl){ Plotly.react(gdcEl,s.traces,{...darkLayout,...(s.layout||{})},{displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(gdcEl,s.traces,darkLayout,{displayModeBar:false,responsive:true})); }
+      const scadaEl=document.getElementById('h2-scada-chart');
+      if(scadaEl&&s.traces?.length>0){
+        const scadaTraces=[{...s.traces[0]},{type:'scatter',x:s.traces[0]?.x||[],y:Array(s.traces[0]?.x?.length||2).fill(5.0),mode:'lines',name:'SCADA Trip (5.0 mm/s)',line:{color:'#f44336',dash:'dash',width:1.5},hoverinfo:'skip'}];
+        Plotly.react(scadaEl,scadaTraces,{...darkLayout,title:{text:'SCADA: 5.0 mm/s trip limit not reached',font:{color:'var(--green)',size:11}}},{displayModeBar:false,responsive:true}).catch(()=>{});
+      }
+    },
+    
+    // ── Horizon 3: Bayesian Optimization ──
+    async runVizierOptimize() {
+      try {
+        const r=await fetch(`/api/vizier/optimize?oil_price=${this.oilPriceSlider}&horizon_days=${this.horizonSlider}`);
+        if(r.ok){
+          const d=await r.json();
+          this.optTrials=d.trials||[];
+          this.optScadaNominal=d.scada_nominal||{};
+          this.optRunToFailure=d.run_to_failure||{};
+          this.optVizierOptimal=d.vizier_optimal||{};
+          this.optOptimalHz=d.optimal_hz;
+          this.vizierDeployed=false;
+          this.$nextTick(()=>this._renderVizierPareto());
+        }
+      } catch(e){ this.showToast('Error running Vizier optimization','var(--red)'); }
+    },
+    async deployVizierOptimal() {
+      if(this.vizierDeployed) return;
+      this.vizierDeploying=true;
+      const savings=(this.optVizierOptimal.cash_flow||0)-(this.optScadaNominal.cash_flow||0);
+      try {
+        await fetch('/api/vizier/deploy',{method:'POST',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({oil_price:this.oilPriceSlider,horizon_days:this.horizonSlider,deployed_hz:this.optOptimalHz,net_savings:savings})});
+        this.vizierDeployed=true;
+        this.showToast(`✅ Vizier VFD ${this.optOptimalHz} Hz deployed. $${savings.toLocaleString()} projected savings.`,'var(--green)');
+      } catch(e){ this.showToast('Error deploying recommendation','var(--red)'); }
+      this.vizierDeploying=false;
+    },
+    _renderVizierPareto() {
+      const el=document.getElementById('vizier-pareto-chart');
+      if(!el||!this.optTrials.length) return;
+      const failures=this.optTrials.filter(t=>t.is_failure&&!t.is_optimal);
+      const successes=this.optTrials.filter(t=>!t.is_failure&&!t.is_optimal);
+      const optimal=this.optTrials.filter(t=>t.is_optimal);
+      const traces=[
+        {type:'scatter',mode:'markers',x:successes.map(t=>t.vfd_hz),y:successes.map(t=>t.cash_flow),name:'Trial (No Burnout)',marker:{color:'rgba(30,144,255,0.7)',size:10}},
+        {type:'scatter',mode:'markers',x:failures.map(t=>t.vfd_hz),y:failures.map(t=>t.cash_flow),name:'Trial (Pump Burnout)',marker:{color:'rgba(244,67,54,0.7)',size:10,symbol:'x'}},
+        {type:'scatter',mode:'markers',x:optimal.map(t=>t.vfd_hz),y:optimal.map(t=>t.cash_flow),name:'⭐ Optimal',marker:{color:'#ff8c00',size:16,symbol:'star'}},
+        {type:'scatter',mode:'markers',x:[this.optScadaNominal.vfd_hz],y:[this.optScadaNominal.cash_flow],name:'SCADA Nominal',marker:{color:'#5a6a7a',size:12,symbol:'diamond'}},
+      ];
+      const layout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:60,r:20,t:20,b:50},xaxis:{title:'VFD Frequency (Hz)',gridcolor:'#1e2a38'},yaxis:{title:'Net Cash Flow ($)',gridcolor:'#1e2a38'},legend:{bgcolor:'rgba(11,12,16,0.7)',bordercolor:'#1e2a38',borderwidth:1}};
+      Plotly.react(el,traces,layout,{displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(el,traces,layout,{displayModeBar:false,responsive:true}));
+    },
+    
     initCanvasSplitter() {
       const splitter = this.$refs.canvasSplitter;
       if (!splitter) return;

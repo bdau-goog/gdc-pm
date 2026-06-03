@@ -740,6 +740,13 @@ FAULT_PROFILES = {
         "psi_range": (1350, 1450), "temp_range": (210, 230), "vib_range": (8.5, 14.5),
         "amps_range": (76, 85),
     },
+    "slug_flow": {
+        "label": "Flowline Slug Flow", "asset_class": "esp",
+        "description": "Flowline slugging causes hydraulic tubing vibration downhole, motor temperature nominal",
+        "color": "#ffb300",
+        "psi_range": (1300, 1500), "temp_range": (190, 205), "vib_range": (2.2, 3.2),
+        "amps_range": (70, 80),
+    },
     # ── Gas Lift Compressor Faults ────────────────────────────────────────────
     "valve_failure": {
         "label": "Check Valve Failure", "asset_class": "gas_lift",
@@ -810,6 +817,7 @@ FAULTS_BY_CLASS = {
 # Used in the Edge vs Cloud comparison chart to quantify the response window.
 PNR_MINUTES = {
     "gas_lock":                   25,   # Gas fraction >70% — pump impeller stalls
+    "slug_flow":                  120,  # Slow vibration drift allows 2h response window
     "sand_ingress":               120,  # Impeller erosion accumulates over hours
     "motor_overheat":             30,   # Winding insulation fails above 280°F
     "valve_failure":               5,   # Instantaneous pressure crash
@@ -837,6 +845,12 @@ REMEDIATION_TIERED = {
         "urgent":   {"action": "Immediate VFD cutback to 60% + page on-call field engineer for pump inspection",   "type": "field_notification", "time_to_execute": "15–20 min", "cost_incurred": 8000},
         "critical": {"action": "Emergency VFD shutdown + initiate staged pump restart protocol via SCADA",         "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 15000},
         "post_pnr": {"action": "Pull and replace ESP string — impeller stalled, order workover rig",               "type": "workover", "time_to_execute": "3–5 days", "cost_incurred": 150000},
+    },
+    "slug_flow": {   # PNR=120m
+        "early":    {"action": "Dispatch surface technician (truck roll) to inspect surface choke valve backpressure. Do not pull well.", "type": "field_notification", "time_to_execute": "30–60 min", "cost_incurred": 1500},
+        "urgent":   {"action": "Dispatch surface technician (truck roll) to check choke manifold and surface hydraulics.", "type": "field_notification", "time_to_execute": "15–20 min", "cost_incurred": 3000},
+        "critical": {"action": "Emergency choke bypass adjustment — surface flowline slugging dampening is required immediately", "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 8000},
+        "post_pnr": {"action": "Erroneously mobilized workover rig — pulled mechanically sound ESP downhole, incurring huge unnecessary Capex", "type": "workover", "time_to_execute": "3–5 days", "cost_incurred": 150000},
     },
     "sand_ingress": {   # PNR=120m
         "early":    {"action": "Reduce pump rate 20% to lower sand influx; sample fluid for sand concentration",   "type": "software_command", "time_to_execute": "<10 min", "cost_incurred": 5000},
@@ -911,6 +925,8 @@ REMEDIATION_TIERED = {
 # Represents the financial risk prevented by early Edge AI detection.
 REMEDIATION_COSTS = {
     "gas_lock":                   150000,  # Production stopped + workover
+    "slug_flow":                  150000,  # Avoided premature ESP well pull
+    "vizier_optimal":             150000,  # Optimization savings
     "sand_ingress":                85000,  # Workover + impeller replacement
     "motor_overheat":             200000,  # Motor burnout + replacement
     "valve_failure":               42500,  # Valve replacement + downtime
@@ -4745,6 +4761,240 @@ def get_fault_sessions(limit: int = 50):
         return {"sessions": [dict(r) for r in rows], "count": len(rows)}
     except Exception as e:
         return {"sessions": [], "count": 0, "error": str(e)}
+
+
+# ── Bayesian Optimization & Truck Roll Endpoints (3-Horizon Demo Overhaul) ──────
+class OptimizeRequest(BaseModel):
+    oil_price: float = 112.0
+    horizon_days: int = 90
+
+@app.get("/api/vizier/optimize")
+def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
+    """
+    Simulates 15 trials of Bayesian Optimization (Vizier) to find the optimal VFD frequency (Hz).
+    Applies the physically and economically grounded cash flow model.
+    """
+    import math
+    
+    # Standard trial frequencies (simulating Bayesian exploration converging toward the sweet spot)
+    trial_hz_values = [48.0, 64.0, 52.0, 61.5, 54.5, 59.0, 56.5, 58.0, 57.2, 57.8, 57.5, 57.6, 57.4, 57.7, 57.5]
+    
+    trials = []
+    best_cash_flow = -999999999.0
+    
+    for i, hz in enumerate(trial_hz_values):
+        # 1. Flow Rate (bbl/day)
+        flow_rate = round(24.0 * hz, 1)
+        
+        # 2. Motor Temperature (°F)
+        temp_f = round(180.0 + 1.5 * (hz - 45.0) + 0.15 * max(0.0, hz - 58.0)**3, 1)
+        
+        # 3. Remaining Useful Life (RUL, Days)
+        rul_days = round(300.0 * math.exp(-0.11 * (hz - 45.0)), 1)
+        
+        # 4. Power Cost ($/day)
+        power_cost = round(0.1 * (hz**3), 1)
+        
+        # 5. Economic outcome
+        # If RUL exceeds or meets the contract horizon, we operate safely.
+        # Otherwise, the pump burns out prematurely, stopping production and triggering a $150k CAPEX replacement penalty.
+        if rul_days >= horizon_days:
+            revenue = oil_price * flow_rate * horizon_days
+            operating_cost = power_cost * horizon_days
+            failure_capex = 0.0
+            prod_days = horizon_days
+        else:
+            revenue = oil_price * flow_rate * rul_days
+            operating_cost = power_cost * rul_days
+            failure_capex = 150000.0
+            prod_days = rul_days
+            
+        net_cash_flow = round(revenue - operating_cost - failure_capex, 1)
+        
+        is_best = False
+        if net_cash_flow > best_cash_flow:
+            best_cash_flow = net_cash_flow
+            is_best = True
+            
+        trial_data = {
+            "trial_num": i + 1,
+            "vfd_hz": hz,
+            "flow_rate": flow_rate,
+            "motor_temp_f": temp_f,
+            "rul_days": rul_days,
+            "cash_flow": net_cash_flow,
+            "prod_days": prod_days,
+            "is_failure": rul_days < horizon_days,
+            "is_optimal": False
+        }
+        trials.append(trial_data)
+        
+    # Mark the single absolute best trial as optimal
+    best_idx = 0
+    for idx, t in enumerate(trials):
+        if t["cash_flow"] == best_cash_flow:
+            best_idx = idx
+    trials[best_idx]["is_optimal"] = True
+    optimal_trial = trials[best_idx]
+    
+    # Calculate SCADA Nominal comparison (hardcoded safe 50.0 Hz)
+    scada_hz = 50.0
+    scada_flow = round(24.0 * scada_hz, 1)
+    scada_temp = round(180.0 + 1.5 * (scada_hz - 45.0), 1)
+    scada_rul = round(300.0 * math.exp(-0.11 * (scada_hz - 45.0)), 1)
+    scada_power = round(0.1 * (scada_hz**3), 1)
+    scada_cash_flow = round((oil_price * scada_flow - scada_power) * horizon_days, 1)
+    
+    # Calculate Aggressive Run-to-Failure comparison (65.0 Hz)
+    agg_hz = 65.0
+    agg_flow = round(24.0 * agg_hz, 1)
+    agg_temp = round(180.0 + 1.5 * (agg_hz - 45.0) + 0.15 * max(0.0, agg_hz - 58.0)**3, 1)
+    agg_rul = round(300.0 * math.exp(-0.11 * (agg_hz - 45.0)), 1) # ~33 days
+    agg_power = round(0.1 * (agg_hz**3), 1)
+    if agg_rul >= horizon_days:
+        agg_cash_flow = round((oil_price * agg_flow - agg_power) * horizon_days, 1)
+    else:
+        agg_cash_flow = round((oil_price * agg_flow - agg_power) * agg_rul - 150000.0, 1)
+        
+    return {
+        "trials": trials,
+        "optimal_hz": optimal_trial["vfd_hz"],
+        "optimal_cash_flow": best_cash_flow,
+        "scada_nominal": {
+            "vfd_hz": scada_hz,
+            "flow_rate": scada_flow,
+            "motor_temp_f": scada_temp,
+            "rul_days": scada_rul,
+            "cash_flow": scada_cash_flow,
+            "is_failure": scada_rul < horizon_days
+        },
+        "run_to_failure": {
+            "vfd_hz": agg_hz,
+            "flow_rate": agg_flow,
+            "motor_temp_f": agg_temp,
+            "rul_days": agg_rul,
+            "cash_flow": agg_cash_flow,
+            "is_failure": agg_rul < horizon_days
+        },
+        "vizier_optimal": {
+            "vfd_hz": optimal_trial["vfd_hz"],
+            "flow_rate": optimal_trial["flow_rate"],
+            "motor_temp_f": optimal_trial["motor_temp_f"],
+            "rul_days": optimal_trial["rul_days"],
+            "cash_flow": optimal_trial["cash_flow"],
+            "is_failure": optimal_trial["is_failure"]
+        }
+    }
+
+
+class DeployVizierRequest(BaseModel):
+    oil_price: float = 112.0
+    horizon_days: int = 90
+    deployed_hz: float = 57.5
+    net_savings: float = 996030.0
+
+@app.post("/api/vizier/deploy")
+def vizier_deploy(req: DeployVizierRequest):
+    """
+    Deploys the Vizier recommendation. Records the optimization savings to the fleet financials ledger
+    by inserting a mock event row in telemetry_events.
+    """
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO telemetry_events (
+                    event_time, asset_id, asset_type, psi, temp_f, vibration, motor_amps,
+                    failure_type, predicted_label, confidence, source,
+                    acknowledged, ack_time, ack_operator, cost_avoided, cost_incurred,
+                    ai_narrative, recommended_action
+                ) VALUES (
+                    NOW(), 'ESP-ALPHA-5', 'esp', 1400.0, 198.0, 1.4, 75.0,
+                    'vizier_optimal', 'vizier_optimal', 0.99, 'vizier_agent',
+                    TRUE, NOW(), 'vizier_opt', %s, 0.0,
+                    'Vizier Bayesian optimization successfully deployed.',
+                    'Deployed optimized VFD Hz at Well A-5.'
+                )
+                """,
+                (req.net_savings,),
+            )
+        conn.commit()
+        conn.close()
+        log.info(f"Deployed Vizier VFD Hz: {req.deployed_hz} on ESP-ALPHA-5 | savings=${req.net_savings:,}")
+        return {"status": "deployed", "hz": req.deployed_hz, "net_savings": req.net_savings}
+    except Exception as e:
+        log.error(f"vizier deploy error: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {e}")
+
+
+# ── Horizon 2: Truck Roll State Management ────────────────────────────────────
+# We will use an in-memory dictionary to track truck-roll dispatches
+active_truck_rolls = {}  # {asset_id: {"dispatched_at": datetime, "duration_s": 5, "resolved": bool}}
+
+class TruckRollRequest(BaseModel):
+    asset_id: str
+    event_id: int
+
+def _run_truck_roll_timer(asset_id: str, event_id: int):
+    """Background timer simulating technician travel time (5 seconds) before resolving fault."""
+    time.sleep(5)
+    
+    # 1. Resolve the active fault simulation
+    if asset_id in active_degrades:
+        active_degrades[asset_id]["running"] = False
+        active_degrades.pop(asset_id, None)
+        HEALTH_HISTORY.pop(asset_id, None)
+        
+    # 2. Update the event row in telemetry_events as resolved/acknowledged
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE telemetry_events
+                SET acknowledged=TRUE, ack_time=NOW(), ack_operator='truck_roll_tech',
+                    cost_avoided=150000, cost_incurred=1500,
+                    recommended_action='Surface choke valve adjusted, stabilizing backpressure.'
+                WHERE id=%s
+                """,
+                (event_id,),
+            )
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        log.warning(f"Truck roll DB resolution update failed: {e}")
+        
+    active_truck_rolls.pop(asset_id, None)
+    log.info(f"🚛 Truck roll complete and resolved for {asset_id} (event {event_id})")
+
+
+@app.post("/api/agent/truck-roll")
+def dispatch_truck_roll(req: TruckRollRequest):
+    """
+    Horizon 2 Dispatch: triggers a surface technician dispatch (truck roll) to well site.
+    Simulates tech en-route via a 5-second background timer, then resolves the slug_flow fault.
+    """
+    if req.asset_id in active_truck_rolls:
+        return {"status": "already_dispatched", "message": f"Technician is already en-route to {req.asset_id}"}
+        
+    active_truck_rolls[req.asset_id] = {
+        "dispatched_at": datetime.utcnow().isoformat() + "Z",
+        "duration_s": 5,
+        "resolved": False
+    }
+    
+    t = threading.Thread(target=_run_truck_roll_timer, args=(req.asset_id, req.event_id), daemon=True)
+    t.start()
+    
+    log.info(f"🚛 Technician dispatched to wellsite {req.asset_id} to resolve Flowline Slug Flow")
+    return {"status": "dispatched", "asset_id": req.asset_id, "travel_time_seconds": 5}
+
+
+@app.get("/api/agent/truck-roll-status/{asset_id}")
+def get_truck_roll_status(asset_id: str):
+    """Returns whether a truck roll is currently active for a well site."""
+    return {"active": asset_id in active_truck_rolls}
 
 
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────
