@@ -232,6 +232,31 @@ In `/api/vizier/optimize`, retrieve Class H insulation temp limit from pgvector 
 
 ---
 
+## Demo Variability — Already Implemented (Do Not Rebuild)
+
+Every run of the demo produces different numbers, narratives, and evidence layouts. This is fully implemented in `app.py` through three independent randomization layers:
+
+**1. Physics-Based Telemetry Noise (XGBoost Inputs)**
+- Fault severity targets are randomized per-run: `_psi_target = random.uniform(*profile["psi_range"])` — the sensor endpoints and degradation speed (`_k = random.uniform(3.0, 4.0)`) vary on every injection.
+- Real Gaussian noise applied at every 5s poll: `random.gauss(current_psi, abs(current_psi * 0.02))`. Charts look organic, not canned.
+
+**2. Document Values (LLM/RAG Inputs)**
+All dynamically generated field documents carry randomized physical variables:
+- H1 Gas Lock: `gvf = random.randint(71, 85)` — changes Gemma's synthesis AND the RUL multiplier
+- H2 Slug Flow: `cyclic_dp = random.randint(38, 48)` psi pressure variation
+- Motor Overheat: `water_cut = random.randint(62, 75)%`
+- Sand Ingress: `sand_conc = random.randint(150, 300)` ppm
+
+Because `adjust_rul_with_documents()` parses these *actual randomized numbers* via regex, Gemma's RUL adjustments and narrative text change organically between runs.
+
+**3. Evidence Shuffle & Gemma Template Variety**
+- `random.sample(pool, 3)` + `random.shuffle()` — the 3 evidence items appear in a different order on every run
+- `template = random.choice(templates)` — Gemma's finding sentence varies in phrasing
+
+*No action required — variability is production-ready. Do not add more variability without good reason — the current level is correct for enterprise demos.*
+
+---
+
 ## Physics & Logic Engineering Rationale (Do Not Lose This — Source Material)
 
 This section captures the engineering reasoning developed in the June 3 session that must flow into the info panels in Fix 10. **Do not remove from handoff.**
