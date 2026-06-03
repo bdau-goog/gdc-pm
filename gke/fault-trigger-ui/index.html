@@ -670,6 +670,7 @@
       <div class="hdr-tab" :class="{active: mainTab==='horizon1'}" @click="setMainTab('horizon1')">Horizon 1: Gas Lock</div>
       <div class="hdr-tab" :class="{active: mainTab==='horizon2'}" @click="setMainTab('horizon2')">Horizon 2: Slug Flow</div>
       <div class="hdr-tab" :class="{active: mainTab==='horizon3'}" @click="setMainTab('horizon3')">Horizon 3: Optimization</div>
+      <div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations';fetchHorizonAlerts()">Fleet Operations</div>
       <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
     </div>
     <div class="hdr-right">
@@ -3185,6 +3186,7 @@ createApp({
             const cs=this.activeDegradesMap['ESP-ALPHA-1']?.current_sensors||{};
             if(cs.psi) this.h1SensorPsi=cs.psi.toFixed(0)+' PSI';
             if(cs.temp) this.h1SensorTemp=cs.temp.toFixed(0)+'°F';
+            if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
           }}
           const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
           if(rfd.ok){const d=await rfd.json();if(d.sensors){

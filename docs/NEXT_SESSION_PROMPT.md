@@ -3,11 +3,13 @@
 ## Header
 **Date:** June 3, 2026
 **Live URL:** http://gdc-pm.bdau.io (us-east1 cluster)
-**Project:** gdc-pm (`feature-trio-scenarios` branch — git head `098afa0`)
+**Project:** gdc-pm (`feature-trio-scenarios` branch — git head `e4504ec`)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `098afa0` (Clean working tree)
-**Image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest` (deployed June 3, 2026 — 3-Horizon Overhaul)
+**Git Head:** `e4504ec` ⚠ Uncommitted changes in working directory (4 files: app.py, index.html, requirements.txt, NEXT_SESSION_PROMPT.md)
+**Image:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+**Image Digest:** `sha256:4b120c0473787bb56ca43de88d457978e86f7d6834daa63fe81214f55674a64e` (deployed June 3, 2026 — Fixes 1-4)
+**Image Size:** 3.3 GB (includes sentence-transformers 2.7.0)
 
 ---
 
@@ -27,32 +29,44 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability \
   -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents; SELECT COUNT(*) FROM fault_sessions;"
 
-# 5. Check new Vizier endpoint works
-curl -s "http://gdc-pm.bdau.io/api/vizier/optimize?oil_price=112&horizon_days=90" | python3 -c "import sys,json;d=json.load(sys.stdin);print('trials:',len(d.get('trials',[])), 'optimal_hz:',d.get('optimal_hz'))"
+# 5. Check sentence_transformers (Fix 1 — should print OK)
+kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "from sentence_transformers import SentenceTransformer; print('sentence_transformers: OK')" 2>&1
+
+# 6. Check slug_flow is registered
+curl -s http://gdc-pm.bdau.io/api/fault-physics/slug_flow | python3 -c "import sys,json;d=json.load(sys.stdin);p=d['physics'];print('slug_flow:',p['horizon_label'],p['total_hours'],'h')"
+
+# 7. Check Fleet Operations nav tab exists in live HTML
+curl -s http://gdc-pm.bdau.io/ | grep -o "Fleet Operations"
+
+# 8. Commit pending changes (FIRST ACTION)
+cd ~/gdc-pm && git add -A && git commit -m "fix: Fixes 1-4 — sentence-transformers, Fleet Operations tab, motor_amps live binding, slug_flow registry"
 ```
 
 **Expected results when healthy:**
-- All pods: `1/1 Running` (fault-trigger-ui ~fresh from today's deploy)
+- All pods: `1/1 Running`
 - Ollama: `1` replica, `ollama_online: True  model: gemma4:latest`
 - rag_documents: **18 rows** ✅
-- field_intel: **100 rows** ✅
-- fault_sessions: **4 rows** ✅
-- Vizier: `trials: 15 optimal_hz: 54.5` ✅
+- field_intel: **~100 rows** ✅
+- fault_sessions: **≥4 rows** ✅
+- sentence_transformers: **OK** ✅ (Fix 1 deployed)
+- slug_flow: **Hours 2.0 h** ✅ (Fix 4 deployed)
+- Fleet Operations: **Fleet Operations** ✅ (Fix 2 deployed)
 
 ---
 
-## ⚠️ Known Integrity State (VERIFIED June 3, 2026)
+## ⚠️ Known Integrity State (VERIFIED June 3, 2026 — Post Fixes 1-4)
 
 | Item | Display Says | Reality | Status |
 |------|-------------|---------|--------|
-| Gemma model | "Gemma 4 8B" | `gemma4:latest` (8B, 128K context) | ✅ CLEAN |
-| Architecture tab | v5 live | Full-width panes, ⓘ popups | ✅ |
-| Grafana URL | 35.190.137.145 | Live Grafana LB IP | ✅ Fixed |
-| Horizon 1 tab | Gas Lock UI | ESP-ALPHA-1, PNR 25min | ✅ Live |
-| Horizon 2 tab | Slug Flow UI | ESP-ALPHA-3, truck roll timer | ✅ Live |
-| Horizon 3 tab | Vizier UI | 15 Bayesian trials, Pareto chart | ✅ Live |
-| slug_flow fault | In simulator | vibration drift, nominal motor temp | ✅ |
-| Vizier optimal_hz | 54.5 Hz | Bayesian converged result at $112/bbl, 90d | ✅ |
+| Gemma model | "gemma4:latest" | `gemma4:latest` running | ✅ CLEAN |
+| Architecture Pane 4 | "Static O&G Corpus: 18 chunks retrieved" | `sentence_transformers==2.7.0` NOW installed in fault-trigger-ui | ✅ **FIXED (Fix 1)** |
+| Fleet Operations nav tab | Accessible from header | Tab now has nav button → `mainTab='operations'` | ✅ **FIXED (Fix 2)** |
+| H1 Motor Amps card | Live declining value | `motor_amps` now in `current_sensors` dict AND bound in H1 polling | ✅ **FIXED (Fix 3)** |
+| slug_flow registry | Registered in all 4 dicts | FAULTS_BY_CLASS, FAULT_PHYSICS, INTELLIGENCE_FEED, GEMMA_FINDINGS all populated | ✅ **FIXED (Fix 4)** |
+| H2 Truck Roll savings | Fleet Financials shows $148,500 | DB write never happens — frontend never calls `/api/agent/truck-roll` | ❌ FIX-5 |
+| Vizier "Bayesian" trials | 15 Bayesian exploration trials | Hardcoded `trial_hz_values` list — deterministic, not adaptive | ⚠️ Demo-acceptable |
+| `last_cloud_sync` in MLOps | Live sync timestamp | Hardcoded `"2026-05-13T14:30:00Z"` | ⚠️ Low priority |
+| Grafana URL | `35.190.137.145` | Live Grafana LB IP | ✅ Fixed |
 | GPU CronJobs | SUSPENDED ✅ | Manual only | ✅ |
 
 ---
@@ -67,68 +81,78 @@ gemma4:31b       19 GB    ← READY (downloaded) Gemma 4 31B, 128K ctx (upgrade 
 
 ---
 
-## NEXT SESSION PLAN — Horizon UI Polish & Integration Testing
+## NEXT SESSION PLAN — Session B (1 fix + git commit)
 
-| Fix | Change | Verification | Est. complexity |
-|-----|--------|--------------|-----------------|
-| H1 Live Charts | Verify h1-gdc-chart and h1-scada-chart render correctly when fault is injected | Click "Inject Gas Lock" → chart appears within 10s | Small |
-| H2 Truck Roll Timer | Test 5-second countdown completes and vibration resets | Click "Dispatch Truck Roll" → resolved in 5s | Small |
-| H3 Slider Reactivity | Test Oil Price and Horizon sliders re-trigger Vizier optimization | Drag slider → trial table updates | Small |
-| H1 Motor Amps Card | Wire live motor_amps value to h1SensorAmps card in Horizon 1 | h1SensorAmps shows declining value when gas lock active | Small |
-| slug_flow Intelligence Feed | Add canned feed items for slug_flow to INTELLIGENCE_FEED dict in app.py | Horizon 2 shows 3+ feed items with RAG context | Medium |
-| RAG Prompt for slug_flow | Confirm Gemma finding for slug_flow is meaningful | h2GemmaFinding contains vibration + motor temp reference | Small |
-| Pareto Chart Clickthrough | Add hover tooltip showing VFD Hz, Cash Flow, RUL on Pareto | Hover over scatter point → tooltip appears | Small |
+**First action: commit the 4 changed files** (they are deployed but uncommitted):
+```bash
+git add -A && git commit -m "fix: Fixes 1-4 — sentence-transformers, Fleet Operations tab, motor_amps live binding, slug_flow registry"
+```
 
----
+| Fix | Exact change | Verification | Complexity |
+|-----|-------------|--------------|------------|
+| **Commit pending** | `git add -A && git commit -m "fix: Fixes 1-4..."` | `git log --oneline -1` shows new commit | Trivial |
+| **Fix 5** | `index.html` `dispatchTruckRoll()`: before starting countdown, call `fetch('/api/recent-events?limit=5')`, find the most recent event for `ESP-ALPHA-3` with `failure_type='slug_flow'`, capture its `id`, then call `fetch('/api/agent/truck-roll', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({asset_id:'ESP-ALPHA-3', event_id: <captured_id>})})`. If no event found, pass `event_id: 0` (backend handles gracefully). | Inject Slug Flow → dispatch truck roll → wait 5s → Fleet Financials ledger shows `ESP-ALPHA-3 / slug_flow / $148,500` entry | Medium |
 
-## What Was Done This Session (June 3, 2026)
-
-*   **3-Horizon Architecture** — Replaced old Fleet Operations + Fleet Telemetry tabs with 3 dedicated Horizon tabs (Horizon 1: Gas Lock, Horizon 2: Slug Flow, Horizon 3: Vizier Optimization).
-
-*   **Horizon 1 (Gas Lock)** — SCADA vs GDC value cards, live GDC AI forecast chart + SCADA historical chart, VFD approval button with $147,500 savings, live RAG feed from AlloyDB, polling loop.
-
-*   **Horizon 2 (Slug Flow)** — Slug flow vibration drift scenario (1.1→2.4 mm/s), motor temp remains nominal (O&G defensible physics), 5-second truck roll countdown timer, RAG troubleshooting guide text, $148,500 savings narrative.
-
-*   **Horizon 3 (Vizier Optimization)** — Bayesian optimization over 15 trials, real Net Cash Flow model (Revenue − Power Costs − $150k ESP burnout penalty), interactive sliders (oil price, horizon), Pareto scatter plot via Plotly, trials log table.
-
-*   **Backend APIs** — `/api/vizier/optimize`, `/api/vizier/deploy`, `/api/agent/truck-roll`, `/api/agent/truck-roll-status`.
-
-*   **Simulator** — Added `slug_flow_reading()` fault generator with physically correct sensor profile (vibration rises, motor temp flat, motor amps nominal).
-
-*   **Deployed & Verified** — Both `fault-trigger-ui` and `telemetry-simulator` pods rebuilt, pushed, and rolled out. Vizier API confirmed working: 15 trials, optimal_hz=54.5.
+**Where Fix 5 is in index.html:**
+- Search for `async dispatchTruckRoll()` in the JS section
+- The function currently only starts a countdown timer without calling the backend
+- The `/api/agent/truck-roll` endpoint already exists in app.py (PID-ready with `event_id: int` parameter)
+- Pattern: `fetch('/api/recent-events?limit=50')` → filter `.failure_type === 'slug_flow'` and `.asset_id === 'ESP-ALPHA-3'` → take `[0].id` → POST to truck-roll
 
 ---
 
-## Current Cluster State (VERIFIED June 3, 2026)
+## What Was Done This Session (June 3, 2026 — Fixes 1-4)
+
+*   **Fix 1 (sentence-transformers)** — Added `sentence-transformers==2.7.0` to `gke/fault-trigger-ui/requirements.txt`. Rebuilt and deployed. Verified: `kubectl exec ... python3 -c "from sentence_transformers import SentenceTransformer; print('OK')"` → `sentence_transformers: OK`. Static RAG corpus (18 OEM manual chunks) now actually retrieved during agent queries.
+
+*   **Fix 2 (Fleet Operations nav tab)** — Added `<div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations';fetchHorizonAlerts()">Fleet Operations</div>` to header in `index.html` (after "Horizon 3: Optimization" tab, before "Fleet Financials"). The full HITL deep dive workflow is now reachable from the UI.
+
+*   **Fix 3 (H1 Motor Amps live binding)** — Two-part fix: (a) Added `"motor_amps": reading.get("motor_amps")` to `current_sensors` dict in `_run_degrade_thread` in `app.py`; (b) Added `if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';` to the H1 polling block in `index.html`. Motor Amps card on H1 now shows live declining value during gas lock injection.
+
+*   **Fix 4 (slug_flow registry)** — Added `slug_flow` to 4 dictionaries in `app.py`:
+    - `FAULTS_BY_CLASS["esp"]`: `["gas_lock", "slug_flow", "sand_ingress", "motor_overheat"]`
+    - `FAULT_PHYSICS["slug_flow"]`: `{horizon_label:"Hours", total_hours:2.0, scada_sensor:"vib", pnr_sensor:"vib", primary_sensor:"vib", intervention_type:"field_notification"}`
+    - `INTELLIGENCE_FEED["slug_flow"]`: 3 items (choke log, separator test, shift note — all physically accurate for slug flow)
+    - `GEMMA_FINDINGS["slug_flow"]`: vibration drift + flat motor temp discriminator statement
+
+*   **Deployed** — docker build (took ~5 min for sentence-transformers) → docker push (3.3GB image, took ~8 min) → kubectl rollout restart → `deployment "fault-trigger-ui" successfully rolled out` in 2m19s.
+
+---
+
+## Current Cluster State (VERIFIED June 3, 2026 11:56)
 
 ```
 alloydb-omni-5fcfc68fdb-9vm2z           1/1   Running   0   5d15h
 event-processor-7d9b594b6b-j5jp8        1/1   Running   0   5d15h
-fault-trigger-ui-846895c64d-j7zmt       1/1   Running   0   <2m  ← NEW (3-Horizon)
+fault-trigger-ui-859787b97c-xmg8m       1/1   Running   0   ~4m    ← NEW pod (Fixes 1-4)
 gdc-pm-rabbitmq-server-0                1/1   Running   0   5d15h
 grafana-655b6f5c7c-w2h84                1/1   Running   0   5d15h
 inference-api-5697b79566-zqdpl          1/1   Running   0   5d15h
 ollama-5bc5db749b-n6tb8                 1/1   Running   0   5d12h
-telemetry-simulator-867677f784-h55wd    1/1   Running   0   <2m  ← NEW (slug_flow)
+telemetry-simulator-867677f784-h55wd    1/1   Running   0   ~40m
 ```
+
+DB counts: field_intel: 100, rag_documents: 18, fault_sessions: 4
 
 ---
 
 ## Outstanding Development Items (Backlog)
 
-**High Priority**
-1. **slug_flow Intelligence Feed** — INTELLIGENCE_FEED dict in app.py has no `slug_flow` key; the RAG feed pane shows empty in H2. Add 2–3 realistic field docs referencing flowline slugging, choke adjustment, and motor temp sentinel. One-liner: add `"slug_flow": [...]` block matching existing feed format.
-2. **H1 Motor Amps live binding** — `h1SensorAmps` is not wired to current_sensors polling; shows static "64.1 A". Wire in `launchHorizon1` polling interval.
+**High Priority — Integrity Violations**
+1. **[Fix 5] H2 Truck Roll DB write** — Frontend `dispatchTruckRoll()` never calls `/api/agent/truck-roll`. Truck roll resolution is invisible in Fleet Financials. Fix: fetch latest event_id from `/api/recent-events`, then POST to `/api/agent/truck-roll`. (See Session B plan above.)
 
 **Medium Priority**
-3. **Pareto chart tooltip** — Currently hover shows raw coordinates. Add `hovertemplate` with Hz, Cash Flow ($M), RUL (d) labels.
-4. **Deploy VFD feedback** — After clicking "Deploy Recommendation", show what Hz will be applied and a brief confirmation dialog.
-5. **Gemma Horizon 1 narrative** — The h1GemmaFinding is pulled from existing gas_lock GEMMA_FINDINGS. May need to trigger the agent streaming endpoint to generate something richer.
-6. **Merge `feature-trio-scenarios` → `main`** — Once UI polish is complete, create PR and merge.
+2. **Pareto chart tooltip** — Add `hovertemplate` with Hz, Cash Flow ($M), RUL (d) labels.
+3. **Deploy VFD feedback (H3)** — After "Deploy Recommendation", show which Hz was applied.
+4. **Polling timer leaks (H1/H2)** — `h1DegPollTimer` and `h2DegPollTimer` not cleared on tab navigation. Add cleanup to `beforeUnmount()`.
+5. **Merge `feature-trio-scenarios` → `main`** — Once Fix 5 deployed and verified.
 
 **Low Priority**
-7. **Upgrade to gemma4:31b** — Change `OLLAMA_MODEL=gemma4:31b` env var to test higher quality reasoning on Horizon scenarios.
-8. **Horizon 3 — RAG constraint** — Add a block to the Vizier prompt that retrieves max motor temperature limits from OEM manuals via pgvector, constraining the Bayesian search space.
+6. **`last_cloud_sync` hardcoded stale** — Either compute from a real AlloyDB timestamp or remove the field.
+7. **`processor.py` default `OLLAMA_MODEL`** — Change default from `"gemma:2b"` to `"gemma4:latest"` (line 52).
+8. **Frontend `FAULT_META` / `ASSET_META`** — Only Pad Alpha ESP assets defined. Gas lift, mud pump, top drive invisible to frontend JS.
+9. **Upgrade to gemma4:31b** — Change `OLLAMA_MODEL=gemma4:31b` env var to test higher quality reasoning.
+10. **Horizon 3 — RAG constraint** — Add pgvector retrieval of max motor temperature limits to Vizier prompt.
 
 ---
 
@@ -153,19 +177,13 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 ```
 
-If simulator.py changed:
-```bash
-docker build -t ${REGISTRY}/telemetry-simulator:latest gke/telemetry-simulator
-docker push ${REGISTRY}/telemetry-simulator:latest
-kubectl rollout restart deployment/telemetry-simulator -n gdc-pm
-kubectl rollout status deployment/telemetry-simulator -n gdc-pm
-```
+**Note:** Image is now 3.3GB (sentence-transformers adds ~2.3GB). Build takes ~5 min, push takes ~8 min, rollout pull takes ~2 min. Total deploy time: ~15 min.
 
 ---
 
-## Key Lessons Learned
+## Key Lessons Learned (June 3, 2026 — Fixes 1-4 Session)
 
-- **O&G Domain Realism enforced**: "loose wellhead bolts" scenario was rejected (sensor placement on downhole motor block means surface mechanical looseness doesn't show in downhole vibration). Replaced with flowline slug flow hydraulics — physically sound and defensible to any production engineer.
-- **Three-horizon architecture** cleanly maps to near-term (gas lock emergency), mid-term (ambiguous inconclusive telemetry requiring field dispatch), and long-term (capital allocation optimization under market conditions). This is the correct framing for a predictive maintenance ROI story.
-- **Vizier Bayesian economic model**: net cash flow = Revenue − Power Costs − $150k CAPEX penalty if RUL < horizon. At $112/bbl and 90-day horizon, optimal_hz = 54.5 (vs 50.0 SCADA nominal). Higher Hz → more barrels but exponentially shorter RUL. The $150k penalty correctly punishes aggressive run-to-failure strategies.
-- **Tab architecture**: Removing Fleet Telemetry (Grafana iframe) reduced UI complexity without losing any capability (Grafana accessible separately). Three focused Horizon tabs > one generic operations tab for demo storytelling.
+- **sentence-transformers adds 2.3GB to image**: Build time increased from ~2min to ~5min, push from ~1min to ~8min, GKE pull from ~30s to ~2min. Budget 15min for a full deploy cycle with this dependency.
+- **`docker push ... | tail -10` buffers output**: The log file stays 0 bytes until the push completes. Better to check `ps aux | grep "docker push"` or `gcloud artifacts docker images list` to monitor push progress.
+- **All 4 slug_flow dicts needed**: A fault type is only fully functional when it appears in FAULTS_BY_CLASS, FAULT_PHYSICS, INTELLIGENCE_FEED, and GEMMA_FINDINGS. Missing any one causes silent failures in different parts of the UI.
+- **motor_amps needs BOTH app.py and index.html changes**: Backend must populate `current_sensors["motor_amps"]` AND frontend must read it. Either change alone does nothing.

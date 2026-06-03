@@ -805,7 +805,7 @@ FAULT_PROFILES = {
 
 # Faults valid per asset class
 FAULTS_BY_CLASS = {
-    "esp":       ["gas_lock", "sand_ingress", "motor_overheat"],
+    "esp":       ["gas_lock", "slug_flow", "sand_ingress", "motor_overheat"],
     "gas_lift":  ["valve_failure", "thermal_runaway", "bearing_wear_glift"],
     "mud_pump":  ["pulsation_dampener_failure", "valve_washout", "piston_seal_wear"],
     "top_drive": ["gearbox_bearing_spalling", "hydraulic_leak"],
@@ -1379,6 +1379,21 @@ FAULT_PHYSICS = {
         "primary_sensor": "psi",
         "intervention_type": "operational_control",
     },
+    # ── Slug Flow (2h window) — surface choke adjustment ─────────────────────
+    # Intermittent gas/liquid slugs from the wellbore cause hydraulic vibration
+    # in the tubing/flowline. Primary signature: vibration drift with flat motor
+    # temperature. PNR 120min per PNR_MINUTES — operator dispatches surface tech
+    # to adjust choke valve; well pull is NOT required.
+    "slug_flow": {
+        "horizon_label": "Hours",
+        "total_hours": 2.0,           # 2 hours
+        "scada_alarm_health": 0.25,
+        "pnr_health": 0.10,
+        "scada_sensor": "vib",        # Vibration high alarm from slug impacts
+        "pnr_sensor": "vib",          # Vibration drives PNR (tubing fatigue)
+        "primary_sensor": "vib",
+        "intervention_type": "field_notification",
+    },
 }
 
 # ── Demo Scenarios ─────────────────────────────────────────────────────────────
@@ -1723,7 +1738,8 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
         # use them for contextually accurate document prompts.
         if asset_id in active_degrades:
             active_degrades[asset_id]["current_sensors"] = {
-                "psi": reading["psi"], "temp": reading["temp_f"], "vib": reading["vibration"]
+                "psi": reading["psi"], "temp": reading["temp_f"], "vib": reading["vibration"],
+                "motor_amps": reading.get("motor_amps"),
             }
         time.sleep(5)
 
@@ -4049,6 +4065,54 @@ INTELLIGENCE_FEED = {
             ),
         },
     ],
+    "slug_flow": [
+        {
+            "id": "sf_1", "type": "choke_log", "source": "Surface Choke Control Panel Log",
+            "ts_label": "last 4 hours", "icon": "🔧", "is_anomaly": True,
+            "headline": "Choke position: 48% → 62% → 44%  ·  3 manual adjustments this tour  ·  Backpressure unstable",
+            "ai_relevance": "Erratic choke adjustments without a corresponding pump speed change = flowline slug flow regime, not downhole failure",
+            "detail": (
+                "Surface Choke Control Log — ESP-ALPHA-3 / Well A-3\n"
+                "· 0215h: Choke opened 48% → 62% by lease operator (Garza) to maintain target 350 BPD\n"
+                "· 0410h: Choke closed 62% → 44% — 'flow surging at the header'\n"
+                "· 0558h: Choke set to 52% — attempting to stabilize\n"
+                "· ⚠ Three choke adjustments in 4 hours without pump speed change = surface flow instability\n"
+                "· SCADA: Vibration 2.4 mm/s (trip: 5.0 mm/s) — NO ALARM. Motor temp 198°F — NOMINAL."
+            ),
+        },
+        {
+            "id": "sf_2", "type": "separator_test", "source": "Separator Flow Test Report",
+            "ts_label": "06:00 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "A-3 slug volume: 1.8 bbl/cycle  ·  Cycle period: 14 min  ·  GOR: 1,240 scf/bbl (rising)",
+            "ai_relevance": "Measured slug volumes with 14-minute periodicity confirm intermittent gas/liquid flow regime — surface choke tuning is the correct intervention",
+            "detail": (
+                "Separator Test Report — Pad Alpha Production Header\n"
+                "· Well A-3 slug volume: 1.8 bbl per cycle (measured using separator dump valve counter)\n"
+                "· Slug cycle period: 14 minutes (consistent with 2,400 ft flowline at 2.1 ft/s slug velocity)\n"
+                "· GOR: 1,240 scf/bbl (nominal: 1,104 scf/bbl; rising slowly over last 3 days)\n"
+                "· Casing pressure: 118 PSI (stable — not a tubing leak)\n"
+                "· Separator inlet pressure oscillation: ±22 PSI at slug frequency\n"
+                "· Root cause: Intermittent gas accumulation in flowline low-point sending slugs to separator.\n"
+                "· SCADA: No alarm. Mean separator pressure 118 PSI — within range."
+            ),
+        },
+        {
+            "id": "sf_3", "type": "shift_note", "source": "Shift Handover — Night Tour",
+            "ts_label": "06:00 shift handover", "icon": "📋", "is_anomaly": False,
+            "headline": "\"A-3 pumping rough this morning — vibration up but temp is normal\"",
+            "ai_relevance": "Operator 'pumping rough with normal temp' is the key discriminator: downhole motor failure shows both; surface slugging shows vibration only",
+            "detail": (
+                "Shift Handover Notes — Pad Alpha Night Tour Pusher: D. Wakefield\n"
+                "· ESP-ALPHA-3: 'Pump vibration noticeably higher since about 0200h — running rough.'\n"
+                "· 'Motor temp still reading normal at 198°F — hasn't moved. That's unusual if it were a bearing.'\n"
+                "· 'GDC edge system showing vibration drift but confidence is low (~52%). Not calling it yet.'\n"
+                "· 'Flow at header is surging. Might be slugging from A-3 flowline low-point.'\n"
+                "· ⚠ Operator specifically notes FLAT motor temperature — the critical discriminator between\n"
+                "  slug flow (surface issue) and motor bearing failure (downhole issue).\n"
+                "· No SCADA alarms. Production rate slightly variable: 340–365 BPD over last 4 hours."
+            ),
+        },
+    ],
     "hydraulic_leak": [
         {
             "id": "hl_1", "type": "rig_log", "source": "Rig Floor Maintenance Log",
@@ -4181,6 +4245,12 @@ GEMMA_FINDINGS = {
     "gas_lock": (
         "🤖 Gemma: Intake PSI declining at -18 PSI/min below 1,000 PSI threshold — gas void fraction increasing in pump intake. "
         "VFD frequency reduction available via SCADA. Act within 25 minutes before pump stall."
+    ),
+    "slug_flow": (
+        "🤖 Gemma: Vibration drift from 1.1 to 2.4 mm/s over 4 hours with motor temperature FLAT at 198°F. "
+        "Flat temperature is the key discriminator — downhole bearing failure shows rising temp; surface slug flow does not. "
+        "Separator test confirms 1.8 bbl slug volumes at 14-minute intervals. "
+        "Recommend surface choke adjustment to 46–48%. Do NOT pull well — this is a flowline flow regime issue, not a downhole failure."
     ),
 }
 

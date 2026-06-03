@@ -7,3 +7,4 @@ plotly==5.22.0
 numpy==1.26.4
 xgboost==2.0.3
 requests==2.31.0
+sentence-transformers==2.7.0
