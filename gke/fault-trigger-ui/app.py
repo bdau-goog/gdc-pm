@@ -4867,24 +4867,34 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     import math
     import re
 
-    # ── Retrieve Class H insulation temperature limit from pgvector (Fix 15) ──
-    # Calls the same RAG pipeline used by the deep-dive intelligence feed.
-    # Searches rag_documents for "motor_overheat esp" content and parses the
-    # temperature limit mentioned in the OEM manual section.
-    burnout_threshold_f = 284.0   # API RP 11S Class H default — used if RAG fails
+    # ── Retrieve Class H insulation temperature limit from AlloyDB (Fix 15) ──
+    # Direct SQL text search — no embedding model needed, <10ms latency.
+    # The insulation limit is a specific fact in the ESP OEM manual that a
+    # simple ILIKE query can locate directly, eliminating the sentence_transformers
+    # cold-start latency (60-90s on fresh pod) that caused GKE gateway timeouts.
+    burnout_threshold_f = 284.0   # API RP 11S Class H default — used if DB query fails
     rag_constraint_source = "default (API RP 11S)"
     try:
-        rag_context, _ = get_rag_context_and_adjusted_rul("ESP-ALPHA-5", "motor_overheat", 60)
-        if rag_context:
-            # Match patterns like "284°F", "270 °F", "284 F", "300°F" in the retrieved text
-            m = re.search(r'(\d{2,3})\s*[°º]?\s*F\b', rag_context)
-            if m:
-                candidate = float(m.group(1))
-                if 200.0 <= candidate <= 380.0:   # physical sanity bounds for motor winding
-                    burnout_threshold_f = candidate
-                    rag_constraint_source = "pgvector (rag_documents)"
+        _rag_conn = get_db()
+        with _rag_conn.cursor() as _cur:
+            _cur.execute("""
+                SELECT content FROM rag_documents
+                WHERE asset_class = 'esp'
+                  AND (content ILIKE '%insulation%' OR content ILIKE '%class h%')
+                  AND content ILIKE '%%F%'
+                LIMIT 1
+            """)
+            _row = _cur.fetchone()
+        _rag_conn.close()
+        if _row:
+            _m = re.search(r'(\d{2,3})\s*[°º]?\s*F\b', _row[0])
+            if _m:
+                _cand = float(_m.group(1))
+                if 200.0 <= _cand <= 380.0:
+                    burnout_threshold_f = _cand
+                    rag_constraint_source = "AlloyDB rag_documents (SQL)"
     except Exception as e:
-        log.debug(f"Vizier RAG constraint retrieval skipped (non-fatal): {e}")
+        log.debug(f"Vizier RAG constraint DB query skipped (non-fatal): {e}")
 
     # Standard trial frequencies (simulating Bayesian exploration converging toward the sweet spot)
     trial_hz_values = [48.0, 64.0, 52.0, 61.5, 54.5, 59.0, 56.5, 58.0, 57.2, 57.8, 57.5, 57.6, 57.4, 57.7, 57.5]
