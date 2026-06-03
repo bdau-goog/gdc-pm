@@ -2454,27 +2454,55 @@
 const { createApp } = Vue;
 
 const SITES = {
-  pad_alpha: { name:'Pad Alpha', icon:'🛢', type:'ESP Production',      assets:['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','ESP-ALPHA-5','ESP-ALPHA-6'] },
+  pad_alpha: { name:'Pad Alpha',  icon:'🛢', type:'ESP Production',      assets:['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','ESP-ALPHA-5','ESP-ALPHA-6'] },
+  well_bravo:{ name:'Well Bravo', icon:'⚗',  type:'Gas Lift Production', assets:['GLIFT-BRAVO-1','GLIFT-BRAVO-2','GLIFT-BRAVO-3','GLIFT-BRAVO-4'] },
+  rig_42:    { name:'Rig 42',     icon:'🔩', type:'Drilling Operations',  assets:['MUD-RIG42-1','MUD-RIG42-2','MUD-RIG42-3','TOPDRIVE-RIG42-1'] },
 };
 const ASSET_META = {
-  'ESP-ALPHA-1':{label:'ESP-A1',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
-  'ESP-ALPHA-2':{label:'ESP-A2',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
-  'ESP-ALPHA-3':{label:'ESP-A3',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
-  'ESP-ALPHA-4':{label:'ESP-A4',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
-  'ESP-ALPHA-5':{label:'ESP-A5',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
-  'ESP-ALPHA-6':{label:'ESP-A6',site:'pad_alpha',aclass:'esp',type:'Electrical Submersible Pump'},
+  'ESP-ALPHA-1':    {label:'ESP-A1',       site:'pad_alpha',  aclass:'esp',      type:'Electrical Submersible Pump'},
+  'ESP-ALPHA-2':    {label:'ESP-A2',       site:'pad_alpha',  aclass:'esp',      type:'Electrical Submersible Pump'},
+  'ESP-ALPHA-3':    {label:'ESP-A3',       site:'pad_alpha',  aclass:'esp',      type:'Electrical Submersible Pump'},
+  'ESP-ALPHA-4':    {label:'ESP-A4',       site:'pad_alpha',  aclass:'esp',      type:'Electrical Submersible Pump'},
+  'ESP-ALPHA-5':    {label:'ESP-A5',       site:'pad_alpha',  aclass:'esp',      type:'Electrical Submersible Pump'},
+  'ESP-ALPHA-6':    {label:'ESP-A6',       site:'pad_alpha',  aclass:'esp',      type:'Electrical Submersible Pump'},
+  'GLIFT-BRAVO-1':  {label:'GLIFT-B1',     site:'well_bravo', aclass:'gas_lift', type:'Gas Lift Well'},
+  'GLIFT-BRAVO-2':  {label:'GLIFT-B2',     site:'well_bravo', aclass:'gas_lift', type:'Gas Lift Well'},
+  'GLIFT-BRAVO-3':  {label:'GLIFT-B3',     site:'well_bravo', aclass:'gas_lift', type:'Gas Lift Well'},
+  'GLIFT-BRAVO-4':  {label:'GLIFT-B4',     site:'well_bravo', aclass:'gas_lift', type:'Gas Lift Well'},
+  'MUD-RIG42-1':    {label:'MUD-R42-1',    site:'rig_42',     aclass:'mud_pump', type:'Mud Pump'},
+  'MUD-RIG42-2':    {label:'MUD-R42-2',    site:'rig_42',     aclass:'mud_pump', type:'Mud Pump'},
+  'MUD-RIG42-3':    {label:'MUD-R42-3',    site:'rig_42',     aclass:'mud_pump', type:'Mud Pump'},
+  'TOPDRIVE-RIG42-1':{label:'TD-R42-1',   site:'rig_42',     aclass:'top_drive',type:'Top Drive'},
 };
 const FAULT_META = {
-  gas_lock:                   {label:'Gas Lock',                color:'#f44336',desc:'Gas entrainment — pump efficiency degrading',aclass:'esp'},
-  slug_flow:                  {label:'Slug Flow',               color:'#ffb300',desc:'Flowline slugging — surface choke valve backpressure',aclass:'esp'},
-  sand_ingress:               {label:'Sand Ingress',             color:'#f9a825',desc:'Formation sand erodes impeller stages',aclass:'esp'},
-  motor_overheat:             {label:'Motor Over-Temp',          color:'#ff6d00',desc:'Winding temp climbs toward insulation failure',aclass:'esp'},
+  // ESP faults
+  gas_lock:                     {label:'Gas Lock',                    color:'#f44336',desc:'Gas entrainment — pump efficiency degrading',                    aclass:'esp'},
+  slug_flow:                    {label:'Slug Flow',                   color:'#ffb300',desc:'Flowline slugging — surface choke valve backpressure',            aclass:'esp'},
+  sand_ingress:                 {label:'Sand Ingress',                color:'#f9a825',desc:'Formation sand erodes impeller stages',                           aclass:'esp'},
+  motor_overheat:               {label:'Motor Over-Temp',             color:'#ff6d00',desc:'Winding temp climbs toward insulation failure',                   aclass:'esp'},
+  // Gas Lift faults
+  valve_failure:                {label:'GLV Failure',                 color:'#e53935',desc:'Gas lift valve stuck closed — injection gas blocked, well loading',aclass:'gas_lift'},
+  thermal_runaway:              {label:'Thermal Runaway',             color:'#bf360c',desc:'Compression overheating — manifold temperature exceeding limits',  aclass:'gas_lift'},
+  bearing_wear_glift:           {label:'Mandrel Erosion',             color:'#ff8f00',desc:'GLV mandrel erosion — formation sand cutting valve seat',          aclass:'gas_lift'},
+  // Mud Pump faults
+  pulsation_dampener_failure:   {label:'Dampener Failure',            color:'#ad1457',desc:'Bladder failure — pressure spikes exceed liner rating',            aclass:'mud_pump'},
+  valve_washout:                {label:'Valve Washout',               color:'#c62828',desc:'Pump valve seat erosion — fluid bypassing valve, pressure loss',   aclass:'mud_pump'},
+  piston_seal_wear:             {label:'Piston Seal Wear',            color:'#e65100',desc:'Liner wear — stroke efficiency declining, fluid bypass',           aclass:'mud_pump'},
+  // Top Drive faults
+  gearbox_bearing_spalling:     {label:'Gearbox Spalling',            color:'#b71c1c',desc:'Ring gear bearing surface pitting — vibration and torque loss',    aclass:'top_drive'},
+  hydraulic_leak:               {label:'Hydraulic Leak',              color:'#e65100',desc:'Swivel seal failure — hydraulic fluid loss, torque limitation',    aclass:'top_drive'},
 };
 const FAULTS_BY_CLASS = {
   esp:       ['gas_lock','slug_flow','sand_ingress','motor_overheat'],
+  gas_lift:  ['valve_failure','thermal_runaway','bearing_wear_glift'],
+  mud_pump:  ['pulsation_dampener_failure','valve_washout','piston_seal_wear'],
+  top_drive: ['gearbox_bearing_spalling','hydraulic_leak'],
 };
 const SENSOR_LABELS = {
-  esp:       {psi:'Intake Pres. (PSI)',temp:'Winding Temp (°F)',vib:'Vibration (mm/s)',s4:'Motor Current (A)'},
+  esp:       {psi:'Intake Pres. (PSI)',      temp:'Winding Temp (°F)',  vib:'Vibration (mm/s)',          s4:'Motor Current (A)'},
+  gas_lift:  {psi:'Casing Pressure (PSI)',   temp:'Wellhead Temp (°F)', vib:'Valve Vibration (mm/s)',    s4:null},
+  mud_pump:  {psi:'Standpipe Pres. (PSI)',   temp:'Fluid Temp (°F)',    vib:'Pump Vibration (mm/s)',     s4:'Stroke Rate (SPM)'},
+  top_drive: {psi:'Hydraulic Pres. (PSI)',   temp:'Gearbox Temp (°F)',  vib:'Torque Oscillation (mm/s)',s4:null},
 };
 const DEMO_SCENARIOS = [
   {id:'demo_sand_ingress',name:'Sand Ingress — Supply Chain Lead Time',horizon:'Days',assetId:'ESP-ALPHA-2',faultType:'sand_ingress',faultLabel:'Sand Ingress',description:'GDC detects sand production 14 days early. SCADA sees nothing. Lab report & shift notes fused with vibration trend — SAP order must be placed today.',costAvoided:85000,dataFusion:'Lab Report + Shift Notes + Vibration',durationSec:3600},

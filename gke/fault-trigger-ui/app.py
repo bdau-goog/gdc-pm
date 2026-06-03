@@ -4858,9 +4858,34 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     """
     Simulates 15 trials of Bayesian Optimization (Vizier) to find the optimal VFD frequency (Hz).
     Applies the physically and economically grounded cash flow model.
+
+    Fix 15: The Class H insulation temperature burnout threshold is retrieved from AlloyDB
+    pgvector (rag_documents) at call time rather than hardcoded. This means the constraint
+    actually varies based on what the OEM manual says — making the RAG story demonstrably real.
+    Default fallback: 284°F per API RP 11S (Class H polyimide insulation limit).
     """
     import math
-    
+    import re
+
+    # ── Retrieve Class H insulation temperature limit from pgvector (Fix 15) ──
+    # Calls the same RAG pipeline used by the deep-dive intelligence feed.
+    # Searches rag_documents for "motor_overheat esp" content and parses the
+    # temperature limit mentioned in the OEM manual section.
+    burnout_threshold_f = 284.0   # API RP 11S Class H default — used if RAG fails
+    rag_constraint_source = "default (API RP 11S)"
+    try:
+        rag_context, _ = get_rag_context_and_adjusted_rul("ESP-ALPHA-5", "motor_overheat", 60)
+        if rag_context:
+            # Match patterns like "284°F", "270 °F", "284 F", "300°F" in the retrieved text
+            m = re.search(r'(\d{2,3})\s*[°º]?\s*F\b', rag_context)
+            if m:
+                candidate = float(m.group(1))
+                if 200.0 <= candidate <= 380.0:   # physical sanity bounds for motor winding
+                    burnout_threshold_f = candidate
+                    rag_constraint_source = "pgvector (rag_documents)"
+    except Exception as e:
+        log.debug(f"Vizier RAG constraint retrieval skipped (non-fatal): {e}")
+
     # Standard trial frequencies (simulating Bayesian exploration converging toward the sweet spot)
     trial_hz_values = [48.0, 64.0, 52.0, 61.5, 54.5, 59.0, 56.5, 58.0, 57.2, 57.8, 57.5, 57.6, 57.4, 57.7, 57.5]
     
@@ -4880,19 +4905,26 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
         # 4. Power Cost ($/day)
         power_cost = round(0.1 * (hz**3), 1)
         
-        # 5. Economic outcome
-        # If RUL exceeds or meets the contract horizon, we operate safely.
-        # Otherwise, the pump burns out prematurely, stopping production and triggering a $150k CAPEX replacement penalty.
-        if rul_days >= horizon_days:
+        # 5. Burnout check — either RUL exhausted OR temperature exceeds RAG-retrieved limit
+        # This is the key Fix 15 change: the temperature constraint comes from pgvector,
+        # not a hardcoded literal, so it reflects the actual OEM manual retrieved at runtime.
+        is_temp_burnout = temp_f >= burnout_threshold_f
+        is_failure = (rul_days < horizon_days) or is_temp_burnout
+
+        # 6. Economic outcome
+        if not is_failure:
             revenue = oil_price * flow_rate * horizon_days
             operating_cost = power_cost * horizon_days
             failure_capex = 0.0
             prod_days = horizon_days
         else:
-            revenue = oil_price * flow_rate * rul_days
-            operating_cost = power_cost * rul_days
+            prod_days = rul_days if not is_temp_burnout else round(
+                # Estimate days until temp threshold is reached (linear approx)
+                max(1.0, rul_days * 0.6), 1
+            )
+            revenue = oil_price * flow_rate * prod_days
+            operating_cost = power_cost * prod_days
             failure_capex = 150000.0
-            prod_days = rul_days
             
         net_cash_flow = round(revenue - operating_cost - failure_capex, 1)
         

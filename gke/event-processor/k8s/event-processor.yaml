@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: event-processor
-          image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/event-processor:latest
+          image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/event-processor@sha256:c63678dd5aec44569f3419f0cc3d2f96d9e93a5501cab0da929e1eaa635d3d83
           env:
             - name: RABBITMQ_HOST
               valueFrom:
@@ -70,6 +70,8 @@ spec:
               value: "rag"
             - name: GCP_PROJECT
               value: "gdc-pm"
+            - name: OLLAMA_MODEL
+              value: "gemma4:31b"
           resources:
             requests:
               cpu: "100m"
