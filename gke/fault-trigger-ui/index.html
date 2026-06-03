@@ -9,10 +9,10 @@
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <style>
     :root {
-      --bg:#0b0c10; --surf:#0f1318; --surf2:#141b22; --surf3:#1a2330;
-      --border:#1e2a38; --border2:#2a3a50;
-      --text:#e0e0e0; --text2:#a0b0c0; --muted:#5a6a7a;
-      --green:#00e676; --yellow:#ffb300; --orange:#ff6d00; --red:#f44336; --blue:#1e90ff;
+      --bg:#0f172a; --surf:#1e293b; --surf2:#253347; --surf3:#2d3f56;
+      --border:rgba(148,163,184,0.12); --border2:rgba(148,163,184,0.22);
+      --text:#e2e8f0; --text2:#94a3b8; --muted:#475569;
+      --green:#4ade80; --yellow:#fbbf24; --orange:#fb923c; --red:#f87171; --blue:#38bdf8;
       /* Muted Google Material palette (dark-mode calibrated) — used for financial data */
       --g-blue:#8ab4f8;    /* Google Blue — actions, links */
       --g-green:#81c995;   /* Google Green — positive outcomes (muted) */
@@ -661,6 +661,11 @@
     .h3-main-body { display: flex; gap: 16px; flex: 1; min-height: 0; }
     .h3-chart-pane { flex: 1.3; background: var(--surf); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; padding: 12px; }
     .h3-trials-pane { flex: 1; background: var(--surf); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; padding: 12px; }
+    .h1-splitter { width: 5px; cursor: col-resize; flex-shrink: 0; border-radius: 3px; background: var(--border); transition: background 0.15s; align-self: stretch; }
+    .h1-splitter:hover, .h1-splitter.dragging { background: var(--blue); opacity: 0.7; }
+    .h1-stab { padding: 4px 10px; font-size: 0.63rem; font-weight: 600; cursor: pointer; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap; display: flex; align-items: center; }
+    .h1-stab:hover { color: var(--text2); }
+    .h1-stab.active { color: var(--blue); border-bottom-color: var(--blue); }
     
     .h3-slider-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 20px; background: var(--surf); border: 1px solid var(--border); padding: 14px 20px; border-radius: 8px; }
     .h3-slider-container { display: flex; flex-direction: column; }
@@ -1062,9 +1067,9 @@
                   <tr><td>Detection</td><td>Single-threshold alarm when PIP &lt; 180 PSI</td><td>Multivariate XGBoost slope correlation</td></tr>
                   <tr><td>Timing</td><td>~5 min before lockup</td><td class="pp-em">25 min advance notice</td></tr>
                   <tr><td>Action</td><td>Emergency shut-in + pump pull evaluation</td><td>VFD reduction 52Hz → 44Hz via SCADA</td></tr>
-                  <tr><td>Capital</td><td class="pp-danger">$150,000 pump replacement</td><td>$2,500 VFD software command</td></tr>
+                  <tr><td>Capital</td><td class="pp-danger">$150,000 pump replacement</td><td>$0 — remote SCADA command</td></tr>
                   <tr><td>Downtime</td><td class="pp-danger">5–7 days (pull + replace)</td><td class="pp-em">Zero downtime</td></tr>
-                  <tr><td>Net avoided</td><td>—</td><td class="pp-em">$147,500</td></tr>
+                  <tr><td>Net avoided</td><td>—</td><td class="pp-em">$150,000</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1091,43 +1096,54 @@
             <div class="h3-card-row"><span>Health Score:</span><span class="h3-card-val">{{ h1HealthScore || '—' }}</span></div>
             <div class="h3-card-row"><span>Motor Amps Trend:</span><span class="h3-card-val" style="color:var(--orange)">{{ h1Injected ? '−2.3A/min ↓' : '—' }}</span></div>
             <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.07em">⚡ GDC Assessment</span>
-              <span class="h3-card-cash">{{ h1Injected ? 'INTERVENE NOW' : 'Monitoring…' }}</span>
-              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">{{ h1Injected ? 'PNR in ~25 min — act immediately' : 'Inject fault to run scenario' }}</span>
+              <span style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em" :style="{color: h1Recovering ? 'var(--green)' : h1Injected ? 'var(--orange)' : 'var(--muted)'}">⚡ GDC Assessment</span>
+              <span class="h3-card-cash" :style="{color: h1Recovering ? 'var(--green)' : (h1Injected && !h1Resolved) ? 'var(--orange)' : 'var(--blue)'}">{{ h1Recovering ? 'Recovering' : h1Resolved ? 'Resolved' : h1Injected ? 'Intervention Needed' : 'Monitoring…' }}</span>
+              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">{{ h1Recovering ? 'Wellbore clearing — sensors normalising' : h1Resolved ? 'VFD at 2,640 RPM — gas void migrated' : h1Injected ? 'GVF >70% · 25 min AI lead time over SCADA' : 'Inject fault to run scenario' }}</span>
             </div>
           </div>
           <div class="h3-card" style="border-color:rgba(0,230,118,0.3)">
             <div class="h3-card-title">💰 Financial Impact</div>
             <div class="h3-card-row"><span>Well pull if ignored:</span><span class="h3-card-val" style="color:var(--red)">$150,000</span></div>
-            <div class="h3-card-row"><span>VFD adjustment cost:</span><span class="h3-card-val" style="color:var(--green)">$2,500</span></div>
-            <div class="h3-card-row"><span>Intervention window:</span><span class="h3-card-val" style="color:var(--orange)">25 min</span></div>
+            <div class="h3-card-row"><span>VFD SCADA command:</span><span class="h3-card-val" style="color:var(--green)">$0 (remote)</span></div>
+            <div class="h3-card-row"><span>Expected reactive loss:</span><span class="h3-card-val" style="color:var(--yellow)">~$97,500</span></div>
             <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--g-green);text-transform:uppercase;letter-spacing:0.07em">Net Savings</span>
-              <span class="h3-card-cash" style="color:var(--g-green)">$147,500</span>
+              <span style="font-size:0.62rem;font-weight:700;color:var(--g-green);text-transform:uppercase;letter-spacing:0.07em">Capital Preserved</span>
+              <span class="h3-card-cash" style="color:var(--g-green)">$150,000</span>
             </div>
           </div>
         </div>
         <!-- Live Chart + Intelligence Feed side by side -->
         <div class="h3-main-body">
-          <div class="h3-chart-pane">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ GDC AI Forecast Chart — ESP-ALPHA-1</div>
-            <div id="h1-gdc-chart" style="height:300px"></div>
-            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
-              <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">📊 SCADA Chart (Historical Only)</div>
-              <div id="h1-scada-chart" style="height:200px"></div>
+          <div class="h3-chart-pane" :style="{flex: h1SplitPercent + ' 1 0%'}">
+            <!-- H1 Sensor tab bar -->
+            <div style="display:flex;align-items:stretch;flex-shrink:0;margin:-12px -12px 10px;padding:0 6px;height:28px;background:var(--surf2);border-bottom:1px solid var(--border);border-radius:8px 8px 0 0">
+              <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP Pressure</span>
+              <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Motor Amps</span>
+              <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Winding Temp</span>
+              <span style="margin-left:auto;font-size:0.58rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:4px;opacity:0.8">⚡ GDC Forecast</span>
             </div>
-            <!-- Action Approval Button -->
-            <div v-if="h1Injected && !h1Resolved" style="margin-top:16px;padding:14px;background:rgba(255,109,0,0.06);border:2px solid rgba(255,109,0,0.4);border-radius:8px">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--orange);margin-bottom:6px">⚡ Recommended Action: Reduce VFD Frequency 15%</div>
-              <div style="font-size:0.7rem;color:var(--text2);margin-bottom:10px">Reduce VFD from 52 Hz → 44 Hz via SCADA to allow gas void to migrate up the casing annulus and clear the pump intake. GDC has autonomously calculated the safe setpoint.</div>
-              <button @click="approveH1VFD" style="padding:9px 20px;border-radius:6px;border:none;background:linear-gradient(135deg,#1b5e20,#2e7d32);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer">✔ Approve Autonomous VFD Tuning — Save $147,500</button>
+            <div id="h1-gdc-chart" style="height:270px"></div>
+            <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
+              <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px">📊 SCADA — No Alarm Triggered</div>
+              <div id="h1-scada-chart" style="height:150px"></div>
             </div>
-            <div v-if="h1Resolved" style="margin-top:16px;padding:14px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:8px">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ Gas Lock Resolved — VFD Tuned Successfully</div>
-              <div style="font-size:0.7rem;color:var(--text2)">VFD reduced to 44 Hz. Gas void migrated up annulus. PIP recovering. Motor stabilized. $147,500 capital preserved.</div>
+            <!-- Action / Status Panel -->
+            <div v-if="h1Injected && !h1Resolved && !h1Recovering" style="margin-top:10px;padding:10px 12px;background:rgba(251,146,60,0.05);border:1px solid rgba(251,146,60,0.28);border-radius:7px">
+              <div style="font-size:0.72rem;font-weight:700;color:var(--orange);margin-bottom:3px">⚡ Recommended: VFD Speed-Down — 52 Hz → 44 Hz (3,120 → 2,640 RPM)</div>
+              <div style="font-size:0.66rem;color:var(--text2);margin-bottom:8px">Remote SCADA command · $0 direct cost · Raises PIP by reducing gas entrainment rate · GDC has 25 min lead time vs SCADA's ~5 min</div>
+              <button @click="approveH1VFD" style="padding:6px 14px;border-radius:5px;border:none;background:linear-gradient(135deg,#166534,#15803d);color:#fff;font-size:0.7rem;font-weight:700;cursor:pointer">✔ Execute VFD Command — Avoid $150k Pump Replacement</button>
+            </div>
+            <div v-if="h1Recovering" style="margin-top:10px;padding:9px 12px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.22);border-radius:7px">
+              <div style="font-size:0.72rem;font-weight:700;color:var(--green);margin-bottom:3px">↗ Wellbore Recovering — Monitoring Live Telemetry</div>
+              <div style="font-size:0.66rem;color:var(--text2)">VFD at 44 Hz / 2,640 RPM. Gas void migrating up annulus. PIP and Amps trending back to nominal. Chart updates in real-time.</div>
+            </div>
+            <div v-if="h1Resolved && !h1Recovering" style="margin-top:10px;padding:9px 12px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:7px">
+              <div style="font-size:0.72rem;font-weight:700;color:var(--green);margin-bottom:3px">✅ Gas Lock Resolved — ESP-ALPHA-1 Nominal</div>
+              <div style="font-size:0.66rem;color:var(--text2)">PIP restored. Motor stable. Production resumed. Expected reactive cost avoided: ~$97,500 (65% burnout risk on SCADA-only response). Direct intervention cost: $0.</div>
             </div>
           </div>
-          <div class="h3-trials-pane" style="overflow-y:auto">
+          <div class="h1-splitter" :class="{dragging:h1Dragging}" @mousedown="initH1Resize"></div>
+          <div class="h3-trials-pane" :style="{flex: (100-h1SplitPercent) + ' 1 0%', overflowY:'auto'}">
             <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">📄 RAG Context & Field Intelligence</div>
             <div v-for="item in h1FeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
               <div class="fi-top">
@@ -2544,6 +2560,11 @@ createApp({
       h1HealthScore: null,
       h1FeedItems: [],
       h1GemmaFinding: '',
+      h1ForecastData: null,
+      h1ActiveSensor: 'psi',
+      h1Recovering: false,
+      h1Dragging: false,
+      h1SplitPercent: 60,
       h1DegPollTimer: null,
       
       // Horizon 2 State
@@ -3372,7 +3393,7 @@ createApp({
       if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
       if (this.h2DegPollTimer) { clearInterval(this.h2DegPollTimer); this.h2DegPollTimer = null; }
       // Restart polling if returning to an active, unresolved horizon scenario
-      if (tab === 'horizon1' && this.h1Injected && !this.h1Resolved) {
+      if (tab === 'horizon1' && this.h1Injected && (!this.h1Resolved || this.h1Recovering)) {
         this.h1DegPollTimer = setInterval(async()=>{
           const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
           if(r.ok){const d=await r.json(); if(d.is_active){
@@ -3383,7 +3404,7 @@ createApp({
             if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
           }}
           const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
-          if(rfd.ok){const d=await rfd.json();if(d.sensors){this._renderH1Charts(d);}}
+          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1Charts(d);}}
         }, 5000);
       }
       if (tab === 'horizon2' && this.h2Injected && !this.h2Resolved) {
@@ -3422,6 +3443,7 @@ createApp({
           }}
           const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
           if(rfd.ok){const d=await rfd.json();if(d.sensors){
+            this.h1ForecastData=d;
             this._renderH1Charts(d);
           }}
         }, 5000);
@@ -3430,32 +3452,64 @@ createApp({
     async resetHorizon1() {
       if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer=null; }
       try { await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}); } catch{}
-      this.h1Injected=false; this.h1Resolved=false;
+      this.h1Injected=false; this.h1Resolved=false; this.h1Recovering=false;
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
       this.h1FeedItems=[]; this.h1GemmaFinding='';
+      this.h1ForecastData=null; this.h1ActiveSensor='psi'; this.h1SplitPercent=60;
       try { Plotly.purge('h1-gdc-chart'); Plotly.purge('h1-scada-chart'); } catch{}
       this.showToast('↺ Horizon 1 reset','var(--green)');
     },
     async approveH1VFD() {
       this.h1Resolved = true;
-      if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer=null; }
+      this.h1Recovering = true;
+      this.showToast('↗ VFD command sent — monitoring wellbore recovery. $150k pump replacement avoided.','var(--green)');
+      // Keep polling timer alive — chart shows live recovery trend for 2 min, then auto-stops
+      setTimeout(() => {
+        this.h1Recovering = false;
+        if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
+      }, 120000);
       try {
         await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({asset_id:'ESP-ALPHA-1',fault_type:'gas_lock',action_taken:'VFD reduced to 44Hz via SCADA — gas void migrating up annulus',cost_incurred:2500})});
-        this.showToast('✅ VFD Tuned — Gas Lock Resolved. $147,500 saved.','var(--green)');
-        await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}).catch(()=>{});
+          body:JSON.stringify({asset_id:'ESP-ALPHA-1',fault_type:'gas_lock',action_taken:'VFD reduced to 44 Hz (2,640 RPM) via SCADA — gas void migrating up annulus',cost_incurred:0})});
       } catch(e) {}
     },
     _renderH1Charts(d) {
-      const s=d.sensors?.psi; if(!s) return;
-      const darkLayout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e2a38'},yaxis:{gridcolor:'#1e2a38'}};
+      const sensor = this.h1ActiveSensor || 'psi';
+      const s = d.sensors?.[sensor] || d.sensors?.psi; if(!s) return;
+      const darkLayout={paper_bgcolor:'#0f172a',plot_bgcolor:'#131d2e',font:{color:'#94a3b8',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e293b'},yaxis:{gridcolor:'#1e293b'}};
       const gdcEl=document.getElementById('h1-gdc-chart');
       if(gdcEl) { Plotly.react(gdcEl, s.traces, {...darkLayout,...(s.layout||{})}, {displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(gdcEl,s.traces,darkLayout,{displayModeBar:false,responsive:true})); }
       const scadaEl=document.getElementById('h1-scada-chart');
       if(scadaEl && s.traces?.length>0) {
         const histTraces=[{...s.traces[0]}];
-        Plotly.react(scadaEl, histTraces, {...darkLayout, title:{text:'SCADA View — No Alarm Triggered',font:{color:'var(--green)',size:11}}}, {displayModeBar:false,responsive:true}).catch(()=>{});
+        Plotly.react(scadaEl, histTraces, {...darkLayout, title:{text:'SCADA — No Alarm Triggered',font:{color:'#4ade80',size:10}}}, {displayModeBar:false,responsive:true}).catch(()=>{});
       }
+    },
+    setH1Sensor(sensor) {
+      this.h1ActiveSensor = sensor;
+      if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);
+    },
+    initH1Resize(e) {
+      this.h1Dragging = true;
+      const startX = e.clientX;
+      const startPct = this.h1SplitPercent;
+      const container = e.target.closest('.h3-main-body');
+      const onMove = (ev) => {
+        if (!container) return;
+        const pct = startPct + ((ev.clientX - startX) / container.offsetWidth * 100);
+        this.h1SplitPercent = Math.min(80, Math.max(20, pct));
+        this.$nextTick(() => {
+          try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
+          try { Plotly.Plots.resize(document.getElementById('h1-scada-chart')); } catch(err) {}
+        });
+      };
+      const onUp = () => {
+        this.h1Dragging = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
     },
     
     // ── Horizon 2: Slug Flow ──
