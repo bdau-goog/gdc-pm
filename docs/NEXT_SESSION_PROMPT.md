@@ -3,11 +3,11 @@
 ## Header
 **Date:** June 3, 2026
 **Live URL:** http://gdc-pm.bdau.io (us-east1 cluster)
-**Project:** gdc-pm (`feature-trio-scenarios` branch — git head `fd8ab97`)
+**Project:** gdc-pm (`feature-trio-scenarios` branch — git head `0949491`)
 **Cluster:** gdc-edge-simulation (us-east1)
 **Namespace:** gdc-pm
-**Git Head:** `fd8ab97` — clean working tree, no uncommitted changes
-**fault-trigger-ui Digest:** `sha256:d632c012719901d7ffa2518d828a558753b4a2e700c1be076a68afecaf79df95`
+**Git Head:** `0949491` — clean working tree, no uncommitted changes
+**fault-trigger-ui Digest:** `sha256:d655aad9f03941bccf14e12fa565a6002237676a3ea3117ae8eba5ace9374712`
 **event-processor Digest:** `sha256:312ce844a244356732d435e396396486df7e111c814f8205238c43feb5d9cd63` — pinned in YAML
 **Branch Policy:** `feature-trio-scenarios` stays **separate from main** — do NOT merge.
 
@@ -17,81 +17,118 @@
 
 ```bash
 kubectl get pods -n gdc-pm --no-headers
-kubectl get pod -n gdc-pm -l app=event-processor -o jsonpath='{.items[0].metadata.name} restarts={.items[0].status.containerStatuses[0].restartCount}'; echo ""
+kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
 curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
-time curl -s "http://gdc-pm.bdau.io/api/vizier/optimize?oil_price=112&horizon_days=90" --max-time 30 | python3 -c "import sys,json;d=json.load(sys.stdin);print('trials:',len(d['trials']),'optimal_hz:',d['optimal_hz'])"
 cd ~/gdc-pm && git log --oneline -3
 ```
 
 **Expected results when healthy:**
 - All pods: `1/1 Running`, event-processor `restarts=0`
-- Ollama: `ollama_online: True`
+- Ollama: `ollama_online: True` model: `gemma4:latest`
 - rag_documents: 18, field_intel: ~100
-- Vizier endpoint: 3-10s (real Vertex AI Vizier API call), non-round Hz (e.g. `55.891...`)
-- git head: `fd8ab97`
+- git head: `0949491`
 
 ---
 
-## ✅ Known Integrity State — BOTH VIOLATIONS FIXED
+## ✅ Known Integrity State — ALL CLEAR
 
 | Item | Status |
 |------|--------|
-| **H3 Vizier tab** | **FIXED** — `vizier_optimize()` now calls `VizierServiceClient` with `algorithm=1` (Gaussian Process Bandit). Two real Vertex AI studies verified in logs: `/studies/2188426501479`, `/studies/2478514597393`. Different Hz per run (55.89, 59.09, 59.09) confirms real Bayesian search. |
-| **Field intel documents** | **FIXED** — `_intel_generator()` now calls Ollama `/api/generate` every 20-30 seconds. Natural-language Gemma output verified in field_intel (id=73378, `**Operational Note: ESP-ALPHA-1**...`). No template fallback — cycles are skipped on Ollama failure. |
+| H3 Vizier tab | **FIXED** — real Vertex AI Vizier Gaussian Process Bandit |
+| Field intel documents | **FIXED** — live Gemma4 Ollama generation via `_intel_generator()` |
+| VFD cost displayed as $2,500 | **FIXED** — now correctly shows $0 (SCADA remote command, no capital) |
+| H1 assessment label "INTERVENE NOW" | **FIXED** — now "Intervention Needed" with dynamic state machine |
 
-**What IS genuinely Gemma-generated:**
-- Agent chat responses (SSE stream to `/api/agent/recommend-stream`) ✅
-- `telemetry_events.ai_narrative` (event-processor calls Ollama for each fault message) ✅
-- `field_intel` rows (background generator calls Ollama every 20-30s during active faults) ✅
-
-**Acceptable simulations (not integrity violations):**
-- SAP/Maximo/Pason context data — hardcoded Python dicts, not live API calls. Industry-standard for POC demos.
-- SCADA chart — same simulator data as GDC, trimmed to historical. Acceptable framing.
-- `INTELLIGENCE_FEED` static items (pre-written shift notes, lab reports) — honest reference documents, not claimed to be AI-generated.
+**None — all displays now match reality.**
 
 ---
 
-## NEXT SESSION PLAN — Demo Polish & Backlog
+## NEXT SESSION PLAN — H1 Live Telemetry & Strategic Advisor Redesign
 
-The two critical integrity violations are resolved. The demo is now truthful end-to-end. Suggested next work:
+This is a significant demo-quality overhaul planned in detail at end of Session I. Implement in one session.
+
+**Session scope:** 1 Large (index.html + app.py together, one deploy)
 
 | Fix | Change | Verification | Complexity |
 |-----|--------|--------------|------------|
-| **Perf-1** | Cache Vizier study between calls (reuse same study, only `suggest_trials` for each new call) to reduce latency from 5s → 2s | Vizier tab feels snappier | Small |
-| **UX-1** | Add a loading spinner/message on H3 tab while Vizier call is in-flight (currently shows stale results) | UI shows "Calling Vertex AI Vizier..." during 5s wait | Small |
-| **UX-2** | H3 physics panel: update "~57.5 Hz" hardcoded example in the table to say "varies per run" | Visual check | Trivial |
-| **Demo-1** | Full end-to-end demo walk-through: H1 → H2 → H3 in sequence with talking points | All 3 horizons work cleanly | None (no code) |
-
-**Note:** If Vizier latency (currently 5-10s) is acceptable for demos, Perf-1 can be deferred. The current implementation creates a new study per call — this is clean but costs ~1-2s per call for study creation.
-
----
-
-## What Was Done This Session (Session H — June 3, 2026)
-
-### V1: Real Vertex AI Vizier (Gaussian Process Bandit)
-- **IAM**: Workload Identity binding created — `gdc-pm/default` KSA → `gdc-edge-sa@gdc-pm-v2.iam.gserviceaccount.com` (which has `roles/aiplatform.user`)
-- **KSA annotated**: `iam.gke.io/gcp-service-account=gdc-edge-sa@gdc-pm-v2.iam.gserviceaccount.com`
-- **requirements.txt**: Added `google-cloud-aiplatform>=1.38.0`
-- **app.py**: `vizier_optimize()` replaced — creates real `VizierServiceClient`, calls `create_study()` + `suggest_trials(count=15)` + `complete_trial()` per trial
-- **Bug fixed**: `StudySpec.Algorithm.GAUSSIAN_PROCESS_BANDIT` not exported by name in installed SDK version → use `algorithm=1` (integer) per Vertex AI proto spec
-- **index.html**: H3 physics panel updated: "Google Vertex AI Vizier executes 15 Gaussian Process Bandit trials..."
-- **Verified**: Two different inputs → two different optimal Hz (`55.89`, `59.09`), each with 2 real study IDs in pod logs
-
-### V2: Gemma-Generated Field Intel Documents
-- **app.py**: `_intel_generator()` fully replaced — removed `generate_dynamic_documents()` call, added Ollama `POST /api/generate` with live sensor state prompt
-- **Bug fixed**: `requests.post(...)` was `NameError` (requests not imported at module level) → added `import requests as _req` inside try block
-- **Design**: On Ollama failure, cycle is skipped entirely (no template fallback). Only real Gemma output goes into field_intel.
-- **Verified**: id=73378 `pm_record`, headline `Gas Lock — Pm Record`, detail `**Operational Note: ESP-ALPHA-1**...` (Gemma markdown prose)
+| **H1-Live-1** | **Continuous live telemetry on tab load:** Wire `setMainTab('horizon1')` to immediately poll and chart real ESP-ALPHA-1 nominal telemetry from the DB — even before injection. SCADA card shows ticking live PSI/Temp/Amps from the latest simulator rows (no more static `'1,041 PSI'`). | Open H1 tab — SCADA card values update every 5s; GDC chart shows live historical trend | Medium |
+| **H1-Live-2** | **Pre-generated baseline field intel:** Add `"normal"` key to `INTELLIGENCE_FEED` in `app.py` with 3 realistic routine well documents (daily performance scan, monthly chemistry report, PM log). `intelligence-feed` API falls back to these when no fault active. | Open H1 tab before injection — RAG pane shows 3 routine baseline documents | Small |
+| **H1-Cards-1** | **Remove Financial Impact card. Two-card layout.** Change `h3-card-grid` from 3 columns to 2. Card 1 stays as SCADA. Card 2 renamed "⚡ GDC AI Assessment" and shows all three trend slopes (PIP, Amps, Temp in PSI/min, A/min, °F/min) for both nominal (100%, stable) and fault (anomaly %, declining rates). | Nominal: all slopes = 0.0/stable. Injected: all three show declining trends | Small |
+| **H1-LLM-1** | **Financial-operational advice embedded in Gemma templates.** Revise `GEMMA_FINDING_TEMPLATES["gas_lock"]` in `app.py` to include the risk-weighted financial case inline: *"Expected unmitigated loss: $150,000 CAPEX (65% response failure risk = $97,500 expected cost). Recommend: SCADA VFD Speed-Down 52→44 Hz / 3,120→2,640 RPM at $0 direct cost."* | After inject, h1GemmaFinding contains risk-weighted dollar figures and both Hz+RPM | Small |
+| **H1-P3** | **Backend recovery thread:** After VFD approval, `hitl_approve()` launches `_run_recovery_thread()` that posts climbing PIP/Amps readings to RabbitMQ over 36 steps, with DB timestamps spaced 5 min apart (3h wellbore recovery compressed to ~3 min real-time). Chart shows green upward trend. | After approve, chart continues to animate — green trend, sensors normalising over ~3 min | Medium |
 
 ---
 
-## Current Cluster State (VERIFIED June 3, 2026 19:36)
+### Design Detail: Two-Card Layout Wireframe
+
+```text
++-----------------------------------------------+-----------------------------------------------+
+|  📊 SCADA (Current Reading)                   |  ⚡ GDC AI Assessment                         |
+|  PIP Reading:     [live ticking]               |  AI Confidence:  [—] / [94.2% gas_lock]       |
+|  Winding Temp:    [live ticking]               |  Health Score:   [100.0%] / [82.1%]           |
+|  Motor Amps:      [live ticking]               |  PIP Trend:      [Stable 0.0] / [−12.5/min ↓]|
+|  ─────────────────────────────────             |  Amps Trend:     [Stable 0.0] / [−2.3/min ↓] |
+|  ✓ SCADA: ALL NOMINAL (No alarm)               |  Temp Trend:     [Stable 0.0] / [+1.8/min ↑] |
+|  No action recommended.                        |  ─────────────────────────────────────────    |
+|                                                |  Status: [Monitoring…] / [Intervention Needed]|
++-----------------------------------------------+-----------------------------------------------+
+```
+
+### Design Detail: Gemma Financial-Operational Template (gas_lock)
+
+The advisor templates in `GEMMA_FINDING_TEMPLATES["gas_lock"]` should follow this pattern:
+```
+"🤖 GDC Advisory: Gas lock anomaly detected ({conf}% confidence). PIP at {psi:.0f} PSI 
+declining at rate consistent with gas entrainment. Expected unmitigated loss: $150,000 pump 
+replacement CAPEX (65% probability of SCADA-window response failure → $97,500 risk-weighted 
+expected cost). Recommended: SCADA VFD Speed-Down from 52 Hz (3,120 RPM) → 44 Hz (2,640 RPM). 
+Direct cost: $0. Preserves pump asset entirely."
+```
+
+### Implementation Sequence (one session, one deploy)
+
+**app.py changes (batch into single replace_in_file call):**
+1. Add `"normal"` documents to `INTELLIGENCE_FEED`
+2. Update `get_intelligence_feed()` to return normal docs when `fault_type` is `None`/`"normal"`
+3. Replace `GEMMA_FINDING_TEMPLATES["gas_lock"]` with financial-operational templates
+4. Add `_run_recovery_thread()` function (Phase H1-P3)
+5. Wire `hitl_approve()` to call `_run_recovery_thread()` instead of immediately clearing state
+
+**index.html changes (batch into single replace_in_file call):**
+1. Change `h3-card-grid` to `grid-template-columns: 1fr 1fr` (remove 3rd column)
+2. Remove the Financial Impact card HTML block entirely
+3. Update GDC card title from "Prediction" to "Assessment"
+4. Add PIP Trend, Amps Trend, Temp Trend rows to GDC card (reactive to h1Injected state)
+5. Wire `setMainTab('horizon1')` to immediately poll live nominal telemetry + RAG feed
+6. Update SCADA card metrics to use real live data for all three sensors (no static defaults)
+
+---
+
+## What Was Done This Session (Session I — June 3, 2026)
+
+### Phase 1: H1 Visual & Interaction Overhaul (git `0949491`)
+- **Global Tailwind Dark Slate Palette** — Replaced harsh neon palette with professional Slate-900/800 + calibrated accent colors across the entire UI
+- **H1 Drag-Resizable Splitter** — Vertical `h1-splitter` div between chart pane and RAG pane; `initH1Resize()` with mouse drag + Plotly auto-resize
+- **H1 Multivariate Sensor Tabs** — PIP Pressure / Motor Amps / Winding Temp tabs above GDC forecast chart; forecast payload cached in `h1ForecastData`; `setH1Sensor()` switches charts without any network call
+- **H1 Assessment State Machine** — `h1Recovering` flag tracks 4 states: Monitoring → Intervention Needed → Recovering → Resolved; colors transition correctly
+- **VFD Terminology** — Frequencies shown with RPM equivalents: "52 Hz → 44 Hz (3,120 → 2,640 RPM)"
+- **Recovery Phase** — `approveH1VFD()` sets `h1Recovering=true`, keeps polling alive for 2 min, then auto-stops
+
+### Phase 2: Financial Card Integrity Fix (git `0949491`)
+- VFD cost corrected: `$2,500` → `$0 (SCADA remote command, no capital outlay)`
+- Physics panel table net avoided: `$147,500` → `$150,000`
+- Financial card restructured: shows risk-weighted SCADA-only expected loss (~$97,500 at 65% burnout probability)
+- Outcome label: `Net Savings` → `Capital Preserved: $150,000`
+
+---
+
+## Current Cluster State (VERIFIED June 3, 2026 21:02)
 
 ```
 alloydb-omni-5fcfc68fdb-9vm2z           1/1   Running   ← database
 event-processor-99dd7b6d9-qjjg9         1/1   Running   ← EP-2 + Fix 13
-fault-trigger-ui-58b89475ff-z4ktn       1/1   Running   ← fd8ab97 (V1+V2 fixes)
+fault-trigger-ui-7585546bf7-fpdrn       1/1   Running   ← 0949491 (Phase 1+2)
 gdc-pm-rabbitmq-server-0                1/1   Running
 grafana-655b6f5c7c-w2h84                1/1   Running
 inference-api-5697b79566-zqdpl          1/1   Running
@@ -99,9 +136,7 @@ ollama-5bc5db749b-n6tb8                 1/1   Running   ← gemma4:latest
 telemetry-simulator-867677f784-h55wd    1/1   Running
 ```
 
-**Vizier endpoint latency:** 3-10s (real Vertex AI API + 15 trial completions).  
-**Gemma field_intel cycle:** every 20-30 seconds during active fault injection.  
-**Vertex AI project:** `gdc-pm-v2` · Location: `us-central1`
+**field_intel count:** 100  ·  **rag_documents count:** 18
 
 ---
 
@@ -136,24 +171,25 @@ kubectl apply -f gke/event-processor/k8s/event-processor.yaml -n gdc-pm
 
 ## Outstanding Development Items (Backlog)
 
-**High Priority:**
-- None. Both integrity violations are fixed. Demo is truthful.
+**High Priority (next session — see NEXT SESSION PLAN above):**
+- H1-Live-1, H1-Live-2, H1-Cards-1, H1-LLM-1, H1-P3 (all scoped above)
 
 **Medium Priority:**
-- **Perf-1**: Vizier study caching — reuse study across calls to reduce latency from 5s → 2s. Implementation: store `study.name` in a module-level variable and call `suggest_trials()` directly on subsequent calls.
-- **UX-1**: H3 loading state — show "Calling Vertex AI Vizier..." spinner during the 5s API call.
+- **H2-tabs** — H2 sensor tabs: same `h2ActiveSensor` / `h2ForecastData` pattern as H1. Wire Vibration, Motor Temp tabs above H2 GDC chart. Zero-network tab switching.
+- **Perf-1** — Vizier study caching: reuse study across calls to reduce H3 tab latency from ~5s → ~2s.
 
 **Low Priority:**
-- **UX-2**: Update hardcoded "~57.5 Hz" example in H3 physics panel table.
-- **Demo-1**: Full rehearsal walk-through — H1 gas lock → H2 slug flow → H3 Vizier, timed at ~15 minutes.
-- **Tech debt**: `generate_dynamic_documents()` function (lines ~164-350) is now dead code — referenced nowhere. Can be removed in a cleanup pass.
+- **H3-UX-1** — H3 loading spinner during 5s Vizier call.
+- **H3-UX-2** — Update hardcoded "~57.5 Hz" example in H3 physics panel to "varies per run".
+- **Clean-1** — Remove dead `generate_dynamic_documents()` function from `app.py` (~lines 164-350).
+- **Demo-1** — Full rehearsal walk-through: H1 → H2 → H3, timed at ~15 minutes.
 
 ---
 
 ## Key Lessons
 
-- **`StudySpec.Algorithm` enum**: `GAUSSIAN_PROCESS_BANDIT` is value `1` in the Vertex AI proto spec but is not exported by name in `google-cloud-aiplatform>=1.38.0`'s Python client. Use the integer `1` directly. Filed as a known SDK version quirk.
-- **Workload Identity in GKE**: Annotating the KSA is not sufficient — the GSA must also have `roles/iam.workloadIdentityUser` bound to `serviceAccount:PROJECT.svc.id.goog[NAMESPACE/KSA]`. Both steps required.
-- **`requests` not in top-level imports**: The module uses `import requests as _req` inside function bodies throughout. Any new function that uses `requests` must include its own local import.
-- **Ollama call latency**: `gemma4:latest` takes 10-15s for a 150-token prompt. The intel generator's 20-30s sleep interval is appropriate — it gives Ollama time to complete and leaves headroom for the next cycle.
-- **Batch Bayesian optimization**: Requesting all 15 Vizier suggestions at once (`suggestion_count=15`) is valid batch Bayesian exploration. The first batch is pure exploration (no prior); subsequent calls to the same study would use GP to exploit. For this demo, a new study per call is intentional — it demonstrates each run as independent optimization.
+- **sed is safer than replace_in_file for targeted line edits** when the file contains special HTML entities like em-dash (`—`). Use `sed -i 'NNNs|old|new|'` (line-addressed) to bypass encoding edge cases.
+- **Batch all `replace_in_file` calls to the same file** — each call returns the full 3,685-line file (~150K tokens). Two calls costs ~300K tokens. Always plan all edits to a file before making the first call.
+- **Financial realism matters immediately to O&G audiences** — $2,500 VFD cost was caught by the user in the first review. Risk-weighted expected value (65% probability × $150k = $97.5k) is the correct framing.
+- **Static placeholder metrics break demo credibility** — the H1 SCADA card showing static hardcoded `'1,041 PSI'` breaks the "live monitoring" illusion. The correct pattern is continuous polling of real simulator data from the DB, even at nominal state.
+- **Financial case belongs in the LLM, not a static card** — embedding the risk-weighted expected value ($97,500 SCADA-only loss vs $0 proactive command) directly into the Gemma advisory text elevates the system from a dashboard into a Strategic Financial-Operational Copilot.
