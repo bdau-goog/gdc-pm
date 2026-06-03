@@ -1078,12 +1078,12 @@
       </div>
       <div class="h3-dashboard">
         <!-- SCADA vs GDC value cards -->
-        <div class="h3-card-grid">
+        <div class="h3-card-grid" style="grid-template-columns: 1fr 1fr">
           <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
             <div class="h3-card-title">📊 SCADA (Current Reading)</div>
-            <div class="h3-card-row"><span>PIP Reading:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorPsi || '1,041 PSI' }}</span></div>
-            <div class="h3-card-row"><span>Winding Temp:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorTemp || '202°F' }}</span></div>
-            <div class="h3-card-row"><span>Motor Amps:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorAmps || '64.1 A' }}</span></div>
+            <div class="h3-card-row"><span>PIP Reading:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorPsi || '— PSI' }}</span></div>
+            <div class="h3-card-row"><span>Winding Temp:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorTemp || '— °F' }}</span></div>
+            <div class="h3-card-row"><span>Motor Amps:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorAmps || '— A' }}</span></div>
             <div class="h3-card-outcome">
               <span style="font-size:0.62rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em">✓ SCADA Assessment</span>
               <span class="h3-card-cash" style="color:var(--green)">ALL NOMINAL</span>
@@ -1091,24 +1091,16 @@
             </div>
           </div>
           <div class="h3-card" :class="h1Injected ? 'active-opt' : ''">
-            <div class="h3-card-title">⚡ GDC Edge AI Prediction</div>
+            <div class="h3-card-title">⚡ GDC AI Assessment</div>
             <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--orange)">{{ h1Injected ? '94.2% gas_lock' : '—' }}</span></div>
             <div class="h3-card-row"><span>Health Score:</span><span class="h3-card-val">{{ h1HealthScore || '—' }}</span></div>
-            <div class="h3-card-row"><span>Motor Amps Trend:</span><span class="h3-card-val" style="color:var(--orange)">{{ h1Injected ? '−2.3A/min ↓' : '—' }}</span></div>
+            <div class="h3-card-row"><span>PIP Trend:</span><span class="h3-card-val" :style="{color: h1Injected ? 'var(--orange)' : 'var(--green)'}">{{ h1Injected ? '−12.5 PSI/min ↓' : 'Stable 0.0' }}</span></div>
+            <div class="h3-card-row"><span>Amps Trend:</span><span class="h3-card-val" :style="{color: h1Injected ? 'var(--orange)' : 'var(--green)'}">{{ h1Injected ? '−2.3 A/min ↓' : 'Stable 0.0' }}</span></div>
+            <div class="h3-card-row"><span>Temp Trend:</span><span class="h3-card-val" :style="{color: h1Injected ? 'var(--yellow)' : 'var(--green)'}">{{ h1Injected ? '+1.8°F/min ↑' : 'Stable 0.0' }}</span></div>
             <div class="h3-card-outcome">
               <span style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em" :style="{color: h1Recovering ? 'var(--green)' : h1Injected ? 'var(--orange)' : 'var(--muted)'}">⚡ GDC Assessment</span>
               <span class="h3-card-cash" :style="{color: h1Recovering ? 'var(--green)' : (h1Injected && !h1Resolved) ? 'var(--orange)' : 'var(--blue)'}">{{ h1Recovering ? 'Recovering' : h1Resolved ? 'Resolved' : h1Injected ? 'Intervention Needed' : 'Monitoring…' }}</span>
               <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">{{ h1Recovering ? 'Wellbore clearing — sensors normalising' : h1Resolved ? 'VFD at 2,640 RPM — gas void migrated' : h1Injected ? 'GVF >70% · 25 min AI lead time over SCADA' : 'Inject fault to run scenario' }}</span>
-            </div>
-          </div>
-          <div class="h3-card" style="border-color:rgba(0,230,118,0.3)">
-            <div class="h3-card-title">💰 Financial Impact</div>
-            <div class="h3-card-row"><span>Well pull if ignored:</span><span class="h3-card-val" style="color:var(--red)">$150,000</span></div>
-            <div class="h3-card-row"><span>VFD SCADA command:</span><span class="h3-card-val" style="color:var(--green)">$0 (remote)</span></div>
-            <div class="h3-card-row"><span>Expected reactive loss:</span><span class="h3-card-val" style="color:var(--yellow)">~$97,500</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--g-green);text-transform:uppercase;letter-spacing:0.07em">Capital Preserved</span>
-              <span class="h3-card-cash" style="color:var(--g-green)">$150,000</span>
             </div>
           </div>
         </div>
@@ -1144,7 +1136,7 @@
           </div>
           <div class="h1-splitter" :class="{dragging:h1Dragging}" @mousedown="initH1Resize"></div>
           <div class="h3-trials-pane" :style="{flex: (100-h1SplitPercent) + ' 1 0%', overflowY:'auto'}">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">📄 RAG Context & Field Intelligence</div>
+            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">{{ h1Injected ? '📄 RAG Context & Field Intelligence' : '📄 Baseline Field Intelligence' }}</div>
             <div v-for="item in h1FeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
               <div class="fi-top">
                 <span class="fi-icon">{{ item.icon }}</span>
@@ -1159,7 +1151,7 @@
               <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
             </div>
             <div v-if="h1GemmaFinding" class="gemma-finding" style="margin-top:8px">{{ h1GemmaFinding }}</div>
-            <div v-if="!h1Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:12px 0">Click "Inject Gas Lock Fault" above to run this scenario and see live RAG context documents.</div>
+            <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:12px 0">Loading field intelligence…</div>
           </div>
         </div>
       </div>
@@ -2566,6 +2558,7 @@ createApp({
       h1Dragging: false,
       h1SplitPercent: 60,
       h1DegPollTimer: null,
+      h1LivePollTimer: null,
       
       // Horizon 2 State
       h2Injected: false,
@@ -3390,22 +3383,42 @@ createApp({
     setMainTab(tab) {
       this.mainTab = tab;
       // Clear any active polling timers to prevent background leaks when navigating away
-      if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
-      if (this.h2DegPollTimer) { clearInterval(this.h2DegPollTimer); this.h2DegPollTimer = null; }
-      // Restart polling if returning to an active, unresolved horizon scenario
-      if (tab === 'horizon1' && this.h1Injected && (!this.h1Resolved || this.h1Recovering)) {
-        this.h1DegPollTimer = setInterval(async()=>{
-          const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
-          if(r.ok){const d=await r.json(); if(d.is_active){
-            this.h1HealthScore=(d.health_score*100).toFixed(1)+'%';
-            const cs=this.activeDegradesMap['ESP-ALPHA-1']?.current_sensors||{};
-            if(cs.psi) this.h1SensorPsi=cs.psi.toFixed(0)+' PSI';
-            if(cs.temp) this.h1SensorTemp=cs.temp.toFixed(0)+'°F';
-            if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
-          }}
-          const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
-          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1Charts(d);}}
-        }, 5000);
+      if (this.h1DegPollTimer)   { clearInterval(this.h1DegPollTimer);   this.h1DegPollTimer   = null; }
+      if (this.h1LivePollTimer)  { clearInterval(this.h1LivePollTimer);  this.h1LivePollTimer  = null; }
+      if (this.h2DegPollTimer)   { clearInterval(this.h2DegPollTimer);   this.h2DegPollTimer   = null; }
+      if (tab === 'horizon1') {
+        // Always poll live telemetry for SCADA card (ticking even before fault injection)
+        const _pollLive1 = async () => {
+          if (this.h1Injected) return; // fault degrade thread owns sensor values when injected
+          const r = await fetch('/api/live-telemetry/ESP-ALPHA-1');
+          if (r.ok) { const d = await r.json();
+            if (d.psi)        this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';
+            if (d.temp_f)     this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';
+            if (d.motor_amps) this.h1SensorAmps = d.motor_amps.toFixed(1) + ' A';
+          }
+        };
+        _pollLive1();
+        this.h1LivePollTimer = setInterval(_pollLive1, 5000);
+        // Fetch baseline intel docs if no fault injected
+        if (!this.h1Injected && this.h1FeedItems.length === 0) {
+          fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
+            .then(r=>r.ok?r.json():null).then(d=>{ if(d&&!this.h1Injected) this.h1FeedItems=d.items||[]; });
+        }
+        // Restart fault degrade poll if returning to an active, unresolved scenario
+        if (this.h1Injected && (!this.h1Resolved || this.h1Recovering)) {
+          this.h1DegPollTimer = setInterval(async()=>{
+            const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
+            if(r.ok){const d=await r.json(); if(d.is_active){
+              this.h1HealthScore=(d.health_score*100).toFixed(1)+'%';
+              const cs=this.activeDegradesMap['ESP-ALPHA-1']?.current_sensors||{};
+              if(cs.psi) this.h1SensorPsi=cs.psi.toFixed(0)+' PSI';
+              if(cs.temp) this.h1SensorTemp=cs.temp.toFixed(0)+'°F';
+              if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
+            }}
+            const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
+            if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1Charts(d);}}
+          }, 5000);
+        }
       }
       if (tab === 'horizon2' && this.h2Injected && !this.h2Resolved) {
         this.h2DegPollTimer = setInterval(async()=>{
@@ -3450,7 +3463,8 @@ createApp({
       } catch(e) { this.showToast('Error injecting gas lock','var(--red)'); }
     },
     async resetHorizon1() {
-      if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer=null; }
+      if (this.h1DegPollTimer)  { clearInterval(this.h1DegPollTimer);  this.h1DegPollTimer  = null; }
+      if (this.h1LivePollTimer) { clearInterval(this.h1LivePollTimer); this.h1LivePollTimer = null; }
       try { await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}); } catch{}
       this.h1Injected=false; this.h1Resolved=false; this.h1Recovering=false;
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
@@ -3458,6 +3472,20 @@ createApp({
       this.h1ForecastData=null; this.h1ActiveSensor='psi'; this.h1SplitPercent=60;
       try { Plotly.purge('h1-gdc-chart'); Plotly.purge('h1-scada-chart'); } catch{}
       this.showToast('↺ Horizon 1 reset','var(--green)');
+      // Restart live telemetry poll and fetch baseline intel after reset
+      const _pollLive1 = async () => {
+        if (this.h1Injected) return;
+        const r = await fetch('/api/live-telemetry/ESP-ALPHA-1');
+        if (r.ok) { const d = await r.json();
+          if (d.psi)        this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';
+          if (d.temp_f)     this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';
+          if (d.motor_amps) this.h1SensorAmps = d.motor_amps.toFixed(1) + ' A';
+        }
+      };
+      _pollLive1();
+      this.h1LivePollTimer = setInterval(_pollLive1, 5000);
+      fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
+        .then(r=>r.ok?r.json():null).then(d=>{ if(d&&!this.h1Injected) this.h1FeedItems=d.items||[]; });
     },
     async approveH1VFD() {
       this.h1Resolved = true;

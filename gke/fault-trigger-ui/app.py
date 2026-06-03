@@ -4177,6 +4177,53 @@ INTELLIGENCE_FEED = {
             ),
         },
     ],
+    "normal": [
+        {
+            "id": "nm_1", "type": "daily_scan", "source": "GDC Daily Performance Scan",
+            "ts_label": "06:00 this morning", "icon": "✅", "is_anomaly": False,
+            "headline": "ESP-ALPHA-1: All sensors nominal · PIP 1,400 PSI · Amps 75A · Temp 198°F",
+            "ai_relevance": "All four sensor channels within normal operating range — no corrective action required",
+            "detail": (
+                "Daily Well Performance Scan — ESP-ALPHA-1 / Well A-1\n"
+                "· Pump Intake Pressure (PIP): 1,400 PSI (normal range: 1,200–1,600 PSI) ✓\n"
+                "· Motor current: 75A (normal range: 60–90A) ✓\n"
+                "· Winding temperature: 198°F (alarm limit: 250°F) ✓\n"
+                "· Gas Void Fraction (GVF) estimate: 42% (threshold: 60%) ✓\n"
+                "· Production rate: 847 BOPD (on target)\n"
+                "· No corrective action recommended. Continue monitoring."
+            ),
+        },
+        {
+            "id": "nm_2", "type": "chemistry_report", "source": "Monthly Fluid Chemistry Report",
+            "ts_label": "3 days ago", "icon": "🧪", "is_anomaly": False,
+            "headline": "BS&W stable at 22% · Chlorides 18,400 mg/L · No scale or corrosion indicators",
+            "ai_relevance": "Stable fluid chemistry confirms no sand ingress, scaling, or corrosion risk in current window",
+            "detail": (
+                "Monthly Fluid Chemistry — Well A-1 Sample (Lab Report)\n"
+                "· Basic Sediment & Water (BS&W): 22% (prior month: 22.1% — stable)\n"
+                "· Chloride content: 18,400 mg/L (within produced water baseline)\n"
+                "· Iron content: 3.2 mg/L (no corrosion signal — limit 10 mg/L)\n"
+                "· Sand particle count: 0.02 g/L (sand ingress risk: LOW)\n"
+                "· Scale inhibitor residual: 8.1 mg/L (effective — above 5 mg/L threshold)\n"
+                "· Conclusion: Fluid chemistry stable. No chemistry-driven risk to ESP."
+            ),
+        },
+        {
+            "id": "nm_3", "type": "pm_log", "source": "Preventive Maintenance Log",
+            "ts_label": "14 days ago", "icon": "🔧", "is_anomaly": False,
+            "headline": "PM completed on schedule · Motor insulation 480 MΩ · Seal OK · Next due 180 days",
+            "ai_relevance": "Recent PM with passing insulation resistance confirms motor health — failure risk low in current window",
+            "detail": (
+                "Preventive Maintenance Log — ESP-ALPHA-1 (scheduled PM)\n"
+                "· Motor insulation resistance (Megger test): 480 MΩ (pass — limit: >100 MΩ per API RP 11S)\n"
+                "· Seal condition: No bypass detected — wellbore fluid intrusion risk: LOW\n"
+                "· Cable splice integrity: Satisfactory (visual + continuity check)\n"
+                "· VFD calibration: 52 Hz confirmed at surface panel ✓\n"
+                "· Recommendation: No corrective action. Next scheduled PM: 180 days.\n"
+                "· PM interval: 180 days (consistent with 8,760 hr MTBF target for this ESP string)"
+            ),
+        },
+    ],
 }
 
 # ── Fix 10: Dynamic Gemma Finding Templates ───────────────────────────────────
@@ -4184,9 +4231,9 @@ INTELLIGENCE_FEED = {
 # gas_lock. Other fault types fall back to the static GEMMA_FINDINGS dict.
 GEMMA_FINDING_TEMPLATES = {
     "gas_lock": [
-        "🤖 Gemma: Intake PSI at {psi:.0f} PSI (↓ from 1,400 nominal) with motor current {amps:.0f}A — gas void fraction estimated {gvf}%. VFD frequency reduction available immediately. Act before {pnr}m PNR.",
-        "🤖 Gemma: Current-pressure-vibration correlation matches gas lock at {conf}% confidence. PSI {psi:.0f} and amps {amps:.0f}A both declining — pump unloading. SCADA has no active alarm.",
-        "🤖 Gemma: Gas entrainment confirmed at {psi:.0f} PSI intake. Declining amps ({amps:.0f}A) projects pump lock within {pnr} minutes at current trend rate. Reduce VFD to 44 Hz.",
+        "🤖 GDC Advisory: Gas lock anomaly detected ({conf}% confidence). PIP at {psi:.0f} PSI declining at rate consistent with gas entrainment. Expected unmitigated loss: $150,000 pump replacement CAPEX (65% probability of SCADA-window response failure → $97,500 risk-weighted expected cost). Recommended: SCADA VFD Speed-Down from 52 Hz (3,120 RPM) → 44 Hz (2,640 RPM). Direct cost: $0. Preserves pump asset entirely.",
+        "🤖 GDC Advisory: Current-pressure correlation confirms gas lock at {conf}% confidence. PIP {psi:.0f} PSI and motor amps {amps:.0f}A both declining — pump unloading on gas void. Reactive path: $150,000 pump pull + 5–7 day downtime. Proactive path: VFD speed-down at $0. SCADA has no active alarm — GDC has {pnr} min advantage window.",
+        "🤖 GDC Advisory: Gas entrainment confirmed at {psi:.0f} PSI intake, {amps:.0f}A motor current. Risk-weighted expected loss if no action: ~$97,500 (65% burnout probability × $150k replacement). VFD reduction 52 → 44 Hz (3,120 → 2,640 RPM) costs $0 and eliminates the risk. SCADA alarm threshold not yet triggered — act now.",
     ],
     "thermal_runaway": [
         "🤖 Gemma: Fin-fan cooling degraded. Discharge temp at {temp:.0f}°F and rising. SCADA alarm at 230°F. Schedule maintenance.",
@@ -4320,7 +4367,8 @@ def get_intelligence_feed(asset_id: str, fault_type: str = None):
     """
     if not fault_type:
         fault_type = (active_degrades.get(asset_id) or {}).get("fault_type")
-    pool = INTELLIGENCE_FEED.get(fault_type, [])
+    _pool_key = fault_type if (fault_type and fault_type not in ("normal", "")) else "normal"
+    pool = INTELLIGENCE_FEED.get(_pool_key, [])
     canned_items = random.sample(pool, min(3, len(pool))) if len(pool) > 3 else list(pool)
     random.shuffle(canned_items)
     finding = get_gemma_finding(fault_type, asset_id)
@@ -4598,14 +4646,72 @@ class HitlApproveRequest(BaseModel):
     cost_incurred: Optional[float] = 0
 
 
+def _run_recovery_thread(asset_id: str) -> None:
+    """Post 36 climbing PIP/Amps readings over 3 real minutes, simulating wellbore
+    gas void clearance after VFD speed-down. Chart shows live green recovery trend."""
+    RECOVERY_STEPS = 36
+    psi_start  = 800.0   # approximate fault-level PIP
+    psi_target = 1400.0  # nominal PIP
+    amps_start  = 32.0   # approximate fault-level amps
+    amps_target = 75.0   # nominal amps
+    temp_nom    = 200.0
+
+    # Use actual current sensor values if available from degrade state
+    cs = (active_degrades.get(asset_id) or {}).get("current_sensors", {})
+    if cs.get("psi"):        psi_start  = float(cs["psi"])
+    if cs.get("motor_amps"): amps_start = float(cs["motor_amps"])
+
+    log.info(f"↗ Recovery thread started: {asset_id} — {RECOVERY_STEPS} steps over ~3 min")
+
+    for i in range(RECOVERY_STEPS):
+        if asset_id not in active_degrades:
+            break  # Reset clicked — exit immediately
+        t    = (i + 1) / RECOVERY_STEPS
+        psi  = psi_start  + t * (psi_target  - psi_start)
+        amps = amps_start + t * (amps_target - amps_start)
+        reading = {
+            "asset_id"    : asset_id,
+            "asset_type"  : "esp",
+            "psi"         : round(random.gauss(psi,  abs(psi  * 0.02)), 1),
+            "temp_f"      : round(random.gauss(temp_nom, abs(temp_nom * 0.01)), 1),
+            "vibration"   : round(max(0.05, random.gauss(0.45, 0.05)), 3),
+            "motor_amps"  : round(max(10.0, random.gauss(amps, abs(amps * 0.02))), 1),
+            "failure_type": "normal",
+            "source"      : "recovery",
+            "timestamp"   : datetime.utcnow().isoformat() + "Z",
+        }
+        if asset_id in active_degrades:
+            active_degrades[asset_id]["current_sensors"] = {
+                "psi": reading["psi"], "temp": reading["temp_f"],
+                "vib": reading["vibration"], "motor_amps": reading["motor_amps"],
+            }
+        try:
+            publish_to_rabbitmq(reading)
+        except Exception as e:
+            log.error(f"Recovery publish error: {e}")
+        time.sleep(5)
+
+    # Cleanup — remove from active_degrades so simulator resumes normal readings
+    active_degrades.pop(asset_id, None)
+    HEALTH_HISTORY.pop(asset_id, None)
+    log.info(f"✅ Recovery complete: {asset_id} — nominal sensors restored")
+
+
 @app.post("/api/agent/hitl-approve")
 def hitl_approve(req: HitlApproveRequest):
     """
     Human-in-the-Loop approval endpoint.
     Stops the fault simulation, records the intervention, and returns the outcome card.
     """
-    # Stop any active degrade/hold thread for this asset
-    if req.asset_id in active_degrades:
+    # For gas_lock: launch recovery thread instead of immediately clearing state.
+    # The recovery thread posts 36 climbing sensor readings over 3 real minutes,
+    # then cleans up active_degrades. For all other faults, clear immediately.
+    if req.fault_type == "gas_lock" and req.asset_id in active_degrades:
+        active_degrades[req.asset_id]["running"] = False
+        active_degrades[req.asset_id]["recovering"] = True
+        t_rec = threading.Thread(target=_run_recovery_thread, args=(req.asset_id,), daemon=True)
+        t_rec.start()
+    elif req.asset_id in active_degrades:
         active_degrades[req.asset_id]["running"] = False
         active_degrades.pop(req.asset_id, None)
         HEALTH_HISTORY.pop(req.asset_id, None)
@@ -4648,6 +4754,40 @@ def hitl_approve(req: HitlApproveRequest):
         "net_savings": cost_avoided - req.cost_incurred,
         "outcome_message": outcome_msgs.get(intervention_type, "Intervention recorded."),
     }
+
+
+# ── H1-Live-1: Live Telemetry Endpoint ───────────────────────────────────────
+@app.get("/api/live-telemetry/{asset_id}")
+def get_live_telemetry(asset_id: str):
+    """Return the latest nominal sensor readings from telemetry_events for the SCADA
+    card live display. Only returns rows with failure_type='normal' so injected fault
+    readings don't leak into the pre-injection display."""
+    try:
+        conn = get_db()
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(
+                """
+                SELECT psi, temp_f, motor_amps, event_time
+                FROM telemetry_events
+                WHERE asset_id = %s AND failure_type = 'normal'
+                ORDER BY event_time DESC LIMIT 1
+                """,
+                (asset_id,),
+            )
+            row = cur.fetchone()
+        conn.close()
+        if not row:
+            return {"asset_id": asset_id, "psi": None, "temp_f": None, "motor_amps": None}
+        return {
+            "asset_id":   asset_id,
+            "psi":        float(row["psi"])        if row["psi"]        else None,
+            "temp_f":     float(row["temp_f"])     if row["temp_f"]     else None,
+            "motor_amps": float(row["motor_amps"]) if row["motor_amps"] else None,
+            "event_time": row["event_time"].isoformat() if row["event_time"] else None,
+        }
+    except Exception as e:
+        log.warning(f"live-telemetry error for {asset_id}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ── Phase 12: Financial Justification Endpoint ───────────────────────────────
