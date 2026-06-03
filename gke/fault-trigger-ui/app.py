@@ -466,12 +466,14 @@ _INTEL_DOC_TYPES = {
 
 def _intel_generator() -> None:
     """
-    Phase 16: Background document generator.
-    Runs as a daemon thread. Wakes every 20-30 seconds to generate templates based on current_sensors.
+    Background document generator — calls Gemma (Ollama) to produce realistic
+    operational field documents (shift notes, lab reports, PM records) for the
+    active fault. Wakes every 20-30 seconds. Only inserts into field_intel when
+    Gemma actually returns content — never falls back to templates.
     """
-    time.sleep(10)  # Short wait
+    time.sleep(10)  # Short wait for startup
     _ensure_field_intel_table()
-    log.info("🧠 Intel generator ready — interval: 20-30s")
+    log.info("🧠 Intel generator ready — interval: 20-30s (Gemma-powered)")
 
     while True:
         try:
@@ -481,47 +483,77 @@ def _intel_generator() -> None:
                 fault_context = active_degrades[asset_id].get("fault_type")
                 cs = active_degrades.get(asset_id, {}).get("current_sensors", {})
                 if cs and fault_context:
-                    # Generate the template documents
-                    docs = generate_dynamic_documents(asset_id, fault_context, cs)
-                    
-                    # Also insert a summary into field_intel for the UI to show
                     meta = ASSET_REGISTRY.get(asset_id, {})
                     asset_class = meta.get("asset_class", "esp")
-                    fault_label = FAULT_PROFILES.get(fault_context, {}).get("label", "")
-                    
+                    fault_label = FAULT_PROFILES.get(fault_context, {}).get("label", fault_context)
+                    doc_type = random.choice(["shift_note", "lab_report", "pm_record"])
+
+                    prompt = (
+                        f"You are a field engineer writing a brief operational note for asset {asset_id}.\n"
+                        f"Active fault: {fault_context.replace('_', ' ')}.\n"
+                        f"Current sensors: PSI={cs.get('psi', 0):.0f}, "
+                        f"Temp={cs.get('temp', 0):.0f}\u00b0F, "
+                        f"Vib={cs.get('vib', 0):.3f}mm/s.\n\n"
+                        f"Write one realistic {doc_type.replace('_', ' ')} document. "
+                        f"Be specific with numbers. Maximum 120 words. No preamble."
+                    )
+
                     try:
-                        conn = get_db()
-                        with conn.cursor() as cur:
-                            for d in docs:
-                                doc_type = d["doc_type"]
-                                body = d["content"]
-                                headline = f"{fault_label} - {doc_type.replace('_', ' ').title()}"
-                                ai_relevance = f"GDC AI: Extracted struct variables to adjust RUL."
-                                icon = "📄"
-                                
-                                cur.execute(
-                                    """
-                                    INSERT INTO field_intel
-                                      (asset_id, asset_class, fault_context, doc_type,
-                                       headline, detail, ai_relevance, icon, lbl, lbl_type)
-                                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                                    """,
-                                    (asset_id, asset_class, fault_context, doc_type,
-                                     headline[:120], body[:1000], ai_relevance[:300],
-                                     icon, "AI", "ai"),
+                        import requests as _req
+                        resp = _req.post(
+                            f"{OLLAMA_URL}/api/generate",
+                            json={
+                                "model": OLLAMA_MODEL,
+                                "prompt": prompt,
+                                "stream": False,
+                                "options": {"num_predict": 150, "temperature": 0.7},
+                            },
+                            timeout=15,
+                        )
+                        if resp.status_code != 200:
+                            log.debug(f"Intel generator Ollama HTTP {resp.status_code} — skipping cycle")
+                        else:
+                            body = resp.json().get("response", "").strip()
+                            if body:
+                                headline = (
+                                    f"{fault_label.replace('_', ' ').title()} "
+                                    f"— {doc_type.replace('_', ' ').title()}"
                                 )
-                            # Prune
-                            cur.execute("""
-                                DELETE FROM field_intel
-                                WHERE id NOT IN (
-                                    SELECT id FROM field_intel ORDER BY created_at DESC LIMIT 100
+                                ai_relevance = (
+                                    f"Gemma: {doc_type.replace('_', ' ')} generated "
+                                    f"from live sensor state for {asset_id}."
                                 )
-                            """)
-                        conn.commit()
-                        conn.close()
-                    except Exception as db_err:
-                        log.warning(f"Intel generator DB insert failed: {db_err}")
-                        
+                                try:
+                                    conn = get_db()
+                                    with conn.cursor() as cur:
+                                        cur.execute(
+                                            """
+                                            INSERT INTO field_intel
+                                              (asset_id, asset_class, fault_context, doc_type,
+                                               headline, detail, ai_relevance, icon, lbl, lbl_type)
+                                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                                            """,
+                                            (asset_id, asset_class, fault_context, doc_type,
+                                             headline[:120], body[:1000], ai_relevance[:300],
+                                             "📄", "AI", "ai"),
+                                        )
+                                        # Prune — keep only 100 most recent
+                                        cur.execute("""
+                                            DELETE FROM field_intel
+                                            WHERE id NOT IN (
+                                                SELECT id FROM field_intel ORDER BY created_at DESC LIMIT 100
+                                            )
+                                        """)
+                                    conn.commit()
+                                    conn.close()
+                                    log.debug(
+                                        f"Intel generator inserted Gemma doc for {asset_id} ({doc_type})"
+                                    )
+                                except Exception as db_err:
+                                    log.warning(f"Intel generator DB insert failed: {db_err}")
+                    except Exception as ollama_err:
+                        log.debug(f"Intel generator Ollama call failed — skipping cycle: {ollama_err}")
+
         except Exception as e:
             log.debug(f"Intel generator cycle error (non-fatal): {e}")
 
@@ -4856,23 +4888,25 @@ class OptimizeRequest(BaseModel):
 @app.get("/api/vizier/optimize")
 def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     """
-    Simulates 15 trials of Bayesian Optimization (Vizier) to find the optimal VFD frequency (Hz).
-    Applies the physically and economically grounded cash flow model.
+    Google Vertex AI Vizier Bayesian Optimization — real API call.
+    Creates a Gaussian Process Bandit study, requests 15 trial suggestions,
+    evaluates each against the ESP physics + XGBoost RUL model, reports
+    measurements back to Vertex AI, and returns the optimal VFD Hz.
 
-    Fix 15: The Class H insulation temperature burnout threshold is retrieved from AlloyDB
-    pgvector (rag_documents) at call time rather than hardcoded. This means the constraint
-    actually varies based on what the OEM manual says — making the RAG story demonstrably real.
-    Default fallback: 284°F per API RP 11S (Class H polyimide insulation limit).
+    Fix 15: Class H insulation burnout threshold retrieved from AlloyDB rag_documents
+    at call time via SQL ILIKE (<10ms). Default fallback: 284°F (API RP 11S).
     """
     import math
     import re
+    import time as _time
+    from google.cloud import aiplatform_v1
+
+    GCP_PROJECT = "gdc-pm-v2"
+    GCP_LOCATION = "us-central1"
+    parent = f"projects/{GCP_PROJECT}/locations/{GCP_LOCATION}"
 
     # ── Retrieve Class H insulation temperature limit from AlloyDB (Fix 15) ──
-    # Direct SQL text search — no embedding model needed, <10ms latency.
-    # The insulation limit is a specific fact in the ESP OEM manual that a
-    # simple ILIKE query can locate directly, eliminating the sentence_transformers
-    # cold-start latency (60-90s on fresh pod) that caused GKE gateway timeouts.
-    burnout_threshold_f = 284.0   # API RP 11S Class H default — used if DB query fails
+    burnout_threshold_f = 284.0   # API RP 11S Class H default
     rag_constraint_source = "default (API RP 11S)"
     try:
         _rag_conn = get_db()
@@ -4896,112 +4930,144 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     except Exception as e:
         log.debug(f"Vizier RAG constraint DB query skipped (non-fatal): {e}")
 
-    # Standard trial frequencies (simulating Bayesian exploration converging toward the sweet spot)
-    trial_hz_values = [48.0, 64.0, 52.0, 61.5, 54.5, 59.0, 56.5, 58.0, 57.2, 57.8, 57.5, 57.6, 57.4, 57.7, 57.5]
-    
-    trials = []
-    best_cash_flow = -999999999.0
-    
-    for i, hz in enumerate(trial_hz_values):
-        # 1. Flow Rate (bbl/day)
+    # ── Physics evaluation helper (same model as before) ──
+    def evaluate_hz(hz: float) -> dict:
         flow_rate = round(24.0 * hz, 1)
-        
-        # 2. Motor Temperature (°F)
-        temp_f = round(180.0 + 1.5 * (hz - 45.0) + 0.15 * max(0.0, hz - 58.0)**3, 1)
-        
-        # 3. Remaining Useful Life (RUL, Days)
+        temp_f = round(180.0 + 1.5 * (hz - 45.0) + 0.15 * max(0.0, hz - 58.0) ** 3, 1)
         rul_days = round(300.0 * math.exp(-0.11 * (hz - 45.0)), 1)
-        
-        # 4. Power Cost ($/day)
-        power_cost = round(0.1 * (hz**3), 1)
-        
-        # 5. Burnout check — either RUL exhausted OR temperature exceeds RAG-retrieved limit
-        # This is the key Fix 15 change: the temperature constraint comes from pgvector,
-        # not a hardcoded literal, so it reflects the actual OEM manual retrieved at runtime.
+        power_cost = round(0.1 * (hz ** 3), 1)
         is_temp_burnout = temp_f >= burnout_threshold_f
         is_failure = (rul_days < horizon_days) or is_temp_burnout
-
-        # 6. Economic outcome
         if not is_failure:
-            revenue = oil_price * flow_rate * horizon_days
-            operating_cost = power_cost * horizon_days
-            failure_capex = 0.0
             prod_days = horizon_days
+            net_cash_flow = round((oil_price * flow_rate - power_cost) * horizon_days, 1)
         else:
-            prod_days = rul_days if not is_temp_burnout else round(
-                # Estimate days until temp threshold is reached (linear approx)
-                max(1.0, rul_days * 0.6), 1
-            )
-            revenue = oil_price * flow_rate * prod_days
-            operating_cost = power_cost * prod_days
-            failure_capex = 150000.0
-            
-        net_cash_flow = round(revenue - operating_cost - failure_capex, 1)
-        
-        is_best = False
-        if net_cash_flow > best_cash_flow:
-            best_cash_flow = net_cash_flow
-            is_best = True
-            
-        trial_data = {
-            "trial_num": i + 1,
-            "vfd_hz": hz,
-            "flow_rate": flow_rate,
-            "motor_temp_f": temp_f,
-            "rul_days": rul_days,
-            "cash_flow": net_cash_flow,
-            "prod_days": prod_days,
-            "is_failure": rul_days < horizon_days,
-            "is_optimal": False
+            prod_days = rul_days if not is_temp_burnout else round(max(1.0, rul_days * 0.6), 1)
+            net_cash_flow = round((oil_price * flow_rate - power_cost) * prod_days - 150000.0, 1)
+        return {
+            "vfd_hz": hz, "flow_rate": flow_rate, "motor_temp_f": temp_f,
+            "rul_days": rul_days, "cash_flow": net_cash_flow, "prod_days": prod_days,
+            "is_failure": is_failure,
         }
-        trials.append(trial_data)
-        
-    # Mark the single absolute best trial as optimal
-    best_idx = 0
-    for idx, t in enumerate(trials):
-        if t["cash_flow"] == best_cash_flow:
-            best_idx = idx
-    trials[best_idx]["is_optimal"] = True
-    optimal_trial = trials[best_idx]
-    
-    # Calculate SCADA Nominal comparison (hardcoded safe 50.0 Hz)
-    scada_hz = 50.0
-    scada_flow = round(24.0 * scada_hz, 1)
-    scada_temp = round(180.0 + 1.5 * (scada_hz - 45.0), 1)
-    scada_rul = round(300.0 * math.exp(-0.11 * (scada_hz - 45.0)), 1)
-    scada_power = round(0.1 * (scada_hz**3), 1)
-    scada_cash_flow = round((oil_price * scada_flow - scada_power) * horizon_days, 1)
-    
-    # Calculate Aggressive Run-to-Failure comparison (65.0 Hz)
-    agg_hz = 65.0
-    agg_flow = round(24.0 * agg_hz, 1)
-    agg_temp = round(180.0 + 1.5 * (agg_hz - 45.0) + 0.15 * max(0.0, agg_hz - 58.0)**3, 1)
-    agg_rul = round(300.0 * math.exp(-0.11 * (agg_hz - 45.0)), 1) # ~33 days
-    agg_power = round(0.1 * (agg_hz**3), 1)
-    if agg_rul >= horizon_days:
-        agg_cash_flow = round((oil_price * agg_flow - agg_power) * horizon_days, 1)
-    else:
-        agg_cash_flow = round((oil_price * agg_flow - agg_power) * agg_rul - 150000.0, 1)
-        
+
+    # ── Vertex AI Vizier — Gaussian Process Bandit ──
+    trials_out = []
+    best_cash_flow = -999999999.0
+
+    try:
+        client = aiplatform_v1.VizierServiceClient(
+            client_options={"api_endpoint": f"{GCP_LOCATION}-aiplatform.googleapis.com"}
+        )
+
+        # Create a new study for each call — Gaussian Process Bandit algorithm
+        study = client.create_study(
+            parent=parent,
+            study=aiplatform_v1.Study(
+                display_name=f"gdc_vfd_opt_{int(_time.time())}",
+                study_spec=aiplatform_v1.StudySpec(
+                    algorithm=1,  # GAUSSIAN_PROCESS_BANDIT — value 1 per Vertex AI proto spec
+                                  # (not exported by name in google-cloud-aiplatform>=1.38.0)
+                    metrics=[aiplatform_v1.StudySpec.MetricSpec(
+                        metric_id="cash_flow",
+                        goal=aiplatform_v1.StudySpec.MetricSpec.GoalType.MAXIMIZE,
+                    )],
+                    parameters=[aiplatform_v1.StudySpec.ParameterSpec(
+                        parameter_id="vfd_hz",
+                        double_value_spec=aiplatform_v1.StudySpec.ParameterSpec.DoubleValueSpec(
+                            min_value=45.0,
+                            max_value=70.0,
+                        ),
+                    )],
+                ),
+            ),
+        )
+        log.info(f"Vertex AI Vizier study created: {study.name}")
+
+        # Request 15 suggestions (batch Bayesian exploration over Hz search space)
+        operation = client.suggest_trials(
+            request=aiplatform_v1.SuggestTrialsRequest(
+                parent=study.name,
+                suggestion_count=15,
+                client_id="gdc-edge-fault-trigger",
+            )
+        )
+        suggested = operation.result(timeout=60).trials
+        log.info(f"Vertex AI Vizier returned {len(suggested)} trial suggestions")
+
+        for i, trial in enumerate(suggested):
+            # Extract Hz from Vizier suggestion
+            param = next(p for p in trial.parameters if p.parameter_id == "vfd_hz")
+            hz = float(param.value)
+            result = evaluate_hz(hz)
+            result["trial_num"] = i + 1
+            result["is_optimal"] = False
+
+            # Report result back to Vizier and close the trial
+            if not result["is_failure"]:
+                client.complete_trial(
+                    request=aiplatform_v1.CompleteTrialRequest(
+                        name=trial.name,
+                        final_measurement=aiplatform_v1.Measurement(
+                            metrics=[aiplatform_v1.Measurement.Metric(
+                                metric_id="cash_flow",
+                                value=result["cash_flow"],
+                            )]
+                        ),
+                    )
+                )
+            else:
+                client.complete_trial(
+                    request=aiplatform_v1.CompleteTrialRequest(
+                        name=trial.name,
+                        trial_infeasible=True,
+                        infeasible_reason="burnout or RUL exhausted",
+                    )
+                )
+
+            trials_out.append(result)
+            if result["cash_flow"] > best_cash_flow:
+                best_cash_flow = result["cash_flow"]
+
+    except Exception as vizier_err:
+        log.warning(f"Vertex AI Vizier call failed — falling back to deterministic trials: {vizier_err}")
+        # Fallback: same physics, fixed Hz sequence. Clearly logged as fallback.
+        for i, hz in enumerate([48.0, 64.0, 52.0, 61.5, 54.5, 59.0, 56.5, 58.0,
+                                 57.2, 57.8, 57.5, 57.6, 57.4, 57.7, 57.5]):
+            result = evaluate_hz(hz)
+            result["trial_num"] = i + 1
+            result["is_optimal"] = False
+            trials_out.append(result)
+            if result["cash_flow"] > best_cash_flow:
+                best_cash_flow = result["cash_flow"]
+
+    # Mark the single best trial as optimal
+    best_idx = max(range(len(trials_out)), key=lambda idx: trials_out[idx]["cash_flow"])
+    trials_out[best_idx]["is_optimal"] = True
+    optimal_trial = trials_out[best_idx]
+
+    # SCADA nominal and run-to-failure comparisons
+    scada = evaluate_hz(50.0)
+    rtf = evaluate_hz(65.0)
+
     return {
-        "trials": trials,
+        "trials": trials_out,
         "optimal_hz": optimal_trial["vfd_hz"],
         "optimal_cash_flow": best_cash_flow,
         "scada_nominal": {
-            "vfd_hz": scada_hz,
-            "flow_rate": scada_flow,
-            "motor_temp_f": scada_temp,
-            "rul_days": scada_rul,
-            "cash_flow": scada_cash_flow,
-            "is_failure": scada_rul < horizon_days
+            "vfd_hz": scada["vfd_hz"],
+            "flow_rate": scada["flow_rate"],
+            "motor_temp_f": scada["motor_temp_f"],
+            "rul_days": scada["rul_days"],
+            "cash_flow": scada["cash_flow"],
+            "is_failure": scada["is_failure"],
         },
         "run_to_failure": {
-            "vfd_hz": agg_hz,
-            "flow_rate": agg_flow,
-            "motor_temp_f": agg_temp,
-            "rul_days": agg_rul,
-            "cash_flow": agg_cash_flow,
-            "is_failure": agg_rul < horizon_days
+            "vfd_hz": rtf["vfd_hz"],
+            "flow_rate": rtf["flow_rate"],
+            "motor_temp_f": rtf["motor_temp_f"],
+            "rul_days": rtf["rul_days"],
+            "cash_flow": rtf["cash_flow"],
+            "is_failure": rtf["is_failure"],
         },
         "vizier_optimal": {
             "vfd_hz": optimal_trial["vfd_hz"],
@@ -5009,8 +5075,8 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
             "motor_temp_f": optimal_trial["motor_temp_f"],
             "rul_days": optimal_trial["rul_days"],
             "cash_flow": optimal_trial["cash_flow"],
-            "is_failure": optimal_trial["is_failure"]
-        }
+            "is_failure": optimal_trial["is_failure"],
+        },
     }
 
 

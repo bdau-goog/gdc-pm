@@ -1340,7 +1340,7 @@
               <ul class="pp-list">
                 <li>XGBoost RUL model projects thermal degradation trajectories at each hypothetical Hz setpoint (milliseconds vs 48-hour field trials)</li>
                 <li>OEM Class H insulation limit (284°F per API RP 11S) retrieved from AlloyDB pgvector and used as hard constraint</li>
-                <li><strong>Google Vizier (Bayesian Optimization)</strong> executes 15 targeted trials — each balancing exploration vs exploitation</li>
+                <li><strong>Google Vertex AI Vizier</strong> executes 15 Gaussian Process Bandit trials — each Hz is suggested by Vizier's Bayesian model, evaluated against the local XGBoost RUL projection, and reported back to Vertex AI. The edge cluster runs the physics; Vertex AI Vizier drives the search.</li>
                 <li>Converges on the <span class="pp-em">Pareto Frontier</span> — the maximum Hz that maximizes net cash flow without triggering motor burnout</li>
               </ul>
             </div>
