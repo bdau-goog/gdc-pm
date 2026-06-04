@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session L end)  
-**Git Head:** `df13bf2` — clean working tree  
-**fault-trigger-ui image digest:** `sha256:719e0a6c8bb1d4d3813ce1dceaeff55dfa3da5ad453227fd16c3050511023676`  
+**Date:** June 4, 2026 (Session M end)
+**Git Head:** `9b77d4b` — clean working tree
+**fault-trigger-ui image digest:** `sha256:55e5626853cc1d6da10390159b90432eeacaf60e265254d765428cdb1a26a0db`
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,7 +17,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · fault-trigger-ui-74996dbfd7-qdrbj
+- All pods 1/1 Running · fault-trigger-ui-64d4b6b944-9m5xb
 - ollama_online: True · model: gemma4:latest
 - field_intel: ~99–110 rows · rag_documents: 18 rows
 
@@ -29,65 +29,53 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
-Also read the **last 2 entries** in SESSION_LOG.md (Sessions L and K).
+Also read the **last 2 entries** in SESSION_LOG.md (Sessions M and L).
 
 ---
 
-## STEP 3: What Was Built This Session (H1 UI Redesign)
+## STEP 3: What Was Built This Session (H1 Bug Fixes)
 
 **Live at:** `http://gdc-pm.bdau.io` → "Detect" tab
 
-### Changes deployed (commits `e500c4d` → `1915fe1` → `df13bf2`):
+### Changes deployed (commit `9b77d4b`):
 
-**Tab nav:** Renamed Horizon 1/2/3 → Detect / Discern / Optimize. Fleet Financials tab removed entirely.
+**Cost-zone chart** — `_renderH1Charts` completely rewritten:
+- Pre-injection: shows "Live Sensor Reading" + "SCADA Alarm Threshold" only. Clean "NOW — Monitoring" label. No fault projection, no declining lines.
+- Post-injection: adds "GDC ML Forecast" (orange dashed) + three colored background zones (green=$0, amber=~$2k, red=$150k) + "🤖 AI detects — ACT NOW", "📡 SCADA alarms T+Xm", "⛔ PNR" event pins + cost labels at bottom of each zone.
+- Removed "ML RUL Projection" label (integrity violation) — replaced with "GDC ML Forecast".
 
-**H1 banner:** Now a single line — "Detect — ESP Gas Lock · ESP-ALPHA-1 [ⓘ] [Inject] [Reset]". All physics description is hidden behind the ⓘ collapsible panel. "25m lead time" badge removed from banner.
+**Column resize splitters** — two `.h1-splitter` divs added between well-strip↔center and center↔copilot. `initH1CenterSplit(e, side)` method wired to both. Replaces dead `initH1Resize` (was pointing at `.h3-main-body` which doesn't exist in H1 layout).
 
-**Dual-Reality Bar** (new hero element, replaces old status bar):
-- Two-column compact bar spanning full width
-- LEFT: SCADA · ESP-ALPHA-1 — 4 sensor readings → "✓ All Nominal · No alarm"
-- RIGHT: GDC AI · ESP-ALPHA-1 — same 4 sensors + 4 context chip rows (📋 Shift note, 🧪 Lab: GOR↑, ⚡ VFD events, 📖 API RP 11S) → verdict line changes on inject
-- Context chips dim/inactive pre-injection, activate via `h1EvidenceActive` counter on inject
-- Verdict line: `dr-monitor` (gray) → `dr-alert` (orange) on inject → `dr-ok` (green) on recovery
+**NS resize handle** — `<div class="h1-ns-handle">` added between chart and Window of Options (v-if="h1Injected"). `initH1NsSplit` wired. `h1ChartH` data property (starts 200px) controls chart height dynamically via `:style`.
 
-**New 3-column main body** (`h1-body`):
-- LEFT: `h1-well-strip` (82px wide, fixed) — thin SVG wellbore animation strip
-- CENTER: `h1-center` (36%) — sensor tabs (PIP/Amps/Temp) + chart (200px) + Window of Options (`v-if="h1Injected"`)
-- RIGHT: `h1-copilot-pane` (flex:1, ~52%) — LLM copilot fills full height; compact intel feed (3 items max) at bottom
+**Well strip wider** — width 82px → 110px. SVG `max-height:215px` → `flex:1;min-height:0` so it fills the full column height.
 
-**Charts now load on tab open** — `setMainTab('horizon1')` now fetches `/api/plot/forecast-data/ESP-ALPHA-1` immediately and renders baseline chart, even before injection.
+**Intel feed timestamps** — `<span class="h1-ic-time">{{ item.ts_label }}</span>` added to each `.h1-ic-row`. The `ts_label` field is already returned by `/api/intelligence-feed` (computed server-side as "just now", "Xm ago", "Xh ago").
 
-**Window of Options** — now hidden until fault is injected (`v-if="h1Injected"`).
-
-**Evidence wall + scada-compare boxes removed** — their information absorbed into the dual-reality bar.
-
-**Live intel feed** — reduced from 7 items to 3, compact `.h1-ic-row` style.
-
-**`_renderH1Charts`** — removed stale `h1-scada-chart` element reference.
+**`h1SplitPercent` initial value** changed 60 → 36 (matches h1-center's CSS `flex:0 0 36%`). `h1ChartH: 200` added to data.
 
 ---
 
 ## STEP 4: Next Session Flow
 
-### A. First: Review Detect tab in browser — user will give visual feedback
+### A. Collect visual feedback on Detect tab
 
-The user has not yet reviewed H1 in the browser this session. Open `http://gdc-pm.bdau.io`, navigate to "Detect" tab, and collect feedback before implementing H2. Key things to verify are live:
-1. Dual-reality bar — two-column SCADA vs GDC AI comparison readable?
-2. SVG well strip — narrow left strip visible?
-3. Copilot — dominant right panel, shows baseline monitoring text before inject?
-4. Charts — tick live data on tab open (before injection)?
-5. Window of Options — hidden until inject, appears below chart?
-6. Financial Justification modal — now renders correctly (bug fix `df13bf2`)?
+Open `http://gdc-pm.bdau.io`, navigate to "Detect" tab. Key things to verify:
+1. Well strip — now 110px wide, fills full column height?
+2. Chart pre-injection — clean "Live Sensor Reading" + SCADA threshold, no fault elements?
+3. Column drag handles — left and right splitters draggable?
+4. Intel feed rows — timestamp shows (e.g., "2h ago")?
+5. Inject fault — cost-zone chart appears with green/amber/red zones + AI vs SCADA pins?
+6. NS handle appears below chart after injection — draggable?
 
-### B. After feedback: H2 (Discern) tab redesign
+### B. After visual feedback: H2 (Discern) tab redesign
 
 Per DEMO_MASTER.md §5:
-- Reuse ALL CSS from H1 redesign (`.dr-bar`, `.h1-body`, `.h1-copilot-pane`, `.h1-intel-compact`, `.wopt-container`)
+- Reuse ALL CSS from H1 redesign (`.dr-bar`, `.h1-body`, `.h1-copilot-pane`, `.h1-intel-compact`)
 - Primary visual: two-line superimposed chart — Vibration (rising, orange) + Motor Temp (flat, blue)
-- Well SVG: pump body GREEN (healthy), surface flowline shows orange slug pulses
 - H2 evidence chips in dual-reality bar: 📊 Vibration↑, 📊 Temp─(flat), 📋 Shift note, 🧪 Separator test, 📋 Choke log, 📖 OEM guide
 - LLM copilot: "$1,500 truck roll, not $150,000 pump pull"
-- No Window of Options for H2 (slug flow → dispatch, no PNR countdown)
+- No Window of Options for H2
 
 ---
 
@@ -99,3 +87,4 @@ Per DEMO_MASTER.md §5:
 - Fleet Operations tab: do NOT re-add
 - Financial case: LLM only, no static financial cards
 - Token budget: batch all edits to same file in ONE replace_in_file call
+- Correct registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`

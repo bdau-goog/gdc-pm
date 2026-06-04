@@ -5,6 +5,21 @@
 
 ---
 
+## Session M (June 4, 2026) — *H1 Detect tab bug fixes + chart redesign*
+
+**Code committed:** `9b77d4b` (fix: H1 Detect tab — cost-zone chart, column splitters, NS resize, well strip height, intel timestamps, clean pre-injection state)
+**Cluster image digest:** `sha256:55e5626853cc...` (fault-trigger-ui)
+
+**What was built and deployed:** Five user-reported bugs on the H1 "Detect" tab fixed in a single batched `replace_in_file` call. (1) **Chart redesign** — `_renderH1Charts` rewritten from scratch: pre-injection now shows only "Live Sensor Reading" + SCADA alarm threshold line with a clean "NOW — Monitoring" label (no fault projection, no declining ML lines). Post-injection renders three colored cost-zone backgrounds (green=$0, amber=~$2k, red=$150k) with "🤖 AI detects — ACT NOW", "📡 SCADA alarms T+Xm", "⛔ PNR" event pin annotations and cost labels in each zone. "ML RUL Projection" label (integrity violation per our rules) removed and replaced with "GDC ML Forecast". (2) **Column resize splitters** — two `.h1-splitter` divs inserted between well-strip↔center and center↔copilot; `initH1CenterSplit(e, side)` wired to both; replaces the dead `initH1Resize` which was referencing `.h3-main-body` (a container that doesn't exist in the H1 layout). (3) **NS resize handle** — `h1-ns-handle` div added between chart and Window of Options (gated v-if="h1Injected"); `initH1NsSplit` method controls `h1ChartH` data property via `:style` binding. (4) **Well strip** — widened 82px → 110px; SVG `max-height:215px` changed to `flex:1;min-height:0` so the strip fills the full column height. (5) **Intel feed timestamps** — `item.ts_label` rendered in `.h1-ic-time` span on each feed row (field was already returned by the API, just never displayed in H1). Also corrected `h1SplitPercent` initial value 60→36 and added `h1ChartH:200` data property.
+
+**Design decisions:** Chart redesign settled on a "cost-zone" framing rather than the previous engineering-centric "ML RUL Projection" line — colored background zones make the business story ($0 vs $2k vs $150k) immediately readable by a non-technical observer. SCADA chart (second stacked chart) was discussed and deferred — the dual-reality bar at the top already handles the SCADA vs AI comparison narrative. "Dive deeper" technical sub-page also deferred — existing ⓘ, citation superscripts, and "How It Works" tab stub cover that need.
+
+**Verification:** Pod `fault-trigger-ui-64d4b6b944-9m5xb` 1/1 Running · `/api/mlops/status` → ollama_online: True, gemma4:latest · digest `sha256:55e56268`.
+
+**Next task:** Collect user visual feedback on the Detect tab, then implement H2 ("Discern") tab redesign per DEMO_MASTER §5 — two-line vibration+temp chart, H2 dual-reality bar with 6 evidence chips, LLM copilot "$1,500 vs $150,000" verdict, reuse all H1 CSS patterns.
+
+---
+
 ## Session L (June 4, 2026) — *H1 UI Redesign + Vue template bug fix*
 
 **Code committed:** `e500c4d` (feat: H1 redesign — Detect/Discern/Optimize tabs, dual-reality bar, 3-col layout, copilot dominant, wopt v-if), `1915fe1` (fix: remove em-dash from {{ }} expressions — incorrect theory, benign change), `df13bf2` (fix: remove extra </div> that closed #app early)  
