@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session M end)
-**Git Head:** `9b77d4b` — clean working tree
+**Date:** June 4, 2026 (Session N end — design approved, not yet implemented)
+**Git Head:** `ae3a03f` — clean working tree
 **fault-trigger-ui image digest:** `sha256:55e5626853cc1d6da10390159b90432eeacaf60e265254d765428cdb1a26a0db`
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
@@ -29,53 +29,101 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
-Also read the **last 2 entries** in SESSION_LOG.md (Sessions M and L).
+Also read the **last 2 entries** in SESSION_LOG.md (Sessions N and M).
 
 ---
 
-## STEP 3: What Was Built This Session (H1 Bug Fixes)
+## STEP 3: Implementation Task — H1 Chart Redesign + Layout Fixes
 
-**Live at:** `http://gdc-pm.bdau.io` → "Detect" tab
+This session has ONE task: implement the approved chart redesign and layout changes in `index.html`. All changes in a single batched `replace_in_file` call.
 
-### Changes deployed (commit `9b77d4b`):
+### Approved Design (from Session N discussion — FINAL, DO NOT REVISIT)
 
-**Cost-zone chart** — `_renderH1Charts` completely rewritten:
-- Pre-injection: shows "Live Sensor Reading" + "SCADA Alarm Threshold" only. Clean "NOW — Monitoring" label. No fault projection, no declining lines.
-- Post-injection: adds "GDC ML Forecast" (orange dashed) + three colored background zones (green=$0, amber=~$2k, red=$150k) + "🤖 AI detects — ACT NOW", "📡 SCADA alarms T+Xm", "⛔ PNR" event pins + cost labels at bottom of each zone.
-- Removed "ML RUL Projection" label (integrity violation) — replaced with "GDC ML Forecast".
+#### A. Primary H1 Chart: "Minutes Until Pump Failure" — 3-Line Context Fusion
 
-**Column resize splitters** — two `.h1-splitter` divs added between well-strip↔center and center↔copilot. `initH1CenterSplit(e, side)` method wired to both. Replaces dead `initH1Resize` (was pointing at `.h3-main-body` which doesn't exist in H1 layout).
+The central visual argument of the Detect tab. **No raw sensor values on the Y-axis.**
 
-**NS resize handle** — `<div class="h1-ns-handle">` added between chart and Window of Options (v-if="h1Injected"). `initH1NsSplit` wired. `h1ChartH` data property (starts 200px) controls chart height dynamically via `:style`.
+```
+Y-axis: "Minutes Until Pump Failure" (descending = more urgent)
+X-axis: Rolling time window (showing last ~30 min of history)
 
-**Well strip wider** — width 82px → 110px. SVG `max-height:215px` → `flex:1;min-height:0` so it fills the full column height.
+Line 1 (gray, thick):
+  "📡 SCADA Threshold Monitoring"
+  Stays HIGH — deterministic threshold hasn't been crossed yet
+  Honest: SCADA is not stupid, it just can't compute the pattern
 
-**Intel feed timestamps** — `<span class="h1-ic-time">{{ item.ts_label }}</span>` added to each `.h1-ic-row`. The `ts_label` field is already returned by `/api/intelligence-feed` (computed server-side as "just now", "Xm ago", "Xh ago").
+Line 2 (orange dashed):
+  "⚡ GDC AI: Sensor-Only"
+  XGBoost pattern recognition, no documents
+  Source value: d.time_to_scada_minutes from API
+  Drops faster than SCADA line — multi-sensor correlation working
 
-**`h1SplitPercent` initial value** changed 60 → 36 (matches h1-center's CSS `flex:0 0 36%`). `h1ChartH: 200` added to data.
+Line 3 (solid bright orange, LOWEST):
+  "⚡ GDC AI: Context-Fused"
+  After reading shift log + lab test from AlloyDB RAG
+  Source value: d.adjusted_rul_minutes from API
+  Drops FASTEST — RAG pipeline amplifying the signal
+  
+Shaded bracket between Line 2 and Line 3:
+  Label: "⚡ Context Fusion: −[N]m (shift note + GOR lab test [¹][³])"
+  N = Math.round(time_to_scada_minutes - adjusted_rul_minutes)
+  Only rendered when N > 0 (gap exists)
+```
+
+**Pre-injection state:** Three flat horizontal lines near a nominal "well healthy" level (e.g., 120+ minutes). Clean, calm, no alarm.
+
+**Post-injection behavior:** GDC lines begin declining as health score degrades. Context-fused line diverges below sensor-only line ~15–30s after injection (when first RAG documents are retrieved). Presenter can point to the divergence in real-time.
+
+**Implementation notes:**
+- `_renderH1Charts(d)` receives the full forecast-data API response
+- `d.time_to_scada_minutes` = sensor-only estimate (already in API)
+- `d.adjusted_rul_minutes` = RAG-adjusted estimate (already in API)
+- Pre-injection: render flat lines; post-injection: plot actual computed values
+- Chart ID: keep `id="h1-gdc-chart"` (existing DOM element)
+- Do NOT hardcode any time values — all computed from live API response
+
+#### B. Secondary Chart: SCADA Raw Telemetry (retain below primary)
+
+Keep a smaller SCADA telemetry chart below the primary chart with a horizontal NS resize handle between them. The SCADA chart shows:
+- Raw PIP/Amps/Temp (selected sensor tab) as a live line
+- SCADA alarm threshold as a flat dashed red line
+- Post-injection: the live line declines slowly while staying ABOVE the threshold
+- Label: "📡 SCADA View — No alarm triggered"
+- This chart is the honest companion: SCADA isn't wrong, it just fires later
+
+Chart ID for SCADA: `id="h1-scada-chart"` (new element to add)
+
+#### C. Layout Changes
+
+1. **Well strip → far right:** Move `.h1-well-strip` div from BEFORE h1-center to AFTER h1-copilot-pane (last child of h1-body). Set `width:180px; align-self:stretch; order:3`.
+2. **Add SVG callout labels** on the well strip (dynamic, large enough to read):
+   - At pump intake: `"Intake: Nominal"` → `"Intake: 68% GVF ⚠"` on inject
+   - At motor: `"Motor: Cooling normal"` → `"Motor: Cooling lost ⚠"` on inject
+3. **Column order:** Charts (left, ~44%) | GDC Advisor (center, ~38%) | Well schematic (right, ~18%)
+4. **"Copilot" → "GDC Advisor" everywhere:**
+   - HTML label: `"🤖 GDC Advisor — Gemma 4 · On-Cluster · No Cloud Required"`
+   - Placeholder text: `"Ask a follow-up question…"` → keep, just rename the header
+   - CSS class rename: `.h1-copilot` → `.h1-advisor` (and all variants)
+   - Vue data: `h1CopilotHtml` → `h1AdvisorHtml`, `h1CopilotStreaming` → `h1AdvisorStreaming`, `h1CopilotTimer` → `h1AdvisorTimer`, `h1CopilotText` → `h1AdvisorText`
+   - Method: `_startCopilotStream` → `_startAdvisorStream`
+   - **IMPORTANT:** Update all uses across index.html in one pass — do NOT miss any
+5. **Dynamic feed poll:** Add `setInterval(() => { fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock').then(...).then(d => { if(d) this.h1FeedItems = d.items || []; }); }, 15000)` during `h1Injected && !h1Resolved` state. Clear the interval on reset.
+
+#### D. app.py Change (small, required for the chart)
+
+The `/api/plot/forecast-data` endpoint already returns `adjusted_rul_minutes`. Verify it is non-null during active faults. If `adjusted_rul_minutes` comes back null (RAG hasn't run yet), the chart should use `time_to_scada_minutes` for both lines (gap = 0, context fusion bracket hidden).
+
+No other app.py changes required.
 
 ---
 
-## STEP 4: Next Session Flow
+## STEP 4: Implementation Sequence (Atomic Fix Rule)
 
-### A. Collect visual feedback on Detect tab
-
-Open `http://gdc-pm.bdau.io`, navigate to "Detect" tab. Key things to verify:
-1. Well strip — now 110px wide, fills full column height?
-2. Chart pre-injection — clean "Live Sensor Reading" + SCADA threshold, no fault elements?
-3. Column drag handles — left and right splitters draggable?
-4. Intel feed rows — timestamp shows (e.g., "2h ago")?
-5. Inject fault — cost-zone chart appears with green/amber/red zones + AI vs SCADA pins?
-6. NS handle appears below chart after injection — draggable?
-
-### B. After visual feedback: H2 (Discern) tab redesign
-
-Per DEMO_MASTER.md §5:
-- Reuse ALL CSS from H1 redesign (`.dr-bar`, `.h1-body`, `.h1-copilot-pane`, `.h1-intel-compact`)
-- Primary visual: two-line superimposed chart — Vibration (rising, orange) + Motor Temp (flat, blue)
-- H2 evidence chips in dual-reality bar: 📊 Vibration↑, 📊 Temp─(flat), 📋 Shift note, 🧪 Separator test, 📋 Choke log, 📖 OEM guide
-- LLM copilot: "$1,500 truck roll, not $150,000 pump pull"
-- No Window of Options for H2
+1. **First:** `grep -n` key sections to confirm line numbers before editing
+2. **Second:** Single batched `replace_in_file` on `index.html` with all changes
+3. **Third:** `docker build → docker push → kubectl rollout restart`
+4. **Fourth:** Verify live at `http://gdc-pm.bdau.io`
+5. **Fifth:** Update docs and commit
 
 ---
 
@@ -88,3 +136,4 @@ Per DEMO_MASTER.md §5:
 - Financial case: LLM only, no static financial cards
 - Token budget: batch all edits to same file in ONE replace_in_file call
 - Correct registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+- "Copilot" is a Microsoft product name — do NOT use it anywhere in the UI

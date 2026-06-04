@@ -5,6 +5,23 @@
 
 ---
 
+## Session N (June 4, 2026) — *H1 chart design — approved, not yet implemented*
+
+**Code committed:** None (design session only — no code written)
+**Cluster image:** Unchanged from Session M (`sha256:55e56268`)
+
+**What was decided:** Extended design discussion triggered by user feedback on the Session M screenshot. Six issues identified: (1) Well strip placement (left column, too small, not readable); (2) Chart still confusing — Y-axis in PSI explains nothing to a business audience; (3) "SCADA Alarm" pins showing 4+ hours out (timing bug in chart render — `time_to_scada_minutes` returns large values in nominal state); (4) Truck roll/chemical injection as H2 scenario expansion; (5) LLM update frequency (every 20-30s, intel feed only refreshes on inject); (6) "GDC Copilot" = Microsoft competitor brand conflict.
+
+**Key design decision approved (the chart redesign):** Replace raw sensor telemetry (PSI/Amps/Temp) as the primary H1 visual with a **"Minutes Until Pump Failure" chart** showing three distinct lines on the same plot: (1) gray — SCADA deterministic threshold monitoring (stays HIGH — honestly shows SCADA hasn't been alarmed yet); (2) orange dashed — GDC AI sensor-only XGBoost prediction; (3) solid orange — GDC AI context-fused prediction (adjusted by retrieved AlloyDB RAG documents). A shaded bracket between lines 2 and 3 dynamically labels the gap as "Context Fusion: −Nm (shift note + GOR lab test)". No hardcoded values — all computed live from `d.time_to_scada_minutes` and `d.adjusted_rul_minutes` from the API. Pre-injection: three flat calm lines at ~120+ minutes. Post-injection: GDC lines decline; context-fused line diverges below sensor-only after first RAG retrieval cycle.
+
+**Key rejections this session:** Rejected raw-sensor-on-Y-axis approach (requires narration to understand). Rejected hardcoded timing values (integrity violation). Rejected "straw-manning" SCADA as dumb — SCADA can do multivariate correlation; our advantage is specifically (a) retrainable physics-aware models and (b) unstructured document fusion. Rejected two-chart comparative-only approach (proposed by Gemini during a brief model switch) — the context-fusion gap visualization requires both the sensor-only AND context-fused forecasts on the same Y-axis to make the gap visible.
+
+**Additional layout changes approved:** Well strip moved to far right (decorative, full-height, 180px, with dynamic SVG callout labels for pump intake and motor status). "GDC Copilot" renamed to "GDC Advisor" throughout all CSS, Vue data, and HTML labels (Microsoft Copilot brand conflict). Dynamic feed poll every 15s during active fault.
+
+**Next task:** Fresh session, implement the approved chart design. ONE batched `replace_in_file` call to index.html. See NEXT_SESSION_PROMPT.md Step 3 for complete implementation spec.
+
+---
+
 ## Session M (June 4, 2026) — *H1 Detect tab bug fixes + chart redesign*
 
 **Code committed:** `9b77d4b` (fix: H1 Detect tab — cost-zone chart, column splitters, NS resize, well strip height, intel timestamps, clean pre-injection state)

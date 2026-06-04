@@ -96,33 +96,51 @@ The ESP is still submerged in fluid. The failure is thermal, not mechanical dryo
 
 5. **Capital preserved: $150,000. Direct cost: $0.**
 
-### H1 UI Layout
+### H1 UI Layout (Session N — Approved)
+
+**Column order:** Charts (left ~44%) | GDC Advisor (center ~38%) | Well Schematic (far right ~18%)
 
 ```
-╔══════════════════════════════════════════════════════════════════════════╗
-║ STATUS BAR: [SCADA: ✓ All Nominal · No alarms] | [GDC: 94% gas_lock ⚠] ║
-╠═══════════════════════════════════╦════════════════════════════════════╣
-║ LEFT (55%) — THE WELL             ║ RIGHT (45%) — THE EVIDENCE & MIND  ║
-║                                   ║                                     ║
-║ [2D SVG Well Schematic]           ║ [EVIDENCE CONVERGENCE WALL]         ║
-║ Wellbore cross-section            ║ 5 source categories, activating     ║
-║ Animated gas/liquid particles     ║ in sequence on injection            ║
-║ Motor temp color gradient         ║                                     ║
-║                                   ║ [CITED LLM COPILOT — streaming]     ║
-║ [Primary Plotly Chart]            ║ Auto-triggers on inject             ║
-║ Blue: live telemetry              ║ Superscript citations [¹][²][³]     ║
-║ Orange dashed: ML projection      ║ Clickable to source document        ║
-║ Red dashed: SCADA threshold       ║ Multi-turn follow-up chat           ║
-║ Orange bar: PNR marker            ║                                     ║
-║                                   ║                                     ║
-║ [WINDOW OF OPTIONS TIMELINE]      ║ [LIVE DOCUMENT FEED]                ║
-║ ●────────●─────────────●────●     ║ New AI docs every 20-30s            ║
-║ NOW    T+10m          T+25m FAIL  ║ ⚡ GDC AI — just now (badge)        ║
-║ [$0 ✓][+$8k✓][$150k—]            ║ Includes neutral + counterarg docs  ║
-║                                   ║                                     ║
-║ [APPROVE BUTTON — active option]  ║                                     ║
-╚══════════════════════════════════╩════════════════════════════════════╝
+╔═════════════════════════════════════════════════════════════════════════════════════════════╗
+║ DUAL-REALITY BAR: [SCADA · ESP-ALPHA-1: All Nominal] | [GDC AI · ESP-ALPHA-1: GAS LOCK ⚠] ║
+╠══════════════════════════════════════╦══════════════════════════════╦════════════════════════╣
+║ LEFT — CHARTS (~44%)                 ║ CENTER — GDC ADVISOR (~38%)  ║ RIGHT — WELL (~18%)    ║
+║                                      ║                              ║                        ║
+║ [PRIMARY: "Minutes Until Failure"]   ║ [GDC Advisor — streaming]    ║ [2D SVG Wellbore]      ║
+║ Y-axis: Minutes Until Pump Failure   ║ Auto-starts on inject        ║ Full height, 180px     ║
+║                                      ║ Renamed from "Copilot"       ║ Dynamic callouts:      ║
+║  Line 1 (gray): SCADA monitoring     ║ (not Microsoft product)      ║  - Intake: GVF%        ║
+║    → stays HIGH (honest: no alarm)   ║ Superscript citations        ║  - Motor: status       ║
+║  Line 2 (orange dashed): GDC ML     ║ Multi-turn follow-up chat    ║                        ║
+║    → sensor-only XGBoost prediction  ║                              ║ Decorative, not        ║
+║  Line 3 (solid orange): GDC AI      ║ [RAG Intel Feed — dynamic]   ║ structural. Moves      ║
+║    → context-fused (RAG-adjusted)    ║ Polls every 15s during       ║ to far right so        ║
+║                                      ║ active fault                 ║ charts get full        ║
+║ Shaded bracket between L2 & L3:      ║                              ║ width.                 ║
+║  "⚡ Context Fusion: −Nm"            ║                              ║                        ║
+║  computed from API delta             ║                              ║                        ║
+║  (only rendered when gap > 0)        ║                              ║                        ║
+║                                      ║                              ║                        ║
+║ ── NS resize handle ──               ║                              ║                        ║
+║                                      ║                              ║                        ║
+║ [SECONDARY: SCADA Raw Telemetry]     ║                              ║                        ║
+║  Live PIP/Amps/Temp line             ║                              ║                        ║
+║  Flat SCADA alarm threshold          ║                              ║                        ║
+║  "No alarm triggered" label          ║                              ║                        ║
+║                                      ║                              ║                        ║
+║ [WINDOW OF OPTIONS — post-inject]    ║                              ║                        ║
+║ [$0 ✓VIABLE][~$2k VIABLE][$150k]     ║                              ║                        ║
+╚══════════════════════════════════════╩══════════════════════════════╩════════════════════════╝
 ```
+
+**The primary chart self-labels the story:** Three "minutes until failure" lines diverging live tells the entire value proposition without narration. SCADA line stays high (honest — threshold hasn't been crossed). GDC sensor-only line drops (multi-sensor pattern recognition). Context-fused line drops *fastest* and diverges from sensor-only as RAG documents are retrieved in real-time. The bracket between lines 2 and 3 is the visual proof of Context Fusion.
+
+**No hardcoded timing values.** All chart values computed dynamically from:
+- `d.time_to_scada_minutes` — sensor-only XGBoost estimate
+- `d.adjusted_rul_minutes` — RAG-context-adjusted estimate
+- Gap = `Math.round(time_to_scada_minutes - adjusted_rul_minutes)` (shown in bracket)
+
+**GDC Advisor naming:** "GDC Copilot" retired. Microsoft Copilot is a direct competitor. All CSS, Vue data properties, and HTML labels use "GDC Advisor" / "Advisor".
 
 ### H1 Evidence Wall — 5 Source Categories
 
