@@ -17,9 +17,9 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · fault-trigger-ui-587fc8fb94-vqdst
+- All pods 1/1 Running · fault-trigger-ui-74996dbfd7-qdrbj
 - ollama_online: True · model: gemma4:latest
-- field_intel: ~99–105 rows · rag_documents: 18 rows
+- field_intel: ~99–110 rows · rag_documents: 18 rows
 
 ---
 
@@ -37,7 +37,7 @@ Also read the **last 2 entries** in SESSION_LOG.md (Sessions L and K).
 
 **Live at:** `http://gdc-pm.bdau.io` → "Detect" tab
 
-### Changes deployed (commit `e500c4d`):
+### Changes deployed (commits `e500c4d` → `1915fe1` → `df13bf2`):
 
 **Tab nav:** Renamed Horizon 1/2/3 → Detect / Discern / Optimize. Fleet Financials tab removed entirely.
 
@@ -69,14 +69,15 @@ Also read the **last 2 entries** in SESSION_LOG.md (Sessions L and K).
 
 ## STEP 4: Next Session Flow
 
-### A. First: Review Detect tab in browser and collect any remaining feedback
+### A. First: Review Detect tab in browser — user will give visual feedback
 
-Check:
-1. Dual-reality bar — does the two-column comparison read clearly?
-2. SVG well strip — visible and decorative (narrow, left column)?
-3. Copilot — does it fill the right side and feel dominant?
-4. Charts — do they show live data on tab open (before injection)?
-5. Window of Options — hidden until inject? Appears cleanly below chart?
+The user has not yet reviewed H1 in the browser this session. Open `http://gdc-pm.bdau.io`, navigate to "Detect" tab, and collect feedback before implementing H2. Key things to verify are live:
+1. Dual-reality bar — two-column SCADA vs GDC AI comparison readable?
+2. SVG well strip — narrow left strip visible?
+3. Copilot — dominant right panel, shows baseline monitoring text before inject?
+4. Charts — tick live data on tab open (before injection)?
+5. Window of Options — hidden until inject, appears below chart?
+6. Financial Justification modal — now renders correctly (bug fix `df13bf2`)?
 
 ### B. After feedback: H2 (Discern) tab redesign
 
