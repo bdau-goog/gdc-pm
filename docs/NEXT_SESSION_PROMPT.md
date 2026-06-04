@@ -90,6 +90,16 @@ Per DEMO_MASTER.md §5:
 
 ---
 
+## Known Integrity Violations — Fix Next Session
+
+| Issue | Location | Symptom | Root Cause | Fix Deadline |
+|-------|----------|---------|------------|-------------|
+| Financial Justification modal shows raw `{{ }}` template text | `index.html` lines 2553–2636 | Modal opens but all Vue expressions render as literal text (e.g., `{{ justifyData.fault_label }}`) | Unknown — possibly Vue 3 template compilation error caused by our new H1 HTML preceding this section. Pre-existing in commit `9951199`. Cannot confirm without browser devtools. | Session M |
+
+**Investigation needed:** Open browser devtools console on `http://gdc-pm.bdau.io` and check for Vue 3 template compilation warnings/errors. The modal is accessed via the Architecture tab. Look for any `[Vue warn]` messages related to template compilation.
+
+---
+
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
 - No browser on SSH remote — no `browser_action` tool
