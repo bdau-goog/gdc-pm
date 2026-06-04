@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
 **Date:** June 4, 2026 (Session L end)  
-**Git Head:** `e500c4d` — clean working tree  
-**fault-trigger-ui image digest:** `sha256:5c6d33ae114cb6b234bea46e074f3cb675d264650c4ceab73c956c0fc7762b3f`  
+**Git Head:** `1915fe1` — clean working tree  
+**fault-trigger-ui image digest:** `sha256:b0291a14a74edbcb756120f1f498188f46199dedfcaddfad9327cbcb94d0df5a`  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -87,16 +87,6 @@ Per DEMO_MASTER.md §5:
 - H2 evidence chips in dual-reality bar: 📊 Vibration↑, 📊 Temp─(flat), 📋 Shift note, 🧪 Separator test, 📋 Choke log, 📖 OEM guide
 - LLM copilot: "$1,500 truck roll, not $150,000 pump pull"
 - No Window of Options for H2 (slug flow → dispatch, no PNR countdown)
-
----
-
-## Known Integrity Violations — Fix Next Session
-
-| Issue | Location | Symptom | Root Cause | Fix Deadline |
-|-------|----------|---------|------------|-------------|
-| Financial Justification modal shows raw `{{ }}` template text | `index.html` lines 2553–2636 | Modal opens but all Vue expressions render as literal text (e.g., `{{ justifyData.fault_label }}`) | Unknown — possibly Vue 3 template compilation error caused by our new H1 HTML preceding this section. Pre-existing in commit `9951199`. Cannot confirm without browser devtools. | Session M |
-
-**Investigation needed:** Open browser devtools console on `http://gdc-pm.bdau.io` and check for Vue 3 template compilation warnings/errors. The modal is accessed via the Architecture tab. Look for any `[Vue warn]` messages related to template compilation.
 
 ---
 
