@@ -47,8 +47,12 @@ execute_on_start:
 # 3. If anything doesn't match: ask the user to confirm the correct state before proceeding
 # 4. Do NOT write any code until all 4 commands have been run and their output reported
 #
-# Then read gdc-pm/docs/NEXT_SESSION_PROMPT.md and report the NEXT SESSION PLAN
-# so the user knows what this session will work on before any work starts.
+# Then read BOTH of the following documents before writing any code:
+# 1. gdc-pm/docs/NEXT_SESSION_PROMPT.md — operational state (cluster, git head, next 2-3 tasks)
+# 2. gdc-pm/docs/DEMO_MASTER.md — AUTHORITATIVE spec for what we are building
+#    (H1/H2/H3 design, UI patterns, physics, agentic elements, implementation order)
+# Reading DEMO_MASTER.md is mandatory. It takes precedence over all other docs.
+# Also read the last 3 entries of docs/SESSION_LOG.md for recent decision context.
 #
 
 ## Integrity — No Silent Lies
@@ -79,39 +83,42 @@ The two primary files in this project are extremely large and their full content
 3. **Two edits = two full-file returns = ~400-500K tokens consumed.** Before making any edit, ask: can this be combined with the next planned edit? If yes, defer until all planned edits are ready, then execute as one batched call.
 4. **Parallel `replace_in_file` calls to the same file are permitted** but must target non-overlapping sections. Verify correctness with `grep -n` after, not by re-reading the full final_file_content output from the tool response.
 
-## Session Handoff (NEXT_SESSION_PROMPT.md)
-- At the end of every session, rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` as a complete, self-contained handoff for the next session. Do NOT append — always rewrite from scratch.
+## Session Handoff — Three-Document Architecture
 
-### Pre-Handoff Checklist (ALWAYS run before writing the handoff)
-1. **Check `git status`** — If uncommitted changes exist, list "Commit pending changes" as the #1 High Priority item, and note in the header: "⚠ Uncommitted changes in working directory."
-2. **Feature Completeness Gate** — For every item in "What Was Done This Session", verify it is truly end-to-end complete (code written + deployed + live in cluster). If any part of a feature remains in the To-Do list, the feature is NOT complete — label it **"Partially Complete"** and split its description between the two sections.
-3. **Cross-check To-Do vs What Was Done** — No item should appear in both sections. Any completed To-Do item must be removed from To-Do and moved to What Was Done.
-4. **Run the verification block** — Paste actual command output into the "Current Cluster State" section. Never write what you expect the state to be; write what the commands actually returned.
-5. **Known Integrity State table** — Include a table of any place where the display/UI shows something different from reality. If there are none, write "None — all displays match reality." Do not skip this section.
+There are now THREE documentation files with strictly defined roles. Do NOT conflate them.
 
-### Document Structure
-- The document must include, in order:
-  1. **Header** — date, live URL, project/cluster/namespace, current image tag, git head (include "⚠ Uncommitted changes in working directory" if `git status` shows any)
-  2. **MANDATORY SESSION OPENER** — the 4 verification commands with their expected output. This must be the first thing a new session runs.
-  3. **Known Integrity State** — table of any display vs reality mismatches. "None" is acceptable but must be stated explicitly.
-  4. **NEXT SESSION PLAN** — exactly what the next session will work on, in this format:
-     ```
-     | Fix | Change (one sentence) | Verification test (one command or action) | Est. complexity |
-     |-----|----------------------|------------------------------------------|-----------------|
-     | 8b  | random.sample in intel feed | Inject gas_lock twice; confirm different 3 items each run | Small |
-     | 10  | get_gemma_finding() dynamic | Check gemma_finding varies between runs | Small |
-     ```
-     - "Small" = one function, <30 lines, one verification step
-     - "Medium" = 2-3 functions, one deploy needed, 2-3 verification steps
-     - "Large" = schema change, multiple files, own session required
-     - A session with token budget of ~200K fits: 3-5 Small, 2-3 Medium, 1 Large (never mix Large with others)
-  5. **What Was Done This Session** — only **fully deployed, live work**. Use "Partially Complete" for features where the code was written but not fully wired or deployed.
-  6. **Current Cluster State** — running pods with one-line descriptions. Use VERIFIED ACTUAL OUTPUT, not what you expect.
-  7. **Outstanding Development Items (Backlog)** — everything NOT in the next session plan. Numbered, prioritised (High / Medium / Low). Items not in the next plan should include a one-line implementation note so future sessions can pick them up.
-  8. **Constraints** — the permanent "never violate" list (unchanged unless a constraint is explicitly retired)
-  9. **Rebuild & Deploy Commands** — exact copy-paste commands for the next session
-  10. **Key Lessons Learned** — session-specific only; replace, do not accumulate across sessions
+### 1. `docs/DEMO_MASTER.md` — Permanent Spec (update only on design changes)
+Contains: value proposition, H1/H2/H3 specs, UI patterns, physics, agentic elements, implementation order. Updated ONLY when an explicit design decision changes. Never cleared or rewritten wholesale.
 
-- The document must be **clean**: no historical "What Was Done in Session N-2" sections, no completed to-do items, no outdated caveats. Each handoff should read as if written fresh for a new reader.
-- The next session is started by pasting the entire contents of this file as the first message in a new conversation. Optimise for that use case — be precise, not exhaustive.
-- **Trigger phrase:** When the user says **"wrap session"**, immediately: (1) run the Pre-Handoff Checklist, (2) rewrite `gdc-pm/docs/NEXT_SESSION_PROMPT.md` per the rules above, (3) confirm with a one-paragraph summary of what was done and what's next. No other words needed from the user.
+### 2. `docs/NEXT_SESSION_PROMPT.md` — Operational State (~40 lines max)
+Contains ONLY: cluster state, mandatory startup commands, git head, image digest, next 2-3 specific tasks. **Rewrite this file every session.** Keep it short. It is NOT a narrative — it is an operational checklist.
+
+### 3. `docs/SESSION_LOG.md` — Append-Only History
+One paragraph per session. **Never delete or overwrite entries.** Append a new entry at the top each session. New sessions read only the last 3-5 entries.
+
+### Pre-Handoff Checklist (run before writing handoff)
+1. `git status` — if uncommitted changes, commit them first
+2. Verify all work is deployed and live (`kubectl get pods`, `curl` the API endpoint)
+3. Run the 4 mandatory startup commands and record actual output in NEXT_SESSION_PROMPT.md
+4. Check if any DEMO_MASTER.md design decisions were changed this session — if yes, update that file
+5. Append this session's summary to SESSION_LOG.md (one paragraph: decisions made, code committed, key rejections, next task)
+
+### NEXT_SESSION_PROMPT.md Format (the new compact format)
+```
+# Next Session Prompt — GDC Edge AI Demo (Operational State)
+Date / git head / image digest / branch
+
+## STEP 1: Run These Four Commands First
+[4 commands + expected output]
+
+## STEP 2: Read DEMO_MASTER.md
+[cat command]
+
+## STEP 3: Next Implementation Task
+[specific tasks from DEMO_MASTER.md §12 Implementation Order]
+
+## Constraints (Permanent)
+[short list]
+```
+
+- **Trigger phrase:** When the user says **"wrap session"**, immediately: (1) run the Pre-Handoff Checklist, (2) update NEXT_SESSION_PROMPT.md in compact format, (3) append to SESSION_LOG.md, (4) update DEMO_MASTER.md if design changed, (5) commit all three docs, (6) confirm with one-paragraph summary.
