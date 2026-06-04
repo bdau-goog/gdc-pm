@@ -5,6 +5,21 @@
 
 ---
 
+## Session P (June 4, 2026) — *CSS instrument panel + 4-sensor SCADA chart + chart coherence fix*
+
+**Code committed:** `919c7ee` (feat: CSS instrument panel (GVF/PIP/Amps/Temp), 4-sensor normalized SCADA chart (% Δ baseline))
+**Cluster image digest:** `sha256:c335c72c` (fault-trigger-ui) · pod `fault-trigger-ui-7f476cf587-6bmgk` 1/1 Running
+
+**What was built and deployed:** Two improvements prompted by user visual feedback on the Session O screenshot. (1) **CSS Instrument Panel** — the 45-line SVG wellbore cross-section replaced entirely with a CSS-only "downhole instrument panel." Structure: `WELL A-1` title + pulsing status dot (`dot-green`/`dot-amber`/`dot-red` with `@keyframes ws-pulse`) → animated fluid column (`.wstrip-casing` with `.fluid-nominal`/`.fluid-gaslock` CSS gradient animations + 3 CSS bubble floaters) → PUMP block (blue border) + MOTOR block (CSS `box-shadow` glow transitions: `motor-ok`/`motor-warn`/`motor-crit` with `@keyframes motor-glow`) → 4 instrument readouts (GVF% with animated bar, PIP↓, AMPS↓, TEMP — all live Vue data, color-coded). Design aesthetic taken from `gdc-das-physics-detection/gke/das-web-ui`: bold, dark, readable at any size, no tiny unrenderable SVG primitives. (2) **4-Sensor Normalized SCADA Chart** — replaced single-sensor-with-tabs approach (`setH1Sensor` / h1-stab tabs) with an overlay showing all 4 sensors (PIP, Amps, Temp, Vib) normalized to `% Δ from initial baseline value` on one Plotly chart. PIP and Amps decline together (orange solid / orange dotted) while Temp and Vib stay flat near 0% (blue / grey). Zero-line reference added. "✓ All above SCADA threshold" annotation bottom-right. This chart makes the multivariate correlation argument visual without narration — two sensors co-decline while two hold flat = gas lock signature, SCADA threshold not crossed.
+
+**Decisions made this session:** (a) SVG wellbore rejected as renderable at 180px — CSS instrument panel is the correct tool at this scale. (b) Single-sensor SCADA chart with tabs undermined the multivariate argument by mimicking what SCADA does (one sensor, one threshold). 4-sensor normalized overlay is the correct visualization for "GDC sees the correlation, SCADA doesn't alarm." (c) Amps added to instrument panel per user request.
+
+**Verification:** Pod 1/1 Running · digest `c335c72c` · ollama_online: True, gemma4:latest. Git clean on `feature-trio-scenarios`.
+
+**Next task:** Visual verification of full H1 demo flow (inject → fluid column turns amber → status dot pulses amber → bubbles rise → SCADA chart shows PIP/Amps declining together, Temp/Vib flat → AI chart lines diverge → GDC Advisor streams → Window of Options → Approve). Then H2 (Discern) tab redesign per DEMO_MASTER.md §5.
+
+---
+
 ## Session O (June 4, 2026) — *H1 chart redesign — implemented, deployed, verified*
 
 **Code committed:** `15330a4` (feat: H1 chart redesign — Minutes Until Failure 3-line chart, SCADA secondary, GDC Advisor rename, well strip to right, SVG callout labels, dynamic feed poll)
