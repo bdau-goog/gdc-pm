@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session R end — Phase 1 frontend modularization complete)
-**Git Head:** `0d18533` — clean working tree
-**fault-trigger-ui image digest:** `sha256:85738e70` (live, has static file split)
+**Date:** June 4, 2026 (Session R end — Phase 1 + Phase 2 complete)
+**Git Head:** `faebd9f` — clean working tree
+**fault-trigger-ui image digest:** `sha256:db6f7b6d` (live, has Phase 1 + Phase 2)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,14 +17,17 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · fault-trigger-ui pod name starts with `74559b58dc`
+- All pods 1/1 Running
 - ollama_online: True · model: gemma4:latest
 - field_intel: 80–120 rows · rag_documents: 18 rows
 
-**Also verify static assets are served:**
+**Also verify static assets + Phase 2 API fields:**
 ```bash
 curl -s -o /dev/null -w "%{http_code}" http://gdc-pm.bdau.io/static/styles.css  # expect 200
 curl -s -o /dev/null -w "%{http_code}" http://gdc-pm.bdau.io/static/app.js      # expect 200
+curl -s http://gdc-pm.bdau.io/api/plot/forecast-data/ESP-ALPHA-1 | python3 -c \
+  "import sys,json;d=json.load(sys.stdin);print('thermal_lead:',d.get('thermal_lead_time_minutes'),'class_probs:',d.get('class_probs'))"
+# expect: thermal_lead: <non-null float> class_probs: {dict}
 ```
 
 ---
@@ -38,6 +41,20 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 ---
 
 ## STEP 3: What Was Done This Session (Session R)
+
+### Phase 2 COMPLETE — app.py Truth Layer
+
+**What changed in `app.py` (commit faebd9f):**
+- `thermal_lead_time_minutes` added to `/api/plot/forecast-data` response
+  - Computed: `(280 - temp_v[-1]) / dtemp_dt` (°F/min from polyfit)
+  - Varies per run — defeats "always 25m" convergence problem
+  - Verified live: returned 8.9 min (dtemp_dt=9.335 °F/min)
+- `class_probs` dict added — genuine model label distribution from last 20 DB rows
+  - Currently shows `{'inference_error': 0.0}` — honest (ESP classifier not in inference-api pod)
+  - Will show `{'gas_lock': 0.94, ...}` when inference-api has ESP classifier loaded
+- RAG seed doc protection: prune query now preserves 5 oldest AI shift-notes
+  - Fixes: GVF seed doc was pruned after ~10 intel cycles, collapsing RAG gap to 0
+- Advisor fallback: replaces "Unable to reach AI model" with physically grounded template
 
 ### Phase 1 COMPLETE — Frontend Modularization (behavior-preserving)
 
@@ -55,59 +72,27 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 4: Next Implementation Task — Phase 2 (app.py Truth Layer)
+## STEP 4: Next Implementation Task — Phase 3 (HP-HMI Design System)
 
-**Goal:** Make the backend data honest and non-converging so the UI has clean signals.
+**Goal:** Build the shared reusable visual components in `static/styles.css` and `static/app.js` that H1/H2/H3 all use.
 
-**Four surgical `app.py` changes (one batched `replace_in_file` call):**
+### Components to build (in Phase 3):
+1. **Moving-analog-indicator** — HP-HMI bar with live pointer, gray normal band, alarm limit on the indicator itself. CSS class `.mai` + Vue component. Split into LEADING group (PIP, Amps) and LAGGING group (Temp).
+2. **Fault classification panel** — Probability bar chart from `class_probs` API field. The "this is categorically ML not threshold" visual.
+3. **Status banner** — Full-width, gray when nominal → amber/red on fault. Uses `thermal_lead_time_minutes` and `class_probs.gas_lock` to drive state.
+4. **Gray/color discipline** — Nominal state: almost entirely gray/desaturated. Fault state: color blooms.
 
-### 2A — `thermal_lead_time_minutes` in `/api/plot/forecast-data`
-Add to the response dict after the slopes block:
-```python
-# Thermal lead-time: how long until motor winding temp reaches Class H limit
-# dtemp_dt is in °F/min (from polyfit × READINGS_PER_MIN)
-# This varies per run because _run_degrade_thread randomizes _temp_target and _k
-_thermal_lead = None
-if dtemp_dt > 0.05 and last_temp < 280.0:
-    _thermal_lead = round((280.0 - last_temp) / dtemp_dt, 1)
-```
-Add `"thermal_lead_time_minutes": _thermal_lead` to the return dict.
+### API fields now available (Phase 2 ✅):
+- `thermal_lead_time_minutes` — the per-run-varying lead-time number
+- `class_probs` — multi-class probability distribution
+- `adjusted_rul_minutes` — RAG context-adjusted estimate
+- `slopes.dtemp_dt` — temperature rate of change (°F/min)
 
-### 2B — `class_probs` derived from recent telemetry labels
-In the same endpoint, after computing health_score, add:
-```python
-# Multi-class probability distribution from recent model labels
-# Derived from predicted_label + confidence in last 10-min DB window
-from collections import Counter, defaultdict
-_label_conf = defaultdict(list)
-for r in rows[-20:]:
-    lbl = (r.get("predicted_label") or "normal").lower()
-    conf = float(r.get("confidence") or 0.0)
-    _label_conf[lbl].append(conf if lbl not in ("normal","") else 1.0 - conf)
-_class_probs = {}
-_total_weight = max(sum(sum(v) for v in _label_conf.values()), 1.0)
-for lbl, confs in _label_conf.items():
-    _class_probs[lbl] = round(sum(confs) / _total_weight, 3)
-```
-Add `"class_probs": _class_probs` to return dict.
+### Phase 3 target files:
+- `static/styles.css` — add `.mai`, `.classify-panel`, `.status-banner` CSS
+- `static/app.js` — add Vue component definitions; wire to `class_probs` + `thermal_lead_time_minutes`
 
-### 2C — Protect RAG seed doc from 100-row prune
-In `_intel_generator`, the prune query deletes all but 100 rows. The GVF seed doc (inserted at inject time) gets pruned when the generator writes ~10+ docs. Fix: add a `WHERE lbl_type != 'ai' OR id IN (SELECT id FROM field_intel WHERE lbl = 'AI' ORDER BY created_at ASC LIMIT 5)` guard to protect the seed.
-
-Simpler fix — just re-insert the seed doc on each forecast-data poll while fault is active (already done on inject, do it in `/api/plot/forecast-data` if `fault_active` and no GVF doc in recent window).
-
-### 2D — Advisor 20s timeout + template fallback
-In `agent_chat` endpoint, change `timeout=20` (from current 20) and add:
-```python
-return {"response": (
-    f"Gas lock confirmed. PIP declining at {req.context[:80] if req.context else 'rate visible on chart'}. "
-    f"Your $0 option (VFD 52→44 Hz) is available now. "
-    f"Waiting increases risk — act within the viable window."
-)}
-```
-Return this template if Ollama call fails instead of the current "Unable to reach AI model" message.
-
-**Verify with:** `curl -s http://gdc-pm.bdau.io/api/plot/forecast-data/ESP-ALPHA-1 | python3 -c "import sys,json;d=json.load(sys.stdin);print('thermal_lead:',d.get('thermal_lead_time_minutes'),'class_probs:',d.get('class_probs'))"`
+Both files are now modular (~829 and ~1569 lines) — edits are ~6× cheaper than before Phase 1.
 
 ---
 

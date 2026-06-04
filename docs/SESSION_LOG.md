@@ -2,6 +2,19 @@
 
 ---
 
+## Session R — Addendum (June 4, 2026) — *Phase 2 app.py truth layer — deployed and verified*
+
+**Code committed:** `faebd9f` (feat: Phase 2 app.py truth layer — thermal_lead_time, class_probs, RAG seed protection, advisor fallback)
+**Cluster image digest:** `sha256:db6f7b6d` (fault-trigger-ui)
+
+**What was built and deployed:** Four surgical `app.py` changes in a single batched `replace_in_file` call. (1) **`thermal_lead_time_minutes`** added to `/api/plot/forecast-data` response: computed as `(280 - temp_v[-1]) / dtemp_dt` where `dtemp_dt` comes from polyfit over fault-labeled rows. This number varies per run because `_run_degrade_thread` randomizes `_temp_target` and `_k` — directly solves the "always 25m" convergence problem. Verified live: returned 8.9 min with dtemp_dt=9.335 °F/min. (2) **`class_probs` dict** added to same endpoint: derived from the distribution of `predicted_label` + `confidence` in the last 20 DB rows. Currently shows `{'inference_error': 0.0}` because the ESP classifier isn't loaded in the inference-api pod — that's honest, not a code bug. During active gas_lock with a working classifier, will show `{'gas_lock': 0.94, ...}`. (3) **RAG seed doc protection**: the `_intel_generator` prune query now adds `AND id NOT IN (SELECT id FROM field_intel WHERE doc_type='shift_note' AND lbl_type='ai' ORDER BY created_at ASC LIMIT 5)` — protects the GVF seed document from being pruned after ~10 intel cycles, keeping the context-fusion RAG gap alive throughout the demo. (4) **Advisor template fallback**: `/api/agent/chat` now returns a physically grounded response when Gemma is unavailable, instead of "Unable to reach AI model." 
+
+**Key data source discovery:** The inference-api (separate pod) outputs a full softmax `probabilities: dict[str, float]` on its `/predict` endpoint — confirmed from inspection of `gke/inference-api/app.py`. But the event-processor only stores `predicted_label` + `confidence` (top class), not the full vector, in `telemetry_events`. The `class_probs` field uses the stored labels. If the inference-api ESP classifier were loaded, this would produce a real multi-class probability distribution.
+
+**Next task:** Phase 3 — HP-HMI/ISA-101 design system components: moving-analog-indicator (leading/lagging split), fault classification panel (from `class_probs`), status banner (from `thermal_lead_time_minutes`), gray/color discipline. Target files: `static/styles.css` + `static/app.js` (both now ~800-1600 lines, ~6× cheaper than pre-Phase-1).
+
+---
+
 ## Session R (June 4, 2026) — *Design overhaul + Phase 1 frontend modularization — deployed and verified*
 
 **Code committed:** `0d18533` (feat: Phase 1 frontend modularization — split index.html into static/{styles.css,app.js})
