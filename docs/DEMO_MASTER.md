@@ -436,15 +436,64 @@ The LLM copilot must explicitly address counterargument documents when they appe
 - [ ] **RAG gap collapses to 0 after ~5 minutes.** Seed GVF doc rotated out by 100-row prune after ~10 `_intel_generator` cycles. Fix: protect seed doc from prune OR re-insert on each forecast poll while fault is active.
 - [ ] **Advisor T+2m update returns "Unable to reach AI model."** `/api/agent/chat` call times out or errors. No graceful fallback template. Fix: 20s timeout + template fallback.
 
-#### H1 V2 Redesign Required (Get Approval Before Coding)
-See NEXT_SESSION_PROMPT.md §4 for the full V2 wireframe. Core changes:
-- **Delete phase-plane chart** — too clever, unreadable to audience
-- **Add live event-active banner** with ticking elapsed timer
-- **Add "YOU ARE HERE" moving marker** on the Window of Options timeline
-- **Add directional labels** to every sensor gauge bar
-- **Add evidence reveal sequence** — text lines appear progressively as fault develops
-- **Motor state from actual temperature** — not elapsed time
-- **Advisor with template fallback** — if Gemma times out, still say something correct
+#### H1 V2 Redesign — Design Approved, Pending Implementation
+
+**Core principle:** A business person riding by on a fast horse must understand (a) something is wrong, (b) how much time is left, and (c) what it costs to act now vs. later — in 3 seconds, without narration.
+
+**Wireframe:**
+```
+╔════════════════════════════════════════════════════════════════════╗
+║ STATUS BANNER (full width, color-changes):                         ║
+║  Pre-inject: [✓ WELL A-1 NOMINAL — 4 sensors · no alarm]          ║
+║  Post-inject: [⚠ GAS LOCK ACTIVE · T+02:14 · 16 min remaining]   ║
+╠══════════════════════════════╦═════════════════════════════════════╣
+║ LEFT COLUMN (~50%)            ║ RIGHT COLUMN (~50%) — GDC ADVISOR  ║
+║                               ║                                    ║
+║ DECISION TIMELINE:            ║ Streaming Gemma assessment         ║
+║ NOW ——▶— YOU ARE HERE ————|—|—║ Auto-starts on inject              ║
+║            ↑             $0 $2k  $150k   FAIL                      ║
+║          (elapsed)      T+18 T+23                                  ║
+║                                ║ [Re-fires on new intel doc]       ║
+║ SENSOR BARS (directional):    ║ [Re-fires MARGINAL/EXPIRED]        ║
+║ PIP  ████████████░░  1,340 PSI ║ [Fallback template on timeout]    ║
+║      ↓ Lower=worse · Alarm 800 ║                                    ║
+║      ✓ Above SCADA threshold  ║ INTEL FEED:                        ║
+║                                ║ ⚡ Tour 2 Shift Note · just now   ║
+║ AMPS ████████░░░░░░   69.6 A  ║ ⚡ Lab: GOR 1310 · 2m ago          ║
+║      ↓ Lower=worse · Alarm 50A ║ 📋 PM Record · 1d ago             ║
+║      ✓ Above SCADA threshold  ║                                    ║
+║                                ║                                    ║
+║ TEMP ████░░░░░░░░░░░  199 °F  ║                                    ║
+║      ↑ Higher=worse · Alarm 280║                                    ║
+║      ✓ Below SCADA threshold  ║                                    ║
+║                                ║                                    ║
+║ ─── SCADA vs GDC summary ─── ║                                    ║
+║ SCADA: "4 sensors, all OK,    ║                                    ║
+║  no alarm fired"              ║                                    ║
+║ GDC:   "PIP + Amps declining  ║                                    ║
+║  TOGETHER + shift note GVF 78% ║                                    ║
+║  + lab GOR rising = gas lock"  ║                                    ║
+║                                ║                                    ║
+║ OPTIONS (below timeline):     ║                                    ║
+║ ┌────────────┐ ┌─────────┐ ┌──────────┐                           ║
+║ │$0 ✓VIABLE  │ │$2k VIABLE│ │$150k PNR │                          ║
+║ │VFD 52→44Hz │ │Emergency │ │Only after│                          ║
+║ │[✔ Execute] │ │shutdown  │ │PNR (25m) │                          ║
+║ └────────────┘ └─────────┘ └──────────┘                           ║
+╚══════════════════════════════╩═════════════════════════════════════╝
+```
+
+**Key changes from current implementation:**
+- Delete phase-plane chart — too clever, unreadable to business audience
+- Status banner replaces dual-reality bar as the primary "active/inactive" indicator
+- Decision Timeline with YOU ARE HERE moving marker replaces the passive "now → fail" line
+- Sensor bars: directional labels + alarm threshold + "✓ Above/Below" status on every bar
+- SCADA vs GDC comparison expressed as plain sentences, not UI widgets
+- Motor state from actual `h1SensorTemp` value, not elapsed time
+- Advisor with template fallback if Gemma times out
+- Evidence reveal sequence: text lines in the SCADA vs GDC section appear progressively
+
+**Model retraining note:** The XGBoost health model currently scores ~0.74 in nominal state (should be ~0.92+). `scripts/retrain_edge_models.py` exists for this purpose. Retraining is approved if the nominal health score issue is confirmed as a model calibration problem (likely: simulator nominal amps ~88A vs training nominal ~75A). This must be done as a separate explicit step with verification before deployment.
 
 ---
 
