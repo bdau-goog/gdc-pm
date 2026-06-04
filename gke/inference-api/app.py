@@ -69,6 +69,7 @@ MODEL_CONFIGS = {
             1: "gas_lock",
             2: "sand_ingress",
             3: "motor_overheat",
+            4: "slug_flow",       # H2: surface flowline slugging — vibration up, temp flat
         },
     },
     "gas_lift_classifier": {

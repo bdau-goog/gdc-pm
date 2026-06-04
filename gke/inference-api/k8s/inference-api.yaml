@@ -38,22 +38,19 @@ spec:
           ports:
             - containerPort: 8080
           env:
-            # ── GKE / Cloud Mode ────────────────────────────────────────────
-            # Set GCS_MODEL_BUCKET to download models from GCS at startup.
-            # Requires Workload Identity annotation on the ServiceAccount.
+            # ── GDC Software-Only / Air-Gapped Mode (ACTIVE) ────────────────
+            # Models are baked into the container image at /app/models/.
+            # LOCAL_MODELS_DIR takes priority — GCS_MODEL_BUCKET is ignored.
+            - name: LOCAL_MODELS_DIR
+              value: "/app/models"
+
+            # ── GKE / Cloud Mode (DISABLED — GCS bucket is empty) ───────────
+            # Re-enable GCS_MODEL_BUCKET if classifier models are uploaded to GCS.
             - name: GCS_MODEL_BUCKET
-              value: "gdc-pm-v2-models"
+              value: ""
 
             # Legacy single-model path (kept for backward compatibility).
             - name: GCS_MODEL_PATH
-              value: ""
-
-            # ── GDC Software-Only / Air-Gapped Mode ─────────────────────────
-            # Set LOCAL_MODELS_DIR to load models from the container image
-            # instead of GCS. Build the container with models at this path.
-            # When set, GCS_MODEL_BUCKET/GCS_MODEL_PATH are not used.
-            # Example: /app/models (models baked in at image build time)
-            - name: LOCAL_MODELS_DIR
               value: ""
           resources:
             requests:
