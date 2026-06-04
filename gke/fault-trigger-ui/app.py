@@ -1879,6 +1879,28 @@ def inject_degrade(req: DegradeRequest):
                 "INSERT INTO fault_sessions (asset_id, asset_class, fault_type) VALUES (%s, %s, %s)",
                 (req.asset_id, asset_class, req.fault_type)
             )
+            # ── Seed guaranteed-match field_intel documents for context fusion ─────────
+            # adjust_rul_with_documents() applies RUL multipliers only when keyword-matching
+            # documents exist in field_intel. Seeding these at inject time guarantees that
+            # the first /api/plot/forecast-data poll returns adjusted_rul < time_to_scada,
+            # creating a visible and real context-fusion gap on the primary chart.
+            if req.fault_type == "gas_lock":
+                cur.execute("""
+                    INSERT INTO field_intel
+                      (asset_id, asset_class, fault_context, doc_type, headline, detail,
+                       ai_relevance, icon, lbl, lbl_type)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    req.asset_id, asset_class, "gas_lock", "shift_note",
+                    "Tour 2 Shift Note \u2014 Elevated GVF at Pump Intake",
+                    "Operator observed gas void fraction at pump intake estimated at 78%% throughout "
+                    "the morning tour. Separator gas test from prior shift: GOR 1,310 scf/bbl, up 19%% "
+                    "from 24-hour baseline. Motor amps trending below nominal. No SCADA alarm has fired "
+                    "\u2014 all sensors remain within configured thresholds. Recommend continued monitoring.",
+                    "HIGH \u2014 GVF above pump handling threshold (~60\u201365%%); combined with rising GOR, "
+                    "pattern is consistent with early-stage gas lock and imminent loss of motor cooling flow.",
+                    "\U0001f4cb", "AI", "ai"
+                ))
         conn.commit()
         conn.close()
     except Exception as e:
