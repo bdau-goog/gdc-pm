@@ -5,6 +5,21 @@
 
 ---
 
+## Session K (June 4, 2026) — *H1 Full Redesign — deployed and verified*
+
+**Code committed:** `9951199` (feat: H1 full redesign — Evidence Wall, Cited Copilot, Window of Options, SVG well schematic)  
+**Cluster image digest:** `sha256:c8dfa4c...`
+
+**What was built and deployed:** Complete H1 tab redesign matching DEMO_MASTER.md §4 wireframe. Two-column layout (55% left / 45% right). Left column: 2D SVG animated wellbore schematic (blue liquid particles + yellow gas particles with CSS transition, motor housing color gradient green→amber→red, GVF indicator bar), sensor tab bar + GDC forecast chart (230px), Window of Options timeline (3 cards with live VIABLE/MARGINAL/EXPIRED viability tickers, `_updateOptionsViability` ticking every 5s). Right column: Evidence Convergence Wall (5 source categories activating in sequence at 200ms/2s/3.8s/5.5s/7.2s with glow animation), SCADA comparison (always visible, left=4 sensors normal, right=8 signals GAS LOCK 94%), Cited LLM Copilot (auto-streams on inject via `_startCopilotStream` typewriter effect at 4 chars/28ms, superscript citations [¹][³][⁵] linked to source categories, follow-up chat via `/api/agent/chat`), Live Document Feed with `⚡ GDC AI — just now` badge and ALT counterargument styling.
+
+**app.py changes:** `_intel_generator` now uses weighted 55/30/15 document type mix (supporting/neutral/counterargument) per DEMO_MASTER §10 with tailored Gemma prompts per category. `slopes` dict (`dpsi_dt`, `dtemp_dt`, `dvib_dt`, `ds4_dt`) added to `/api/plot/forecast-data` response. `_post_approval_monitor()` background function polls PIP recovery trend every 30s for 2.5 min post-VFD-approval, writes to `RECOVERY_STATUS` dict, exposed via `/api/recovery-status/{asset_id}`. `/api/agent/chat` endpoint added for H1 copilot follow-up chat. `hitl_approve()` for gas_lock now launches both `_run_recovery_thread` and `_post_approval_monitor` in parallel. Fleet Operations tab removed from header. Static financial cards not present (already absent from prior session).
+
+**Verification passed:** Pod 1/1 Running (digest `c8dfa4c`). `/api/mlops/status` → ollama_online: True, gemma4:latest. `/api/recovery-status/ESP-ALPHA-1` → `{"msg":"","state":"pending"}` (correct for no active fault). `/api/plot/forecast-data/ESP-ALPHA-1` → `slopes` dict present with all 4 keys.
+
+**Next task:** Verify H1 demo flow end-to-end in browser (inject → evidence wall → copilot streams → approve → recovery message). Then implement H2 redesign per DEMO_MASTER §5 (two-line vibration+temp chart, H2 evidence wall, copilot with $1,500 vs $150,000 decision, reuse H1 CSS classes).
+
+---
+
 ## Session J (June 3–4, 2026) — *Major planning session; H1 full implementation*
 
 **Code committed:** `e8f8b78` (feat: H1 Live Telemetry & Strategic Advisor), `862d674` (docs handoff)  
