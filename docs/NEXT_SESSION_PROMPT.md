@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session Q end — Phase-plane chart, SCADA CSS gauges, AI lead-time panel, LLM re-triggering, context-fusion server fix)
-**Git Head:** `245e50a` — clean working tree
-**fault-trigger-ui image digest:** `sha256:3ee29db0e41e93dbfb503481e231201835c291085576164fb3778e0889126e9a`
+**Date:** June 4, 2026 (Session Q end — H1 visually failed; do NOT start H2)
+**Git Head:** `0fdc393` — clean working tree
+**fault-trigger-ui image digest:** `sha256:3ee29db0` (live, has all Session Q code)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,90 +17,93 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · new fault-trigger-ui pod (post 245e50a rollout)
+- All pods 1/1 Running
 - ollama_online: True · model: gemma4:latest
 - field_intel: ~80–120 rows · rag_documents: 18 rows
 
 ---
 
-## STEP 2: Read DEMO_MASTER.md
+## STEP 2: Read DEMO_MASTER.md — Especially §12 (Status) and §15 (Engagement Requirements)
 
 ```bash
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
-Also read the **last 2 entries** in SESSION_LOG.md (Sessions Q and P).
+---
+
+## STEP 3: H1 IS BROKEN — DO NOT START H2
+
+H1 was deployed and visually reviewed in Session Q. It failed. Here are the specific failures in priority order:
+
+### Integrity Violations (Lie to the Audience)
+1. **"Motor CRITICAL" driven by `h1ElapsedMin > 15`, NOT actual temperature.** At T+16m, the motor block says "MOTOR CRITICAL" even though temp = 199°F and SCADA threshold = 280°F. This is a hardcoded timer lie. Rule: motor state must come from actual `h1SensorTemp` value.
+2. **"GAS LOCK — 94% confidence" in the dual-reality bar is static text.** It always says 94% regardless of what the model actually produces. Must reflect live model confidence.
+3. **SCADA gauge fallback values** ("1,400 PSI", "75.3 A") shown pre-injection when live-telemetry data is already available. Bars show hardcoded data that doesn't match the live sensor display above them.
+
+### UX Failures (Audience Can't Understand State)
+4. **No "YOU ARE HERE" on the Window of Options timeline.** The timeline shows T+10m, T+18m, PNR markers but no moving indicator showing elapsed time. A viewer can't tell where they are in the window.
+5. **No "event active" indicator.** The only signal that a fault is running is that the Reset button appears. There is no prominent timer, banner, or alert state at the top of the tab. Audience doesn't know if the demo is running.
+6. **SCADA gauge bars have no directional labels.** "PIP 1,340 PSI ⬇800" — the audience doesn't know if 800 means "lower is worse" or "higher is worse." Every gauge needs "↓ Lower = worse" or "↑ Higher = worse" printed on it.
+7. **Phase-plane chart is unreadable to a business audience.** State-space diagrams require engineering literacy. Zones are unlabeled clearly. Axes require interpretation. The dot moves but it's not obvious what direction means danger.
+
+### Technical Bugs
+8. **AI Lead-Time RAG gap collapses to 0 after ~5 minutes.** The seed `field_intel` GVF document gets rotated out by the 100-row prune after `_intel_generator` writes ~10 documents. After this, `adjusted_rul === time_to_scada`. The prune must protect the seed doc OR re-insert it on each forecast cycle while the fault is active.
+9. **Advisor `T+2m` update returns "Unable to reach AI model."** The `_triggerAdvisoryUpdate` call to `/api/agent/chat` times out or errors. No graceful fallback template. Gemma takes ~5-10s — the fetch timeout may be too short, or the model is busy from the initial stream.
 
 ---
 
-## STEP 3: What Was Just Deployed (Session Q)
+## STEP 4: Proposed H1 V2 Redesign (Before Writing Any Code, Get Approval)
 
-Two commits shipped and verified:
+The root cause is: **one button, then try to figure out what's happening.** There is no engagement, no live narrative, no sense of urgency building.
 
-### Commit 1 (a4cb95d) — Server-side context fusion fix
-- `/api/inject/degrade` now INSERTs a seed `field_intel` row (Tour 2 Shift Note, GVF 78%, GOR 1310 scf/bbl) immediately on gas_lock inject
-- `adjust_rul_with_documents()` matches "estimated at 78%" regex → applies 0.6× multiplier
-- **Verified:** `time_to_scada_minutes: 17.9` vs `adjusted_rul_minutes: 10.7` → **7.2 min real context-fusion gap**
+### Design Principle
+**A business person riding by on a fast horse must understand the crisis and the remaining window in 3 seconds. Without narration.**
 
-### Commit 2 (245e50a) — H1 visual redesign
-1. **Phase-plane chart** replaces the broken flat-line "Minutes Until Failure" chart
-   - X axis: Motor Winding Temp (°F), Y axis: Motor Amps (A)
-   - Green safe zone / amber warning / red gas-lock zone (background shapes)
-   - SCADA alarm lines: Amps < 50A (horizontal dashed red), Temp > 280°F (vertical dashed red)
-   - Scatter trail of last 20 operating points (purple line + dots)
-   - Current operating point: large color-coded dot (green/amber/red)
-   - **The point moves into the red zone during gas lock — before crossing either SCADA line**
+### H1 V2 Layout
+```
+╔═══════════════════════════════════════════════════════════════════╗
+║ BANNER: [NOMINAL] or [⚠ GAS LOCK ACTIVE · T+02:14 remaining: 16m] ║
+╠═══════════════════════════════════════════════════════════════════╣
+║                                                                    ║
+║  DECISION TIMELINE (top of left column):                          ║
+║  NOW ——▶— YOU ARE HERE —————————|————————|——————— FAIL            ║
+║             ↑                   $0 safe  $2k     $150k only       ║
+║          (elapsed)              T+18m    T+23m   after PNR        ║
+║                                                                    ║
+║  SENSOR BARS (left, below timeline):                              ║
+║  PIP  ████████████████░░░░  1,340 PSI  Alarm at 800 ↓lower=worse  ║
+║  AMPS ████████████░░░░░░░░    69 A     Alarm at  50 ↓lower=worse  ║
+║  TEMP ████░░░░░░░░░░░░░░░░   199 °F    Alarm at 280 ↑higher=worse ║
+║                                                                    ║
+║  ⚡ SCADA sees: 4 sensors, all above/below alarm limits. No alarm. ║
+║  ⚡ GDC sees:   PIP + Amps declining TOGETHER = gas lock signature ║
+║               + retrieved documents confirm GVF 78%, GOR rising   ║
+║                                                                    ║
+║  OPTIONS (below):                                                  ║
+║  ┌─────────────────┐  ┌────────────────┐  ┌───────────────────┐   ║
+║  │ $0  · AVAILABLE │  │ $2k · AVAILABLE│  │ $150k · POST-PNR  │   ║
+║  │ VFD 52→44 Hz    │  │ Emergency stop │  │ Pump pull         │   ║
+║  │ [✔ Execute Now] │  │                │  │                   │   ║
+║  └─────────────────┘  └────────────────┘  └───────────────────┘   ║
+╠═══════════════════════════════════════════════════════════════════╣
+║ GDC ADVISOR (right): streaming + re-fires with fallback template  ║
+╚═══════════════════════════════════════════════════════════════════╝
+```
 
-2. **SCADA CSS gauge cluster** replaces the confusing normalized-delta chart
-   - 4 horizontal bars: PIP / Amps / Temp / Vib
-   - Each bar has a colored fill (width = % of range) + red tick mark at SCADA alarm threshold
-   - Footer: "⚠ PIP + Amps declining — still above SCADA alarm limits" during fault
-
-3. **AI Lead-Time Advantage panel** (post-inject, below gauges)
-   - Sensor-only model: `time_to_scada_minutes` (orange)
-   - Context-fused (RAG): `adjusted_rul_minutes` (orange)
-   - RAG contribution: real gap from AlloyDB (green, ~7 min)
-   - Label: "Shift note + GOR lab report fused via AlloyDB RAG"
-
-4. **Vue `watch:` block** for LLM re-triggering
-   - `h1FeedItems` watcher: new document at top of feed → `_triggerAdvisoryUpdate('feed', newItem)`
-   - `h1OptALabel` watcher: VIABLE→MARGINAL → urgency update; MARGINAL→EXPIRED → final warning
-
-5. **`_triggerAdvisoryUpdate(type, item)` method** — calls `/api/agent/chat` with live sensor context, streams response appended below "── GDC Advisor · T+Xm ──" separator
-
-6. **Scheduled advisor updates** at T+50s and T+2min after inject (setTimeout-based)
-
----
-
-## STEP 4: What Still Needs Visual Verification
-
-Load http://gdc-pm.bdau.io → Detect tab, click "Inject Gas Lock":
-
-1. **Phase-plane chart** — operating point (dot) should start in green safe zone, migrate toward/into red gas-lock zone as amps decline and temp rises
-2. **SCADA gauge bars** — PIP and Amps bars should visibly shrink; status text changes to "⚠ Sensors changing — no alarm yet"
-3. **AI Lead-Time Advantage panel** — appears post-inject showing ~7 min RAG gap
-4. **Advisor re-triggers** — wait ~50s for the second Gemma assessment to appear below the separator line
-5. **Context chips** in dual-reality bar activate in sequence (shift note, lab GOR↑, VFD events, API RP 11S)
-
----
-
-## STEP 5: Next Implementation Task — H2 (Discern) Tab Redesign
-
-After H1 is visually verified, implement H2 per DEMO_MASTER.md §5:
-- Two-line primary chart: Vibration (rising, orange) + Motor Temperature (flat, blue) — same Y-axis — **the single most visual proof of slug flow vs bearing wear**
-- Evidence wall with H2-specific chips (6 sources activating)
-- GDC Advisor auto-starts on inject: *"$1,500 truck roll vs $150,000 pump pull"* verdict
-- Reuse all H1 CSS patterns (`.h1-advisor`, `.h1-lead-time`, `.sgg-*`, Vue watchers)
+### Engagement Elements to Add
+- **Banner that changes.** Before inject: "✓ WELL A-1 NOMINAL — 4 sensors · no alarm." After inject: "⚠ GAS LOCK ACTIVE · T+02:14 · 16 min remaining" with a live ticking counter.
+- **YOU ARE HERE marker** on the timeline. A moving arrow/dot that advances over the 25-minute window in 5× compressed time.
+- **Evidence reveal sequence** on the left: text lines appear one by one as the injected fault progresses, each sentence building the case. Not a static wall — a slow revelation.
+- **Advisor with fallback:** if Gemma timeouts, use a template that still says something correct.
 
 ---
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
-- No browser on SSH remote — no `browser_action` tool
+- No browser on SSH remote
 - `feature-trio-scenarios` stays separate from `main`
 - XGBoost `*.ubj` models — do not retrain
-- Fleet Operations tab: do NOT re-add
-- Financial case: LLM only, no static financial cards
+- No npm/webpack/React — vanilla HTML/JS + Vue.js CDN only
 - Token budget: batch all edits to same file in ONE replace_in_file call
-- Correct registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
-- "Copilot" is a Microsoft product name — do NOT use it anywhere in the UI
+- Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+- "Copilot" is a Microsoft product name — do NOT use it

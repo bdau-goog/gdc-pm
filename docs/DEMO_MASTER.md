@@ -403,29 +403,48 @@ The LLM copilot must explicitly address counterargument documents when they appe
 
 ## 12. IMPLEMENTATION ORDER AND CURRENT STATUS
 
-**Last updated:** Session Q (June 4, 2026)
+**Last updated:** Session Q addendum (June 4, 2026) — H1 visual QA FAILED
 
 ---
 
-### Phase 1: H1 Detect Tab — GAS LOCK ✅ COMPLETE (needs visual QA)
+### Phase 1: H1 Detect Tab — GAS LOCK ❌ NOT DEMO-READY
 
+**Visual QA result:** FAILED. Four screenshots reviewed. Multiple integrity violations and UX failures. See DEMO_MASTER.md §15 and SESSION_LOG.md Session Q Addendum for full details.
+
+#### What IS working (backend / API layer)
 - [x] RAG corpus: 18 OEM manual sections embedded in AlloyDB pgvector
 - [x] `_intel_generator` background thread: 55/30/15 document mix (supporting/neutral/counterargument), Gemma-powered, every 20-30s during active fault
 - [x] `slopes` dict (`dpsi_dt`, `dtemp_dt`, `dvib_dt`, `ds4_dt`) in `/api/plot/forecast-data` response
 - [x] `post_approval_monitor()` polls PIP recovery every 30s for 2.5 min post-VFD-approval
 - [x] `hitl_approve()` launches both `_run_recovery_thread` and `_post_approval_monitor` for gas_lock
-- [x] **Context-fusion fix** (Session Q): inject endpoint seeds a `field_intel` GVF 78% document on gas_lock inject → `adjust_rul_with_documents()` fires 0.6× multiplier → real `adjusted_rul < time_to_scada`. Verified 7.2 min gap.
-- [x] H1 layout: dual-reality bar, 3-column body (well strip / charts / GDC Advisor), Window of Options
-- [x] CSS instrument panel in well strip (GVF bar, PIP/Amps/Temp readings, motor glow, fluid column animation)
-- [x] `setMainTab('horizon1')` starts live telemetry poll and loads baseline intel before injection
-- [x] GDC Advisor auto-streams on injection (typewriter effect, superscript citations)
-- [x] Window of Options with live viability tickers (VIABLE/MARGINAL/EXPIRED)
+- [x] Context-fusion seed doc (GVF 78%) INSERTed on inject → 7.2 min gap verified at API level
+- [x] Window of Options viability tickers (VIABLE/MARGINAL/EXPIRED) work correctly
 - [x] Fleet Operations tab removed; static financial cards removed
-- [x] **Phase-plane chart** (Session Q): Motor Amps × Winding Temp state-space diagram replaces flat-line "Minutes Until Failure". Green/amber/red zones. SCADA alarm lines at 50A and 280°F. Trail + current point. The operating point migrates into the red gas-lock zone before crossing either SCADA alarm line.
-- [x] **SCADA CSS gauge cluster** (Session Q): 4 bars (PIP/Amps/Temp/Vib) with threshold ticks and reactive fills. Replaces confusing normalized-delta chart.
-- [x] **AI Lead-Time Advantage panel** (Session Q): shows real sensor-only vs context-fused estimates + RAG contribution (~7 min, labeled).
-- [x] **Vue watchers + `_triggerAdvisoryUpdate()`** (Session Q): Advisor re-fires on new intel doc, on VIABLE→MARGINAL→EXPIRED transitions, and at T+50s/T+2min. Uses live sensor slopes + elapsed time.
-- [ ] **Visual QA still needed**: user needs to verify in browser that phase-plane dot migrates, gauge bars shrink, lead-time panel shows gap, advisor re-fires at T+50s.
+
+#### Known Integrity Violations (Lie to the Audience) — MUST FIX
+- [ ] **Motor CRITICAL state driven by `h1ElapsedMin > 15`, not actual temperature.** At T+16m the UI says "MOTOR CRITICAL" when temp = 199°F and SCADA alarm = 280°F. A hardcoded lie. Fix: motor state must derive from `h1SensorTemp` numeric value.
+- [ ] **"GAS LOCK — 94% confidence" in dual-reality bar is static text.** Not connected to the model's actual confidence output. Fix: use live model confidence from forecast data.
+- [ ] **SCADA CSS gauge bars show hardcoded fallback values** ("1,400 PSI", "75.3 A") pre-injection even though `/api/live-telemetry` returns actual live values. Fix: populate `h1RawPsi/Amps/Temp` from the live-telemetry poll in `setMainTab`, not only from the degrade status poll.
+
+#### Known UX Failures (Audience Can't Understand State) — MUST FIX
+- [ ] **No "YOU ARE HERE" on Window of Options timeline.** Fixed T+10m/T+18m/PNR markers with no moving indicator. Audience can't see elapsed time position in the window.
+- [ ] **No event-active banner.** Only signal fault is running: Reset button appears. No prominent timer, no "⚠ GAS LOCK ACTIVE · T+02:14" header.
+- [ ] **SCADA gauge bars have no directional labels.** "Alarm at 800" — is 800 the floor or ceiling? Every bar needs "↓ Lower = worse" or "↑ Higher = worse."
+- [ ] **Phase-plane chart is unreadable to a business audience.** State-space diagrams require engineering literacy. Dropped for H1 V2.
+
+#### Known Technical Bugs — MUST FIX
+- [ ] **RAG gap collapses to 0 after ~5 minutes.** Seed GVF doc rotated out by 100-row prune after ~10 `_intel_generator` cycles. Fix: protect seed doc from prune OR re-insert on each forecast poll while fault is active.
+- [ ] **Advisor T+2m update returns "Unable to reach AI model."** `/api/agent/chat` call times out or errors. No graceful fallback template. Fix: 20s timeout + template fallback.
+
+#### H1 V2 Redesign Required (Get Approval Before Coding)
+See NEXT_SESSION_PROMPT.md §4 for the full V2 wireframe. Core changes:
+- **Delete phase-plane chart** — too clever, unreadable to audience
+- **Add live event-active banner** with ticking elapsed timer
+- **Add "YOU ARE HERE" moving marker** on the Window of Options timeline
+- **Add directional labels** to every sensor gauge bar
+- **Add evidence reveal sequence** — text lines appear progressively as fault develops
+- **Motor state from actual temperature** — not elapsed time
+- **Advisor with template fallback** — if Gemma times out, still say something correct
 
 ---
 
@@ -469,6 +488,63 @@ H3 is already largely functional (Vertex AI Vizier runs, Pareto chart renders, d
 - [ ] **`initH1NsSplit` still references old `h1-gdc-chart` and `h1-scada-chart` IDs** in the resize method (lines visible in grep). These IDs no longer exist — should reference `h1-phase-chart`. Low priority (NS resize still works, it just silently fails the Plotly resize call).
 - [ ] **Viability clock countdown** in Window of Options is CSS-timer-driven (based on `h1ElapsedMin` from injection timestamp), not from the model's `time_to_scada_minutes`. This is honest and intentional — the clock is the real elapsed time, not an ML estimate. No fix needed.
 - [ ] **`field_intel` expected range**: update NEXT_SESSION_PROMPT.md expected value from 99-110 to 80-120 (the prune job keeps it bounded; ~86 rows is healthy).
+
+---
+
+## 15. DEMO ENGAGEMENT REQUIREMENTS
+
+**Added:** Session Q addendum (June 4, 2026)
+**Why this section exists:** H1 has been redesigned 8+ times across Sessions I–Q. Every iteration added technical sophistication while the core engagement problem remained unsolved. This section captures the non-negotiable requirements that every visual element must satisfy before it ships.
+
+### The Test
+**A business person riding by on a fast horse must understand (a) something is wrong, (b) how much time is left, and (c) what it costs to act now vs. later — in 3 seconds, without narration.**
+
+If the visual requires a sentence of explanation before the viewer can understand it, it fails the test.
+
+### Requirements
+
+**R1 — Active/Inactive State is Immediately Obvious**
+- Pre-injection: large green header, clear "NOMINAL · MONITORING" label, no warning elements visible
+- Post-injection: prominent color change (amber/red), an explicit "⚠ GAS LOCK ACTIVE" label, a ticking elapsed timer
+- If a viewer looks at the screen for 1 second, they must know whether the demo scenario is running
+
+**R2 — Remaining Time Window is Visible Without Reading Numbers**
+- A graphical indicator (progress bar, arrow, dot on timeline) must show "YOU ARE HERE" in the 25-minute window
+- The indicator moves in real time
+- The option cards must be spatially aligned under the timeline so the viewer can see which options are "to the left" (still available) vs "to the right" (expired or post-PNR only)
+
+**R3 — Every Sensor Value Has Directional Context**
+- Displaying "PIP: 1,340 PSI" means nothing to a non-engineer
+- Every value must include its SCADA alarm threshold AND its direction word: "↓ Lower = worse · Alarm at 800 PSI"
+- Color transitions (green → amber → red) must only be used if the direction is obvious from the color
+
+**R4 — The SCADA vs GDC Comparison Must Be Expressible in One Sentence**
+- The single sentence: "All four sensors are still above their individual SCADA alarm limits — but they're declining together, and GDC recognizes that pattern."
+- Every visual element must either support this sentence or be removed
+
+**R5 — Interactivity Beyond One Button**
+- "Click Inject and watch" is not a demo — it's a presentation
+- At minimum: the operator must make a decision (Execute Now vs. wait), and the consequence of that decision must be visible
+- Ideally: the viewer can ask a follow-up question to the Advisor and get a contextual answer in <15 seconds
+
+**R6 — No UI Element May Lie**
+- Motor state must come from actual temperature data, not a timer
+- Confidence percentages must come from the model's output, not hardcoded text
+- Sensor bars must show live data, not fallback values
+- If the real data cannot be obtained, the element must show "—" or "Loading..." not a fake value
+
+**R7 — Technical Credibility Must Be Available But Not Required**
+- The business viewer must not need to understand state-space diagrams, XGBoost, or pgvector to understand the demo
+- Technical depth (How It Works tab, ⓘ popovers, citation superscripts) must be *available* for the engineer in the room — but the demo narrative must stand without them
+- If removing all the technical labels leaves the visual unintelligible, the visual design has failed
+
+### Anti-Patterns (Never Again)
+- Phase-plane / state-space charts as primary visuals for a business audience
+- "Normalized % Δ from baseline" sensor charts
+- Confidence percentages that are hardcoded text
+- Motor/pump status driven by timers instead of sensor values
+- Evidence walls that appear all at once without building the narrative
+- Leading with charts before establishing "something is wrong and here's how much time you have"
 
 ---
 

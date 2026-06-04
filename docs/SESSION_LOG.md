@@ -5,6 +5,22 @@
 
 ---
 
+## Session Q — Addendum (June 4, 2026) — *H1 visual review: FAILED*
+
+**Visual review outcome:** After deployment, four screenshots reviewed by the user. Every major element failed. Summary of failures in order of severity:
+
+**(1) Integrity violations:** "Motor CRITICAL" fires at T+16m driven by `h1ElapsedMin > 15` — a hardcoded timer, not actual temperature. Motor temp was 199°F while SCADA alarm threshold is 280°F. The UI was lying. "GAS LOCK — 94% confidence" in the dual-reality bar is static text unconnected to the model. SCADA CSS gauge bars show fallback hardcoded values pre-injection even though live-telemetry data was available.
+
+**(2) UX failures:** No visible "event active" state — audience doesn't know if the demo is running. No "YOU ARE HERE" indicator on the Window of Options timeline — viewers can't see how much window remains. SCADA gauge bars have no directional labels — "Alarm at 800" doesn't tell a non-engineer whether 800 is the floor or the ceiling. Phase-plane chart is unreadable to a business audience — state-space diagrams require engineering literacy that a business audience does not have.
+
+**(3) Technical bugs:** AI Lead-Time RAG gap collapsed to 0 after ~5 minutes (seed `field_intel` GVF doc rotated out by the 100-row prune after `_intel_generator` wrote ~10 documents). Advisor T+2m re-trigger returned "Unable to reach AI model" — Gemma timeout, no fallback template.
+
+**(4) Design root cause identified:** Every iteration added more sophistication (3-line charts → phase planes → state-space zones) while the core engagement problem was never solved: it's one button then "try to figure out what's happening." There is no live narrative, no sense of urgency building, no visual that a fast-moving business viewer can process in 3 seconds. The question was never "what does an engineer find credible?" — it should have been "what makes a non-technical person feel the urgency AND understand what GDC did that SCADA couldn't?"
+
+**Decision:** H1 is NOT demo-ready. H2 and H3 must not be started. Next session must get explicit design approval for H1 V2 before writing any code. The redesign concept: horizontal decision timeline with a moving YOU ARE HERE marker, directional sensor bars with plain-English alarm context, a live event-active banner with ticking clock, evidence reveal sequence. DEMO_MASTER.md §15 now captures "Demo Engagement Requirements" so this failure mode is documented for future sessions.
+
+---
+
 ## Session Q (June 4, 2026) — *Phase-plane chart + SCADA CSS gauges + AI lead-time panel + LLM re-triggering + context-fusion server fix*
 
 **Code committed:** `a4cb95d` (fix: seed field_intel GVF doc on gas_lock inject), `245e50a` (feat: phase-plane chart, SCADA CSS gauges, AI lead-time panel, Vue watchers for LLM re-triggering)
