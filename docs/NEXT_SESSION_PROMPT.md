@@ -72,27 +72,80 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 4: Next Implementation Task — Phase 3 (HP-HMI Design System)
+## STEP 4: Next Implementation Task — MODEL PREP (MUST DO BEFORE ANY UI WORK)
 
-**Goal:** Build the shared reusable visual components in `static/styles.css` and `static/app.js` that H1/H2/H3 all use.
+**Why this is first:** H2's entire value proposition ("right diagnosis = right action") is 100% classifier-dependent — the demo is literally "model says slug_flow, not bearing wear → $1,500 truck roll instead of $150,000 pump pull." No working classifier = no H2. Also: H1's classification hero panel needs real `predicted_label` output from the inference-api, not `inference_error`. Phase 3 UI can be built in parallel but the classification panel component will show garbage until models are in place.
 
-### Components to build (in Phase 3):
-1. **Moving-analog-indicator** — HP-HMI bar with live pointer, gray normal band, alarm limit on the indicator itself. CSS class `.mai` + Vue component. Split into LEADING group (PIP, Amps) and LAGGING group (Temp).
-2. **Fault classification panel** — Probability bar chart from `class_probs` API field. The "this is categorically ML not threshold" visual.
-3. **Status banner** — Full-width, gray when nominal → amber/red on fault. Uses `thermal_lead_time_minutes` and `class_probs.gas_lock` to drive state.
-4. **Gray/color discipline** — Nominal state: almost entirely gray/desaturated. Fault state: color blooms.
+### Critical discovery (Session R): two orphaned model pipelines
 
-### API fields now available (Phase 2 ✅):
-- `thermal_lead_time_minutes` — the per-run-varying lead-time number
-- `class_probs` — multi-class probability distribution
-- `adjusted_rul_minutes` — RAG context-adjusted estimate
-- `slopes.dtemp_dt` — temperature rate of change (°F/min)
+| Component | Model type | Status |
+|---|---|---|
+| `inference-api` | XGBoost **classifier** (`esp_classifier.ubj`) — outputs fault TYPE label | **NEVER LOADED**: GCS bucket `gdc-pm-v2-models` is **completely empty**. All predictions return `inference_error`. |
+| `fault-trigger-ui` | XGBoost **health regressor** (`esp_health.ubj`) — outputs health 0→1 | ✅ Working — baked into container at `models/*.ubj` |
 
-### Phase 3 target files:
-- `static/styles.css` — add `.mai`, `.classify-panel`, `.status-banner` CSS
-- `static/app.js` — add Vue component definitions; wire to `class_probs` + `thermal_lead_time_minutes`
+The project pivoted from BQML classifiers → XGBoost health regressors in Phase 5.1. The health regressors were built (`retrain_edge_models.py`) and deployed. **No one created or uploaded ESP classifier models.** The inference-api has been running with an empty GCS bucket the entire project.
 
-Both files are now modular (~829 and ~1569 lines) — edits are ~6× cheaper than before Phase 1.
+### Critical gap: `slug_flow` missing from `esp_classifier` label map
+
+Current `esp_classifier` label map: `{0: normal, 1: gas_lock, 2: sand_ingress, 3: motor_overheat}` — **slug_flow is absent.**
+H2 requires a classifier that distinguishes slug_flow (rising vibration + FLAT temperature) from sand_ingress/bearing_wear (rising vibration + RISING temperature). Temperature is the discriminating feature. This must be encoded in training data, not just the label map.
+
+### Model dependency per horizon
+
+| Horizon | Classifier needed | Health regressor needed | Cloud |
+|---|---|---|---|
+| **H1** Gas Lock | ✅ "gas_lock 94%" panel | ✅ early detection + health score | edge only |
+| **H2** Slug Flow | ✅✅ **THE ENTIRE STORY** (slug_flow must be class 4) | — | edge only |
+| **H3** VFD Optimize | — | ✅ thermal-safety evaluator for Vizier | Vizier = one cloud dep |
+
+### Model-prep task sequence (5 steps, next session)
+
+**Step 1 — Audit training scripts.**
+Read `scripts/seed-and-train-og-models.py` and `scripts/retrain_edge_models.py`.
+Determine: do they produce classifiers, regressors, or both?
+Expected finding: `retrain_edge_models.py` produces health regressors only. Need to add a classifier-training path.
+
+**Step 2 — Extend classifier training to include slug_flow as class 4.**
+Update `retrain_edge_models.py` or create `train_classifiers.py`:
+- `esp_classifier`: classes 0=normal, 1=gas_lock, 2=sand_ingress, 3=motor_overheat, 4=slug_flow
+- Training data for slug_flow: rising vibration + **flat temperature** (temp_range overlaps nominal)
+- This temperature signature is what makes H2's discrimination story true and testable
+- Output: `esp_classifier.ubj`, `gas_lift_classifier.ubj`, `mud_pump_classifier.ubj`, `top_drive_classifier.ubj`
+
+**Step 3 — Deploy classifiers via LOCAL_MODELS_DIR (recommended over GCS).**
+Rationale: fully edge-native, no cloud dependency, matches the "runs entirely on-prem" value prop, consistent with how health models are deployed.
+```
+kubectl set env deployment/inference-api -n gdc-pm \
+  LOCAL_MODELS_DIR=/app/models
+```
+Then bake the classifier `.ubj` files into the inference-api container alongside the Dockerfile.
+
+**Step 4 — Verify end-to-end.**
+```bash
+# Inject gas_lock fault on ESP-ALPHA-1
+# Wait 60s for event-processor to classify
+kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c \
+  "SELECT predicted_label, confidence FROM telemetry_events WHERE failure_type='gas_lock' ORDER BY event_time DESC LIMIT 5;"
+# Expected: predicted_label='gas_lock', confidence>0.85
+# NOT: predicted_label='inference_error'
+```
+
+**Step 5 — Then resume Phase 3 UI.**
+With real `predicted_label = "gas_lock"` in the DB, `class_probs` will show `{gas_lock: 0.9x}` automatically (already wired in Phase 2). The classification panel hero becomes genuine.
+
+### Known integrity state going into next session
+
+| Issue | Status |
+|---|---|
+| `predicted_label = "inference_error"` for all events | Known/documented. Fix A prevents this from corrupting `classifier_active` gate. Fix B = train + deploy classifiers. |
+| `class_probs = {}` in nominal, `{inference_error: 0.0}` during faults | Honest display. Will show real probabilities once classifier is deployed. |
+| temperature reframe = INCREASES model dependence | Correct. Temperature is the lagging deadline. ML classifier is the PRIMARY hero. |
+
+### Phase 3 (HP-HMI design system) — deferred to after model-prep
+
+Once classifiers are verified, these files are ready to receive the components:
+- `static/styles.css` (~829 lines) — add `.mai`, `.classify-panel`, `.status-banner`
+- `static/app.js` (~1569 lines) — add Vue components wired to `class_probs` + `thermal_lead_time_minutes`
 
 ---
 

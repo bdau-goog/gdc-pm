@@ -2,6 +2,24 @@
 
 ---
 
+## Session R — Addendum 3 (June 4, 2026) — *Critical model-architecture discovery: no classifier models exist*
+
+**Code committed:** None (discovery session — documentation only)
+
+**What was discovered:** While diagnosing the nominal health_score issue (Fix A), a deeper architectural gap emerged: the GCS bucket `gdc-pm-v2-models` is **completely empty**. The inference-api has been running with no models loaded since the cluster was first deployed. Every call to `POST /predict` returns `{"predicted_label": "inference_error", "confidence": 0.0}`. This explains why `class_probs` showed `{'inference_error': 0.0}` after Phase 2.
+
+**Root cause:** The project pivoted from BQML classifier models → XGBoost health score regressors during Phase 5.1. The `retrain_edge_models.py` script correctly produced health regressors (`esp_health.ubj`, etc.) and placed them in `fault-trigger-ui/models/`. However, no equivalent classifier training script was created, and no classifier models were ever uploaded to the `gdc-pm-v2-models` GCS bucket. The inference-api's model loading logic (Priority 2: GCS download) silently fails when the bucket is empty, leaving all models as `None`.
+
+**Why this is blocking:** The H2 (Slug Flow) demo is 100% classifier-dependent. H2's entire argument is "the model discriminates slug_flow (surface issue, $1,500 fix) from downhole fault (wrong $150,000 pump pull) — SCADA cannot." Without a working `esp_classifier`, H2 has no story. Additionally, the `esp_classifier` label map is missing `slug_flow` as a class entirely (currently: `{0: normal, 1: gas_lock, 2: sand_ingress, 3: motor_overheat}`). This needs to be added as class 4 with training data that encodes the temperature-flat signature that is the discriminating H2 feature.
+
+**Model dependency per horizon:** H1 needs both classifier (for "gas_lock 94%" panel) + health regressor (for early detection). H2 needs classifier only — it IS the classifier story. H3 needs health regressor as Vizier's thermal-safety constraint; Vertex AI Vizier is the one intentional cloud dependency in an otherwise fully-edge stack.
+
+**Temperature reframe does NOT reduce model dependence.** Temperature is the lagging deadline (`(280°F − temp) / dtemp_dt`) — the finish line the ML is racing to beat. The ML classifier is the hero. The reframe increases model dependence by making the classification panel the primary demo element.
+
+**Next action:** Model-prep before any further UI work. See NEXT_SESSION_PROMPT.md STEP 4 for the complete 5-step sequence. Key steps: audit training scripts, extend classifier to include slug_flow (class 4, flat-temp training data), deploy via LOCAL_MODELS_DIR (edge-native, not GCS), verify `predicted_label = "gas_lock"` in DB.
+
+---
+
 ## Session R — Addendum 2 (June 4, 2026) — *Fix A: inference_error classifier gate — deployed and verified*
 
 **Code committed:** `0d85220` (fix: Fix A — exclude inference_error from classifier_active gate)

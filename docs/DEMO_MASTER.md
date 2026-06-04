@@ -413,7 +413,31 @@ The LLM copilot must explicitly address counterargument documents when they appe
 
 ## 12. IMPLEMENTATION ORDER AND CURRENT STATUS
 
-**Last updated:** Session Q addendum (June 4, 2026) — H1 visual QA FAILED
+**Last updated:** Session R addendum (June 4, 2026) — model-architecture gap discovered
+
+---
+
+### MODEL ARCHITECTURE TRUTH (Discovered Session R — read before any model work)
+
+Two separate XGBoost model pipelines exist. They were never fully reconciled.
+
+| Component | Model | What it does | Location | Status |
+|---|---|---|---|---|
+| `inference-api` pod | **Classifier** `esp_classifier.ubj` | Predicts fault TYPE: `gas_lock`, `slug_flow`, etc. | GCS `gdc-pm-v2-models/` | ❌ **NEVER UPLOADED** — bucket empty |
+| `fault-trigger-ui` pod | **Health regressor** `esp_health.ubj` | Predicts health score 0→1 | `models/*.ubj` in container | ✅ Working |
+
+**Why the bucket is empty:** Phase 5.1 rebuilt the ML layer using XGBoost health regressors (`retrain_edge_models.py`). These work and are deployed. No one created classifier training code or uploaded classifier models to GCS. The inference-api has been returning `inference_error` on every prediction since the cluster was first deployed.
+
+**Critical gap: `slug_flow` is not a class in the `esp_classifier` label map.** Current map: `{0: normal, 1: gas_lock, 2: sand_ingress, 3: motor_overheat}`. H2's discrimination story requires `slug_flow` as class 4, trained with **flat temperature** signature (vibration rises, temp stays nominal). Temperature is the discriminating feature between slug_flow (surface) and downhole faults. This training distinction IS the H2 demo.
+
+**Model dependency per horizon:**
+- **H1 Gas Lock** — needs BOTH: classifier (for "gas_lock 94%" classification panel hero) + health regressor (for early detection, health score, lead-time). Fully edge.
+- **H2 Slug Flow** — needs classifier ONLY. H2's entire value proposition IS the classification discrimination. No working classifier = no H2. Fully edge.
+- **H3 VFD Optimize** — needs health regressor ONLY (as Vizier's thermal-safety constraint). Vertex AI Vizier = the one intentional cloud dependency; everything else is on-prem edge.
+
+**Temperature reframe (Session R design decision) INCREASES model dependence.** Temperature `(280−temp)/dtemp_dt` is the lagging physical deadline — the finish line the model is racing to beat. The ML classifier is the primary hero. The design is "classifier fires first, SCADA's temperature threshold fires 21+ minutes later."
+
+**Recommended fix (next session):** Train classifiers locally and deploy via `LOCAL_MODELS_DIR` in the inference-api (not GCS — edge-native, no cloud dependency). See NEXT_SESSION_PROMPT.md STEP 4 for the complete 5-step model-prep sequence.
 
 ---
 
