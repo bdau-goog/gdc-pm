@@ -2384,7 +2384,12 @@ def plot_forecast(asset_id: str, metric: str = "auto"):
     status_text    = "✓ NOMINAL OPERATION"
 
     recent_labels = [str(r.get("predicted_label") or "normal").lower() for r in rows[-10:]]
-    fault_count   = sum(1 for l in recent_labels if l not in ("normal", ""))
+    # Fix A: exclude "inference_error" from fault fraction count.
+    # inference-api labels ALL readings "inference_error" when ESP classifier isn't loaded.
+    # This was causing classifier_active=True during nominal state → health model ran on
+    # nominal data → health_score ~0.74 instead of expected ~0.92+. The model is fine;
+    # the pipeline label was polluting the fault-detection gate.
+    fault_count   = sum(1 for l in recent_labels if l not in ("normal", "", "inference_error"))
     fault_fraction = fault_count / max(len(recent_labels), 1)
     classifier_active = (fault_fraction > 0.20) or is_degrading
     # Phase 5.2: pre-initialize health score + FAULT_PHYSICS vars at function scope
@@ -3577,7 +3582,8 @@ def get_forecast_data(asset_id: str):
     _deg_state    = active_degrades.get(asset_id, {})
     is_degrading  = _deg_state.get("running", False) or _deg_state.get("held", False)
     recent_labels = [str(r.get("predicted_label") or "normal").lower() for r in rows[-10:]]
-    fault_fraction = sum(1 for l in recent_labels if l not in ("normal", "")) / max(len(recent_labels), 1)
+    # Fix A (same as plot_forecast): exclude "inference_error" from fault fraction.
+    fault_fraction = sum(1 for l in recent_labels if l not in ("normal", "", "inference_error")) / max(len(recent_labels), 1)
     # Sprint 5 v5: same fix as plot_forecast — include is_degrading so any injected fault
     # immediately populates HEALTH_HISTORY and drives a live, declining RUL for any asset.
     classifier_active = (fault_fraction > 0.20) or is_degrading
