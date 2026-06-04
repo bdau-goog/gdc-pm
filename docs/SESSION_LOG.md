@@ -1,5 +1,23 @@
 # GDC-PM Session Log — Append-Only History
 
+---
+
+## Session R (June 4, 2026) — *Design overhaul + Phase 1 frontend modularization — deployed and verified*
+
+**Code committed:** `0d18533` (feat: Phase 1 frontend modularization — split index.html into static/{styles.css,app.js})
+**Cluster image digest:** `sha256:85738e70` (fault-trigger-ui) · pod `fault-trigger-ui-74559b58dc-tlgmn` 1/1 Running
+
+**What happened this session (Plan mode + Phase 1 only):** Longest Plan-mode session to date. Diagnosed the root cause of 8 failed redesigns: (1) no shared visual vocabulary — each session invented a new bespoke primary visual, every one rejected; (2) noisy real-model data forcing integrity violations (hardcoded timer-driven state, static "94%", converged "always 25m" RUL). Read all session history, the Situation Brief, and the full DEMO_MASTER before touching any code.
+
+**Key design decisions locked this session:** Adopted HP-HMI (moving-analog-indicator + gray/color discipline) and ISA-101 (Level-1 fast-horse overview / Level-2 available detail) as the shared design system across H1/H2/H3. Reframed the hero visual from "countdown chart" to "live fault CLASSIFICATION panel + leading/lagging indicator split." Classification panel shows the full label-probability distribution derived from recent model outputs — this is categorically unmistakably ML, not threshold-alarm (SCADA). Temperature reframed as the *lagging deadline* motor is racing toward (not the ML detection signal). ML detection signal is the multivariate PIP+amps correlated decline *before* temp moves. Lead-time number = `(280°F − current_temp) / dtemp_dt` — varies per run because `_run_degrade_thread` randomizes `_temp_target` and `_k`, so "always 25m" problem is solved at the data layer. Confirmed inference-api returns full softmax `probabilities: dict[str, float]` per prediction; class_probs for UI will be derived from DB label-frequency distribution (no schema changes needed). 
+
+**Phase 1 executed and verified:** Extracted CSS (829 lines → `static/styles.css`) and JS (1569 lines → `static/app.js`) from 4347-line `index.html` using a Python extraction script with structural assertions. New `index.html` is 1947 lines. Added `StaticFiles` mount to `app.py`, `aiofiles==23.2.1` to requirements, `COPY static/` to Dockerfile. Rebuilt image (sha256:85738e70, 2.56GB), pushed, rolled out. Verified: `/static/styles.css` HTTP 200 (76KB), `/static/app.js` HTTP 200 (87KB), page loads identically. Token impact: future HTML edits are ~2.2× cheaper; CSS/JS edits target small individual files.
+
+**Rejected approaches this session:** (a) "5 separate microservice apps" for H1/H2/H3 — correct that they should be separate, wrong split axis; concerns should be split by concern within the frontend, not by demo act. (b) Motor temperature as the primary ML detection signal — caught and corrected: temp is lagging, ML acts on multivariate precursors before temp moves. (c) Continuing to push Phase 2+ without fixing the large-file token problem first.
+
+**Next task:** Phase 2 (app.py truth layer): add `thermal_lead_time_minutes` (deterministic, per-run-varying), `class_probs` (DB-derived softmax), protect GVF RAG seed from prune, and Advisor template fallback. Single batched `replace_in_file` on `app.py`. See NEXT_SESSION_PROMPT.md §STEP 4.
+
+
 **Format:** One paragraph per session, newest first. Never delete entries.  
 **Usage:** New sessions read the last 3–5 entries only for recent decision context.
 
