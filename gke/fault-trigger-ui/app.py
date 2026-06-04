@@ -27,6 +27,7 @@ import psycopg2
 import psycopg2.extras
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # ── Logging ───────────────────────────────────────────────────────────────────
@@ -1533,6 +1534,7 @@ def publish_to_rabbitmq(reading: dict) -> None:
 
 # ── FastAPI App ────────────────────────────────────────────────────────────────
 app = FastAPI(title="GDC-PM Fault Trigger UI", version="3.0.0")
+app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 
 
 # ── Pydantic Models ────────────────────────────────────────────────────────────
