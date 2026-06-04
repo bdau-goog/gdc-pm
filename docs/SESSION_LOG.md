@@ -2,6 +2,15 @@
 
 ---
 
+## Session R — Addendum 2 (June 4, 2026) — *Fix A: inference_error classifier gate — deployed and verified*
+
+**Code committed:** `0d85220` (fix: Fix A — exclude inference_error from classifier_active gate)
+**Cluster image digest:** `sha256:565ec44a` (fault-trigger-ui)
+
+**What was fixed:** Nominal health_score was 0.74 (should be ~0.92+ or None). Root cause diagnosed by querying the DB: ALL `predicted_label` values in `telemetry_events` were `inference_error` — the inference-api doesn't have the ESP classifier model loaded, so every reading gets labeled `inference_error`. The `classifier_active` gate checked `l not in ("normal", "")`, which treated `inference_error` as a fault label → 100% "fault fraction" → health model ran on nominal sensor data → scored 0.74 from noise slopes. **Fix:** Added `"inference_error"` to the exclusion tuple in both `plot_forecast` and `get_forecast_data`. Verified: `health_score: None, is_active: False` in nominal state. The health model itself is correctly calibrated — no retrain needed for the nominal issue. Fix B (retrain) remains optional for improving fault-severity discrimination in active injections.
+
+---
+
 ## Session R — Addendum (June 4, 2026) — *Phase 2 app.py truth layer — deployed and verified*
 
 **Code committed:** `faebd9f` (feat: Phase 2 app.py truth layer — thermal_lead_time, class_probs, RAG seed protection, advisor fallback)

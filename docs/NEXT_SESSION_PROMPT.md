@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session R end — Phase 1 + Phase 2 complete)
-**Git Head:** `faebd9f` — clean working tree
-**fault-trigger-ui image digest:** `sha256:db6f7b6d` (live, has Phase 1 + Phase 2)
+**Date:** June 4, 2026 (Session R end — Phase 1 + Phase 2 + Fix A complete)
+**Git Head:** `0d85220` — clean working tree
+**fault-trigger-ui image digest:** `sha256:565ec44a` (live, has Phase 1 + Phase 2 + Fix A)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
