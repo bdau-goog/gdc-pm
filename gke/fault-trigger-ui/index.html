@@ -785,6 +785,24 @@
     .h1-ns-handle{height:6px;cursor:ns-resize;flex-shrink:0;background:rgba(30,144,255,0.07);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background 0.15s;user-select:none}
     .h1-ns-handle:hover,.h1-ns-handle.dragging{background:rgba(30,144,255,0.28)}
     .h1-ns-handle::before{content:'···';font-size:10px;color:rgba(255,255,255,0.22);letter-spacing:2px}
+    /* ── Phase-plane & SCADA gauge & lead-time panels ─────────────────────── */
+    .h1-phase-hdr{display:flex;align-items:center;height:22px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 8px;font-size:0.54rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;flex-shrink:0}
+    .h1-scada-gauges{background:var(--surf);border:1px solid var(--border);border-radius:6px;padding:8px 10px;flex-shrink:0}
+    .sgg-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+    .sgg-row{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+    .sgg-lbl{font-size:0.52rem;color:var(--muted);width:30px;text-align:right;flex-shrink:0;font-weight:700;letter-spacing:0.04em}
+    .sgg-bar-wrap{flex:1;height:8px;background:#1e293b;border-radius:3px;position:relative;overflow:visible}
+    .sgg-fill{height:100%;border-radius:3px;transition:width 0.8s ease,background 0.5s ease}
+    .sgg-alarm-tick{position:absolute;top:-3px;height:14px;width:2px;background:rgba(239,68,68,0.7);border-radius:1px}
+    .sgg-val{font-size:0.55rem;color:var(--text2);width:66px;text-align:right;flex-shrink:0;font-family:var(--mono)}
+    .sgg-alm{font-size:0.46rem;color:rgba(239,68,68,0.55);width:50px;flex-shrink:0}
+    .sgg-footer{margin-top:5px;font-size:0.56rem;text-align:center;padding-top:4px;border-top:1px solid var(--border)}
+    .h1-lead-time{background:var(--surf);border:1px solid rgba(34,197,94,0.2);border-radius:6px;padding:8px 10px;flex-shrink:0}
+    .h1-lt-hdr{font-size:0.53rem;font-weight:700;color:#22c55e;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px}
+    .h1-lt-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+    .h1-lt-lbl{font-size:0.55rem;color:var(--muted)}
+    .h1-lt-val{font-size:0.62rem;font-weight:700;font-family:var(--mono)}
+    .h1-lt-divider{height:1px;background:rgba(34,197,94,0.18);margin:4px 0}
     /* ── CSS Well Strip Instrument Panel ── */
     .wstrip-hdr{display:flex;align-items:center;justify-content:space-between;width:100%;padding:2px 6px 0;flex-shrink:0}
     .wstrip-title{font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
@@ -1294,21 +1312,85 @@
           <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'left')" title="Drag to resize"></div>
           <!-- LEFT: Charts (~44%) -->
           <div class="h1-center" :style="{flex: '0 0 ' + h1SplitPercent + '%'}">
-            <!-- Primary chart: Minutes Until Pump Failure -->
+            <!-- Phase-Plane Operating State Chart -->
             <div>
-              <div style="display:flex;align-items:center;flex-shrink:0;height:22px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 8px">
-                <span style="font-size:0.54rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.05em">⏱ Minutes Until Pump Failure</span>
+              <div class="h1-phase-hdr">
+                <span>⚙ Operating State Space — Motor Amps × Winding Temp</span>
+                <span v-if="h1Injected" style="color:var(--orange);font-size:0.5rem;margin-left:auto">● Gas lock trajectory</span>
               </div>
-              <div id="h1-gdc-chart" :style="{height: h1ChartH + 'px'}" style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
+              <div id="h1-phase-chart" :style="{height: h1ChartH + 'px'}" style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
             </div>
-            <!-- ── NS resize handle: primary ↕ SCADA chart ── -->
+            <!-- ── NS resize handle ── -->
             <div class="h1-ns-handle" @mousedown="initH1NsSplit" title="Drag to resize chart height"></div>
-            <!-- Secondary chart: SCADA 4-Sensor Correlation -->
-            <div style="flex-shrink:0">
-              <div style="display:flex;align-items:center;flex-shrink:0;height:22px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 8px">
-                <span style="font-size:0.52rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">📡 SCADA — 4 sensors · All above alarm threshold</span>
+            <!-- SCADA 4-Sensor Gauge Cluster -->
+            <div class="h1-scada-gauges">
+              <div class="sgg-hdr">
+                <span style="font-size:0.53rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">📡 SCADA Threshold Monitor</span>
+                <span class="sgg-status" :style="{color: h1Injected && (h1RawAmps !== null && h1RawAmps < 60) ? 'var(--orange)' : '#22c55e', fontSize:'0.53rem', fontWeight:'700'}">
+                  {{ h1Injected && h1RawAmps !== null && h1RawAmps < 60 ? '⚠ Sensors changing — no alarm yet' : '✓ All nominal — no alarm' }}
+                </span>
               </div>
-              <div id="h1-scada-chart" style="height:110px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
+              <div class="sgg-row">
+                <div class="sgg-lbl">PIP</div>
+                <div class="sgg-bar-wrap">
+                  <div class="sgg-fill" :style="{width: h1RawPsi ? Math.min(100,h1RawPsi/1600*100)+'%' : '87.5%', background: h1RawPsi && h1RawPsi < 800 ? '#ef4444' : h1RawPsi && h1RawPsi < 950 ? '#f97316' : '#3b82f6'}"></div>
+                  <div class="sgg-alarm-tick" style="left:50%"></div>
+                </div>
+                <div class="sgg-val">{{ h1SensorPsi || '1,400 PSI' }}</div>
+                <div class="sgg-alm">⚠ &lt;800</div>
+              </div>
+              <div class="sgg-row">
+                <div class="sgg-lbl">AMPS</div>
+                <div class="sgg-bar-wrap">
+                  <div class="sgg-fill" :style="{width: h1RawAmps ? Math.min(100,h1RawAmps/90*100)+'%' : '83.3%', background: h1RawAmps && h1RawAmps < 50 ? '#ef4444' : h1RawAmps && h1RawAmps < 62 ? '#f97316' : '#3b82f6'}"></div>
+                  <div class="sgg-alarm-tick" style="left:55.6%"></div>
+                </div>
+                <div class="sgg-val">{{ h1SensorAmps || '75.3 A' }}</div>
+                <div class="sgg-alm">⚠ &lt;50A</div>
+              </div>
+              <div class="sgg-row">
+                <div class="sgg-lbl">TEMP</div>
+                <div class="sgg-bar-wrap">
+                  <div class="sgg-fill" :style="{width: h1RawTemp ? Math.min(100,Math.max(0,(h1RawTemp-160)/140*100))+'%' : '27.1%', background: h1RawTemp && h1RawTemp > 280 ? '#ef4444' : h1RawTemp && h1RawTemp > 250 ? '#f97316' : '#10b981'}"></div>
+                  <div class="sgg-alarm-tick" style="left:85.7%"></div>
+                </div>
+                <div class="sgg-val">{{ h1SensorTemp || '198°F' }}</div>
+                <div class="sgg-alm">⚠ &gt;280°F</div>
+              </div>
+              <div class="sgg-row">
+                <div class="sgg-lbl">VIB</div>
+                <div class="sgg-bar-wrap">
+                  <div class="sgg-fill" style="width:14%;background:#10b981"></div>
+                  <div class="sgg-alarm-tick" style="left:80%"></div>
+                </div>
+                <div class="sgg-val">~0.9 mm/s</div>
+                <div class="sgg-alm">⚠ &gt;8</div>
+              </div>
+              <div class="sgg-footer">
+                <span :style="{color: h1Injected ? '#f97316' : '#22c55e'}">
+                  {{ h1Injected ? '⚠ PIP + Amps declining — still above SCADA alarm limits' : '✓ All four within SCADA thresholds — no alarm fired' }}
+                </span>
+              </div>
+            </div>
+            <!-- AI Lead-Time Advantage panel (post-inject) -->
+            <div v-if="h1Injected && h1ForecastData && h1ForecastData.time_to_scada_minutes" class="h1-lead-time" style="margin-top:6px">
+              <div class="h1-lt-hdr">⚡ AI Lead-Time Advantage</div>
+              <div class="h1-lt-row">
+                <span class="h1-lt-lbl">Sensor-only model</span>
+                <span class="h1-lt-val" style="color:#f97316">{{ Math.round(h1ForecastData.time_to_scada_minutes) }} min</span>
+              </div>
+              <div class="h1-lt-row">
+                <span class="h1-lt-lbl">Context-fused (RAG)</span>
+                <span class="h1-lt-val" style="color:#fb923c">{{ Math.round(h1ForecastData.adjusted_rul_minutes) }} min</span>
+              </div>
+              <div class="h1-lt-divider"></div>
+              <div class="h1-lt-row">
+                <span class="h1-lt-lbl">⚡ RAG contribution</span>
+                <span class="h1-lt-val" style="color:#22c55e">{{ Math.round(h1ForecastData.time_to_scada_minutes - h1ForecastData.adjusted_rul_minutes) }} min</span>
+              </div>
+              <div class="h1-lt-row" style="margin-top:1px">
+                <span class="h1-lt-lbl" style="font-size:0.48rem;color:var(--muted)">Shift note + GOR lab report fused via AlloyDB RAG</span>
+              </div>
             </div>
             <!-- Window of Options Timeline -->
             <div v-if="h1Injected" class="wopt-container" style="margin-top:8px">
@@ -2781,6 +2863,14 @@ createApp({
       h1FeedItems: [],
       h1GemmaFinding: '',
       h1ForecastData: null,
+      h1RawPsi: null,
+      h1RawAmps: null,
+      h1RawTemp: null,
+      h1PhasePlaneHistory: [],
+      h1DetectionTime: null,
+      h1AdvisorLastFeedId: null,
+      h1AdvisorLastContextTime: 0,
+      h1AdvisorUpdateTimers: [],
       h1ActiveSensor: 'psi',
       h1Recovering: false,
       h1Dragging: false,
@@ -2956,6 +3046,20 @@ createApp({
     // ── Convenience getter for current asset's initial RUL (used in template) ──
     initialRulMinutes() {
       return this.ddAssetId ? (this.initialRulMap[this.ddAssetId] || null) : null;
+    },
+  },
+
+  watch: {
+    h1FeedItems(newVal, oldVal) {
+      if (!this.h1Injected || this.h1Resolved || this.h1AdvisorStreaming) return;
+      if (newVal.length > 0 && oldVal && oldVal.length > 0 && newVal[0].id !== oldVal[0]?.id) {
+        this._triggerAdvisoryUpdate('feed', newVal[0]);
+      }
+    },
+    h1OptALabel(newVal, oldVal) {
+      if (!this.h1Injected || this.h1Resolved) return;
+      if (oldVal === 'VIABLE' && newVal === 'MARGINAL') this._triggerAdvisoryUpdate('urgency', null);
+      else if (oldVal === 'MARGINAL' && newVal === 'EXPIRED') this._triggerAdvisoryUpdate('critical', null);
     },
   },
 
@@ -3728,8 +3832,11 @@ createApp({
         evDelays.forEach((delay, i) => {
           setTimeout(() => { this.h1EvidenceWall[i].active = true; this.h1EvidenceActive = i + 1; }, delay);
         });
-        // LLM copilot auto-streams 3s after injection (evidence wall activating first)
+        // LLM advisor auto-streams 3s after injection; scheduled follow-ups at T+50s and T+2min
         setTimeout(() => this._startAdvisorStream(), 3000);
+        const _at1 = setTimeout(() => this._triggerAdvisoryUpdate('context', null), 50000);
+        const _at2 = setTimeout(() => this._triggerAdvisoryUpdate('context', null), 120000);
+        this.h1AdvisorUpdateTimers = [_at1, _at2];
         // Elapsed timer for option viability
         this.h1ElapsedTimer = setInterval(() => {
           this.h1ElapsedMin = (Date.now() - this.h1InjectedAt) / 60000;
@@ -3746,7 +3853,7 @@ createApp({
             if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
           }}
           const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
-          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1Charts(d);}}
+          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1PhasePlane(d);}}
         }, 5000);
       } catch(e) { this.showToast('Error injecting gas lock','var(--red)'); }
     },
@@ -3762,13 +3869,17 @@ createApp({
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
       this.h1FeedItems=[]; this.h1GemmaFinding=''; this.h1ForecastData=null; this.h1ActiveSensor='psi';
       this.h1EvidenceActive=0; this.h1AdvisorHtml=''; this.h1AdvisorStreaming=false; this.h1RulHistory=[];
+      this.h1RawPsi=null; this.h1RawAmps=null; this.h1RawTemp=null;
+      this.h1PhasePlaneHistory=[]; this.h1DetectionTime=null;
+      this.h1AdvisorLastFeedId=null; this.h1AdvisorLastContextTime=0;
+      this.h1AdvisorUpdateTimers.forEach(t=>clearTimeout(t)); this.h1AdvisorUpdateTimers=[];
       this.h1ChatMessages=[]; this.h1ChatInput='';
       this.h1InjectedAt=null; this.h1ElapsedMin=0;
       this.h1OptA='wopt-viable'; this.h1OptALabel='VIABLE';
       this.h1OptB='wopt-viable'; this.h1OptBLabel='VIABLE';
       this.h1RecoveryMsg='';
       this.h1EvidenceWall.forEach(e => { e.active = false; });
-      try { Plotly.purge('h1-gdc-chart'); } catch{}
+      try { Plotly.purge('h1-phase-chart'); } catch{}
       this.showToast('↺ Horizon 1 reset','var(--green)');
       const _pollLive1 = async () => {
         if (this.h1Injected) return;
@@ -3818,120 +3929,84 @@ createApp({
         if (this.h1RecoveryPollTimer) { clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null; }
       }, 180000);
     },
-    _renderH1Charts(d) {
-      // Rolling RUL history — builds 3-line "Minutes Until Failure" time series
-      if (!this.h1RulHistory) this.h1RulHistory = [];
-      const nowIso       = new Date().toISOString();
-      const scadaVal     = 120; // SCADA: no alarm threshold crossed — stays flat at nominal
-      const sensorOnly   = (this.h1Injected && d.time_to_scada_minutes != null)
-                           ? Math.max(0, d.time_to_scada_minutes) : 120;
-      const contextFused = (this.h1Injected && d.adjusted_rul_minutes != null)
-                           ? Math.max(0, d.adjusted_rul_minutes) : sensorOnly;
-      this.h1RulHistory.push({ ts: nowIso, scada: scadaVal, sensor: sensorOnly, fused: contextFused });
-      if (this.h1RulHistory.length > 36) this.h1RulHistory = this.h1RulHistory.slice(-36);
-
-      const xs          = this.h1RulHistory.map(p => p.ts);
-      const ys_scada    = this.h1RulHistory.map(p => p.scada);
-      const ys_sensor   = this.h1RulHistory.map(p => p.sensor);
-      const ys_fused    = this.h1RulHistory.map(p => p.fused);
-      const gap         = Math.round(sensorOnly - contextFused);
-      const showBracket = this.h1Injected && gap > 0;
-
-      const gdcEl = document.getElementById('h1-gdc-chart');
-      if (!gdcEl) return;
-
-      const traces = [
-        { x: xs, y: ys_scada,  name: '\uD83D\uDCE1 SCADA Threshold Monitoring',
-          line: { color: '#64748b', width: 3 }, mode: 'lines', type: 'scatter' },
-        { x: xs, y: ys_sensor, name: '\u26A1 GDC AI: Sensor-Only',
-          line: { color: '#f97316', width: 2, dash: 'dash' }, mode: 'lines', type: 'scatter' },
-        { x: xs, y: ys_fused,  name: '\u26A1 GDC AI: Context-Fused',
-          line: { color: '#fb923c', width: 2.5 }, mode: 'lines', type: 'scatter',
-          fill: showBracket ? 'tonexty' : 'none', fillcolor: 'rgba(251,146,60,0.12)' },
-      ];
-
-      const annotations = [];
-      if (showBracket) {
-        const midIdx = Math.floor(xs.length / 2);
-        annotations.push({
-          x: xs[midIdx], y: (sensorOnly + contextFused) / 2,
-          xref: 'x', yref: 'y',
-          text: '\u26A1 Context Fusion: \u2212' + gap + 'm<br><span style="font-size:9px">shift note + GOR lab test [\u00B9][\u00B3]</span>',
-          showarrow: false,
-          font: { color: '#fb923c', size: 10, family: 'Inter,sans-serif' },
-          bgcolor: 'rgba(251,146,60,0.08)', borderpad: 3,
-          bordercolor: 'rgba(251,146,60,0.3)', borderwidth: 1
-        });
-      } else if (!this.h1Injected) {
-        annotations.push({
-          x: xs[xs.length - 1] || nowIso, y: 122, xref: 'x', yref: 'y',
-          text: 'Nominal \u2014 monitoring', showarrow: false,
-          font: { color: '#475569', size: 9, family: 'Inter,sans-serif' }
-        });
+    _renderH1PhasePlane(d) {
+      // Extract raw sensor values from forecast data live telemetry traces
+      const rawAmps = d.sensors?.amps?.traces?.[0]?.y?.slice(-1)?.[0] ?? null;
+      const rawTemp = d.sensors?.temp?.traces?.[0]?.y?.slice(-1)?.[0] ?? null;
+      const rawPsi  = d.sensors?.psi?.traces?.[0]?.y?.slice(-1)?.[0]  ?? null;
+      // Store for reactive gauge bindings
+      if (rawAmps !== null) this.h1RawAmps = rawAmps;
+      if (rawTemp !== null) this.h1RawTemp = rawTemp;
+      if (rawPsi  !== null) this.h1RawPsi  = rawPsi;
+      // Detect GDC detection moment (first time health_score drops below 0.85)
+      if (d.health_score && d.health_score < 0.85 && !this.h1DetectionTime) {
+        this.h1DetectionTime = Date.now();
       }
-
+      // Accumulate phase-plane trail (Amps × Temp operating points)
+      if (this.h1Injected && rawAmps !== null && rawTemp !== null) {
+        if (!this.h1PhasePlaneHistory) this.h1PhasePlaneHistory = [];
+        this.h1PhasePlaneHistory.push({ a: rawAmps, t: rawTemp });
+        if (this.h1PhasePlaneHistory.length > 20) this.h1PhasePlaneHistory = this.h1PhasePlaneHistory.slice(-20);
+      }
+      const el = document.getElementById('h1-phase-chart');
+      if (!el) return;
+      const trail = this.h1PhasePlaneHistory || [];
+      const trailX = trail.map(p => p.t);
+      const trailY = trail.map(p => p.a);
+      const curAmps = rawAmps ?? 75;
+      const curTemp = rawTemp ?? 198;
+      const ptColor = curAmps < 50 ? '#ef4444' : curAmps < 62 ? '#f97316' : '#22c55e';
+      const traces = [
+        { x: trailX, y: trailY, mode: 'lines+markers', name: 'Trajectory',
+          line: { color: 'rgba(99,102,241,0.55)', width: 2 },
+          marker: { color: 'rgba(99,102,241,0.35)', size: 5 }, type: 'scatter' },
+        { x: [curTemp], y: [curAmps], mode: 'markers', name: 'Current state',
+          marker: { color: ptColor, size: 13, symbol: 'circle',
+                    line: { color: 'rgba(255,255,255,0.8)', width: 2 } },
+          type: 'scatter' },
+      ];
+      // Background zone shapes — physically grounded regions
+      const shapes = [
+        // Green safe zone (nominal Amps > 60, Temp < 230)
+        { type: 'rect', x0: 190, x1: 238, y0: 60, y1: 88,
+          fillcolor: 'rgba(34,197,94,0.08)', line: { width: 0 }, layer: 'below' },
+        // Amber warning zone (Amps 45–62 OR Temp 220–280)
+        { type: 'rect', x0: 218, x1: 285, y0: 42, y1: 65,
+          fillcolor: 'rgba(249,115,22,0.07)', line: { width: 0 }, layer: 'below' },
+        // Red gas-lock zone (Amps < 55, Temp > 225)
+        { type: 'rect', x0: 225, x1: 308, y0: 20, y1: 58,
+          fillcolor: 'rgba(239,68,68,0.10)', line: { width: 0 }, layer: 'below' },
+        // SCADA low-amps alarm line (horizontal)
+        { type: 'line', x0: 190, x1: 308, y0: 50, y1: 50,
+          line: { color: 'rgba(239,68,68,0.55)', width: 1.5, dash: 'dot' } },
+        // SCADA high-temp alarm line (vertical)
+        { type: 'line', x0: 280, x1: 280, y0: 20, y1: 88,
+          line: { color: 'rgba(239,68,68,0.55)', width: 1.5, dash: 'dot' } },
+      ];
+      const annotations = [
+        { x: 210, y: 32, xref:'x', yref:'y', text: 'Gas Lock Zone ⚠',
+          showarrow: false, font: { color: 'rgba(239,68,68,0.65)', size: 9 } },
+        { x: 210, y: 82, xref:'x', yref:'y', text: 'Safe Operating Zone ✓',
+          showarrow: false, font: { color: 'rgba(34,197,94,0.55)', size: 9 } },
+        { x: 277, y: 87, xref:'x', yref:'y', text: 'SCADA 280°F',
+          showarrow: false, xanchor: 'right', font: { color: 'rgba(239,68,68,0.55)', size: 8 } },
+        { x: 308, y: 51.5, xref:'x', yref:'y', text: 'SCADA 50A',
+          showarrow: false, font: { color: 'rgba(239,68,68,0.55)', size: 8 } },
+        { x: 198, y: 75, xref:'x', yref:'y', text: '✦',
+          showarrow: false, font: { color: 'rgba(100,116,139,0.6)', size: 10 } },
+      ];
       const layout = {
         paper_bgcolor: '#0b1526', plot_bgcolor: '#131d2e',
         font: { color: '#94a3b8', size: 11 },
-        margin: { l: 56, r: 10, t: 10, b: 6 },
-        xaxis: { gridcolor: '#1e293b', zeroline: false, showticklabels: false, title: '' },
-        yaxis: { title: 'Min Until Failure', gridcolor: '#1e293b', zeroline: false, range: [0, 135] },
-        annotations, shapes: [],
-        showlegend: true,
-        legend: { orientation: 'h', yanchor: 'bottom', y: 1.01, xanchor: 'left', x: 0, font: { size: 8 } }
+        margin: { l: 48, r: 10, t: 10, b: 38 },
+        xaxis: { title: 'Motor Winding Temp (°F)', gridcolor: '#1e293b', zeroline: false, range: [190, 310] },
+        yaxis: { title: 'Motor Amps (A)', gridcolor: '#1e293b', zeroline: false, range: [18, 90] },
+        shapes, annotations, showlegend: false,
       };
-      Plotly.react(gdcEl, traces, layout, { displayModeBar: false, responsive: true })
-        .catch(() => Plotly.newPlot(gdcEl, traces, layout, { displayModeBar: false, responsive: true }));
-
-      this._renderH1ScadaChart(d);
+      Plotly.react(el, traces, layout, { displayModeBar: false, responsive: true })
+        .catch(() => Plotly.newPlot(el, traces, layout, { displayModeBar: false, responsive: true }));
     },
-    _renderH1ScadaChart(d) {
-      const scadaEl = document.getElementById('h1-scada-chart');
-      if (!scadaEl) return;
-      // 4-sensor normalized overlay — % change from initial baseline value.
-      // Gas lock signature: PIP + Amps decline together (orange) while Temp + Vib stay flat (blue/grey).
-      // All sensors remain ABOVE SCADA alarm thresholds — confirming "no SCADA alarm" visually.
-      const sensorDefs = [
-        { key: 'psi',  label: 'PIP',  color: '#f97316', dash: 'solid', width: 2.5 },
-        { key: 'amps', label: 'Amps', color: '#fb923c', dash: 'dot',   width: 2   },
-        { key: 'temp', label: 'Temp', color: '#38bdf8', dash: 'solid', width: 1.5 },
-        { key: 'vib',  label: 'Vib',  color: '#64748b', dash: 'dash',  width: 1.5 },
-      ];
-      const traces = [];
-      for (const def of sensorDefs) {
-        const s = d.sensors?.[def.key];
-        if (!s) continue;
-        const liveSrc = s.traces.find(t => t.name === 'Live Telemetry') || s.traces[0];
-        if (!liveSrc || !liveSrc.y || liveSrc.y.length === 0) continue;
-        const baseline = liveSrc.y[0];
-        if (!baseline || baseline === 0) continue;
-        const yNorm = liveSrc.y.map(v => ((v - baseline) / Math.abs(baseline)) * 100);
-        traces.push({
-          x: liveSrc.x, y: yNorm, name: def.label,
-          mode: 'lines', type: 'scatter',
-          line: { color: def.color, width: def.width, dash: def.dash }
-        });
-      }
-      const layout = {
-        paper_bgcolor: '#0b1526', plot_bgcolor: '#131d2e',
-        font: { color: '#94a3b8', size: 10 },
-        margin: { l: 42, r: 10, t: 6, b: 30 },
-        xaxis: { gridcolor: '#1e293b', zeroline: false, title: '' },
-        yaxis: {
-          title: '% \u0394', gridcolor: '#1e293b',
-          zeroline: true, zerolinecolor: 'rgba(100,116,139,0.5)', zerolinewidth: 1.5
-        },
-        showlegend: true,
-        legend: { orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'left', x: 0, font: { size: 8 } },
-        annotations: [{
-          x: 0.99, y: 0.05, xref: 'paper', yref: 'paper',
-          text: '\u2714 All above SCADA threshold', showarrow: false, xanchor: 'right',
-          font: { color: '#22c55e', size: 9, family: 'Inter,sans-serif' }
-        }]
-      };
-      Plotly.react(scadaEl, traces, layout, { displayModeBar: false, responsive: true })
-        .catch(() => Plotly.newPlot(scadaEl, traces, layout, { displayModeBar: false, responsive: true }));
-    },
+    _renderH1ScadaChart() { /* replaced by reactive CSS gauge cluster */ },
     setH1Sensor(sensor) {
       this.h1ActiveSensor = sensor;
       if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);
@@ -3949,8 +4024,7 @@ createApp({
         const dPct = (dx / bodyW) * 100;
         this.h1SplitPercent = Math.max(18, Math.min(62, startPct + dPct));
         this.$nextTick(() => {
-          try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
-          try { Plotly.Plots.resize(document.getElementById('h1-scada-chart')); } catch(err) {}
+          try { Plotly.Plots.resize(document.getElementById('h1-phase-chart')); } catch(err) {}
         });
       };
       const onUp = () => {
@@ -3989,6 +4063,62 @@ createApp({
       delays.forEach((delay, i) => {
         setTimeout(() => { this.h1EvidenceWall[i].active = true; this.h1EvidenceActive = i + 1; }, delay);
       });
+    },
+    async _triggerAdvisoryUpdate(type, item) {
+      if (this.h1AdvisorStreaming || !this.h1Injected || this.h1Resolved) return;
+      const now = Date.now();
+      if (now - this.h1AdvisorLastContextTime < 38000) return;  // debounce 38s
+      this.h1AdvisorLastContextTime = now;
+      const elapsed = Math.max(1, Math.round(this.h1ElapsedMin));
+      const d = this.h1ForecastData || {};
+      const slopes = d.slopes || {};
+      const pipRate = slopes.dpsi_dt != null ? Math.abs(slopes.dpsi_dt).toFixed(0) : null;
+      const ampsRate = slopes.ds4_dt != null ? Math.abs(slopes.ds4_dt).toFixed(1) : null;
+      const rul = d.time_to_scada_minutes;
+      const adj = d.adjusted_rul_minutes;
+      let message;
+      if (type === 'feed' && item) {
+        const detail = (item.detail || item.ai_relevance || '').slice(0, 140);
+        message = `New intelligence retrieved: "${item.headline}". ${detail}. `+
+          `Status at T+${elapsed}min: PIP ${this.h1SensorPsi||'N/A'}, Amps ${this.h1SensorAmps||'N/A'}. `+
+          (pipRate ? `PIP declining ${pipRate} PSI/min. ` : '')+
+          (rul ? `Sensor-only estimate: ${Math.round(rul)} min. Context-fused: ${adj?Math.round(adj):rul} min. ` : '')+
+          `In 2 sentences: how does this document change or confirm the gas lock diagnosis?`;
+      } else if (type === 'urgency') {
+        message = `URGENT: T+${elapsed}min elapsed. VFD speed-down option is now MARGINAL. `+
+          `PIP ${this.h1SensorPsi||'N/A'}, Amps ${this.h1SensorAmps||'N/A'}. `+
+          `In 2 sentences: restate the urgency and whether the $0 option is still executable.`;
+      } else if (type === 'critical') {
+        message = `CRITICAL: VFD $0 option has EXPIRED at T+${elapsed}min. `+
+          `In 2 sentences: what options remain and what is the expected cost?`;
+      } else {
+        message = `T+${elapsed}min status update. `+
+          `PIP ${this.h1SensorPsi||'N/A'}, Amps ${this.h1SensorAmps||'N/A'}, Temp ${this.h1SensorTemp||'N/A'}. `+
+          (pipRate ? `PIP declining ${pipRate} PSI/min, amps declining ${ampsRate||'?'} A/min. ` : '')+
+          (rul && adj ? `Sensor-only: ${Math.round(rul)}min, context-fused: ${Math.round(adj)}min. ` : '')+
+          `In 2 sentences: current urgency level and whether the $0 VFD option remains viable.`;
+      }
+      this.h1AdvisorHtml += `<br><hr style="border-color:rgba(90,143,192,0.18);margin:7px 0"><span style="font-size:0.58rem;color:var(--muted);font-style:italic">\u2500\u2500 GDC Advisor \u00b7 T+${elapsed}m \u2500\u2500</span><br>`;
+      this.h1AdvisorStreaming = true;
+      try {
+        const r = await fetch('/api/agent/chat', {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', message, context: this.h1AdvisorText.slice(0,350)})
+        });
+        if (r.ok) {
+          const resp = ((await r.json()).response || '').trim();
+          if (resp) {
+            let ci = 0;
+            const tid = setInterval(() => {
+              ci = Math.min(ci + 4, resp.length);
+              const spans = document.querySelectorAll('.h1-advisor-body .adv-update');
+              if (spans.length) spans[spans.length-1].textContent = resp.slice(0, ci);
+              if (ci >= resp.length) { clearInterval(tid); this.h1AdvisorStreaming = false; }
+            }, 28);
+            this.h1AdvisorHtml += `<span class="adv-update"></span>`;
+          } else { this.h1AdvisorStreaming = false; }
+        } else { this.h1AdvisorStreaming = false; }
+      } catch(e) { this.h1AdvisorStreaming = false; }
     },
     _startAdvisorStream() {
       const base = this.h1GemmaFinding ||
