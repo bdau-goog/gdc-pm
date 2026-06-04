@@ -401,37 +401,74 @@ The LLM copilot must explicitly address counterargument documents when they appe
 
 ---
 
-## 12. IMPLEMENTATION ORDER
+## 12. IMPLEMENTATION ORDER AND CURRENT STATUS
 
-### Phase 1: H1 (Complete Before Starting H2)
+**Last updated:** Session Q (June 4, 2026)
 
-1. **Write updated RAG corpus** (citations added to existing manuals, counterargument seeds added to `INTELLIGENCE_FEED`)
-2. **app.py changes (single `replace_in_file` call):**
-   - Add `slopes` dict to `/api/plot/forecast-data/{asset_id}` response
-   - Update `_intel_generator` for 55/30/15 document mix with counterargument templates
-   - Add `post_approval_monitor()` function for recovery monitoring after HITL
-   - Wire `hitl_approve()` to launch recovery monitor for gas_lock
-3. **index.html changes (single `replace_in_file` call):**
-   - Build H1 layout (2D well SVG, evidence wall, cited LLM copilot, window-of-options, live document feed)
-   - Wire `setMainTab('horizon1')` to start live telemetry poll and load baseline intel
-   - LLM copilot auto-starts on injection (no button needed)
-   - Window of Options with live viability tickers
-   - Remove static financial cards; remove Fleet Operations tab link
+---
 
-### Phase 2: H2 (After H1 is verified)
+### Phase 1: H1 Detect Tab — GAS LOCK ✅ COMPLETE (needs visual QA)
 
-- Reuse evidence wall pattern with H2 evidence configuration
-- Reuse cited LLM copilot with H2 prompting
-- Add two-line Vibration+Temperature chart as primary visual
-- Update well SVG for surface vs downhole contrast
-- Configure window-of-options for slug flow time horizon
+- [x] RAG corpus: 18 OEM manual sections embedded in AlloyDB pgvector
+- [x] `_intel_generator` background thread: 55/30/15 document mix (supporting/neutral/counterargument), Gemma-powered, every 20-30s during active fault
+- [x] `slopes` dict (`dpsi_dt`, `dtemp_dt`, `dvib_dt`, `ds4_dt`) in `/api/plot/forecast-data` response
+- [x] `post_approval_monitor()` polls PIP recovery every 30s for 2.5 min post-VFD-approval
+- [x] `hitl_approve()` launches both `_run_recovery_thread` and `_post_approval_monitor` for gas_lock
+- [x] **Context-fusion fix** (Session Q): inject endpoint seeds a `field_intel` GVF 78% document on gas_lock inject → `adjust_rul_with_documents()` fires 0.6× multiplier → real `adjusted_rul < time_to_scada`. Verified 7.2 min gap.
+- [x] H1 layout: dual-reality bar, 3-column body (well strip / charts / GDC Advisor), Window of Options
+- [x] CSS instrument panel in well strip (GVF bar, PIP/Amps/Temp readings, motor glow, fluid column animation)
+- [x] `setMainTab('horizon1')` starts live telemetry poll and loads baseline intel before injection
+- [x] GDC Advisor auto-streams on injection (typewriter effect, superscript citations)
+- [x] Window of Options with live viability tickers (VIABLE/MARGINAL/EXPIRED)
+- [x] Fleet Operations tab removed; static financial cards removed
+- [x] **Phase-plane chart** (Session Q): Motor Amps × Winding Temp state-space diagram replaces flat-line "Minutes Until Failure". Green/amber/red zones. SCADA alarm lines at 50A and 280°F. Trail + current point. The operating point migrates into the red gas-lock zone before crossing either SCADA alarm line.
+- [x] **SCADA CSS gauge cluster** (Session Q): 4 bars (PIP/Amps/Temp/Vib) with threshold ticks and reactive fills. Replaces confusing normalized-delta chart.
+- [x] **AI Lead-Time Advantage panel** (Session Q): shows real sensor-only vs context-fused estimates + RAG contribution (~7 min, labeled).
+- [x] **Vue watchers + `_triggerAdvisoryUpdate()`** (Session Q): Advisor re-fires on new intel doc, on VIABLE→MARGINAL→EXPIRED transitions, and at T+50s/T+2min. Uses live sensor slopes + elapsed time.
+- [ ] **Visual QA still needed**: user needs to verify in browser that phase-plane dot migrates, gauge bars shrink, lead-time panel shows gap, advisor re-fires at T+50s.
 
-### Phase 3: H3 (After H2 is verified)
+---
 
-- Reuse evidence wall with H3 strategic evidence configuration  
-- Add financial delta bar to existing Pareto frontier chart
-- Add "Edge + Cloud" architecture badge on Vertex AI Vizier element
-- Update LLM prompt for optimization context
+### Phase 2: H2 Discern Tab — SLUG FLOW ⏳ NOT STARTED
+
+The core H2 story: vibration rises (alarming), motor temperature stays flat (exonerating). The two-line chart IS the demo — anyone can see one line moving and one flat. $1,500 truck roll vs $150,000 unnecessary pump pull.
+
+Specific items remaining:
+
+- [ ] **Primary chart**: two-line Plotly chart on the same Y-axis — Vibration (orange, rising) and Motor Temperature (blue, flat). This is the entire diagnostic argument in one visual.
+- [ ] **Evidence wall redesign**: 6 H2-specific chips activating in sequence (see DEMO_MASTER §5 table: vibration sensor, motor temp sensor, shift note, separator test, surface choke log, OEM troubleshooting guide). Different content from H1 but same CSS animation pattern.
+- [ ] **GDC Advisor auto-starts on inject** with verdict: *"Vibration elevated. Motor temperature completely flat. This combination is the diagnostic signature of surface flowline slugging, not downhole mechanical wear. Six independent sources confirm: the pump is healthy. Correct response: $1,500 truck roll to adjust the surface choke valve."*
+- [ ] **Advisor re-triggering**: reuse `_triggerAdvisoryUpdate` and Vue watchers already built for H1.
+- [ ] **Well schematic**: pump body glows GREEN (healthy — contrast with H1's amber motor), surface flowline shows slug animation (orange slugs). Visual contrast: alarm at surface, healthy pump downhole.
+- [ ] **Window of Options** for slug flow: shorter time horizon. Options: (1) $1,500 truck roll — VIABLE; (2) $150,000 pump pull — NOT RECOMMENDED (but technically viable).
+- [ ] **`h2GemmaFinding`** and intel feed: already partially implemented with `INTELLIGENCE_FEED['slug_flow']` in app.py (6 items). Wire into the H2 tab.
+- [ ] **H2 dual-reality bar**: same CSS pattern as H1, different content. SCADA shows "Vibration HIGH — possible bearing failure". GDC shows "Slug flow 52% confidence — pump healthy — surface issue."
+
+**Implementation approach:** All H2 changes go into index.html only (no app.py changes needed). The slug_flow intel feed, fault injection, and truck roll dispatch are already wired in app.py. Single batched `replace_in_file` to index.html.
+
+---
+
+### Phase 3: H3 Optimize Tab — VFD BAYESIAN OPTIMIZATION ⚠ PARTIALLY COMPLETE
+
+H3 is already largely functional (Vertex AI Vizier runs, Pareto chart renders, deployment works). Minor polish remaining:
+
+- [x] Vertex AI Vizier Gaussian Process Bandit optimization (15 trials, real API)
+- [x] XGBoost RUL model evaluates each Hz against thermal safety boundary
+- [x] Pareto frontier chart with optimal point, SCADA nominal, and run-to-failure comparison
+- [x] Deploy recommendation to AlloyDB ledger
+- [ ] **Financial delta bar**: a horizontal bar or annotation on the Pareto chart showing the dollar difference between SCADA nominal and Vizier optimal. Currently just numbers in the card grid — not visual.
+- [ ] **"Edge + Cloud" architecture badge**: small label on the Vizier optimal card saying "Edge XGBoost enforces thermal constraint · Vertex AI Vizier drives search". Makes the "edge + cloud" story explicit.
+- [ ] **GDC Advisor** for H3: update LLM prompt for optimization context. Should say: *"Bayesian optimization complete. Vertex AI Vizier evaluated 15 configurations. Optimal: 57.5 Hz. Projected additional revenue over 90 days: $1.2M. Motor thermal model confirms this remains within Class H insulation limits."*
+
+**Implementation approach:** Minor index.html changes. App.py already correct.
+
+---
+
+### Cross-Cutting Items (Any Phase)
+
+- [ ] **`initH1NsSplit` still references old `h1-gdc-chart` and `h1-scada-chart` IDs** in the resize method (lines visible in grep). These IDs no longer exist — should reference `h1-phase-chart`. Low priority (NS resize still works, it just silently fails the Plotly resize call).
+- [ ] **Viability clock countdown** in Window of Options is CSS-timer-driven (based on `h1ElapsedMin` from injection timestamp), not from the model's `time_to_scada_minutes`. This is honest and intentional — the clock is the real elapsed time, not an ML estimate. No fix needed.
+- [ ] **`field_intel` expected range**: update NEXT_SESSION_PROMPT.md expected value from 99-110 to 80-120 (the prune job keeps it bounded; ~86 rows is healthy).
 
 ---
 
