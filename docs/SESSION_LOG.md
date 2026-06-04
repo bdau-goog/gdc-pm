@@ -7,8 +7,8 @@
 
 ## Session L (June 4, 2026) — *H1 UI Redesign + Vue template bug fix*
 
-**Code committed:** `e500c4d` (feat: H1 redesign — Detect/Discern/Optimize tabs, dual-reality bar, 3-col layout, copilot dominant, wopt v-if), `1915fe1` (fix: remove em-dash from Vue template expressions)  
-**Cluster image digest:** `sha256:b0291a14...` (fault-trigger-ui)
+**Code committed:** `e500c4d` (feat: H1 redesign — Detect/Discern/Optimize tabs, dual-reality bar, 3-col layout, copilot dominant, wopt v-if), `1915fe1` (fix: remove em-dash from {{ }} expressions — incorrect theory, benign change), `df13bf2` (fix: remove extra </div> that closed #app early)  
+**Cluster image digest:** `sha256:719e0a6c...` (fault-trigger-ui)
 
 **What was built and deployed:** Complete H1 ("Detect") UI restructure in response to 12-point user feedback. Tab nav renamed: Horizon 1/2/3 → Detect / Discern / Optimize (user's preferred "Detect, Discern, Optimize" progression). Fleet Financials tab removed. H1 banner collapsed to a single line with physics description moved behind ⓘ. "25-minute lead time" removed as a standalone callout. New **dual-reality bar** (hero comparison element): two-column compact strip showing SCADA (4 sensors, all nominal) vs GDC AI (same 4 sensors + 4 context chips activating on inject → different verdict). Old evidence wall and scada-compare boxes removed; their purpose absorbed into the dual-reality bar. New **3-column main body**: thin 82px SVG well strip (left), sensor chart + Window of Options (center 36%), dominant LLM copilot panel (right ~52%). Window of Options hidden with `v-if="h1Injected"` — only visible when fault is active. Charts now load and tick on tab open (before injection) via baseline `/api/plot/forecast-data` fetch in `setMainTab`. Live intel feed reduced to 3 compact rows. Stale `h1-scada-chart` DOM reference removed from `_renderH1Charts`.
 
@@ -16,9 +16,7 @@
 
 **Verification:** Pod `fault-trigger-ui-587fc8fb94-vqdst` 1/1 Running · `/api/live-telemetry/ESP-ALPHA-1` → 200 OK in logs · image digest `sha256:5c6d33ae`.
 
-**Bug fixed (commit `1915fe1`):** Em dash character U+2014 (`—`) inside Vue 3 template `{{ }}` expression string literals (e.g., `{{ h1SensorPsi || '—' }}`) causes Vue 3 CDN runtime's template expression extractor to misparse the `}}` boundary. The extractor consumed a large portion of subsequent template as one broken expression, which caused ALL subsequent `{{ }}` expressions to fail silently — including the Financial Justification modal, which then rendered raw template text despite Vue being mounted. Fix: replaced all `'—'` fallback defaults in `{{ }}` expressions with `'--'`, and simplified the dr-verdict nested ternary to ASCII-only strings. The box-drawing character `─` in static text (outside `{{ }}`) is unaffected.
-
-**Vue 3 CDN Runtime — confirmed limitation:** Multi-byte UTF-8 characters (em dash U+2014 = E2 80 94, emoji, etc.) inside single-quoted string literals within `{{ }}` template expressions can corrupt Vue 3's production CDN runtime template extractor. Safe workaround: use ASCII alternatives (`--`, `-`, `N/A`) as fallback values in `{{ }}` expressions. Emoji in static text (outside `{{ }}`) is unaffected.
+**Bug fixed (commit `df13bf2`):** The H1 redesign's Block 6 SEARCH/REPLACE (SVG closing → h1-center opening) introduced one extra `</div><!-- /h1-well-strip -->`. After `</svg>`, the existing `</div>` correctly closed `h1-well-strip`. The extra `</div>` then closed `h1-body`. This caused a cascade of 5 more orphaned closing divs: `/h1-center` → closed `h3-dashboard`, `/h1-copilot-pane` → closed the H1 `main-tab-content`, `/h1-body` → closed `app-body`, `/h3-dashboard` → **closed `#app` at line 1334**. Everything after line 1334 (the H2 tab, H3 tab, Architecture tab, and Financial Justification modal at line 2553) was rendered OUTSIDE the Vue template scope — explaining why the Financial Justification modal showed raw `{{ }}` text. Fix: removed the one duplicate line. Commit `1915fe1` (em-dash removal) was an incorrect theory and is a benign no-op; the real fix was one `</div>` deletion.
 
 **Next task:** Collect Detect tab visual feedback, then implement H2 (Discern) tab redesign reusing all new CSS patterns (`.dr-bar`, `.h1-body`, `.h1-copilot-pane`) per DEMO_MASTER §5.
 
