@@ -1,8 +1,9 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session R end — Phase 1 + Phase 2 + Fix A complete)
-**Git Head:** `0d85220` — clean working tree
-**fault-trigger-ui image digest:** `sha256:565ec44a` (live, has Phase 1 + Phase 2 + Fix A)
+**Date:** June 4, 2026 (Session S end — Model Prep complete)
+**Git Head:** `92dc9be` — clean working tree
+**inference-api image digest:** `sha256:560e4ab3` (live, has 4 classifiers + slug_flow)
+**fault-trigger-ui image digest:** `sha256:565ec44a` (unchanged this session)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,17 +18,20 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running
+- All pods 1/1 Running (inference-api pod: `6f8c85857f-*`)
 - ollama_online: True · model: gemma4:latest
 - field_intel: 80–120 rows · rag_documents: 18 rows
 
-**Also verify static assets + Phase 2 API fields:**
+**Also verify classifiers working:**
 ```bash
-curl -s -o /dev/null -w "%{http_code}" http://gdc-pm.bdau.io/static/styles.css  # expect 200
-curl -s -o /dev/null -w "%{http_code}" http://gdc-pm.bdau.io/static/app.js      # expect 200
-curl -s http://gdc-pm.bdau.io/api/plot/forecast-data/ESP-ALPHA-1 | python3 -c \
-  "import sys,json;d=json.load(sys.stdin);print('thermal_lead:',d.get('thermal_lead_time_minutes'),'class_probs:',d.get('class_probs'))"
-# expect: thermal_lead: <non-null float> class_probs: {dict}
+kubectl exec -n gdc-pm deployment/inference-api -- python3 -c "
+import urllib.request, json
+data = json.dumps({'psi':520,'temp_f':230,'vibration':9.5,'motor_amps':30,'dpsi_dt':-45.0,'dtemp_dt':3.5,'dvib_dt':1.2,'damps_dt':-4.0,'asset_type':'esp'}).encode()
+req = urllib.request.Request('http://localhost:8080/predict', data=data, headers={'Content-Type':'application/json'}, method='POST')
+d = json.loads(urllib.request.urlopen(req).read())
+print('gas_lock test:', d['predicted_label'], d['confidence'])
+"
+# expect: gas_lock 0.94
 ```
 
 ---
@@ -40,112 +44,58 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: What Was Done This Session (Session R)
+## STEP 3: What Was Done This Session (Session S)
 
-### Phase 2 COMPLETE — app.py Truth Layer
+### Model Prep COMPLETE
 
-**What changed in `app.py` (commit faebd9f):**
-- `thermal_lead_time_minutes` added to `/api/plot/forecast-data` response
-  - Computed: `(280 - temp_v[-1]) / dtemp_dt` (°F/min from polyfit)
-  - Varies per run — defeats "always 25m" convergence problem
-  - Verified live: returned 8.9 min (dtemp_dt=9.335 °F/min)
-- `class_probs` dict added — genuine model label distribution from last 20 DB rows
-  - Currently shows `{'inference_error': 0.0}` — honest (ESP classifier not in inference-api pod)
-  - Will show `{'gas_lock': 0.94, ...}` when inference-api has ESP classifier loaded
-- RAG seed doc protection: prune query now preserves 5 oldest AI shift-notes
-  - Fixes: GVF seed doc was pruned after ~10 intel cycles, collapsing RAG gap to 0
-- Advisor fallback: replaces "Unable to reach AI model" with physically grounded template
+**Classifiers trained and deployed** (`92dc9be`):
+- `scripts/train_classifiers.py`: new script, all 4 asset classifiers
+- ESP: 5 classes — normal, gas_lock, sand_ingress, motor_overheat, **slug_flow (class 4)**
+- `slug_flow` training signature: vibration elevated + `dtemp_dt` ≈ 0 (flat temp = H2 discriminator)
+- Test accuracy: ESP 99.92% · all classes 100/200 correct in holdout
+- Deploy method: `LOCAL_MODELS_DIR=/app/models` (edge-native, no GCS dependency)
+- Verified live: gas_lock 94.41% · slug_flow 93.8% · sand_ingress 94.47%
+- DB: `predicted_label` now shows real values (no more `inference_error`)
 
-### Phase 1 COMPLETE — Frontend Modularization (behavior-preserving)
-
-**What changed:**
-- `index.html`: 4347 → 1947 lines (slim shell: head + template only)
-- `static/styles.css`: 829 lines (all CSS, served by FastAPI StaticFiles at /static/)
-- `static/app.js`: 1569 lines (entire Vue app, loaded before `</body>`)
-- `app.py`: `StaticFiles` mount added; `aiofiles` import added
-- `Dockerfile`: `COPY static/ ./static/`
-- `requirements.txt`: `aiofiles==23.2.1` added
-
-**Why it matters:** Future HTML edits return ~1947 lines not 4347 (~2.2× cheaper). CSS/JS edits target individual ~800-1600 line files. Next step: split `app.js` into `core.js + h1.js + h2.js + h3.js` WHEN rebuilding each horizon tab.
-
-**Verified live:** `/static/styles.css` HTTP 200 (76KB), `/static/app.js` HTTP 200 (87KB), page loads correctly.
+**Known calibration issue (non-blocking):** ESP nominal state sometimes classified as `sand_ingress` at 50-63% confidence. Cause: simulator nominal amps (~88A) overlap with sand_ingress training range (42-72A). The H1 demo uses gas_lock injection (psi <800, amps <50, dpsi_dt <-8) which is unambiguous. Fix later by retraining with corrected nominal amps range if needed.
 
 ---
 
-## STEP 4: Next Implementation Task — MODEL PREP (MUST DO BEFORE ANY UI WORK)
+## STEP 4: Next Implementation Task — H1 V2 UI INTEGRITY FIXES
 
-**Why this is first:** H2's entire value proposition ("right diagnosis = right action") is 100% classifier-dependent — the demo is literally "model says slug_flow, not bearing wear → $1,500 truck roll instead of $150,000 pump pull." No working classifier = no H2. Also: H1's classification hero panel needs real `predicted_label` output from the inference-api, not `inference_error`. Phase 3 UI can be built in parallel but the classification panel component will show garbage until models are in place.
+**All 7 known violations from DEMO_MASTER §12 — batch into ONE `replace_in_file` on `static/app.js`:**
 
-### Critical discovery (Session R): two orphaned model pipelines
+### Fix 1 (INTEGRITY): Motor state from actual temperature, not timer
+Current: `h1ElapsedMin > 15` triggers "MOTOR CRITICAL". A hardcoded lie.
+Fix: motor state must derive from `h1SensorTemp` numeric value:
+- `h1SensorTemp < 220` → `motor-ok` (green)
+- `220 ≤ h1SensorTemp < 250` → `motor-warn` (amber)
+- `h1SensorTemp ≥ 250` → `motor-crit` (red)
 
-| Component | Model type | Status |
-|---|---|---|
-| `inference-api` | XGBoost **classifier** (`esp_classifier.ubj`) — outputs fault TYPE label | **NEVER LOADED**: GCS bucket `gdc-pm-v2-models` is **completely empty**. All predictions return `inference_error`. |
-| `fault-trigger-ui` | XGBoost **health regressor** (`esp_health.ubj`) — outputs health 0→1 | ✅ Working — baked into container at `models/*.ubj` |
+### Fix 2 (INTEGRITY): GAS LOCK confidence from live model, not static text
+Current: `"GAS LOCK — 94%"` is hardcoded string in dual-reality bar.
+Fix: `class_probs.gas_lock` from `/api/plot/forecast-data` response already contains live confidence. Display as `{{ (classProbs.gas_lock * 100).toFixed(0) }}%` when `h1Injected`.
 
-The project pivoted from BQML classifiers → XGBoost health regressors in Phase 5.1. The health regressors were built (`retrain_edge_models.py`) and deployed. **No one created or uploaded ESP classifier models.** The inference-api has been running with an empty GCS bucket the entire project.
+### Fix 3 (INTEGRITY): SCADA gauge bars from live telemetry, not fallback
+Current: bars show hardcoded "1,400 PSI / 75.3 A" pre-injection.
+Fix: populate `h1RawPsi/Amps/Temp` from `setMainTab` baseline call to `/api/live-telemetry`.
 
-### Critical gap: `slug_flow` missing from `esp_classifier` label map
+### Fix 4 (UX): "YOU ARE HERE" moving marker on Window of Options timeline
+Current: fixed T+10m/T+18m/PNR markers with no current-position indicator.
+Fix: compute `h1ElapsedMin` from `h1InjectTime` timestamp every tick. Show dot/arrow on timeline.
 
-Current `esp_classifier` label map: `{0: normal, 1: gas_lock, 2: sand_ingress, 3: motor_overheat}` — **slug_flow is absent.**
-H2 requires a classifier that distinguishes slug_flow (rising vibration + FLAT temperature) from sand_ingress/bearing_wear (rising vibration + RISING temperature). Temperature is the discriminating feature. This must be encoded in training data, not just the label map.
+### Fix 5 (UX): Event-active status banner with ticking timer
+Current: only signal fault is running = Reset button appears.
+Fix: full-width banner: pre-inject = green "✓ WELL A-1 NOMINAL"; post-inject = amber "⚠ GAS LOCK ACTIVE · T+MM:SS · N min remaining".
 
-### Model dependency per horizon
+### Fix 6 (UX): SCADA gauge directional labels
+Current: "Alarm at 800" — no direction indication.
+Fix: add "↓ Lower = worse" (PIP, Amps) or "↑ Higher = worse" (Temp) below each bar.
 
-| Horizon | Classifier needed | Health regressor needed | Cloud |
-|---|---|---|---|
-| **H1** Gas Lock | ✅ "gas_lock 94%" panel | ✅ early detection + health score | edge only |
-| **H2** Slug Flow | ✅✅ **THE ENTIRE STORY** (slug_flow must be class 4) | — | edge only |
-| **H3** VFD Optimize | — | ✅ thermal-safety evaluator for Vizier | Vizier = one cloud dep |
+### Fix 7 (TECHNICAL): Drop phase-plane chart
+DEMO_MASTER §15 anti-pattern. Replace with the SCADA vs GDC plain-sentence comparison block.
 
-### Model-prep task sequence (5 steps, next session)
-
-**Step 1 — Audit training scripts.**
-Read `scripts/seed-and-train-og-models.py` and `scripts/retrain_edge_models.py`.
-Determine: do they produce classifiers, regressors, or both?
-Expected finding: `retrain_edge_models.py` produces health regressors only. Need to add a classifier-training path.
-
-**Step 2 — Extend classifier training to include slug_flow as class 4.**
-Update `retrain_edge_models.py` or create `train_classifiers.py`:
-- `esp_classifier`: classes 0=normal, 1=gas_lock, 2=sand_ingress, 3=motor_overheat, 4=slug_flow
-- Training data for slug_flow: rising vibration + **flat temperature** (temp_range overlaps nominal)
-- This temperature signature is what makes H2's discrimination story true and testable
-- Output: `esp_classifier.ubj`, `gas_lift_classifier.ubj`, `mud_pump_classifier.ubj`, `top_drive_classifier.ubj`
-
-**Step 3 — Deploy classifiers via LOCAL_MODELS_DIR (recommended over GCS).**
-Rationale: fully edge-native, no cloud dependency, matches the "runs entirely on-prem" value prop, consistent with how health models are deployed.
-```
-kubectl set env deployment/inference-api -n gdc-pm \
-  LOCAL_MODELS_DIR=/app/models
-```
-Then bake the classifier `.ubj` files into the inference-api container alongside the Dockerfile.
-
-**Step 4 — Verify end-to-end.**
-```bash
-# Inject gas_lock fault on ESP-ALPHA-1
-# Wait 60s for event-processor to classify
-kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c \
-  "SELECT predicted_label, confidence FROM telemetry_events WHERE failure_type='gas_lock' ORDER BY event_time DESC LIMIT 5;"
-# Expected: predicted_label='gas_lock', confidence>0.85
-# NOT: predicted_label='inference_error'
-```
-
-**Step 5 — Then resume Phase 3 UI.**
-With real `predicted_label = "gas_lock"` in the DB, `class_probs` will show `{gas_lock: 0.9x}` automatically (already wired in Phase 2). The classification panel hero becomes genuine.
-
-### Known integrity state going into next session
-
-| Issue | Status |
-|---|---|
-| `predicted_label = "inference_error"` for all events | Known/documented. Fix A prevents this from corrupting `classifier_active` gate. Fix B = train + deploy classifiers. |
-| `class_probs = {}` in nominal, `{inference_error: 0.0}` during faults | Honest display. Will show real probabilities once classifier is deployed. |
-| temperature reframe = INCREASES model dependence | Correct. Temperature is the lagging deadline. ML classifier is the PRIMARY hero. |
-
-### Phase 3 (HP-HMI design system) — deferred to after model-prep
-
-Once classifiers are verified, these files are ready to receive the components:
-- `static/styles.css` (~829 lines) — add `.mai`, `.classify-panel`, `.status-banner`
-- `static/app.js` (~1569 lines) — add Vue components wired to `class_probs` + `thermal_lead_time_minutes`
+**Implementation approach:** All 7 fixes are in `static/app.js` (~1569 lines). Grep line numbers first, then ONE batched `replace_in_file` call. Also check `static/styles.css` for motor state CSS classes.
 
 ---
 
@@ -155,7 +105,8 @@ Once classifiers are verified, these files are ready to receive the components:
 - `feature-trio-scenarios` stays separate from `main`
 - XGBoost `*.ubj` models — do not retrain without explicit verification step
 - No npm/webpack/React — vanilla HTML/JS + Vue.js CDN only
-- **Batch all edits to same file in ONE `replace_in_file` call** — each call returns full file
+- **Batch all edits to same file in ONE `replace_in_file` call**
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+- inference-api registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest`
 - "Copilot" is a Microsoft product name — do NOT use it
-- Future `index.html` edits: ~1947 lines (≈75K tokens). `app.js` edits: ~1569 lines. `app.py` edits: ~5510 lines. Always grep -n to locate lines before reading.
+- Future `index.html` edits: ~1947 lines. `app.js` edits: ~1569 lines. `app.py` edits: ~5510 lines. Always grep -n first.

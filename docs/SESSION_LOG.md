@@ -2,6 +2,19 @@
 
 ---
 
+## Session S (June 4, 2026) — *Model Prep complete — ESP classifier with slug_flow class 4, inference-api LOCAL_MODELS_DIR deploy*
+
+**Code committed:** `92dc9be` (feat: ESP classifier with slug_flow class 4 — inference-api LOCAL_MODELS_DIR deploy)
+**Cluster image digest:** `sha256:560e4ab3` (inference-api) · `sha256:565ec44a` (fault-trigger-ui, unchanged)
+
+**What was built and deployed:** Closed the classifier gap discovered in Session R. Created `scripts/train_classifiers.py` which trains XGBoost multi-class classifiers for all 4 asset classes. The ESP classifier was extended from 4 classes to 5 — adding `slug_flow` as class 4. The `slug_flow` training signature encodes the H2 demo's discriminating physics: elevated vibration (`vib` 3–8 mm/s) with near-zero temperature rate (`dtemp_dt` ≈ ±0.08°F/min), contrasting with `sand_ingress` (vibration + rising temperature) and `motor_overheat` (strong temperature rise). All classifiers trained in <2s locally: ESP 99.92% accuracy, all 5 classes 100/200 correct in holdout test. Classifier `.ubj` files baked into the inference-api container at `/app/models/` via `COPY models/ ./models/` in Dockerfile. Set `LOCAL_MODELS_DIR=/app/models` and cleared `GCS_MODEL_BUCKET` in k8s yaml (GCS bucket was always empty — fully edge-native now). Rebuilt, pushed (`sha256:560e4ab3`), applied k8s yaml, forced exact digest rollout (old image was cached on node — `kubectl set image` with full digest solved it).
+
+**Verified live:** `gas_lock` → 94.41% · `slug_flow` → 93.8% (flat dtemp_dt correctly discriminated from sand_ingress) · `sand_ingress` → 94.47%. DB `telemetry_events` shows real `predicted_label` values for all asset types — `inference_error` is gone. Known calibration issue: ESP nominal state occasionally classified as `sand_ingress` at 50–63% because simulator nominal amps (~88A) overlap with the training sand_ingress range (42–72A). Non-blocking for H1 demo (gas_lock injection uses PSI <800, amps <50 — unambiguous). Fix: retrain with corrected normal amps range if needed.
+
+**Next task:** H1 V2 UI integrity fixes — all 7 known violations in `static/app.js`: (1) motor state from `h1SensorTemp` not timer, (2) GAS LOCK% from live `class_probs.gas_lock` not static text, (3) SCADA gauge bars from live telemetry not fallback, (4) "YOU ARE HERE" moving marker on Window of Options timeline, (5) event-active status banner with ticking T+MM:SS timer, (6) directional labels on SCADA gauge bars, (7) drop phase-plane chart. All 7 batched into ONE `replace_in_file` call on `app.js`.
+
+---
+
 ## Session R — Addendum 3 (June 4, 2026) — *Critical model-architecture discovery: no classifier models exist*
 
 **Code committed:** None (discovery session — documentation only)
