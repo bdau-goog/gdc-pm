@@ -1176,9 +1176,9 @@
           <div class="dr-col dr-scada">
             <div class="dr-hdr">📊 SCADA · ESP-ALPHA-1</div>
             <div class="dr-signals">
-              <span class="dr-sig">PIP <b>{{ h1SensorPsi || '—' }}</b></span>
-              <span class="dr-sig">Amps <b>{{ h1SensorAmps || '—' }}</b></span>
-              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '—' }}</b></span>
+              <span class="dr-sig">PIP <b>{{ h1SensorPsi || '--' }}</b></span>
+              <span class="dr-sig">Amps <b>{{ h1SensorAmps || '--' }}</b></span>
+              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '--' }}</b></span>
               <span class="dr-sig">Vib <b>0.8 mm/s</b></span>
             </div>
             <div class="dr-verdict dr-ok">✓ 4 signals — All Nominal · No alarm</div>
@@ -1187,9 +1187,9 @@
           <div class="dr-col dr-gdc">
             <div class="dr-hdr">🤖 GDC AI · ESP-ALPHA-1</div>
             <div class="dr-signals">
-              <span class="dr-sig">PIP <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorPsi || '—' }}<span v-if="h1Injected"> ↓</span></b></span>
-              <span class="dr-sig">Amps <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorAmps || '—' }}<span v-if="h1Injected"> ↓</span></b></span>
-              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '—' }} ─</b></span>
+              <span class="dr-sig">PIP <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorPsi || '--' }}<span v-if="h1Injected"> ↓</span></b></span>
+              <span class="dr-sig">Amps <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorAmps || '--' }}<span v-if="h1Injected"> ↓</span></b></span>
+              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '--' }}</b></span>
               <span class="dr-sig">Vib <b>0.8 mm/s ─</b></span>
             </div>
             <div class="dr-ctx-chips">
@@ -1199,7 +1199,7 @@
               <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 5}">📖 API RP 11S</span>
             </div>
             <div class="dr-verdict" :class="h1Recovering ? 'dr-ok' : h1Injected ? 'dr-alert' : 'dr-monitor'">
-              {{ h1Recovering ? '↗ Recovering · VFD at 44 Hz (2,640 RPM)' : h1Resolved ? '✅ $150,000 capital preserved' : h1Injected ? '⚠ GAS LOCK — 94% confidence' : '● Monitoring' }}
+              {{ h1Recovering ? 'Recovering - VFD at 44 Hz' : h1Resolved ? 'Resolved - $150,000 preserved' : h1Injected ? 'GAS LOCK - 94% confidence' : 'Monitoring' }}
             </div>
           </div>
         </div>
