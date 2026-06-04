@@ -737,10 +737,10 @@
     .wopt-window{color:var(--muted);font-size:0.53rem;margin-bottom:4px}
     .wopt-approve-btn{padding:3px 8px;border-radius:4px;border:none;background:linear-gradient(135deg,#166534,#15803d);color:#fff;font-size:0.59rem;font-weight:700;cursor:pointer;width:100%;margin-top:2px}
     .wopt-approve-btn:hover{filter:brightness(1.1)}
-    .h1-copilot{background:var(--surf);border:1px solid rgba(30,144,255,0.2);border-radius:7px;display:flex;flex-direction:column;flex-shrink:0}
-    .h1-copilot-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:linear-gradient(135deg,rgba(21,101,192,0.1),transparent);border-bottom:1px solid var(--border);font-size:0.56rem;font-weight:700;color:#5a8fc0;text-transform:uppercase;letter-spacing:0.07em}
-    .h1-copilot-body{padding:8px 10px;font-size:0.7rem;line-height:1.6;max-height:175px;overflow-y:auto}
-    .h1-copilot-input{display:flex;gap:5px;padding:5px 8px;border-top:1px solid var(--border)}
+    .h1-advisor{background:var(--surf);border:1px solid rgba(30,144,255,0.2);border-radius:7px;display:flex;flex-direction:column;flex-shrink:0}
+    .h1-advisor-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:linear-gradient(135deg,rgba(21,101,192,0.1),transparent);border-bottom:1px solid var(--border);font-size:0.56rem;font-weight:700;color:#5a8fc0;text-transform:uppercase;letter-spacing:0.07em}
+    .h1-advisor-body{padding:8px 10px;font-size:0.7rem;line-height:1.6;max-height:175px;overflow-y:auto}
+    .h1-advisor-input{display:flex;gap:5px;padding:5px 8px;border-top:1px solid var(--border)}
     .h1-chat-input-field{flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text);font-size:0.66rem;outline:none}
     .h1-chat-send{padding:4px 10px;background:var(--blue);border:none;border-radius:4px;color:#fff;font-size:0.7rem;cursor:pointer}
     .h1-chat-msg{margin-top:6px;padding:4px 8px;border-radius:4px;font-size:0.64rem;line-height:1.4}
@@ -768,11 +768,12 @@
     .dr-monitor{color:var(--muted)}
     /* ── H1 New 3-col Body ── */
     .h1-body{display:flex;gap:10px;flex:1;min-height:0;overflow:hidden}
-    .h1-well-strip{width:110px;flex-shrink:0;background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
-    .h1-center{flex:0 0 36%;display:flex;flex-direction:column;min-width:0;min-height:0}
-    .h1-copilot-pane{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
-    .h1-copilot-pane>.h1-copilot{flex:1;min-height:0;flex-shrink:1!important}
-    .h1-copilot-pane>.h1-copilot>.h1-copilot-body{flex:1;max-height:none!important;min-height:0}
+    .h1-body>:nth-child(2){display:none}
+    .h1-well-strip{width:180px;flex-shrink:0;align-self:stretch;order:5;background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+    .h1-center{flex:0 0 44%;display:flex;flex-direction:column;min-width:0;min-height:0}
+    .h1-advisor-pane{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+    .h1-advisor-pane>.h1-advisor{flex:1;min-height:0;flex-shrink:1!important}
+    .h1-advisor-pane>.h1-advisor>.h1-advisor-body{flex:1;max-height:none!important;min-height:0}
     /* ── Compact Intel Feed ── */
     .h1-intel-compact{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:7px 10px;flex-shrink:0}
     .h1-ic-hdr{font-size:0.53rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px}
@@ -1253,23 +1254,33 @@
                 <text x="162" y="173" :fill="h1Injected ? '#fbbf24' : '#60a5fa'" font-size="5" text-anchor="middle" font-weight="700">{{ h1Injected ? '68%' : '22%' }}</text>
                 <text x="14" y="208" :fill="h1Injected ? '#f59e0b' : '#4ade80'" font-size="6" text-anchor="middle" font-weight="700">{{ h1Injected ? '↓' : '✓' }}</text>
                 <text x="14" y="215" fill="#374151" font-size="5" text-anchor="middle">PIP</text>
+                <text x="4" y="180" :fill="h1Injected ? '#fbbf24' : '#4ade80'" font-size="6" text-anchor="start" font-weight="600">{{ h1Injected ? 'Intake: 68% GVF ⚠' : 'Intake: Nominal' }}</text>
+                <text x="4" y="230" :fill="h1Injected ? '#f87171' : '#4ade80'" font-size="6" text-anchor="start" font-weight="600">{{ h1Injected ? 'Motor: Cooling lost ⚠' : 'Motor: Cooling normal' }}</text>
               </svg>
             </div>
           <!-- ── EW splitter: well-strip ↔ center ── -->
           <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'left')" title="Drag to resize"></div>
-          <!-- CENTER: chart + window of options -->
+          <!-- LEFT: Charts (~44%) -->
           <div class="h1-center" :style="{flex: '0 0 ' + h1SplitPercent + '%'}">
+            <!-- Primary chart: Minutes Until Pump Failure -->
             <div>
-              <div style="display:flex;align-items:stretch;flex-shrink:0;height:26px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 4px">
-                <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP</span>
-                <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Amps</span>
-                <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Temp</span>
-                <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:6px;opacity:0.8">⚡ GDC</span>
+              <div style="display:flex;align-items:center;flex-shrink:0;height:22px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 8px">
+                <span style="font-size:0.54rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.05em">⏱ Minutes Until Pump Failure</span>
               </div>
               <div id="h1-gdc-chart" :style="{height: h1ChartH + 'px'}" style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
             </div>
-            <!-- ── NS resize handle: chart ↕ Window of Options ── -->
-            <div v-if="h1Injected" class="h1-ns-handle" @mousedown="initH1NsSplit" title="Drag to resize chart height"></div>
+            <!-- ── NS resize handle: primary ↕ SCADA chart ── -->
+            <div class="h1-ns-handle" @mousedown="initH1NsSplit" title="Drag to resize chart height"></div>
+            <!-- Secondary chart: SCADA Raw Telemetry -->
+            <div style="flex-shrink:0">
+              <div style="display:flex;align-items:stretch;flex-shrink:0;height:22px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 4px">
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Amps</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Temp</span>
+                <span style="margin-left:auto;font-size:0.52rem;font-weight:700;color:var(--green);align-self:center;padding-right:6px">📡 SCADA — No alarm triggered</span>
+              </div>
+              <div id="h1-scada-chart" style="height:110px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
+            </div>
             <!-- Window of Options Timeline -->
             <div v-if="h1Injected" class="wopt-container" style="margin-top:8px">
               <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⏱ Window of Options</div>
@@ -1308,23 +1319,23 @@
             <div v-if="h1RecoveryMsg" style="margin-top:6px;padding:6px 10px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:5px;font-size:0.64rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
           </div><!-- /h1-center -->
 
-          <!-- ── EW splitter: center ↔ copilot ── -->
+          <!-- ── EW splitter: center ↔ advisor ── -->
           <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'right')" title="Drag to resize"></div>
 
-          <!-- RIGHT: GDC AI Copilot (dominant) -->
-          <div class="h1-copilot-pane">
-            <!-- Cited LLM Copilot -->
-            <div class="h1-copilot">
-              <div class="h1-copilot-hdr">
-                <span>🤖 GDC Copilot — Gemma 4 · On-Cluster · No Cloud Required</span>
-                <span v-if="h1CopilotStreaming" class="streaming-dot"></span>
+          <!-- CENTER: GDC Advisor (~38%) -->
+          <div class="h1-advisor-pane">
+            <!-- GDC Advisor — Gemma 4 -->
+            <div class="h1-advisor">
+              <div class="h1-advisor-hdr">
+                <span>🤖 GDC Advisor — Gemma 4 · On-Cluster · No Cloud Required</span>
+                <span v-if="h1AdvisorStreaming" class="streaming-dot"></span>
               </div>
-              <div class="h1-copilot-body">
+              <div class="h1-advisor-body">
                 <div v-if="!h1Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic">Monitoring ESP-ALPHA-1. All sensors nominal. Ready to analyze downhole anomalies.</div>
-                <div v-if="h1Injected" style="font-size:0.7rem;line-height:1.65;color:var(--text2)" v-html="h1CopilotHtml"></div>
-                <div v-for="msg in h1ChatMessages" :key="msg.id" class="h1-chat-msg" :class="msg.role"><strong>{{ msg.role === 'user' ? 'You' : '🤖 Copilot' }}:</strong> {{ msg.text }}</div>
+                <div v-if="h1Injected" style="font-size:0.7rem;line-height:1.65;color:var(--text2)" v-html="h1AdvisorHtml"></div>
+                <div v-for="msg in h1ChatMessages" :key="msg.id" class="h1-chat-msg" :class="msg.role"><strong>{{ msg.role === 'user' ? 'You' : '🤖 Advisor' }}:</strong> {{ msg.text }}</div>
               </div>
-              <div v-if="h1Injected" class="h1-copilot-input">
+              <div v-if="h1Injected" class="h1-advisor-input">
                 <input v-model="h1ChatInput" @keydown.enter="sendH1Chat" placeholder="Ask a follow-up question…" class="h1-chat-input-field"/>
                 <button @click="sendH1Chat" class="h1-chat-send">↵</button>
               </div>
@@ -1340,7 +1351,7 @@
               </div>
               <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.65rem;font-style:italic;padding:4px 0">Loading intel…</div>
             </div>
-          </div><!-- /h1-copilot-pane -->
+          </div><!-- /h1-advisor-pane -->
         </div><!-- /h1-body -->
       </div><!-- /h3-dashboard -->
     </div><!-- tab-horizon1 -->
@@ -2757,10 +2768,12 @@ createApp({
         { icon: '📖', cat: 'Technical Standards', placeholder: 'No standards cited', content: 'API RP 11S §5.3: VFD speed-down is primary intervention. Class H limit: 180°C (IEEE 117). Baker Hughes: GVF >65% triggers unloading.', active: false },
       ],
       h1EvidenceActive: 0,
-      h1CopilotHtml: '',
-      h1CopilotStreaming: false,
-      h1CopilotTimer: null,
-      h1CopilotText: '',
+      h1AdvisorHtml: '',
+      h1AdvisorStreaming: false,
+      h1AdvisorTimer: null,
+      h1AdvisorText: '',
+      h1RulHistory: [],
+      h1FeedPollInterval: null,
       h1ChatInput: '',
       h1ChatMessages: [],
       h1InjectedAt: null,
@@ -3675,13 +3688,19 @@ createApp({
         this.showToast('⚡ Gas Lock injected on ESP-ALPHA-1','var(--orange)');
         const feed = await fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock');
         if (feed.ok) { const d=await feed.json(); this.h1FeedItems=d.items||[]; this.h1GemmaFinding=d.gemma_finding||''; }
+        if (this.h1FeedPollInterval) clearInterval(this.h1FeedPollInterval);
+        this.h1FeedPollInterval = setInterval(() => {
+          fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock')
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d && this.h1Injected && !this.h1Resolved) this.h1FeedItems = d.items || []; });
+        }, 15000);
         // Activate evidence wall in sequence (200ms, 2s, 3.8s, 5.5s, 7.2s)
         const evDelays = [200, 2000, 3800, 5500, 7200];
         evDelays.forEach((delay, i) => {
           setTimeout(() => { this.h1EvidenceWall[i].active = true; this.h1EvidenceActive = i + 1; }, delay);
         });
         // LLM copilot auto-streams 3s after injection (evidence wall activating first)
-        setTimeout(() => this._startCopilotStream(), 3000);
+        setTimeout(() => this._startAdvisorStream(), 3000);
         // Elapsed timer for option viability
         this.h1ElapsedTimer = setInterval(() => {
           this.h1ElapsedMin = (Date.now() - this.h1InjectedAt) / 60000;
@@ -3706,13 +3725,14 @@ createApp({
       if (this.h1DegPollTimer)      { clearInterval(this.h1DegPollTimer);      this.h1DegPollTimer      = null; }
       if (this.h1LivePollTimer)     { clearInterval(this.h1LivePollTimer);     this.h1LivePollTimer     = null; }
       if (this.h1ElapsedTimer)      { clearInterval(this.h1ElapsedTimer);      this.h1ElapsedTimer      = null; }
-      if (this.h1CopilotTimer)      { clearInterval(this.h1CopilotTimer);      this.h1CopilotTimer      = null; }
+      if (this.h1AdvisorTimer)      { clearInterval(this.h1AdvisorTimer);      this.h1AdvisorTimer      = null; }
+      if (this.h1FeedPollInterval)  { clearInterval(this.h1FeedPollInterval);  this.h1FeedPollInterval  = null; }
       if (this.h1RecoveryPollTimer) { clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null; }
       try { await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}); } catch{}
       this.h1Injected=false; this.h1Resolved=false; this.h1Recovering=false;
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
       this.h1FeedItems=[]; this.h1GemmaFinding=''; this.h1ForecastData=null; this.h1ActiveSensor='psi';
-      this.h1EvidenceActive=0; this.h1CopilotHtml=''; this.h1CopilotStreaming=false;
+      this.h1EvidenceActive=0; this.h1AdvisorHtml=''; this.h1AdvisorStreaming=false; this.h1RulHistory=[];
       this.h1ChatMessages=[]; this.h1ChatInput='';
       this.h1InjectedAt=null; this.h1ElapsedMin=0;
       this.h1OptA='wopt-viable'; this.h1OptALabel='VIABLE';
@@ -3741,7 +3761,7 @@ createApp({
       this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXECUTED';
       this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED';
       if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
-      this.h1CopilotHtml += '<br><br><strong style="color:var(--green)">↗ VFD speed-down command sent (52 → 44 Hz / 3,120 → 2,640 RPM). Recovery initiated. Monitoring wellbore response…</strong>';
+      this.h1AdvisorHtml += '<br><br><strong style="color:var(--green)">↗ VFD speed-down command sent (52 → 44 Hz / 3,120 → 2,640 RPM). Recovery initiated. Monitoring wellbore response…</strong>';
       this.showToast('↗ VFD command sent — monitoring wellbore recovery. $150k pump replacement avoided.','var(--green)');
       try {
         await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -3755,7 +3775,7 @@ createApp({
             if (d.msg) { this.h1RecoveryMsg = d.msg; }
             if (d.state === 'complete') {
               this.h1Recovering = false;
-              this.h1CopilotHtml += '<br><strong style="color:var(--green)">✅ Recovery complete. ESP-ALPHA-1 nominal. $150,000 pump replacement avoided.</strong>';
+              this.h1AdvisorHtml += '<br><strong style="color:var(--green)">✅ Recovery complete. ESP-ALPHA-1 nominal. $150,000 pump replacement avoided.</strong>';
               clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null;
               if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
             }
@@ -3770,81 +3790,101 @@ createApp({
       }, 180000);
     },
     _renderH1Charts(d) {
+      // Rolling RUL history — builds 3-line "Minutes Until Failure" time series
+      if (!this.h1RulHistory) this.h1RulHistory = [];
+      const nowIso       = new Date().toISOString();
+      const scadaVal     = 120; // SCADA: no alarm threshold crossed — stays flat at nominal
+      const sensorOnly   = (this.h1Injected && d.time_to_scada_minutes != null)
+                           ? Math.max(0, d.time_to_scada_minutes) : 120;
+      const contextFused = (this.h1Injected && d.adjusted_rul_minutes != null)
+                           ? Math.max(0, d.adjusted_rul_minutes) : sensorOnly;
+      this.h1RulHistory.push({ ts: nowIso, scada: scadaVal, sensor: sensorOnly, fused: contextFused });
+      if (this.h1RulHistory.length > 36) this.h1RulHistory = this.h1RulHistory.slice(-36);
+
+      const xs          = this.h1RulHistory.map(p => p.ts);
+      const ys_scada    = this.h1RulHistory.map(p => p.scada);
+      const ys_sensor   = this.h1RulHistory.map(p => p.sensor);
+      const ys_fused    = this.h1RulHistory.map(p => p.fused);
+      const gap         = Math.round(sensorOnly - contextFused);
+      const showBracket = this.h1Injected && gap > 0;
+
+      const gdcEl = document.getElementById('h1-gdc-chart');
+      if (!gdcEl) return;
+
+      const traces = [
+        { x: xs, y: ys_scada,  name: '\uD83D\uDCE1 SCADA Threshold Monitoring',
+          line: { color: '#64748b', width: 3 }, mode: 'lines', type: 'scatter' },
+        { x: xs, y: ys_sensor, name: '\u26A1 GDC AI: Sensor-Only',
+          line: { color: '#f97316', width: 2, dash: 'dash' }, mode: 'lines', type: 'scatter' },
+        { x: xs, y: ys_fused,  name: '\u26A1 GDC AI: Context-Fused',
+          line: { color: '#fb923c', width: 2.5 }, mode: 'lines', type: 'scatter',
+          fill: showBracket ? 'tonexty' : 'none', fillcolor: 'rgba(251,146,60,0.12)' },
+      ];
+
+      const annotations = [];
+      if (showBracket) {
+        const midIdx = Math.floor(xs.length / 2);
+        annotations.push({
+          x: xs[midIdx], y: (sensorOnly + contextFused) / 2,
+          xref: 'x', yref: 'y',
+          text: '\u26A1 Context Fusion: \u2212' + gap + 'm<br><span style="font-size:9px">shift note + GOR lab test [\u00B9][\u00B3]</span>',
+          showarrow: false,
+          font: { color: '#fb923c', size: 10, family: 'Inter,sans-serif' },
+          bgcolor: 'rgba(251,146,60,0.08)', borderpad: 3,
+          bordercolor: 'rgba(251,146,60,0.3)', borderwidth: 1
+        });
+      } else if (!this.h1Injected) {
+        annotations.push({
+          x: xs[xs.length - 1] || nowIso, y: 122, xref: 'x', yref: 'y',
+          text: 'Nominal \u2014 monitoring', showarrow: false,
+          font: { color: '#475569', size: 9, family: 'Inter,sans-serif' }
+        });
+      }
+
+      const layout = {
+        paper_bgcolor: '#0b1526', plot_bgcolor: '#131d2e',
+        font: { color: '#94a3b8', size: 11 },
+        margin: { l: 56, r: 10, t: 10, b: 6 },
+        xaxis: { gridcolor: '#1e293b', zeroline: false, showticklabels: false, title: '' },
+        yaxis: { title: 'Min Until Failure', gridcolor: '#1e293b', zeroline: false, range: [0, 135] },
+        annotations, shapes: [],
+        showlegend: true,
+        legend: { orientation: 'h', yanchor: 'bottom', y: 1.01, xanchor: 'left', x: 0, font: { size: 8 } }
+      };
+      Plotly.react(gdcEl, traces, layout, { displayModeBar: false, responsive: true })
+        .catch(() => Plotly.newPlot(gdcEl, traces, layout, { displayModeBar: false, responsive: true }));
+
+      this._renderH1ScadaChart(d);
+    },
+    _renderH1ScadaChart(d) {
+      const scadaEl = document.getElementById('h1-scada-chart');
+      if (!scadaEl) return;
       const sensor  = this.h1ActiveSensor || 'psi';
       const s       = d.sensors?.[sensor] || d.sensors?.psi;
       if (!s) return;
-      const gdcEl = document.getElementById('h1-gdc-chart');
-      if (!gdcEl) return;
-      // Extract specific traces from server response
       const liveSrc  = s.traces.find(t => t.name === 'Live Telemetry') || s.traces[0];
       const scadaSrc = s.traces.find(t => t.name === 'SCADA Alarm Threshold');
-      const projSrc  = s.traces.find(t => t.name === 'ML RUL Projection') || s.traces[1];
-      const yLabels  = { psi:'PSI', temp:'°F', amps:'Amps', vib:'mm/s', spm:'SPM' };
-      const yLabel   = yLabels[sensor] || 'Value';
-      // Build trace list — always show live sensor + SCADA threshold
-      const traces = [];
-      if (liveSrc)  traces.push({...liveSrc,  name:'Live Sensor Reading',      line:{color:'#3b82f6',width:2.5}});
-      if (scadaSrc) traces.push({...scadaSrc, name:'SCADA Alarm Threshold'});
-      // Post-injection only: ML forecast projection
-      if (this.h1Injected && projSrc) {
-        traces.push({...projSrc, name:'GDC ML Forecast', line:{color:'#f59e0b',width:2,dash:'dot'}});
-      }
-      // Build cost-zone shapes + annotations
-      const shapes = [], annotations = [];
-      const nowStr = liveSrc?.x?.[liveSrc.x.length - 1] || new Date().toISOString();
-      const nowMs  = new Date(nowStr).getTime();
-      // NOW vertical dotted line
-      shapes.push({type:'line',x0:nowStr,x1:nowStr,y0:0,y1:1,xref:'x',yref:'paper',
-        line:{color:'#475569',width:1.5,dash:'dot'}});
-      if (!this.h1Injected) {
-        // Pre-injection: clean nominal state — no fault elements
-        annotations.push({x:nowStr,y:1.0,xref:'x',yref:'paper',text:'NOW — Monitoring',
-          showarrow:false,xanchor:'right',xshift:-6,yanchor:'bottom',
-          font:{color:'#64748b',size:10,family:'Inter,sans-serif'}});
-      } else {
-        // Post-injection: cost-zone overlay
-        const scadaMin = d.time_to_scada_minutes;
-        const pnrMin   = d.time_to_pnr_minutes;
-        if (scadaMin) {
-          const scadaMs  = nowMs + scadaMin * 60000;
-          const scadaStr = new Date(scadaMs).toISOString();
-          const pnrMs    = pnrMin ? nowMs + pnrMin * 60000 : scadaMs + 5 * 60000;
-          const pnrStr   = new Date(pnrMs).toISOString();
-          const endStr   = new Date(pnrMs + 10 * 60000).toISOString();
-          // Colored cost-zone backgrounds
-          shapes.push({type:'rect',x0:nowStr,  x1:scadaStr,y0:0,y1:1,xref:'x',yref:'paper',fillcolor:'rgba(74,222,128,0.05)',line:{width:0}});
-          shapes.push({type:'rect',x0:scadaStr,x1:pnrStr,  y0:0,y1:1,xref:'x',yref:'paper',fillcolor:'rgba(251,146,60,0.07)',line:{width:0}});
-          shapes.push({type:'rect',x0:pnrStr,  x1:endStr,  y0:0,y1:1,xref:'x',yref:'paper',fillcolor:'rgba(239,68,68,0.09)',line:{width:0}});
-          // Boundary lines
-          shapes.push({type:'line',x0:scadaStr,x1:scadaStr,y0:0,y1:1,xref:'x',yref:'paper',line:{color:'rgba(239,68,68,0.55)',width:1.5,dash:'dash'}});
-          shapes.push({type:'line',x0:pnrStr,  x1:pnrStr,  y0:0,y1:1,xref:'x',yref:'paper',line:{color:'rgba(239,68,68,0.9)', width:2.5,dash:'solid'}});
-          const lbl = Math.round(scadaMin) + 'm';
-          // Event pin labels (top row)
-          annotations.push({x:nowStr,   y:0.97,xref:'x',yref:'paper',text:'<b>🤖 AI detects — ACT NOW</b>',   showarrow:false,xanchor:'left', xshift:4, font:{color:'#4ade80',size:10,family:'Inter,sans-serif'},bgcolor:'rgba(74,222,128,0.08)',borderpad:3});
-          annotations.push({x:scadaStr, y:0.97,xref:'x',yref:'paper',text:`<b>📡 SCADA alarms T+${lbl}</b>`, showarrow:false,xanchor:'center',          font:{color:'#fb923c',size:9.5,family:'Inter,sans-serif'},bgcolor:'rgba(251,146,60,0.08)',borderpad:3});
-          annotations.push({x:pnrStr,   y:0.97,xref:'x',yref:'paper',text:'<b>⛔ PNR</b>',                    showarrow:false,xanchor:'left', xshift:4, font:{color:'#ef4444',size:10,family:'Inter,sans-serif'},bgcolor:'rgba(239,68,68,0.08)',borderpad:3});
-          // Cost labels (bottom row)
-          annotations.push({x:nowStr,   y:0.07,xref:'x',yref:'paper',text:'$0 ✓ VFD now',showarrow:false,xanchor:'left', xshift:5,font:{color:'rgba(74,222,128,0.8)',  size:10,family:'Inter,sans-serif'}});
-          annotations.push({x:scadaStr, y:0.07,xref:'x',yref:'paper',text:'~$2,000',     showarrow:false,xanchor:'center',     font:{color:'rgba(251,146,60,0.8)',  size:10,family:'Inter,sans-serif'}});
-          annotations.push({x:pnrStr,   y:0.07,xref:'x',yref:'paper',text:'$150,000',    showarrow:false,xanchor:'left', xshift:5,font:{color:'rgba(239,68,68,0.8)',  size:10,family:'Inter,sans-serif'}});
-        } else {
-          annotations.push({x:nowStr,y:1.0,xref:'x',yref:'paper',text:'⚠ Analyzing…',
-            showarrow:false,xanchor:'right',xshift:-6,yanchor:'bottom',
-            font:{color:'#fb923c',size:10,family:'Inter,sans-serif'}});
-        }
-      }
+      const yLabels  = { psi: 'PSI', temp: '\u00B0F', amps: 'Amps', vib: 'mm/s' };
+      const traces   = [];
+      if (liveSrc)  traces.push({ ...liveSrc,  name: 'Live Reading',          line: { color: '#3b82f6', width: 2 } });
+      if (scadaSrc) traces.push({ ...scadaSrc, name: 'SCADA Alarm Threshold', line: { color: '#ef4444', width: 1.5, dash: 'dash' } });
+      const noAlarmAnnot = [{
+        x: 0.5, y: 0.5, xref: 'paper', yref: 'paper',
+        text: '\u2714 No SCADA alarm triggered', showarrow: false,
+        font: { color: '#22c55e', size: 10, family: 'Inter,sans-serif' }
+      }];
       const layout = {
-        paper_bgcolor:'#0b1526', plot_bgcolor:'#131d2e',
-        font:{color:'#94a3b8',size:11},
-        margin:{l:50,r:10,t:10,b:36},
-        xaxis:{title:'Time (UTC)',gridcolor:'#1e293b',zeroline:false},
-        yaxis:{title:yLabel,gridcolor:'#1e293b',zeroline:false},
-        shapes, annotations,
-        showlegend: this.h1Injected,
-        legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'right',x:1,font:{size:9}}
+        paper_bgcolor: '#0b1526', plot_bgcolor: '#131d2e',
+        font: { color: '#94a3b8', size: 10 },
+        margin: { l: 48, r: 10, t: 6, b: 30 },
+        xaxis: { gridcolor: '#1e293b', zeroline: false, title: '' },
+        yaxis: { title: yLabels[sensor] || 'Value', gridcolor: '#1e293b', zeroline: false },
+        showlegend: true,
+        legend: { orientation: 'h', yanchor: 'bottom', y: 1.02, xanchor: 'left', x: 0, font: { size: 8 } },
+        annotations: this.h1Injected ? [] : noAlarmAnnot
       };
-      Plotly.react(gdcEl, traces, layout, {displayModeBar:false,responsive:true})
-        .catch(()=>Plotly.newPlot(gdcEl, traces, layout, {displayModeBar:false,responsive:true}));
+      Plotly.react(scadaEl, traces, layout, { displayModeBar: false, responsive: true })
+        .catch(() => Plotly.newPlot(scadaEl, traces, layout, { displayModeBar: false, responsive: true }));
     },
     setH1Sensor(sensor) {
       this.h1ActiveSensor = sensor;
@@ -3864,6 +3904,7 @@ createApp({
         this.h1SplitPercent = Math.max(18, Math.min(62, startPct + dPct));
         this.$nextTick(() => {
           try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
+          try { Plotly.Plots.resize(document.getElementById('h1-scada-chart')); } catch(err) {}
         });
       };
       const onUp = () => {
@@ -3885,6 +3926,7 @@ createApp({
         this.h1ChartH = Math.max(100, Math.min(420, startH + dy));
         this.$nextTick(() => {
           try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
+          try { Plotly.Plots.resize(document.getElementById('h1-scada-chart')); } catch(err) {}
         });
       };
       const onUp = () => {
@@ -3902,7 +3944,7 @@ createApp({
         setTimeout(() => { this.h1EvidenceWall[i].active = true; this.h1EvidenceActive = i + 1; }, delay);
       });
     },
-    _startCopilotStream() {
+    _startAdvisorStream() {
       const base = this.h1GemmaFinding ||
         `Gas lock diagnosis confirmed at 94% confidence on ESP-ALPHA-1. ` +
         `Pump Intake Pressure declining at \u221214 PSI/min\u00b9, motor amps declining at \u22122.3 A/min\u00b9 \u2014 ` +
@@ -3910,27 +3952,27 @@ createApp({
         `Separator gas test confirms GOR 1,310 scf/bbl \u2014 up 19% from prior tour\u00b3. ` +
         `API RP 11S \u00a75.3 identifies VFD speed reduction as the primary intervention\u2075. ` +
         `Your $0 option is viable now. Waiting 18 minutes moves you to the $2,000 tier. Waiting 25 minutes leaves only $150,000.`;
-      this.h1CopilotText = base;
-      this.h1CopilotHtml = '';
-      this.h1CopilotStreaming = true;
+      this.h1AdvisorText = base;
+      this.h1AdvisorHtml = '';
+      this.h1AdvisorStreaming = true;
       const withHtml = base
         .replace(/\u00b9/g,'<sup style="color:var(--blue);cursor:pointer" title="Source: Sensor Telemetry">[¹]</sup>')
         .replace(/\u00b3/g,'<sup style="color:var(--blue);cursor:pointer" title="Source: Separator Test">[³]</sup>')
         .replace(/\u2075/g,'<sup style="color:var(--blue);cursor:pointer" title="Source: API RP 11S §5.3">[⁵]</sup>');
       let charCount = 0;
       const rawLen = base.length;
-      if (this.h1CopilotTimer) clearInterval(this.h1CopilotTimer);
-      this.h1CopilotTimer = setInterval(() => {
+      if (this.h1AdvisorTimer) clearInterval(this.h1AdvisorTimer);
+      this.h1AdvisorTimer = setInterval(() => {
         charCount = Math.min(charCount + 4, rawLen);
         const slice = base.slice(0, charCount);
-        this.h1CopilotHtml = slice
+        this.h1AdvisorHtml = slice
           .replace(/\u00b9/g,'<sup style="color:var(--blue)">[¹]</sup>')
           .replace(/\u00b3/g,'<sup style="color:var(--blue)">[³]</sup>')
           .replace(/\u2075/g,'<sup style="color:var(--blue)">[⁵]</sup>');
         if (charCount >= rawLen) {
-          this.h1CopilotHtml = withHtml;
-          this.h1CopilotStreaming = false;
-          clearInterval(this.h1CopilotTimer); this.h1CopilotTimer = null;
+          this.h1AdvisorHtml = withHtml;
+          this.h1AdvisorStreaming = false;
+          clearInterval(this.h1AdvisorTimer); this.h1AdvisorTimer = null;
         }
       }, 28);
     },
@@ -3950,7 +3992,7 @@ createApp({
       this.h1ChatMessages.push({id: uid+'a', role:'assistant', text: '…'});
       try {
         const r = await fetch('/api/agent/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', message: q, context: this.h1CopilotText.slice(0,600)})});
+          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', message: q, context: this.h1AdvisorText.slice(0,600)})});
         if (r.ok) { const d = await r.json(); this.h1ChatMessages[this.h1ChatMessages.length-1].text = d.response || 'No response from model.'; }
         else { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
       } catch(e) { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
