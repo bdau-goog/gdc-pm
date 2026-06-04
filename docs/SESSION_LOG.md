@@ -5,6 +5,21 @@
 
 ---
 
+## Session Q (June 4, 2026) — *Phase-plane chart + SCADA CSS gauges + AI lead-time panel + LLM re-triggering + context-fusion server fix*
+
+**Code committed:** `a4cb95d` (fix: seed field_intel GVF doc on gas_lock inject), `245e50a` (feat: phase-plane chart, SCADA CSS gauges, AI lead-time panel, Vue watchers for LLM re-triggering)
+**Cluster image digest:** `sha256:3ee29db0` (fault-trigger-ui) · pod 1/1 Running
+
+**What was built and deployed:** Prompted by user frustration that the "Minutes Until Failure" chart showed a flat line (instantaneous model output, not a time-series countdown), the advisor fired only once, the SCADA chart showed nothing useful, and the context-fusion gap was always zero. Produced `docs/GDC_DEMO_SITUATION_BRIEF.md` for external review; consulted Gemini 3.1 Pro. Accepted 3 of 4 Gemini proposals; rejected the fake-frontend context-fusion delta (integrity violation). Also addressed user pushback on (a) what actually kills the pump (motor winding temperature, not PIP), (b) no digital clocks, (c) analytical/state-space visual, (d) resizability. **Commit 1 (app.py):** On `gas_lock` inject, immediately INSERT a `field_intel` seed row containing "estimated at 78% GVF" — the existing `adjust_rul_with_documents()` keyword-match regex fires its 0.6× multiplier, producing a real `adjusted_rul_minutes < time_to_scada_minutes`. Verified: 7.2 min gap (`17.9 → 10.7 min`). **Commit 2 (index.html):** (1) **Phase-plane chart** — replaces the flat-line chart with a Plotly scatter plot of Motor Amps (Y) × Winding Temp (X). Background shapes: green safe zone, amber warning, red gas-lock zone (physically grounded: low amps + rising temp = loss of motor cooling). SCADA alarm lines: horizontal at 50A, vertical at 280°F. Trail of last 20 operating points. Current point color-coded. The dot migrates into the red zone during gas lock while NEITHER alarm line has been crossed — this IS the demo story in one visual. (2) **SCADA CSS gauge cluster** — 4 horizontal bars (PIP, Amps, Temp, Vib) with colored fills and red threshold tick marks. Reactive to `h1RawPsi/Amps/Temp` numeric data props extracted from forecast data traces. (3) **AI Lead-Time Advantage panel** — shows sensor-only vs context-fused estimates from real API, with the RAG contribution labeled (~7 min, "Shift note + GOR lab report fused via AlloyDB RAG"). (4) **Vue `watch:` block + `_triggerAdvisoryUpdate()` method** — Advisor re-fires when: new intel doc arrives in feed, `h1OptALabel` transitions VIABLE→MARGINAL→EXPIRED, or at T+50s/T+2min scheduled intervals. Each re-fire builds a live-context prompt from current sensor slopes + elapsed time + the triggering document and calls `/api/agent/chat`.
+
+**Decisions made this session:** (a) Rejected fake frontend context-fusion multiplier — fixed server-side with real RAG doc. (b) Replaced "Minutes Until Failure" with phase-plane state-space chart — analytically credible to petroleum engineers, self-explains without narration. (c) Destructive metric corrected to motor winding temperature (API RP 11S thermal failure chain). (d) Rejected 3D rotatable wellbore for today — deferred; SVG engineering schematic remains in well strip. (e) SCADA normalized-% chart replaced with absolute CSS gauges — cleaner signal that sensors ARE moving but haven't crossed SCADA thresholds. (f) Wrote `GDC_DEMO_SITUATION_BRIEF.md` as structured handoff doc for external model consultation.
+
+**Verification:** Both commits deployed, pod 1/1 Running, digest `sha256:3ee29db0`. Context fusion gap: 7.2 min (real). Raw sensor values `latest_amps: 84.5, latest_temp: 202.6` confirmed present in API response for phase-plane rendering.
+
+**Next task:** Visual verification of H1 Detect tab (user must view in browser). Then H2 (Discern) tab redesign per DEMO_MASTER.md §5: two-line Vib+Temp chart, evidence wall, GDC Advisor with "$1,500 vs $150,000" verdict.
+
+---
+
 ## Session P (June 4, 2026) — *CSS instrument panel + 4-sensor SCADA chart + chart coherence fix*
 
 **Code committed:** `919c7ee` (feat: CSS instrument panel (GVF/PIP/Amps/Temp), 4-sensor normalized SCADA chart (% Δ baseline))

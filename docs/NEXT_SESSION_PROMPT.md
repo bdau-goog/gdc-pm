@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session O end — CSS instrument panel + 4-sensor chart deployed)
-**Git Head:** `919c7ee` — clean working tree
-**fault-trigger-ui image digest:** `sha256:c335c72c414a3ff26972fb62eb3cfe26bc635d6ade9fe89b60623f2cb7c1f294`
+**Date:** June 4, 2026 (Session Q end — Phase-plane chart, SCADA CSS gauges, AI lead-time panel, LLM re-triggering, context-fusion server fix)
+**Git Head:** `245e50a` — clean working tree
+**fault-trigger-ui image digest:** `sha256:3ee29db0e41e93dbfb503481e231201835c291085576164fb3778e0889126e9a`
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,9 +17,9 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · new fault-trigger-ui pod (post 919c7ee rollout)
+- All pods 1/1 Running · new fault-trigger-ui pod (post 245e50a rollout)
 - ollama_online: True · model: gemma4:latest
-- field_intel: ~99–110 rows · rag_documents: 18 rows
+- field_intel: ~80–120 rows · rag_documents: 18 rows
 
 ---
 
@@ -29,47 +29,68 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
-Also read the **last 2 entries** in SESSION_LOG.md (Sessions O and N).
+Also read the **last 2 entries** in SESSION_LOG.md (Sessions Q and P).
 
 ---
 
-## STEP 3: Next Implementation Task — Verify H1 Demo Flow + Begin H2
+## STEP 3: What Was Just Deployed (Session Q)
 
-### What Was Just Deployed (Session O)
+Two commits shipped and verified:
 
-All H1 chart redesign changes from DEMO_MASTER.md §4 are live:
+### Commit 1 (a4cb95d) — Server-side context fusion fix
+- `/api/inject/degrade` now INSERTs a seed `field_intel` row (Tour 2 Shift Note, GVF 78%, GOR 1310 scf/bbl) immediately on gas_lock inject
+- `adjust_rul_with_documents()` matches "estimated at 78%" regex → applies 0.6× multiplier
+- **Verified:** `time_to_scada_minutes: 17.9` vs `adjusted_rul_minutes: 10.7` → **7.2 min real context-fusion gap**
 
-1. ✅ **Primary chart** — "⏱ Minutes Until Pump Failure" with 3 lines:
-   - Gray (SCADA flat at 120) · orange dashed (sensor-only from `d.time_to_scada_minutes`) · solid orange (context-fused from `d.adjusted_rul_minutes`)
-   - Shaded fill + annotation bracket "⚡ Context Fusion: −Nm" when gap > 0
-   - Pre-injection: all 3 lines flat at 120 (calm nominal state)
-2. ✅ **Secondary chart** — "📡 SCADA Raw Telemetry" (id=`h1-scada-chart`) with PIP/Amps/Temp sensor tabs and "✓ No SCADA alarm triggered" annotation
-3. ✅ **Layout** — well strip moved to far right (CSS `order:5`, 180px wide) via `.h1-body>:nth-child(2){display:none}` to hide the old left splitter
-4. ✅ **SVG callout labels** — "Intake: Nominal" → "Intake: 68% GVF ⚠" and "Motor: Cooling normal" → "Motor: Cooling lost ⚠" on inject
-5. ✅ **"Copilot" → "GDC Advisor"** — all CSS classes (`.h1-advisor`, `.h1-advisor-hdr`, etc.), Vue data props (`h1AdvisorHtml`, `h1AdvisorStreaming`, `h1AdvisorTimer`, `h1AdvisorText`), method `_startAdvisorStream`, HTML labels
-6. ✅ **Dynamic feed poll** — `h1FeedPollInterval` every 15s during active fault, cleared on reset
-7. ✅ **NS handle** — now always visible between primary and SCADA chart (no longer gated by `v-if="h1Injected"`)
-8. ✅ **Well strip: SVG → CSS instrument panel** — SVG replaced with animated fluid column + PUMP/MOTOR blocks + 4 instrument readings (GVF bar, PIP↓, AMPS↓, TEMP). Pulsing status dot. Motor glow effect. Gas bubble CSS animations on inject.
-9. ✅ **SCADA chart: 4-sensor normalized overlay** — Sensor tabs removed. All 4 sensors (PIP, Amps, Temp, Vib) normalized to % Δ from baseline on one chart. PIP+Amps decline together (orange), Temp+Vib stay flat (blue/grey). Zero-line reference. "✓ All above SCADA threshold" annotation. Makes the multivariate correlation argument visual without narration.
+### Commit 2 (245e50a) — H1 visual redesign
+1. **Phase-plane chart** replaces the broken flat-line "Minutes Until Failure" chart
+   - X axis: Motor Winding Temp (°F), Y axis: Motor Amps (A)
+   - Green safe zone / amber warning / red gas-lock zone (background shapes)
+   - SCADA alarm lines: Amps < 50A (horizontal dashed red), Temp > 280°F (vertical dashed red)
+   - Scatter trail of last 20 operating points (purple line + dots)
+   - Current operating point: large color-coded dot (green/amber/red)
+   - **The point moves into the red zone during gas lock — before crossing either SCADA line**
 
-### First Task: Verify H1 End-to-End
+2. **SCADA CSS gauge cluster** replaces the confusing normalized-delta chart
+   - 4 horizontal bars: PIP / Amps / Temp / Vib
+   - Each bar has a colored fill (width = % of range) + red tick mark at SCADA alarm threshold
+   - Footer: "⚠ PIP + Amps declining — still above SCADA alarm limits" during fault
 
-Load http://gdc-pm.bdau.io → Detect tab:
-- Pre-injection: 3 flat lines at 120 min, "📡 SCADA — No alarm triggered" annotation on SCADA chart ✓
-- Click "Inject Gas Lock": GDC lines begin declining, SCADA line stays at 120, bracket appears when context-fused < sensor-only ✓
-- Well strip: callout labels update on inject ✓
-- GDC Advisor (not "Copilot") header streams diagnosis ✓
-- Feed poll refreshes every 15s ✓
-- Window of Options appears below SCADA chart ✓
+3. **AI Lead-Time Advantage panel** (post-inject, below gauges)
+   - Sensor-only model: `time_to_scada_minutes` (orange)
+   - Context-fused (RAG): `adjusted_rul_minutes` (orange)
+   - RAG contribution: real gap from AlloyDB (green, ~7 min)
+   - Label: "Shift note + GOR lab report fused via AlloyDB RAG"
 
-### Second Task: H2 (Discern) Tab Redesign
+4. **Vue `watch:` block** for LLM re-triggering
+   - `h1FeedItems` watcher: new document at top of feed → `_triggerAdvisoryUpdate('feed', newItem)`
+   - `h1OptALabel` watcher: VIABLE→MARGINAL → urgency update; MARGINAL→EXPIRED → final warning
 
-After H1 is verified visually, implement H2 per DEMO_MASTER.md §5:
-- Two-line primary chart: Vibration (rising, orange) + Motor Temperature (flat, blue) — same Y-axis
-- H2 dual-reality bar with 6 evidence chips activating in sequence
-- Well schematic: pump body glows GREEN (healthy), surface flowline shows slug animation
-- GDC Advisor auto-starts on inject with "$1,500 vs $150,000" diagnostic verdict
-- Reuse all new H1 CSS patterns (`.h1-advisor`, `.h1-advisor-pane`, `.dr-bar`)
+5. **`_triggerAdvisoryUpdate(type, item)` method** — calls `/api/agent/chat` with live sensor context, streams response appended below "── GDC Advisor · T+Xm ──" separator
+
+6. **Scheduled advisor updates** at T+50s and T+2min after inject (setTimeout-based)
+
+---
+
+## STEP 4: What Still Needs Visual Verification
+
+Load http://gdc-pm.bdau.io → Detect tab, click "Inject Gas Lock":
+
+1. **Phase-plane chart** — operating point (dot) should start in green safe zone, migrate toward/into red gas-lock zone as amps decline and temp rises
+2. **SCADA gauge bars** — PIP and Amps bars should visibly shrink; status text changes to "⚠ Sensors changing — no alarm yet"
+3. **AI Lead-Time Advantage panel** — appears post-inject showing ~7 min RAG gap
+4. **Advisor re-triggers** — wait ~50s for the second Gemma assessment to appear below the separator line
+5. **Context chips** in dual-reality bar activate in sequence (shift note, lab GOR↑, VFD events, API RP 11S)
+
+---
+
+## STEP 5: Next Implementation Task — H2 (Discern) Tab Redesign
+
+After H1 is visually verified, implement H2 per DEMO_MASTER.md §5:
+- Two-line primary chart: Vibration (rising, orange) + Motor Temperature (flat, blue) — same Y-axis — **the single most visual proof of slug flow vs bearing wear**
+- Evidence wall with H2-specific chips (6 sources activating)
+- GDC Advisor auto-starts on inject: *"$1,500 truck roll vs $150,000 pump pull"* verdict
+- Reuse all H1 CSS patterns (`.h1-advisor`, `.h1-lead-time`, `.sgg-*`, Vue watchers)
 
 ---
 
