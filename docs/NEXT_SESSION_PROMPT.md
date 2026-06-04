@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session O end — H1 chart redesign + SVG full-height fix deployed)
-**Git Head:** `ecb2316` — clean working tree
-**fault-trigger-ui image digest:** `sha256:272dfff07c020cf45b61069e61ffd967cfe87237873796861db19ed632f5e36f`
+**Date:** June 4, 2026 (Session O end — CSS instrument panel + 4-sensor chart deployed)
+**Git Head:** `919c7ee` — clean working tree
+**fault-trigger-ui image digest:** `sha256:c335c72c414a3ff26972fb62eb3cfe26bc635d6ade9fe89b60623f2cb7c1f294`
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,7 +17,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · new fault-trigger-ui pod (post ecb2316 rollout)
+- All pods 1/1 Running · new fault-trigger-ui pod (post 919c7ee rollout)
 - ollama_online: True · model: gemma4:latest
 - field_intel: ~99–110 rows · rag_documents: 18 rows
 
@@ -49,7 +49,8 @@ All H1 chart redesign changes from DEMO_MASTER.md §4 are live:
 5. ✅ **"Copilot" → "GDC Advisor"** — all CSS classes (`.h1-advisor`, `.h1-advisor-hdr`, etc.), Vue data props (`h1AdvisorHtml`, `h1AdvisorStreaming`, `h1AdvisorTimer`, `h1AdvisorText`), method `_startAdvisorStream`, HTML labels
 6. ✅ **Dynamic feed poll** — `h1FeedPollInterval` every 15s during active fault, cleared on reset
 7. ✅ **NS handle** — now always visible between primary and SCADA chart (no longer gated by `v-if="h1Injected"`)
-8. ✅ **Well strip SVG full-height** — SVG wrapped in `flex:1; position:relative` div, SVG `position:absolute; width/height:100%` so it fills the column rather than being clipped to its 200×265 aspect ratio
+8. ✅ **Well strip: SVG → CSS instrument panel** — SVG replaced with animated fluid column + PUMP/MOTOR blocks + 4 instrument readings (GVF bar, PIP↓, AMPS↓, TEMP). Pulsing status dot. Motor glow effect. Gas bubble CSS animations on inject.
+9. ✅ **SCADA chart: 4-sensor normalized overlay** — Sensor tabs removed. All 4 sensors (PIP, Amps, Temp, Vib) normalized to % Δ from baseline on one chart. PIP+Amps decline together (orange), Temp+Vib stay flat (blue/grey). Zero-line reference. "✓ All above SCADA threshold" annotation. Makes the multivariate correlation argument visual without narration.
 
 ### First Task: Verify H1 End-to-End
 
