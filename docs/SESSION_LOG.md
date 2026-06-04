@@ -5,6 +5,21 @@
 
 ---
 
+## Session O (June 4, 2026) — *H1 chart redesign — implemented, deployed, verified*
+
+**Code committed:** `15330a4` (feat: H1 chart redesign — Minutes Until Failure 3-line chart, SCADA secondary, GDC Advisor rename, well strip to right, SVG callout labels, dynamic feed poll)
+**Cluster image digest:** `sha256:8202af33` (fault-trigger-ui) · pod `fault-trigger-ui-6558568b8c-q7gts` 1/1 Running
+
+**What was built and deployed:** Implemented the full H1 chart redesign approved in Session N. Single batched `replace_in_file` call (15 SEARCH/REPLACE blocks) covering: (1) **Primary chart rewrite** — `_renderH1Charts` replaced entirely with a rolling time-series "Minutes Until Pump Failure" chart showing 3 lines: gray (SCADA flat at 120), orange dashed (sensor-only from `d.time_to_scada_minutes`), solid orange (context-fused from `d.adjusted_rul_minutes`). Shaded fill + annotation bracket "⚡ Context Fusion: −Nm" renders when gap > 0. Pre-injection: all 3 flat at 120. History buffer `h1RulHistory[]` accumulates up to 36 points. (2) **New `_renderH1ScadaChart` method** added — renders raw PIP/Amps/Temp with SCADA alarm threshold line below the primary chart (id=`h1-scada-chart`, 110px fixed height). Sensor tabs (PIP/Amps/Temp) now control the SCADA chart. "✓ No SCADA alarm triggered" annotation shown pre-injection. (3) **NS handle** made always-visible (removed `v-if="h1Injected"` gate) — sits between primary and SCADA charts. (4) **Column reorder** via CSS `order:5` on `.h1-well-strip` + `.h1-body>:nth-child(2){display:none}` to hide left splitter — well strip moves to far right (180px, `align-self:stretch`) without touching the SVG HTML. (5) **SVG callout labels** added at end of SVG: "Intake: Nominal"↔"Intake: 68% GVF ⚠" and "Motor: Cooling normal"↔"Motor: Cooling lost ⚠". (6) **"GDC Copilot" → "GDC Advisor"** across all CSS classes, Vue data props, method name, HTML labels. (7) **Dynamic feed poll** `h1FeedPollInterval` every 15s during active fault, cleared on reset. (8) Both `initH1CenterSplit` and `initH1NsSplit` now resize both `h1-gdc-chart` and `h1-scada-chart`.
+
+**Key implementation decisions:** Used CSS `order` property + `:nth-child(2){display:none}` to reorder columns without touching the large SVG HTML block (avoiding a risky 50-line exact-match SEARCH). Pre-injection chart shows all 3 lines at 120 by gating on `this.h1Injected` in the JavaScript. Column order: Charts (44%, left) | splitter | GDC Advisor (flex:1, center) | Well Strip (180px, right — CSS order:5).
+
+**Verification:** Pod `fault-trigger-ui-6558568b8c-q7gts` 1/1 Running · `/api/mlops/status` → ollama_online: True, gemma4:latest · `/api/plot/forecast-data/ESP-ALPHA-1` returns `time_to_scada_minutes: 35.6, adjusted_rul_minutes: 35.6, sensors: [psi, temp, vib]` ✓.
+
+**Next task:** Visual verification of H1 demo flow (inject → 3 lines diverge → bracket appears → Window of Options → Approve). Then implement H2 (Discern) tab redesign per DEMO_MASTER.md §5: two-line vibration+temp chart, 6-chip evidence wall, GDC Advisor auto-streams "$1,500 vs $150,000" verdict.
+
+---
+
 ## Session N (June 4, 2026) — *H1 chart design — approved, not yet implemented*
 
 **Code committed:** None (design session only — no code written)

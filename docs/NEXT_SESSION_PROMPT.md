@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session N end — design approved, not yet implemented)
-**Git Head:** `ae3a03f` — clean working tree
-**fault-trigger-ui image digest:** `sha256:55e5626853cc1d6da10390159b90432eeacaf60e265254d765428cdb1a26a0db`
+**Date:** June 4, 2026 (Session O end — H1 chart redesign deployed and verified)
+**Git Head:** `15330a4` — clean working tree
+**fault-trigger-ui image digest:** `sha256:8202af33afbe22539383173f1a01388a70a961ffa26da08facf90a1d168c2bef`
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -17,7 +17,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running · fault-trigger-ui-64d4b6b944-9m5xb
+- All pods 1/1 Running · fault-trigger-ui-6558568b8c-q7gts
 - ollama_online: True · model: gemma4:latest
 - field_intel: ~99–110 rows · rag_documents: 18 rows
 
@@ -29,101 +29,45 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
-Also read the **last 2 entries** in SESSION_LOG.md (Sessions N and M).
+Also read the **last 2 entries** in SESSION_LOG.md (Sessions O and N).
 
 ---
 
-## STEP 3: Implementation Task — H1 Chart Redesign + Layout Fixes
+## STEP 3: Next Implementation Task — Verify H1 Demo Flow + Begin H2
 
-This session has ONE task: implement the approved chart redesign and layout changes in `index.html`. All changes in a single batched `replace_in_file` call.
+### What Was Just Deployed (Session O)
 
-### Approved Design (from Session N discussion — FINAL, DO NOT REVISIT)
+All H1 chart redesign changes from DEMO_MASTER.md §4 are live:
 
-#### A. Primary H1 Chart: "Minutes Until Pump Failure" — 3-Line Context Fusion
+1. ✅ **Primary chart** — "⏱ Minutes Until Pump Failure" with 3 lines:
+   - Gray (SCADA flat at 120) · orange dashed (sensor-only from `d.time_to_scada_minutes`) · solid orange (context-fused from `d.adjusted_rul_minutes`)
+   - Shaded fill + annotation bracket "⚡ Context Fusion: −Nm" when gap > 0
+   - Pre-injection: all 3 lines flat at 120 (calm nominal state)
+2. ✅ **Secondary chart** — "📡 SCADA Raw Telemetry" (id=`h1-scada-chart`) with PIP/Amps/Temp sensor tabs and "✓ No SCADA alarm triggered" annotation
+3. ✅ **Layout** — well strip moved to far right (CSS `order:5`, 180px wide) via `.h1-body>:nth-child(2){display:none}` to hide the old left splitter
+4. ✅ **SVG callout labels** — "Intake: Nominal" → "Intake: 68% GVF ⚠" and "Motor: Cooling normal" → "Motor: Cooling lost ⚠" on inject
+5. ✅ **"Copilot" → "GDC Advisor"** — all CSS classes (`.h1-advisor`, `.h1-advisor-hdr`, etc.), Vue data props (`h1AdvisorHtml`, `h1AdvisorStreaming`, `h1AdvisorTimer`, `h1AdvisorText`), method `_startAdvisorStream`, HTML labels
+6. ✅ **Dynamic feed poll** — `h1FeedPollInterval` every 15s during active fault, cleared on reset
+7. ✅ **NS handle** — now always visible between primary and SCADA chart (no longer gated by `v-if="h1Injected"`)
 
-The central visual argument of the Detect tab. **No raw sensor values on the Y-axis.**
+### First Task: Verify H1 End-to-End
 
-```
-Y-axis: "Minutes Until Pump Failure" (descending = more urgent)
-X-axis: Rolling time window (showing last ~30 min of history)
+Load http://gdc-pm.bdau.io → Detect tab:
+- Pre-injection: 3 flat lines at 120 min, "📡 SCADA — No alarm triggered" annotation on SCADA chart ✓
+- Click "Inject Gas Lock": GDC lines begin declining, SCADA line stays at 120, bracket appears when context-fused < sensor-only ✓
+- Well strip: callout labels update on inject ✓
+- GDC Advisor (not "Copilot") header streams diagnosis ✓
+- Feed poll refreshes every 15s ✓
+- Window of Options appears below SCADA chart ✓
 
-Line 1 (gray, thick):
-  "📡 SCADA Threshold Monitoring"
-  Stays HIGH — deterministic threshold hasn't been crossed yet
-  Honest: SCADA is not stupid, it just can't compute the pattern
+### Second Task: H2 (Discern) Tab Redesign
 
-Line 2 (orange dashed):
-  "⚡ GDC AI: Sensor-Only"
-  XGBoost pattern recognition, no documents
-  Source value: d.time_to_scada_minutes from API
-  Drops faster than SCADA line — multi-sensor correlation working
-
-Line 3 (solid bright orange, LOWEST):
-  "⚡ GDC AI: Context-Fused"
-  After reading shift log + lab test from AlloyDB RAG
-  Source value: d.adjusted_rul_minutes from API
-  Drops FASTEST — RAG pipeline amplifying the signal
-  
-Shaded bracket between Line 2 and Line 3:
-  Label: "⚡ Context Fusion: −[N]m (shift note + GOR lab test [¹][³])"
-  N = Math.round(time_to_scada_minutes - adjusted_rul_minutes)
-  Only rendered when N > 0 (gap exists)
-```
-
-**Pre-injection state:** Three flat horizontal lines near a nominal "well healthy" level (e.g., 120+ minutes). Clean, calm, no alarm.
-
-**Post-injection behavior:** GDC lines begin declining as health score degrades. Context-fused line diverges below sensor-only line ~15–30s after injection (when first RAG documents are retrieved). Presenter can point to the divergence in real-time.
-
-**Implementation notes:**
-- `_renderH1Charts(d)` receives the full forecast-data API response
-- `d.time_to_scada_minutes` = sensor-only estimate (already in API)
-- `d.adjusted_rul_minutes` = RAG-adjusted estimate (already in API)
-- Pre-injection: render flat lines; post-injection: plot actual computed values
-- Chart ID: keep `id="h1-gdc-chart"` (existing DOM element)
-- Do NOT hardcode any time values — all computed from live API response
-
-#### B. Secondary Chart: SCADA Raw Telemetry (retain below primary)
-
-Keep a smaller SCADA telemetry chart below the primary chart with a horizontal NS resize handle between them. The SCADA chart shows:
-- Raw PIP/Amps/Temp (selected sensor tab) as a live line
-- SCADA alarm threshold as a flat dashed red line
-- Post-injection: the live line declines slowly while staying ABOVE the threshold
-- Label: "📡 SCADA View — No alarm triggered"
-- This chart is the honest companion: SCADA isn't wrong, it just fires later
-
-Chart ID for SCADA: `id="h1-scada-chart"` (new element to add)
-
-#### C. Layout Changes
-
-1. **Well strip → far right:** Move `.h1-well-strip` div from BEFORE h1-center to AFTER h1-copilot-pane (last child of h1-body). Set `width:180px; align-self:stretch; order:3`.
-2. **Add SVG callout labels** on the well strip (dynamic, large enough to read):
-   - At pump intake: `"Intake: Nominal"` → `"Intake: 68% GVF ⚠"` on inject
-   - At motor: `"Motor: Cooling normal"` → `"Motor: Cooling lost ⚠"` on inject
-3. **Column order:** Charts (left, ~44%) | GDC Advisor (center, ~38%) | Well schematic (right, ~18%)
-4. **"Copilot" → "GDC Advisor" everywhere:**
-   - HTML label: `"🤖 GDC Advisor — Gemma 4 · On-Cluster · No Cloud Required"`
-   - Placeholder text: `"Ask a follow-up question…"` → keep, just rename the header
-   - CSS class rename: `.h1-copilot` → `.h1-advisor` (and all variants)
-   - Vue data: `h1CopilotHtml` → `h1AdvisorHtml`, `h1CopilotStreaming` → `h1AdvisorStreaming`, `h1CopilotTimer` → `h1AdvisorTimer`, `h1CopilotText` → `h1AdvisorText`
-   - Method: `_startCopilotStream` → `_startAdvisorStream`
-   - **IMPORTANT:** Update all uses across index.html in one pass — do NOT miss any
-5. **Dynamic feed poll:** Add `setInterval(() => { fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock').then(...).then(d => { if(d) this.h1FeedItems = d.items || []; }); }, 15000)` during `h1Injected && !h1Resolved` state. Clear the interval on reset.
-
-#### D. app.py Change (small, required for the chart)
-
-The `/api/plot/forecast-data` endpoint already returns `adjusted_rul_minutes`. Verify it is non-null during active faults. If `adjusted_rul_minutes` comes back null (RAG hasn't run yet), the chart should use `time_to_scada_minutes` for both lines (gap = 0, context fusion bracket hidden).
-
-No other app.py changes required.
-
----
-
-## STEP 4: Implementation Sequence (Atomic Fix Rule)
-
-1. **First:** `grep -n` key sections to confirm line numbers before editing
-2. **Second:** Single batched `replace_in_file` on `index.html` with all changes
-3. **Third:** `docker build → docker push → kubectl rollout restart`
-4. **Fourth:** Verify live at `http://gdc-pm.bdau.io`
-5. **Fifth:** Update docs and commit
+After H1 is verified visually, implement H2 per DEMO_MASTER.md §5:
+- Two-line primary chart: Vibration (rising, orange) + Motor Temperature (flat, blue) — same Y-axis
+- H2 dual-reality bar with 6 evidence chips activating in sequence
+- Well schematic: pump body glows GREEN (healthy), surface flowline shows slug animation
+- GDC Advisor auto-starts on inject with "$1,500 vs $150,000" diagnostic verdict
+- Reuse all new H1 CSS patterns (`.h1-advisor`, `.h1-advisor-pane`, `.dr-bar`)
 
 ---
 
