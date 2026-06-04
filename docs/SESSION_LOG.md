@@ -5,6 +5,21 @@
 
 ---
 
+## Session L (June 4, 2026) — *H1 UI Redesign — Detect/Discern/Optimize tabs, dual-reality bar, 3-col layout*
+
+**Code committed:** `e500c4d` (feat: H1 redesign — Detect/Discern/Optimize tabs, dual-reality bar, 3-col layout, copilot dominant, wopt v-if)  
+**Cluster image digest:** `sha256:5c6d33ae...` (fault-trigger-ui)
+
+**What was built and deployed:** Complete H1 ("Detect") UI restructure in response to 12-point user feedback. Tab nav renamed: Horizon 1/2/3 → Detect / Discern / Optimize (user's preferred "Detect, Discern, Optimize" progression). Fleet Financials tab removed. H1 banner collapsed to a single line with physics description moved behind ⓘ. "25-minute lead time" removed as a standalone callout. New **dual-reality bar** (hero comparison element): two-column compact strip showing SCADA (4 sensors, all nominal) vs GDC AI (same 4 sensors + 4 context chips activating on inject → different verdict). Old evidence wall and scada-compare boxes removed; their purpose absorbed into the dual-reality bar. New **3-column main body**: thin 82px SVG well strip (left), sensor chart + Window of Options (center 36%), dominant LLM copilot panel (right ~52%). Window of Options hidden with `v-if="h1Injected"` — only visible when fault is active. Charts now load and tick on tab open (before injection) via baseline `/api/plot/forecast-data` fetch in `setMainTab`. Live intel feed reduced to 3 compact rows. Stale `h1-scada-chart` DOM reference removed from `_renderH1Charts`.
+
+**Key design decisions:** Dual-reality bar replaces the separate evidence-wall + scada-compare pattern — cleaner and immediately communicates the core "same sensors, different conclusion" argument. LLM copilot at ~52% width is now the visual anchor of the right half of the screen. Window of Options visible only post-injection reduces visual noise in the baseline monitoring state. "How It Works" tab pinned for future refactoring — not touched this session.
+
+**Verification:** Pod `fault-trigger-ui-587fc8fb94-vqdst` 1/1 Running · `/api/live-telemetry/ESP-ALPHA-1` → 200 OK in logs · image digest `sha256:5c6d33ae`.
+
+**Next task:** Collect Detect tab visual feedback, then implement H2 (Discern) tab redesign reusing all new CSS patterns (`.dr-bar`, `.h1-body`, `.h1-copilot-pane`) per DEMO_MASTER §5.
+
+---
+
 ## Session K (June 4, 2026) — *H1 Full Redesign — deployed and verified*
 
 **Code committed:** `9951199` (feat: H1 full redesign — Evidence Wall, Cited Copilot, Window of Options, SVG well schematic)  
