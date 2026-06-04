@@ -265,14 +265,24 @@ These patterns are used identically across H1, H2, and H3. Build them once for H
 - Chat input accepts follow-up questions → streaming response from Gemma
 - Financial case is stated here only — not in separate static cards
 
-### The Animated Well Schematic (SVG, 2D)
-- Pure SVG, dark-mode, 2D cross-section
-- Animated particles: blue circles (liquid), yellow circles (gas)
-- Motor housing with temperature color gradient: green (cool) → amber (warm) → red (critical)
-- Pre-injection: mostly blue particles, green motor
-- Post-injection (H1): increasing yellow particles, warming motor color
-- H2: pump body glows green (healthy), surface flowline shows slug animation
-- H3: pump body at optimal state with VFD frequency badge
+### The Well Schematic (Engineering Diagram Style — NOT CSS Instrument Panel)
+
+**Visual reference:** SLB Oilfield Review journal cross-section figures. Not a video game aesthetic. Not a stylized icon. A technical engineering diagram with depth labels, callout zones, and sensor annotations that an engineer recognizes immediately as professional.
+
+**Why this matters:** The CSS instrument panel built in Sessions P-Q was rejected by the user as looking "primitive — something my grandkids could dream up." The 3D rotatable wellbore was rejected because Plotly 3D renders as obvious data-viz primitives, and a wellbore is axially symmetric so rotation adds no information. The SLB Oilfield Review style is the correct aesthetic target.
+
+**Specification:**
+- Vertical cross-section SVG, dark-mode, drawn to scale (0 ft at surface → –8,000 ft at pump intake)
+- Casing and tubing visible as concentric rectangles; perforations shown at bottom
+- **Detail callout zone at the pump intake** (the action zone — gas lock happens here). All gas lock indicators localized here, not distributed throughout the wellbore.
+- Animated gas bubbles at the intake only during fault injection (physically correct — gas migration is a downhole phenomenon at the intake, not at the surface)
+- Motor section color-mapped to actual temperature reading: green (cool) → amber (warn) → red (critical). Color changes only when `h1SensorTemp` crosses thresholds, NOT on a timer.
+- Live sensor leader lines: PIP, Motor Amps, Motor Winding Temp, Intake GVF% — connecting from the physical location on the diagram to annotation text
+- Inset gauge strip at the bottom: "Motor Winding Temp · Class H Limit: 356°F · Current: 234°F · Headroom: 122°F" — this single gauge shows the physics in one readable element
+- H2 variant: pump body glows green (healthy); surface flowline shows slug animation (orange slugs flowing horizontally at surface, NOT at depth)
+- H3 variant: pump body with VFD frequency badge
+
+**Current state:** The CSS instrument panel (Sessions P-Q) must be replaced with this engineering diagram for H1 V2. The SLB Oilfield Review reference gives a clear design target that satisfies both the "professional/credible" requirement and the "business viewer can read it" requirement.
 
 ### The Window of Options Timeline (H1 and H2 only, not H3)
 - Horizontal timeline: NOW → options expiring → PNR → FAILURE
