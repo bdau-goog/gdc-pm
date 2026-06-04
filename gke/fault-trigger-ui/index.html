@@ -749,6 +749,37 @@
     .streaming-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);animation:blink 0.9s infinite}
     .h1-live-feed{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:10px 12px;flex-shrink:0}
     .ai-doc-badge{font-size:0.54rem;font-weight:700;color:var(--orange);background:rgba(251,146,60,0.1);padding:1px 5px;border-radius:3px;border:1px solid rgba(251,146,60,0.2);white-space:nowrap}
+    /* ── Dual-Reality Bar ── */
+    .dr-bar{display:flex;align-items:stretch;border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0;margin-bottom:8px}
+    .dr-col{display:flex;flex-direction:column;gap:2px;padding:6px 14px;flex:1;min-width:0}
+    .dr-scada{background:rgba(74,222,128,0.03)}
+    .dr-gdc{background:rgba(30,144,255,0.03)}
+    .dr-div{width:1px;background:var(--border);flex-shrink:0}
+    .dr-hdr{font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:2px}
+    .dr-signals{display:flex;flex-wrap:wrap;gap:4px 14px}
+    .dr-sig{font-size:0.64rem;color:var(--muted)}
+    .dr-sig b{color:var(--text2);font-weight:600}
+    .dr-ctx-chips{display:flex;flex-wrap:wrap;gap:3px;margin-top:2px}
+    .dr-ctx-chip{font-size:0.57rem;padding:1px 6px;border-radius:4px;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--muted);opacity:0.4;transition:all 0.6s}
+    .dr-ctx-chip.active{opacity:1;color:var(--text2);background:rgba(74,222,128,0.06);border-color:rgba(74,222,128,0.25)}
+    .dr-verdict{margin-top:3px;font-size:0.65rem;font-weight:700;padding-top:3px;border-top:1px solid var(--border)}
+    .dr-ok{color:var(--green)}
+    .dr-alert{color:var(--orange)}
+    .dr-monitor{color:var(--muted)}
+    /* ── H1 New 3-col Body ── */
+    .h1-body{display:flex;gap:10px;flex:1;min-height:0;overflow:hidden}
+    .h1-well-strip{width:82px;flex-shrink:0;background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+    .h1-center{flex:0 0 36%;display:flex;flex-direction:column;min-width:0;min-height:0}
+    .h1-copilot-pane{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+    .h1-copilot-pane>.h1-copilot{flex:1;min-height:0;flex-shrink:1!important}
+    .h1-copilot-pane>.h1-copilot>.h1-copilot-body{flex:1;max-height:none!important;min-height:0}
+    /* ── Compact Intel Feed ── */
+    .h1-intel-compact{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:7px 10px;flex-shrink:0}
+    .h1-ic-hdr{font-size:0.53rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px}
+    .h1-ic-row{display:flex;align-items:center;gap:6px;padding:3px 0;cursor:pointer;border-bottom:1px solid var(--border)}
+    .h1-ic-row:last-child{border-bottom:none}
+    .h1-ic-icon{font-size:0.8rem;flex-shrink:0}
+    .h1-ic-txt{font-size:0.61rem;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   </style>
 </head>
 <body>
@@ -761,10 +792,9 @@
     <span class="hdr-badge">O&G EDGE AI</span>
     <div class="hdr-tabs">
       <div class="hdr-tab" :class="{active: mainTab==='architecture'}" @click="mainTab='architecture'">How It Works</div>
-      <div class="hdr-tab" :class="{active: mainTab==='horizon1'}" @click="setMainTab('horizon1')">Horizon 1: Gas Lock</div>
-      <div class="hdr-tab" :class="{active: mainTab==='horizon2'}" @click="setMainTab('horizon2')">Horizon 2: Slug Flow</div>
-      <div class="hdr-tab" :class="{active: mainTab==='horizon3'}" @click="setMainTab('horizon3')">Horizon 3: Optimization</div>
-      <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
+      <div class="hdr-tab" :class="{active: mainTab==='horizon1'}" @click="setMainTab('horizon1')">Detect</div>
+      <div class="hdr-tab" :class="{active: mainTab==='horizon2'}" @click="setMainTab('horizon2')">Discern</div>
+      <div class="hdr-tab" :class="{active: mainTab==='horizon3'}" @click="setMainTab('horizon3')">Optimize</div>
     </div>
     <div class="hdr-right">
       <span class="wan-badge" :class="'wan-' + (mlops.wan_state||'stable')">
@@ -1084,20 +1114,15 @@
 
     <!-- ══ TAB: HORIZON 1 — Gas Lock Emergency ══ -->
     <div class="main-tab-content" :class="{active: mainTab==='horizon1'}">
-      <div class="horizon-banner">
-        <div>
-          <h2 class="hb-title">🔴 Horizon 1 — Near-Term: ESP Gas Lock Emergency</h2>
-          <p class="hb-desc">
-            <strong>Asset:</strong> ESP-ALPHA-1 &nbsp;·&nbsp;
-            <strong>Physics:</strong> Gas entrainment in pump stages (GVF > 70%). Motor Amps drop as pump unloads. PIP collapses toward lock-up. PNR = 25 minutes. &nbsp;·&nbsp;
-            <strong>SCADA status:</strong> <span style="color:var(--green)">✓ No alarm (still within thresholds)</span> &nbsp;·&nbsp;
-            <strong>GDC AI lead time:</strong> <span style="color:var(--orange)">25 min early warning</span>
-          </p>
+      <div class="horizon-banner" style="padding:8px 20px;gap:12px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Detect — ESP Gas Lock</h2>
+          <span style="font-size:0.65rem;color:var(--muted)">· ESP-ALPHA-1</span>
+          <button class="hb-btn btn-info" :class="{active: showH1Info}" @click="showH1Info=!showH1Info" style="padding:3px 8px;font-size:0.63rem">ⓘ</button>
         </div>
-        <div class="hb-actions">
-          <button class="hb-btn btn-inject" @click="launchHorizon1">⚡ Inject Gas Lock Fault</button>
+        <div class="hb-actions" style="gap:8px">
+          <button class="hb-btn btn-inject" @click="launchHorizon1">⚡ Inject Gas Lock</button>
           <button class="hb-btn btn-reset" @click="resetHorizon1" v-if="h1Injected">↺ Reset</button>
-          <button class="hb-btn btn-info" :class="{active: showH1Info}" @click="showH1Info=!showH1Info">ⓘ Physics &amp; Logic</button>
         </div>
       </div>
       <!-- H1 Physics & Logic Info Panel -->
@@ -1145,27 +1170,44 @@
           </div>
         </div>
       </div>
-      <div class="h3-dashboard" style="padding:12px">
-        <!-- STATUS BAR -->
-        <div class="h1-status-bar">
-          <div class="h1-sb-half h1-sb-scada">
-            <span class="h1-sb-label">📊 SCADA</span>
-            <span style="color:var(--green)">✓ All Nominal · PIP {{ h1SensorPsi || '1,401 PSI' }} · Amps {{ h1SensorAmps || '74.8 A' }} · No alarms</span>
+      <div class="h3-dashboard" style="padding:10px 12px;overflow:hidden;display:flex;flex-direction:column">
+        <!-- DUAL-REALITY BAR -->
+        <div class="dr-bar">
+          <div class="dr-col dr-scada">
+            <div class="dr-hdr">📊 SCADA · ESP-ALPHA-1</div>
+            <div class="dr-signals">
+              <span class="dr-sig">PIP <b>{{ h1SensorPsi || '—' }}</b></span>
+              <span class="dr-sig">Amps <b>{{ h1SensorAmps || '—' }}</b></span>
+              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '—' }}</b></span>
+              <span class="dr-sig">Vib <b>0.8 mm/s</b></span>
+            </div>
+            <div class="dr-verdict dr-ok">✓ 4 signals — All Nominal · No alarm</div>
           </div>
-          <div class="h1-sb-div"></div>
-          <div class="h1-sb-half" :class="h1Injected && !h1Resolved && !h1Recovering ? 'h1-sb-alert' : h1Recovering ? 'h1-sb-recover' : ''">
-            <span class="h1-sb-label">⚡ GDC AI</span>
-            <span :style="{color: h1Recovering ? 'var(--green)' : (h1Injected && !h1Resolved) ? 'var(--orange)' : 'var(--text2)'}">{{ h1Recovering ? '↗ Recovering · VFD at 44 Hz (2,640 RPM)' : h1Resolved ? '✅ Resolved · $150,000 capital preserved' : h1Injected ? '⚠ 94% gas_lock · 25 min lead time over SCADA' : 'Monitoring ESP-ALPHA-1 · All sensors nominal' }}</span>
-            <span v-if="h1Injected && !h1Resolved && !h1Recovering" style="font-size:0.56rem;color:var(--orange);font-weight:700;animation:blink 1s infinite;margin-left:4px">● LIVE</span>
+          <div class="dr-div"></div>
+          <div class="dr-col dr-gdc">
+            <div class="dr-hdr">🤖 GDC AI · ESP-ALPHA-1</div>
+            <div class="dr-signals">
+              <span class="dr-sig">PIP <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorPsi || '—' }}<span v-if="h1Injected"> ↓</span></b></span>
+              <span class="dr-sig">Amps <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorAmps || '—' }}<span v-if="h1Injected"> ↓</span></b></span>
+              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '—' }} ─</b></span>
+              <span class="dr-sig">Vib <b>0.8 mm/s ─</b></span>
+            </div>
+            <div class="dr-ctx-chips">
+              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 2}">📋 Shift note</span>
+              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 3}">🧪 Lab: GOR↑</span>
+              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 4}">⚡ VFD events</span>
+              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 5}">📖 API RP 11S</span>
+            </div>
+            <div class="dr-verdict" :class="h1Recovering ? 'dr-ok' : h1Injected ? 'dr-alert' : 'dr-monitor'">
+              {{ h1Recovering ? '↗ Recovering · VFD at 44 Hz (2,640 RPM)' : h1Resolved ? '✅ $150,000 capital preserved' : h1Injected ? '⚠ GAS LOCK — 94% confidence' : '● Monitoring' }}
+            </div>
           </div>
         </div>
-        <!-- MAIN 2-COLUMN LAYOUT -->
-        <div class="h1-layout">
-          <!-- LEFT COLUMN (55%) -->
-          <div class="h1-left">
-            <!-- 2D Well Schematic -->
-            <div class="well-svg-wrap" :class="{gaslock: h1Injected && !h1Recovering, recovering: h1Recovering}">
-              <div style="font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px">ESP-ALPHA-1 · Well A-1 · Wellbore Cross-Section</div>
+        <!-- 3-COLUMN MAIN BODY -->
+        <div class="h1-body">
+          <!-- THIN SVG WELL STRIP -->
+          <div class="h1-well-strip" :class="{gaslock: h1Injected && !h1Recovering, recovering: h1Recovering}">
+            <div style="font-size:0.48rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:3px;text-align:center">Well A-1</div>
               <svg viewBox="0 0 200 265" style="width:100%;max-height:215px;display:block">
                 <rect width="200" height="265" fill="#0b1526" rx="6"/>
                 <rect x="0" y="218" width="200" height="47" fill="#100f1e"/>
@@ -1209,19 +1251,21 @@
                 <text x="14" y="215" fill="#374151" font-size="5" text-anchor="middle">PIP</text>
               </svg>
             </div>
-            <!-- Sensor tabs + GDC Forecast Chart -->
-            <div style="margin-top:8px">
+          </div><!-- /h1-well-strip -->
+          <!-- CENTER: chart + window of options -->
+          <div class="h1-center">
+            <div>
               <div style="display:flex;align-items:stretch;flex-shrink:0;height:26px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 4px">
-                <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP Pressure</span>
-                <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Motor Amps</span>
-                <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Winding Temp</span>
-                <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:6px;opacity:0.8">⚡ GDC Forecast</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Amps</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Temp</span>
+                <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:6px;opacity:0.8">⚡ GDC</span>
               </div>
-              <div id="h1-gdc-chart" style="height:230px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
+              <div id="h1-gdc-chart" style="height:200px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
             </div>
             <!-- Window of Options Timeline -->
-            <div class="wopt-container" style="margin-top:10px">
-              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⏱ Window of Options — Cost Rises as the Clock Runs</div>
+            <div v-if="h1Injected" class="wopt-container" style="margin-top:8px">
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⏱ Window of Options</div>
               <div class="wopt-timeline">
                 <span class="wopt-now">NOW</span>
                 <div class="wopt-line" style="position:relative">
@@ -1254,44 +1298,11 @@
               </div>
             </div>
             <!-- Recovery message from _post_approval_monitor -->
-            <div v-if="h1RecoveryMsg" style="margin-top:8px;padding:8px 12px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:0.66rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
-          </div><!-- /h1-left -->
+            <div v-if="h1RecoveryMsg" style="margin-top:6px;padding:6px 10px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:5px;font-size:0.64rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
+          </div><!-- /h1-center -->
 
-          <!-- RIGHT COLUMN (45%) -->
-          <div class="h1-right">
-            <!-- Evidence Convergence Wall -->
-            <div class="evidence-wall">
-              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">{{ h1Injected ? '🔍 Evidence Convergence — 5 Independent Sources' : '🔍 Evidence Sources (inject fault to activate)' }}</div>
-              <div v-for="(ev,idx) in h1EvidenceWall" :key="idx" class="evidence-row" :class="{active: ev.active}">
-                <span class="ev-icon">{{ ev.icon }}</span>
-                <div class="ev-body">
-                  <div class="ev-cat">{{ ev.cat }}</div>
-                  <div class="ev-content" :style="{color: ev.active ? 'var(--text2)' : 'var(--muted)'}">{{ ev.active ? ev.content : ev.placeholder }}</div>
-                </div>
-                <span v-if="ev.active" class="ev-check">✓</span>
-              </div>
-              <div v-if="h1EvidenceActive >= 5" class="ev-synthesis">🤖 GDC AI: <strong>94% confidence — gas_lock</strong> · 5 independent sources — all convergent</div>
-              <!-- SCADA comparison (always visible, never animated) -->
-              <div class="scada-compare" style="margin-top:10px">
-                <div class="scada-box scada-ok">
-                  <div class="scada-box-hdr">📊 SCADA sees</div>
-                  <div class="scada-line">PIP: {{ h1SensorPsi || '1,401 PSI' }} ✓</div>
-                  <div class="scada-line">Amps: {{ h1SensorAmps || '74.8 A' }} ✓</div>
-                  <div class="scada-line">Temp: {{ h1SensorTemp || '198°F' }} ✓</div>
-                  <div class="scada-line">4 sensors + hard thresholds</div>
-                  <div class="scada-verdict scada-verdict-ok">✓ NORMAL — No alarm</div>
-                </div>
-                <div class="scada-arrow">→</div>
-                <div class="scada-box" :class="h1Injected ? 'scada-fault' : 'scada-ok'">
-                  <div class="scada-box-hdr">🤖 GDC AI sees</div>
-                  <div class="scada-line">Same 4 sensors + slopes</div>
-                  <div class="scada-line">+ Shift notes, Lab data</div>
-                  <div class="scada-line">+ VFD logs, API RP 11S</div>
-                  <div class="scada-line">8 signals fused by XGBoost</div>
-                  <div class="scada-verdict" :class="h1Injected ? 'scada-verdict-fault' : 'scada-verdict-ok'">{{ h1Injected ? '⚠ GAS LOCK — 94%' : '✓ Monitoring' }}</div>
-                </div>
-              </div>
-            </div>
+          <!-- RIGHT: GDC AI Copilot (dominant) -->
+          <div class="h1-copilot-pane">
             <!-- Cited LLM Copilot -->
             <div class="h1-copilot">
               <div class="h1-copilot-hdr">
@@ -1308,28 +1319,18 @@
                 <button @click="sendH1Chat" class="h1-chat-send">↵</button>
               </div>
             </div>
-            <!-- Live Document Feed -->
-            <div class="h1-live-feed">
-              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:7px">📄 {{ h1Injected ? 'Live Intelligence Feed — GDC AI generating every 20-30s' : 'Baseline Field Intelligence' }}</div>
-              <div v-for="item in h1FeedItems.slice(0,7)" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)" style="margin-bottom:5px">
-                <div class="fi-top">
-                  <span class="fi-icon">{{ item.icon }}</span>
-                  <div style="flex:1">
-                    <div class="fi-headline">{{ item.headline }}</div>
-                    <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
-                      <span v-if="item.lbl_type === 'ai' || item.lbl_type === 'counterarg' || item.lbl_type === 'neutral'" class="ai-doc-badge" :style="item.lbl_type === 'counterarg' ? 'color:#fbbf24;border-color:rgba(251,191,36,0.3)' : ''">⚡ GDC AI{{ item.lbl_type === 'counterarg' ? ' · ALT' : '' }} — just now</span>
-                      <span v-else class="fi-source">{{ item.source }}</span>
-                      <span class="fi-ts">{{ item.ts_label }}</span>
-                    </div>
-                  </div>
-                </div>
-                <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
+            <!-- Compact Intel Feed -->
+            <div class="h1-intel-compact">
+              <div class="h1-ic-hdr">📄 {{ h1Injected ? 'Live Intelligence Feed' : 'Baseline Field Intel' }}</div>
+              <div v-for="item in h1FeedItems.slice(0,3)" :key="item.id" class="h1-ic-row" @click="openFeedModal(item)">
+                <span class="h1-ic-icon">{{ item.icon }}</span>
+                <span class="h1-ic-txt">{{ item.headline }}</span>
+                <span v-if="item.lbl_type === 'ai' || item.lbl_type === 'counterarg' || item.lbl_type === 'neutral'" class="ai-doc-badge" :style="item.lbl_type === 'counterarg' ? 'color:#fbbf24;border-color:rgba(251,191,36,0.3)' : ''">⚡ AI{{ item.lbl_type === 'counterarg' ? ' · ALT' : '' }}</span>
               </div>
-              <div v-if="h1GemmaFinding && !h1Injected" class="gemma-finding" style="margin-top:6px">{{ h1GemmaFinding }}</div>
-              <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:8px 0">Loading field intelligence…</div>
+              <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.65rem;font-style:italic;padding:4px 0">Loading intel…</div>
             </div>
-          </div><!-- /h1-right -->
-        </div><!-- /h1-layout -->
+          </div><!-- /h1-copilot-pane -->
+        </div><!-- /h1-body -->
       </div><!-- /h3-dashboard -->
     </div><!-- tab-horizon1 -->
 
@@ -3600,6 +3601,14 @@ createApp({
         };
         _pollLive1();
         this.h1LivePollTimer = setInterval(_pollLive1, 5000);
+        // Fetch baseline chart on tab open (shows live data even before injection)
+        if (!this.h1Injected) {
+          this.$nextTick(() => {
+            fetch('/api/plot/forecast-data/ESP-ALPHA-1')
+              .then(r=>r.ok?r.json():null)
+              .then(d=>{ if(d&&d.sensors&&!this.h1Injected){this.h1ForecastData=d;this.$nextTick(()=>this._renderH1Charts(d));} });
+          });
+        }
         // Fetch baseline intel docs if no fault injected
         if (!this.h1Injected && this.h1FeedItems.length === 0) {
           fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
@@ -3754,11 +3763,6 @@ createApp({
       const darkLayout={paper_bgcolor:'#0f172a',plot_bgcolor:'#131d2e',font:{color:'#94a3b8',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e293b'},yaxis:{gridcolor:'#1e293b'}};
       const gdcEl=document.getElementById('h1-gdc-chart');
       if(gdcEl) { Plotly.react(gdcEl, s.traces, {...darkLayout,...(s.layout||{})}, {displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(gdcEl,s.traces,darkLayout,{displayModeBar:false,responsive:true})); }
-      const scadaEl=document.getElementById('h1-scada-chart');
-      if(scadaEl && s.traces?.length>0) {
-        const histTraces=[{...s.traces[0]}];
-        Plotly.react(scadaEl, histTraces, {...darkLayout, title:{text:'SCADA — No Alarm Triggered',font:{color:'#4ade80',size:10}}}, {displayModeBar:false,responsive:true}).catch(()=>{});
-      }
     },
     setH1Sensor(sensor) {
       this.h1ActiveSensor = sensor;
