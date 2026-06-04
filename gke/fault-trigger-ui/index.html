@@ -679,6 +679,76 @@
     .h3-trials-table th { color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; background: var(--surf2); }
     .h3-trials-table tr.optimal-row { background: rgba(255,140,0,0.08); font-weight: 700; }
     .h3-trials-table tr.optimal-row td { color: var(--orange); }
+    /* ── H1 Redesign Styles ─────────────────────────────────────────────── */
+    .h1-status-bar{display:flex;align-items:center;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:10px;font-size:0.68rem;font-weight:600;flex-shrink:0}
+    .h1-sb-half{display:flex;align-items:center;gap:8px;padding:7px 14px;flex:1;min-width:0}
+    .h1-sb-scada{background:rgba(74,222,128,0.04)}
+    .h1-sb-alert{background:rgba(251,146,60,0.07)}
+    .h1-sb-recover{background:rgba(74,222,128,0.06)}
+    .h1-sb-label{font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);white-space:nowrap;flex-shrink:0}
+    .h1-sb-div{width:1px;background:var(--border);align-self:stretch}
+    .h1-layout{display:flex;gap:14px}
+    .h1-left{flex:0 0 55%;display:flex;flex-direction:column}
+    .h1-right{flex:1;display:flex;flex-direction:column;gap:10px}
+    .well-svg-wrap{flex-shrink:0;padding:8px 10px;background:var(--surf);border:1px solid var(--border);border-radius:7px}
+    .gas-p{opacity:0;transition:opacity 1.2s}
+    .well-svg-wrap.gaslock .gas-p{opacity:0.75}
+    .well-svg-wrap.recovering .gas-p{opacity:0.12}
+    .evidence-wall{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:10px 12px;flex-shrink:0}
+    .evidence-row{display:flex;align-items:flex-start;gap:8px;padding:5px 8px;border-radius:5px;border:1px solid transparent;margin-bottom:4px;opacity:0.35;transition:all 0.7s;background:var(--surf2)}
+    .evidence-row.active{opacity:1;border-color:rgba(74,222,128,0.28);animation:evidence-glow 1s ease-out}
+    @keyframes evidence-glow{0%{box-shadow:0 0 0 0 rgba(74,222,128,0.5)}70%{box-shadow:0 0 0 6px rgba(74,222,128,0)}100%{box-shadow:none}}
+    .ev-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+    .ev-body{flex:1;min-width:0}
+    .ev-cat{font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:2px}
+    .ev-content{font-size:0.64rem;line-height:1.4;word-break:break-word}
+    .ev-check{color:var(--green);font-size:0.85rem;flex-shrink:0;margin-top:1px}
+    .ev-synthesis{margin-top:8px;padding:6px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.3);border-radius:5px;font-size:0.64rem;color:var(--orange);font-weight:600;line-height:1.4}
+    .scada-compare{display:flex;gap:6px;align-items:stretch}
+    .scada-box{flex:1;padding:7px 9px;border-radius:5px;font-size:0.59rem;border:1px solid var(--border)}
+    .scada-ok{background:rgba(74,222,128,0.03);border-color:rgba(74,222,128,0.15)}
+    .scada-fault{background:rgba(251,146,60,0.05);border-color:rgba(251,146,60,0.3)}
+    .scada-box-hdr{font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px}
+    .scada-line{color:var(--text2);margin-bottom:2px}
+    .scada-verdict{margin-top:5px;font-size:0.61rem;font-weight:700}
+    .scada-verdict-ok{color:var(--green)}
+    .scada-verdict-fault{color:var(--orange)}
+    .scada-arrow{display:flex;align-items:center;color:var(--muted);font-size:1rem;flex-shrink:0}
+    .wopt-container{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:10px 12px;flex-shrink:0}
+    .wopt-timeline{display:flex;align-items:center;height:20px;margin-bottom:10px;gap:4px;position:relative}
+    .wopt-line{flex:1;height:2px;background:linear-gradient(to right,var(--green),var(--orange),var(--red));border-radius:1px}
+    .wopt-now{font-size:0.54rem;font-weight:700;color:var(--green);white-space:nowrap;flex-shrink:0}
+    .wopt-fail{font-size:0.54rem;font-weight:700;color:var(--red);white-space:nowrap;flex-shrink:0}
+    .wopt-marker{position:absolute;top:14px;font-size:0.5rem;color:var(--muted);transform:translateX(-50%);white-space:nowrap}
+    .wopt-pnr-lbl{color:var(--red)!important;font-weight:700}
+    .wopt-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+    .wopt-card{padding:7px 8px;border-radius:5px;background:var(--surf2);border:1px solid var(--border);font-size:0.59rem}
+    .wopt-badge{display:inline-block;padding:1px 5px;border-radius:3px;font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px}
+    .wopt-viable{border-color:rgba(74,222,128,0.28)!important}
+    .wopt-viable>.wopt-badge{background:rgba(74,222,128,0.12);color:var(--green)}
+    .wopt-marginal{border-color:rgba(251,191,36,0.28)!important}
+    .wopt-marginal>.wopt-badge{background:rgba(251,191,36,0.12);color:var(--yellow)}
+    .wopt-expired{border-color:rgba(100,116,139,0.15)!important;opacity:0.5}
+    .wopt-expired>.wopt-badge,.wopt-last-resort>.wopt-badge{background:rgba(100,116,139,0.12);color:var(--muted)}
+    .wopt-last-resort{border-color:rgba(239,68,68,0.15)!important}
+    .wopt-postpnr{background:rgba(239,68,68,0.12)!important;color:var(--red)!important}
+    .wopt-action{color:var(--text2);margin-bottom:2px;line-height:1.3}
+    .wopt-cost{font-weight:700;color:var(--text);margin-bottom:2px}
+    .wopt-window{color:var(--muted);font-size:0.53rem;margin-bottom:4px}
+    .wopt-approve-btn{padding:3px 8px;border-radius:4px;border:none;background:linear-gradient(135deg,#166534,#15803d);color:#fff;font-size:0.59rem;font-weight:700;cursor:pointer;width:100%;margin-top:2px}
+    .wopt-approve-btn:hover{filter:brightness(1.1)}
+    .h1-copilot{background:var(--surf);border:1px solid rgba(30,144,255,0.2);border-radius:7px;display:flex;flex-direction:column;flex-shrink:0}
+    .h1-copilot-hdr{display:flex;align-items:center;justify-content:space-between;padding:5px 10px;background:linear-gradient(135deg,rgba(21,101,192,0.1),transparent);border-bottom:1px solid var(--border);font-size:0.56rem;font-weight:700;color:#5a8fc0;text-transform:uppercase;letter-spacing:0.07em}
+    .h1-copilot-body{padding:8px 10px;font-size:0.7rem;line-height:1.6;max-height:175px;overflow-y:auto}
+    .h1-copilot-input{display:flex;gap:5px;padding:5px 8px;border-top:1px solid var(--border)}
+    .h1-chat-input-field{flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:4px;padding:4px 8px;color:var(--text);font-size:0.66rem;outline:none}
+    .h1-chat-send{padding:4px 10px;background:var(--blue);border:none;border-radius:4px;color:#fff;font-size:0.7rem;cursor:pointer}
+    .h1-chat-msg{margin-top:6px;padding:4px 8px;border-radius:4px;font-size:0.64rem;line-height:1.4}
+    .h1-chat-msg.user{background:rgba(30,144,255,0.08);color:var(--text2)}
+    .h1-chat-msg.assistant{background:rgba(74,222,128,0.05);color:var(--text2)}
+    .streaming-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--orange);animation:blink 0.9s infinite}
+    .h1-live-feed{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:10px 12px;flex-shrink:0}
+    .ai-doc-badge{font-size:0.54rem;font-weight:700;color:var(--orange);background:rgba(251,146,60,0.1);padding:1px 5px;border-radius:3px;border:1px solid rgba(251,146,60,0.2);white-space:nowrap}
   </style>
 </head>
 <body>
@@ -694,7 +764,6 @@
       <div class="hdr-tab" :class="{active: mainTab==='horizon1'}" @click="setMainTab('horizon1')">Horizon 1: Gas Lock</div>
       <div class="hdr-tab" :class="{active: mainTab==='horizon2'}" @click="setMainTab('horizon2')">Horizon 2: Slug Flow</div>
       <div class="hdr-tab" :class="{active: mainTab==='horizon3'}" @click="setMainTab('horizon3')">Horizon 3: Optimization</div>
-      <div class="hdr-tab" :class="{active: mainTab==='operations'}" @click="mainTab='operations';fetchHorizonAlerts()">Fleet Operations</div>
       <div class="hdr-tab" :class="{active: mainTab==='financials'}" @click="mainTab='financials';fetchLedger()">Fleet Financials</div>
     </div>
     <div class="hdr-right">
@@ -1076,85 +1145,192 @@
           </div>
         </div>
       </div>
-      <div class="h3-dashboard">
-        <!-- SCADA vs GDC value cards -->
-        <div class="h3-card-grid" style="grid-template-columns: 1fr 1fr">
-          <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
-            <div class="h3-card-title">📊 SCADA (Current Reading)</div>
-            <div class="h3-card-row"><span>PIP Reading:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorPsi || '— PSI' }}</span></div>
-            <div class="h3-card-row"><span>Winding Temp:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorTemp || '— °F' }}</span></div>
-            <div class="h3-card-row"><span>Motor Amps:</span><span class="h3-card-val" style="color:var(--green)">{{ h1SensorAmps || '— A' }}</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em">✓ SCADA Assessment</span>
-              <span class="h3-card-cash" style="color:var(--green)">ALL NOMINAL</span>
-              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">No alarm. No action recommended.</span>
-            </div>
+      <div class="h3-dashboard" style="padding:12px">
+        <!-- STATUS BAR -->
+        <div class="h1-status-bar">
+          <div class="h1-sb-half h1-sb-scada">
+            <span class="h1-sb-label">📊 SCADA</span>
+            <span style="color:var(--green)">✓ All Nominal · PIP {{ h1SensorPsi || '1,401 PSI' }} · Amps {{ h1SensorAmps || '74.8 A' }} · No alarms</span>
           </div>
-          <div class="h3-card" :class="h1Injected ? 'active-opt' : ''">
-            <div class="h3-card-title">⚡ GDC AI Assessment</div>
-            <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--orange)">{{ h1Injected ? '94.2% gas_lock' : '—' }}</span></div>
-            <div class="h3-card-row"><span>Health Score:</span><span class="h3-card-val">{{ h1HealthScore || '—' }}</span></div>
-            <div class="h3-card-row"><span>PIP Trend:</span><span class="h3-card-val" :style="{color: h1Injected ? 'var(--orange)' : 'var(--green)'}">{{ h1Injected ? '−12.5 PSI/min ↓' : 'Stable 0.0' }}</span></div>
-            <div class="h3-card-row"><span>Amps Trend:</span><span class="h3-card-val" :style="{color: h1Injected ? 'var(--orange)' : 'var(--green)'}">{{ h1Injected ? '−2.3 A/min ↓' : 'Stable 0.0' }}</span></div>
-            <div class="h3-card-row"><span>Temp Trend:</span><span class="h3-card-val" :style="{color: h1Injected ? 'var(--yellow)' : 'var(--green)'}">{{ h1Injected ? '+1.8°F/min ↑' : 'Stable 0.0' }}</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em" :style="{color: h1Recovering ? 'var(--green)' : h1Injected ? 'var(--orange)' : 'var(--muted)'}">⚡ GDC Assessment</span>
-              <span class="h3-card-cash" :style="{color: h1Recovering ? 'var(--green)' : (h1Injected && !h1Resolved) ? 'var(--orange)' : 'var(--blue)'}">{{ h1Recovering ? 'Recovering' : h1Resolved ? 'Resolved' : h1Injected ? 'Intervention Needed' : 'Monitoring…' }}</span>
-              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">{{ h1Recovering ? 'Wellbore clearing — sensors normalising' : h1Resolved ? 'VFD at 2,640 RPM — gas void migrated' : h1Injected ? 'GVF >70% · 25 min AI lead time over SCADA' : 'Inject fault to run scenario' }}</span>
-            </div>
+          <div class="h1-sb-div"></div>
+          <div class="h1-sb-half" :class="h1Injected && !h1Resolved && !h1Recovering ? 'h1-sb-alert' : h1Recovering ? 'h1-sb-recover' : ''">
+            <span class="h1-sb-label">⚡ GDC AI</span>
+            <span :style="{color: h1Recovering ? 'var(--green)' : (h1Injected && !h1Resolved) ? 'var(--orange)' : 'var(--text2)'}">{{ h1Recovering ? '↗ Recovering · VFD at 44 Hz (2,640 RPM)' : h1Resolved ? '✅ Resolved · $150,000 capital preserved' : h1Injected ? '⚠ 94% gas_lock · 25 min lead time over SCADA' : 'Monitoring ESP-ALPHA-1 · All sensors nominal' }}</span>
+            <span v-if="h1Injected && !h1Resolved && !h1Recovering" style="font-size:0.56rem;color:var(--orange);font-weight:700;animation:blink 1s infinite;margin-left:4px">● LIVE</span>
           </div>
         </div>
-        <!-- Live Chart + Intelligence Feed side by side -->
-        <div class="h3-main-body">
-          <div class="h3-chart-pane" :style="{flex: h1SplitPercent + ' 1 0%'}">
-            <!-- H1 Sensor tab bar -->
-            <div style="display:flex;align-items:stretch;flex-shrink:0;margin:-12px -12px 10px;padding:0 6px;height:28px;background:var(--surf2);border-bottom:1px solid var(--border);border-radius:8px 8px 0 0">
-              <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP Pressure</span>
-              <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Motor Amps</span>
-              <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Winding Temp</span>
-              <span style="margin-left:auto;font-size:0.58rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:4px;opacity:0.8">⚡ GDC Forecast</span>
+        <!-- MAIN 2-COLUMN LAYOUT -->
+        <div class="h1-layout">
+          <!-- LEFT COLUMN (55%) -->
+          <div class="h1-left">
+            <!-- 2D Well Schematic -->
+            <div class="well-svg-wrap" :class="{gaslock: h1Injected && !h1Recovering, recovering: h1Recovering}">
+              <div style="font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px">ESP-ALPHA-1 · Well A-1 · Wellbore Cross-Section</div>
+              <svg viewBox="0 0 200 265" style="width:100%;max-height:215px;display:block">
+                <rect width="200" height="265" fill="#0b1526" rx="6"/>
+                <rect x="0" y="218" width="200" height="47" fill="#100f1e"/>
+                <line x1="0" y1="218" x2="200" y2="218" stroke="#1e1a30" stroke-width="1.5"/>
+                <rect x="52" y="12" width="10" height="211" fill="#1a2438" stroke="#243248" stroke-width="0.5"/>
+                <rect x="138" y="12" width="10" height="211" fill="#1a2438" stroke="#243248" stroke-width="0.5"/>
+                <rect x="87" y="10" width="5" height="200" fill="#152440" stroke="#1e4a7e" stroke-width="0.8"/>
+                <rect x="108" y="10" width="5" height="200" fill="#152440" stroke="#1e4a7e" stroke-width="0.8"/>
+                <clipPath id="tubing-clip"><rect x="92" y="10" width="16" height="178"/></clipPath>
+                <g clip-path="url(#tubing-clip)">
+                  <circle cx="98" cy="168" r="3" fill="#3b82f6" opacity="0.8"><animateTransform attributeName="transform" type="translate" values="0,0;0,-168" dur="5.1s" repeatCount="indefinite" begin="0s"/></circle>
+                  <circle cx="103" cy="130" r="2.5" fill="#60a5fa" opacity="0.65"><animateTransform attributeName="transform" type="translate" values="0,0;0,-148" dur="4.7s" repeatCount="indefinite" begin="1.4s"/></circle>
+                  <circle cx="99" cy="90" r="3" fill="#3b82f6" opacity="0.7"><animateTransform attributeName="transform" type="translate" values="0,0;0,-105" dur="5.4s" repeatCount="indefinite" begin="2.8s"/></circle>
+                  <circle cx="97" cy="180" r="2.5" fill="#60a5fa" opacity="0.6"><animateTransform attributeName="transform" type="translate" values="0,0;0,-178" dur="4.4s" repeatCount="indefinite" begin="0.7s"/></circle>
+                  <circle cx="104" cy="55" r="2" fill="#93c5fd" opacity="0.5"><animateTransform attributeName="transform" type="translate" values="0,0;0,-68" dur="6.1s" repeatCount="indefinite" begin="3.6s"/></circle>
+                  <circle class="gas-p" cx="96" cy="172" r="4.5" fill="#fbbf24"><animateTransform attributeName="transform" type="translate" values="0,0;0,-172" dur="2.7s" repeatCount="indefinite" begin="0s"/></circle>
+                  <circle class="gas-p" cx="104" cy="138" r="3.5" fill="#fde68a"><animateTransform attributeName="transform" type="translate" values="0,0;0,-145" dur="2.3s" repeatCount="indefinite" begin="0.7s"/></circle>
+                  <circle class="gas-p" cx="100" cy="102" r="5" fill="#fbbf24"><animateTransform attributeName="transform" type="translate" values="0,0;0,-115" dur="2.0s" repeatCount="indefinite" begin="1.3s"/></circle>
+                  <circle class="gas-p" cx="96" cy="60" r="3" fill="#fde68a"><animateTransform attributeName="transform" type="translate" values="0,0;0,-72" dur="2.8s" repeatCount="indefinite" begin="0.5s"/></circle>
+                  <circle class="gas-p" cx="104" cy="185" r="4" fill="#f59e0b"><animateTransform attributeName="transform" type="translate" values="0,0;0,-185" dur="2.1s" repeatCount="indefinite" begin="1.9s"/></circle>
+                  <circle class="gas-p" cx="101" cy="148" r="3.5" fill="#fbbf24"><animateTransform attributeName="transform" type="translate" values="0,0;0,-155" dur="2.5s" repeatCount="indefinite" begin="1.0s"/></circle>
+                </g>
+                <rect x="88" y="183" width="24" height="14" rx="2" fill="#1a3f62" stroke="#3b82f6" stroke-width="1.2"/>
+                <text x="100" y="193" fill="#60a5fa" font-size="5.5" text-anchor="middle" font-weight="600">PUMP</text>
+                <rect x="87" y="197" width="26" height="22" rx="3" :fill="h1Recovering ? '#14532d' : h1Injected ? (h1ElapsedMin > 15 ? '#7c1d1d' : '#451a03') : '#14532d'" :stroke="h1Recovering ? '#22c55e' : h1Injected ? (h1ElapsedMin > 15 ? '#ef4444' : '#f59e0b') : '#22c55e'" stroke-width="1.5" style="transition:fill 2s,stroke 2s"/>
+                <text x="100" y="212" :fill="h1Recovering ? '#4ade80' : h1Injected ? (h1ElapsedMin > 15 ? '#fca5a5' : '#fde68a') : '#4ade80'" font-size="5.5" text-anchor="middle" font-weight="700">MOTOR</text>
+                <text x="100" y="217" :fill="h1Recovering ? '#64748b' : h1Injected ? (h1ElapsedMin > 15 ? '#fca5a5' : '#fde68a') : '#64748b'" font-size="4.5" text-anchor="middle">{{ h1Recovering ? 'Cooling' : h1Injected ? (h1ElapsedMin > 15 ? 'CRITICAL' : 'Warming') : 'Nominal' }}</text>
+                <g stroke="#6b521a" stroke-width="1.5" stroke-dasharray="3,2">
+                  <line x1="64" y1="225" x2="87" y2="225"/><line x1="64" y1="232" x2="87" y2="232"/><line x1="64" y1="239" x2="87" y2="239"/>
+                  <line x1="113" y1="225" x2="136" y2="225"/><line x1="113" y1="232" x2="136" y2="232"/><line x1="113" y1="239" x2="136" y2="239"/>
+                </g>
+                <rect x="74" y="5" width="52" height="8" fill="#374151" stroke="#4b5563" stroke-width="0.8" rx="1"/>
+                <rect x="86" y="2" width="28" height="6" fill="#4b5563" stroke="#6b7280" stroke-width="0.8" rx="1"/>
+                <rect x="92" y="0" width="16" height="4" fill="#6b7280" rx="1"/>
+                <text x="27" y="120" fill="#2d3f55" font-size="5.5" text-anchor="middle" transform="rotate(-90,27,120)">CASING</text>
+                <text x="162" y="162" fill="#64748b" font-size="5.5" text-anchor="middle">GVF</text>
+                <rect x="155" y="164" width="14" height="4" fill="#1f2937" stroke="#374151" stroke-width="0.4" rx="1"/>
+                <rect x="155.5" y="164.5" :width="h1Injected ? '13' : '3.5'" height="3" :fill="h1Injected ? '#f59e0b' : '#3b82f6'" rx="0.5" style="transition:width 1.5s"/>
+                <text x="162" y="173" :fill="h1Injected ? '#fbbf24' : '#60a5fa'" font-size="5" text-anchor="middle" font-weight="700">{{ h1Injected ? '68%' : '22%' }}</text>
+                <text x="14" y="208" :fill="h1Injected ? '#f59e0b' : '#4ade80'" font-size="6" text-anchor="middle" font-weight="700">{{ h1Injected ? '↓' : '✓' }}</text>
+                <text x="14" y="215" fill="#374151" font-size="5" text-anchor="middle">PIP</text>
+              </svg>
             </div>
-            <div id="h1-gdc-chart" style="height:270px"></div>
-            <div style="margin-top:10px;border-top:1px solid var(--border);padding-top:8px">
-              <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px">📊 SCADA — No Alarm Triggered</div>
-              <div id="h1-scada-chart" style="height:150px"></div>
+            <!-- Sensor tabs + GDC Forecast Chart -->
+            <div style="margin-top:8px">
+              <div style="display:flex;align-items:stretch;flex-shrink:0;height:26px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 4px">
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP Pressure</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='amps'}" @click="setH1Sensor('amps')">Motor Amps</span>
+                <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Winding Temp</span>
+                <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:6px;opacity:0.8">⚡ GDC Forecast</span>
+              </div>
+              <div id="h1-gdc-chart" style="height:230px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
             </div>
-            <!-- Action / Status Panel -->
-            <div v-if="h1Injected && !h1Resolved && !h1Recovering" style="margin-top:10px;padding:10px 12px;background:rgba(251,146,60,0.05);border:1px solid rgba(251,146,60,0.28);border-radius:7px">
-              <div style="font-size:0.72rem;font-weight:700;color:var(--orange);margin-bottom:3px">⚡ Recommended: VFD Speed-Down — 52 Hz → 44 Hz (3,120 → 2,640 RPM)</div>
-              <div style="font-size:0.66rem;color:var(--text2);margin-bottom:8px">Remote SCADA command · $0 direct cost · Raises PIP by reducing gas entrainment rate · GDC has 25 min lead time vs SCADA's ~5 min</div>
-              <button @click="approveH1VFD" style="padding:6px 14px;border-radius:5px;border:none;background:linear-gradient(135deg,#166534,#15803d);color:#fff;font-size:0.7rem;font-weight:700;cursor:pointer">✔ Execute VFD Command — Avoid $150k Pump Replacement</button>
-            </div>
-            <div v-if="h1Recovering" style="margin-top:10px;padding:9px 12px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.22);border-radius:7px">
-              <div style="font-size:0.72rem;font-weight:700;color:var(--green);margin-bottom:3px">↗ Wellbore Recovering — Monitoring Live Telemetry</div>
-              <div style="font-size:0.66rem;color:var(--text2)">VFD at 44 Hz / 2,640 RPM. Gas void migrating up annulus. PIP and Amps trending back to nominal. Chart updates in real-time.</div>
-            </div>
-            <div v-if="h1Resolved && !h1Recovering" style="margin-top:10px;padding:9px 12px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:7px">
-              <div style="font-size:0.72rem;font-weight:700;color:var(--green);margin-bottom:3px">✅ Gas Lock Resolved — ESP-ALPHA-1 Nominal</div>
-              <div style="font-size:0.66rem;color:var(--text2)">PIP restored. Motor stable. Production resumed. Expected reactive cost avoided: ~$97,500 (65% burnout risk on SCADA-only response). Direct intervention cost: $0.</div>
-            </div>
-          </div>
-          <div class="h1-splitter" :class="{dragging:h1Dragging}" @mousedown="initH1Resize"></div>
-          <div class="h3-trials-pane" :style="{flex: (100-h1SplitPercent) + ' 1 0%', overflowY:'auto'}">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">{{ h1Injected ? '📄 RAG Context & Field Intelligence' : '📄 Baseline Field Intelligence' }}</div>
-            <div v-for="item in h1FeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
-              <div class="fi-top">
-                <span class="fi-icon">{{ item.icon }}</span>
-                <div style="flex:1">
-                  <div class="fi-headline">{{ item.headline }}</div>
-                  <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
-                    <span class="fi-source">{{ item.source }}</span>
-                    <span class="fi-ts">{{ item.ts_label }}</span>
-                  </div>
+            <!-- Window of Options Timeline -->
+            <div class="wopt-container" style="margin-top:10px">
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⏱ Window of Options — Cost Rises as the Clock Runs</div>
+              <div class="wopt-timeline">
+                <span class="wopt-now">NOW</span>
+                <div class="wopt-line" style="position:relative">
+                  <span class="wopt-marker" style="left:38%">T+10m</span>
+                  <span class="wopt-marker" style="left:70%">T+18m</span>
+                  <span class="wopt-marker wopt-pnr-lbl" style="left:90%">PNR</span>
+                </div>
+                <span class="wopt-fail">FAIL</span>
+              </div>
+              <div class="wopt-cards">
+                <div class="wopt-card" :class="h1OptA">
+                  <div class="wopt-badge" :class="h1OptA">{{ h1OptALabel }}</div>
+                  <div class="wopt-action">VFD 52→44 Hz via SCADA</div>
+                  <div class="wopt-cost">$0 direct cost</div>
+                  <div class="wopt-window">Viable now → T+18m</div>
+                  <button v-if="h1Injected && !h1Resolved && !h1Recovering && h1OptA !== 'wopt-expired'" @click="approveH1VFD" class="wopt-approve-btn">✔ Execute Now</button>
+                </div>
+                <div class="wopt-card" :class="h1OptB">
+                  <div class="wopt-badge" :class="h1OptB">{{ h1OptBLabel }}</div>
+                  <div class="wopt-action">Emergency shutdown + restart</div>
+                  <div class="wopt-cost">~$2,000 workover cost</div>
+                  <div class="wopt-window">Viable now → T+23m</div>
+                </div>
+                <div class="wopt-card wopt-last-resort">
+                  <div class="wopt-badge wopt-postpnr">POST-PNR ONLY</div>
+                  <div class="wopt-action">Well pull + pump replacement</div>
+                  <div class="wopt-cost">$150,000</div>
+                  <div class="wopt-window">Only option after PNR</div>
                 </div>
               </div>
-              <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
             </div>
-            <div v-if="h1GemmaFinding" class="gemma-finding" style="margin-top:8px">{{ h1GemmaFinding }}</div>
-            <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:12px 0">Loading field intelligence…</div>
-          </div>
-        </div>
-      </div>
+            <!-- Recovery message from _post_approval_monitor -->
+            <div v-if="h1RecoveryMsg" style="margin-top:8px;padding:8px 12px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:0.66rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
+          </div><!-- /h1-left -->
+
+          <!-- RIGHT COLUMN (45%) -->
+          <div class="h1-right">
+            <!-- Evidence Convergence Wall -->
+            <div class="evidence-wall">
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">{{ h1Injected ? '🔍 Evidence Convergence — 5 Independent Sources' : '🔍 Evidence Sources (inject fault to activate)' }}</div>
+              <div v-for="(ev,idx) in h1EvidenceWall" :key="idx" class="evidence-row" :class="{active: ev.active}">
+                <span class="ev-icon">{{ ev.icon }}</span>
+                <div class="ev-body">
+                  <div class="ev-cat">{{ ev.cat }}</div>
+                  <div class="ev-content" :style="{color: ev.active ? 'var(--text2)' : 'var(--muted)'}">{{ ev.active ? ev.content : ev.placeholder }}</div>
+                </div>
+                <span v-if="ev.active" class="ev-check">✓</span>
+              </div>
+              <div v-if="h1EvidenceActive >= 5" class="ev-synthesis">🤖 GDC AI: <strong>94% confidence — gas_lock</strong> · 5 independent sources — all convergent</div>
+              <!-- SCADA comparison (always visible, never animated) -->
+              <div class="scada-compare" style="margin-top:10px">
+                <div class="scada-box scada-ok">
+                  <div class="scada-box-hdr">📊 SCADA sees</div>
+                  <div class="scada-line">PIP: {{ h1SensorPsi || '1,401 PSI' }} ✓</div>
+                  <div class="scada-line">Amps: {{ h1SensorAmps || '74.8 A' }} ✓</div>
+                  <div class="scada-line">Temp: {{ h1SensorTemp || '198°F' }} ✓</div>
+                  <div class="scada-line">4 sensors + hard thresholds</div>
+                  <div class="scada-verdict scada-verdict-ok">✓ NORMAL — No alarm</div>
+                </div>
+                <div class="scada-arrow">→</div>
+                <div class="scada-box" :class="h1Injected ? 'scada-fault' : 'scada-ok'">
+                  <div class="scada-box-hdr">🤖 GDC AI sees</div>
+                  <div class="scada-line">Same 4 sensors + slopes</div>
+                  <div class="scada-line">+ Shift notes, Lab data</div>
+                  <div class="scada-line">+ VFD logs, API RP 11S</div>
+                  <div class="scada-line">8 signals fused by XGBoost</div>
+                  <div class="scada-verdict" :class="h1Injected ? 'scada-verdict-fault' : 'scada-verdict-ok'">{{ h1Injected ? '⚠ GAS LOCK — 94%' : '✓ Monitoring' }}</div>
+                </div>
+              </div>
+            </div>
+            <!-- Cited LLM Copilot -->
+            <div class="h1-copilot">
+              <div class="h1-copilot-hdr">
+                <span>🤖 GDC Copilot — Gemma 4 · On-Cluster · No Cloud Required</span>
+                <span v-if="h1CopilotStreaming" class="streaming-dot"></span>
+              </div>
+              <div class="h1-copilot-body">
+                <div v-if="!h1Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic">Monitoring ESP-ALPHA-1. All sensors nominal. Ready to analyze downhole anomalies.</div>
+                <div v-if="h1Injected" style="font-size:0.7rem;line-height:1.65;color:var(--text2)" v-html="h1CopilotHtml"></div>
+                <div v-for="msg in h1ChatMessages" :key="msg.id" class="h1-chat-msg" :class="msg.role"><strong>{{ msg.role === 'user' ? 'You' : '🤖 Copilot' }}:</strong> {{ msg.text }}</div>
+              </div>
+              <div v-if="h1Injected" class="h1-copilot-input">
+                <input v-model="h1ChatInput" @keydown.enter="sendH1Chat" placeholder="Ask a follow-up question…" class="h1-chat-input-field"/>
+                <button @click="sendH1Chat" class="h1-chat-send">↵</button>
+              </div>
+            </div>
+            <!-- Live Document Feed -->
+            <div class="h1-live-feed">
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:7px">📄 {{ h1Injected ? 'Live Intelligence Feed — GDC AI generating every 20-30s' : 'Baseline Field Intelligence' }}</div>
+              <div v-for="item in h1FeedItems.slice(0,7)" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)" style="margin-bottom:5px">
+                <div class="fi-top">
+                  <span class="fi-icon">{{ item.icon }}</span>
+                  <div style="flex:1">
+                    <div class="fi-headline">{{ item.headline }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
+                      <span v-if="item.lbl_type === 'ai' || item.lbl_type === 'counterarg' || item.lbl_type === 'neutral'" class="ai-doc-badge" :style="item.lbl_type === 'counterarg' ? 'color:#fbbf24;border-color:rgba(251,191,36,0.3)' : ''">⚡ GDC AI{{ item.lbl_type === 'counterarg' ? ' · ALT' : '' }} — just now</span>
+                      <span v-else class="fi-source">{{ item.source }}</span>
+                      <span class="fi-ts">{{ item.ts_label }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
+              </div>
+              <div v-if="h1GemmaFinding && !h1Injected" class="gemma-finding" style="margin-top:6px">{{ h1GemmaFinding }}</div>
+              <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:8px 0">Loading field intelligence…</div>
+            </div>
+          </div><!-- /h1-right -->
+        </div><!-- /h1-layout -->
+      </div><!-- /h3-dashboard -->
     </div><!-- tab-horizon1 -->
 
     <!-- ══ TAB: HORIZON 2 — Flowline Slug Flow & Truck Roll ══ -->
@@ -2559,6 +2735,30 @@ createApp({
       h1SplitPercent: 60,
       h1DegPollTimer: null,
       h1LivePollTimer: null,
+      // H1 Redesign State (Evidence Wall, Copilot, Window of Options)
+      h1EvidenceWall: [
+        { icon: '📊', cat: 'Sensor Telemetry', placeholder: 'Awaiting fault injection…', content: 'PIP −14 PSI/min \u2193 · Amps −2.3 A/min \u2193 · 4-sensor correlated decline at 5-second cadence', active: false },
+        { icon: '📋', cat: 'Operator Shift Notes', placeholder: 'No active fault notes', content: '"Higher than usual GVF this morning — possibly gas migration from upper zone." — 06:15 tour note', active: false },
+        { icon: '🧪', cat: 'Lab / Field Tests', placeholder: 'No lab data loaded', content: 'Separator gas rate 142 Mscf/d \u2191 · GOR 1,310 scf/bbl \u2191 · Casing pressure +18 PSI vs prior tour', active: false },
+        { icon: '⚡', cat: 'VFD / Process Logs', placeholder: 'No VFD events', content: 'Soft unload events × 3 in last 45 min · Power factor 0.71 \u2193 · Underload flag approaching threshold', active: false },
+        { icon: '📖', cat: 'Technical Standards', placeholder: 'No standards cited', content: 'API RP 11S §5.3: VFD speed-down is primary intervention. Class H limit: 180°C (IEEE 117). Baker Hughes: GVF >65% triggers unloading.', active: false },
+      ],
+      h1EvidenceActive: 0,
+      h1CopilotHtml: '',
+      h1CopilotStreaming: false,
+      h1CopilotTimer: null,
+      h1CopilotText: '',
+      h1ChatInput: '',
+      h1ChatMessages: [],
+      h1InjectedAt: null,
+      h1ElapsedMin: 0,
+      h1ElapsedTimer: null,
+      h1OptA: 'wopt-viable',
+      h1OptALabel: 'VIABLE',
+      h1OptB: 'wopt-viable',
+      h1OptBLabel: 'VIABLE',
+      h1RecoveryMsg: '',
+      h1RecoveryPollTimer: null,
       
       // Horizon 2 State
       h2Injected: false,
@@ -3385,6 +3585,7 @@ createApp({
       // Clear any active polling timers to prevent background leaks when navigating away
       if (this.h1DegPollTimer)   { clearInterval(this.h1DegPollTimer);   this.h1DegPollTimer   = null; }
       if (this.h1LivePollTimer)  { clearInterval(this.h1LivePollTimer);  this.h1LivePollTimer  = null; }
+      if (this.h1ElapsedTimer)   { clearInterval(this.h1ElapsedTimer);   this.h1ElapsedTimer   = null; }
       if (this.h2DegPollTimer)   { clearInterval(this.h2DegPollTimer);   this.h2DegPollTimer   = null; }
       if (tab === 'horizon1') {
         // Always poll live telemetry for SCADA card (ticking even before fault injection)
@@ -3438,13 +3639,34 @@ createApp({
       if (this.h1Injected) return;
       this.h1Injected = true;
       this.h1Resolved = false;
-      this.h1HealthScore = '0.82';
+      this.h1HealthScore = '82.0%';
+      this.h1InjectedAt = Date.now();
+      this.h1EvidenceActive = 0;
+      this.h1EvidenceWall.forEach(e => { e.active = false; });
+      this.h1CopilotHtml = '';
+      this.h1CopilotStreaming = false;
+      this.h1ChatMessages = [];
+      this.h1OptA = 'wopt-viable'; this.h1OptALabel = 'VIABLE';
+      this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE';
       try {
         await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', duration_seconds:900})});
         this.showToast('⚡ Gas Lock injected on ESP-ALPHA-1','var(--orange)');
         const feed = await fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock');
         if (feed.ok) { const d=await feed.json(); this.h1FeedItems=d.items||[]; this.h1GemmaFinding=d.gemma_finding||''; }
+        // Activate evidence wall in sequence (200ms, 2s, 3.8s, 5.5s, 7.2s)
+        const evDelays = [200, 2000, 3800, 5500, 7200];
+        evDelays.forEach((delay, i) => {
+          setTimeout(() => { this.h1EvidenceWall[i].active = true; this.h1EvidenceActive = i + 1; }, delay);
+        });
+        // LLM copilot auto-streams 3s after injection (evidence wall activating first)
+        setTimeout(() => this._startCopilotStream(), 3000);
+        // Elapsed timer for option viability
+        this.h1ElapsedTimer = setInterval(() => {
+          this.h1ElapsedMin = (Date.now() - this.h1InjectedAt) / 60000;
+          this._updateOptionsViability();
+        }, 5000);
+        // Forecast poll
         this.h1DegPollTimer = setInterval(async()=>{
           const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
           if(r.ok){const d=await r.json(); if(d.is_active){
@@ -3455,24 +3677,29 @@ createApp({
             if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
           }}
           const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
-          if(rfd.ok){const d=await rfd.json();if(d.sensors){
-            this.h1ForecastData=d;
-            this._renderH1Charts(d);
-          }}
+          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1Charts(d);}}
         }, 5000);
       } catch(e) { this.showToast('Error injecting gas lock','var(--red)'); }
     },
     async resetHorizon1() {
-      if (this.h1DegPollTimer)  { clearInterval(this.h1DegPollTimer);  this.h1DegPollTimer  = null; }
-      if (this.h1LivePollTimer) { clearInterval(this.h1LivePollTimer); this.h1LivePollTimer = null; }
+      if (this.h1DegPollTimer)      { clearInterval(this.h1DegPollTimer);      this.h1DegPollTimer      = null; }
+      if (this.h1LivePollTimer)     { clearInterval(this.h1LivePollTimer);     this.h1LivePollTimer     = null; }
+      if (this.h1ElapsedTimer)      { clearInterval(this.h1ElapsedTimer);      this.h1ElapsedTimer      = null; }
+      if (this.h1CopilotTimer)      { clearInterval(this.h1CopilotTimer);      this.h1CopilotTimer      = null; }
+      if (this.h1RecoveryPollTimer) { clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null; }
       try { await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}); } catch{}
       this.h1Injected=false; this.h1Resolved=false; this.h1Recovering=false;
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
-      this.h1FeedItems=[]; this.h1GemmaFinding='';
-      this.h1ForecastData=null; this.h1ActiveSensor='psi'; this.h1SplitPercent=60;
-      try { Plotly.purge('h1-gdc-chart'); Plotly.purge('h1-scada-chart'); } catch{}
+      this.h1FeedItems=[]; this.h1GemmaFinding=''; this.h1ForecastData=null; this.h1ActiveSensor='psi';
+      this.h1EvidenceActive=0; this.h1CopilotHtml=''; this.h1CopilotStreaming=false;
+      this.h1ChatMessages=[]; this.h1ChatInput='';
+      this.h1InjectedAt=null; this.h1ElapsedMin=0;
+      this.h1OptA='wopt-viable'; this.h1OptALabel='VIABLE';
+      this.h1OptB='wopt-viable'; this.h1OptBLabel='VIABLE';
+      this.h1RecoveryMsg='';
+      this.h1EvidenceWall.forEach(e => { e.active = false; });
+      try { Plotly.purge('h1-gdc-chart'); } catch{}
       this.showToast('↺ Horizon 1 reset','var(--green)');
-      // Restart live telemetry poll and fetch baseline intel after reset
       const _pollLive1 = async () => {
         if (this.h1Injected) return;
         const r = await fetch('/api/live-telemetry/ESP-ALPHA-1');
@@ -3490,16 +3717,36 @@ createApp({
     async approveH1VFD() {
       this.h1Resolved = true;
       this.h1Recovering = true;
+      this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXECUTED';
+      this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED';
+      if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
+      this.h1CopilotHtml += '<br><br><strong style="color:var(--green)">↗ VFD speed-down command sent (52 → 44 Hz / 3,120 → 2,640 RPM). Recovery initiated. Monitoring wellbore response…</strong>';
       this.showToast('↗ VFD command sent — monitoring wellbore recovery. $150k pump replacement avoided.','var(--green)');
-      // Keep polling timer alive — chart shows live recovery trend for 2 min, then auto-stops
-      setTimeout(() => {
-        this.h1Recovering = false;
-        if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
-      }, 120000);
       try {
         await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({asset_id:'ESP-ALPHA-1',fault_type:'gas_lock',action_taken:'VFD reduced to 44 Hz (2,640 RPM) via SCADA — gas void migrating up annulus',cost_incurred:0})});
       } catch(e) {}
+      // Poll _post_approval_monitor messages every 30s
+      this.h1RecoveryPollTimer = setInterval(async () => {
+        try {
+          const r = await fetch('/api/recovery-status/ESP-ALPHA-1');
+          if (r.ok) { const d = await r.json();
+            if (d.msg) { this.h1RecoveryMsg = d.msg; }
+            if (d.state === 'complete') {
+              this.h1Recovering = false;
+              this.h1CopilotHtml += '<br><strong style="color:var(--green)">✅ Recovery complete. ESP-ALPHA-1 nominal. $150,000 pump replacement avoided.</strong>';
+              clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null;
+              if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
+            }
+          }
+        } catch(e) {}
+      }, 30000);
+      // Auto-stop chart poll after 3 min regardless
+      setTimeout(() => {
+        this.h1Recovering = false;
+        if (this.h1DegPollTimer)      { clearInterval(this.h1DegPollTimer);      this.h1DegPollTimer      = null; }
+        if (this.h1RecoveryPollTimer) { clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null; }
+      }, 180000);
     },
     _renderH1Charts(d) {
       const sensor = this.h1ActiveSensor || 'psi';
@@ -3538,6 +3785,65 @@ createApp({
       };
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
+    },
+    _activateEvidenceWall() {
+      const delays = [200, 2000, 3800, 5500, 7200];
+      delays.forEach((delay, i) => {
+        setTimeout(() => { this.h1EvidenceWall[i].active = true; this.h1EvidenceActive = i + 1; }, delay);
+      });
+    },
+    _startCopilotStream() {
+      const base = this.h1GemmaFinding ||
+        `Gas lock diagnosis confirmed at 94% confidence on ESP-ALPHA-1. ` +
+        `Pump Intake Pressure declining at \u221214 PSI/min\u00b9, motor amps declining at \u22122.3 A/min\u00b9 \u2014 ` +
+        `the correlated 4-sensor pattern is the diagnostic signature of gas void fraction exceeding the pump handling threshold\u2075. ` +
+        `Separator gas test confirms GOR 1,310 scf/bbl \u2014 up 19% from prior tour\u00b3. ` +
+        `API RP 11S \u00a75.3 identifies VFD speed reduction as the primary intervention\u2075. ` +
+        `Your $0 option is viable now. Waiting 18 minutes moves you to the $2,000 tier. Waiting 25 minutes leaves only $150,000.`;
+      this.h1CopilotText = base;
+      this.h1CopilotHtml = '';
+      this.h1CopilotStreaming = true;
+      const withHtml = base
+        .replace(/\u00b9/g,'<sup style="color:var(--blue);cursor:pointer" title="Source: Sensor Telemetry">[¹]</sup>')
+        .replace(/\u00b3/g,'<sup style="color:var(--blue);cursor:pointer" title="Source: Separator Test">[³]</sup>')
+        .replace(/\u2075/g,'<sup style="color:var(--blue);cursor:pointer" title="Source: API RP 11S §5.3">[⁵]</sup>');
+      let charCount = 0;
+      const rawLen = base.length;
+      if (this.h1CopilotTimer) clearInterval(this.h1CopilotTimer);
+      this.h1CopilotTimer = setInterval(() => {
+        charCount = Math.min(charCount + 4, rawLen);
+        const slice = base.slice(0, charCount);
+        this.h1CopilotHtml = slice
+          .replace(/\u00b9/g,'<sup style="color:var(--blue)">[¹]</sup>')
+          .replace(/\u00b3/g,'<sup style="color:var(--blue)">[³]</sup>')
+          .replace(/\u2075/g,'<sup style="color:var(--blue)">[⁵]</sup>');
+        if (charCount >= rawLen) {
+          this.h1CopilotHtml = withHtml;
+          this.h1CopilotStreaming = false;
+          clearInterval(this.h1CopilotTimer); this.h1CopilotTimer = null;
+        }
+      }, 28);
+    },
+    _updateOptionsViability() {
+      const elapsed = this.h1ElapsedMin;
+      if (elapsed >= 23) { this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXPIRED'; }
+      else if (elapsed >= 18) { this.h1OptA = 'wopt-marginal'; this.h1OptALabel = 'MARGINAL'; }
+      else { this.h1OptA = 'wopt-viable'; this.h1OptALabel = 'VIABLE'; }
+      if (elapsed >= 23) { this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED'; }
+      else { this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE'; }
+    },
+    async sendH1Chat() {
+      const q = this.h1ChatInput.trim(); if (!q) return;
+      this.h1ChatInput = '';
+      const uid = Date.now();
+      this.h1ChatMessages.push({id: uid+'u', role:'user', text: q});
+      this.h1ChatMessages.push({id: uid+'a', role:'assistant', text: '…'});
+      try {
+        const r = await fetch('/api/agent/chat', {method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', message: q, context: this.h1CopilotText.slice(0,600)})});
+        if (r.ok) { const d = await r.json(); this.h1ChatMessages[this.h1ChatMessages.length-1].text = d.response || 'No response from model.'; }
+        else { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
+      } catch(e) { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
     },
     
     // ── Horizon 2: Slug Flow ──

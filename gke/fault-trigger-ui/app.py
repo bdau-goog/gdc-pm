@@ -486,15 +486,46 @@ def _intel_generator() -> None:
                     meta = ASSET_REGISTRY.get(asset_id, {})
                     asset_class = meta.get("asset_class", "esp")
                     fault_label = FAULT_PROFILES.get(fault_context, {}).get("label", fault_context)
+                    # Document type weights: 55% supporting, 30% neutral, 15% counterargument
+                    # (per DEMO_MASTER §10)
+                    _cat_roll = random.random()
+                    if _cat_roll < 0.15:
+                        intel_category = "counterargument"
+                    elif _cat_roll < 0.45:
+                        intel_category = "neutral"
+                    else:
+                        intel_category = "supporting"
                     doc_type = random.choice(["shift_note", "lab_report", "pm_record"])
+
+                    if intel_category == "counterargument":
+                        _cat_instr = (
+                            f"IMPORTANT: Write a document presenting an ALTERNATIVE explanation that argues "
+                            f"AGAINST the {fault_context.replace('_',' ')} diagnosis. Be realistic — cite a "
+                            f"plausible competing cause such as gradual reservoir drawdown, VFD calibration "
+                            f"drift, or a benign operational change. An experienced engineer should find "
+                            f"this plausible as an alternative hypothesis."
+                        )
+                    elif intel_category == "neutral":
+                        _cat_instr = (
+                            f"Write a ROUTINE operational document — a normal periodic inspection, standard "
+                            f"shift log entry, or scheduled measurement record. Do NOT reference the active "
+                            f"fault directly. This represents normal background activity."
+                        )
+                    else:
+                        _cat_instr = (
+                            f"Write a document that CORROBORATES the {fault_context.replace('_',' ')} "
+                            f"assessment with specific sensor readings, field observations, or measurements "
+                            f"consistent with this fault signature."
+                        )
 
                     prompt = (
                         f"You are a field engineer writing a brief operational note for asset {asset_id}.\n"
-                        f"Active fault: {fault_context.replace('_', ' ')}.\n"
+                        f"Active fault context: {fault_context.replace('_', ' ')}.\n"
                         f"Current sensors: PSI={cs.get('psi', 0):.0f}, "
                         f"Temp={cs.get('temp', 0):.0f}\u00b0F, "
                         f"Vib={cs.get('vib', 0):.3f}mm/s.\n\n"
-                        f"Write one realistic {doc_type.replace('_', ' ')} document. "
+                        f"{_cat_instr}\n"
+                        f"Document type: {doc_type.replace('_', ' ')}. "
                         f"Be specific with numbers. Maximum 120 words. No preamble."
                     )
 
@@ -516,10 +547,12 @@ def _intel_generator() -> None:
                             body = resp.json().get("response", "").strip()
                             if body:
                                 headline = (
+                                    f"{'⚠ ALT: ' if intel_category == 'counterargument' else ''}"
                                     f"{fault_label.replace('_', ' ').title()} "
                                     f"— {doc_type.replace('_', ' ').title()}"
                                 )
                                 ai_relevance = (
+                                    f"{'Alternative hypothesis: ' if intel_category == 'counterargument' else ''}"
                                     f"Gemma: {doc_type.replace('_', ' ')} generated "
                                     f"from live sensor state for {asset_id}."
                                 )
@@ -535,7 +568,9 @@ def _intel_generator() -> None:
                                             """,
                                             (asset_id, asset_class, fault_context, doc_type,
                                              headline[:120], body[:1000], ai_relevance[:300],
-                                             "📄", "AI", "ai"),
+                                             "📄",
+                                             "ALT" if intel_category == "counterargument" else ("ROUTINE" if intel_category == "neutral" else "AI"),
+                                             "counterarg" if intel_category == "counterargument" else ("neutral" if intel_category == "neutral" else "ai")),
                                         )
                                         # Prune — keep only 100 most recent
                                         cur.execute("""
@@ -3526,6 +3561,7 @@ def get_forecast_data(asset_id: str):
     rul_minutes     = None
     pnr_minutes_rem = None
     ttf_minutes     = None
+    dpsi_dt = dtemp_dt = dvib_dt = ds4_dt = 0.0   # slopes — populated by ML block if active
 
     if len(rows) >= 8 and classifier_active:
         try:
@@ -3714,10 +3750,16 @@ def get_forecast_data(asset_id: str):
     return {
         "asset_id": asset_id, "is_active": classifier_active,
         "fault_type": _fp_fault_type, "health_score": round(health_score, 4) if health_score else None,
-        "time_to_scada_minutes": rul_minutes, "adjusted_rul_minutes": adjusted_rul_minutes if 'adjusted_rul_minutes' in locals() else rul_minutes, 
+        "time_to_scada_minutes": rul_minutes, "adjusted_rul_minutes": adjusted_rul_minutes if 'adjusted_rul_minutes' in locals() else rul_minutes,
         "time_to_pnr_minutes": pnr_minutes_rem,
         "time_to_failure_minutes": ttf_minutes, "horizon_label": fp_hlabel,
         "scada_sensor": fp_scada_sensor, "pnr_sensor": fp_pnr_sensor, "primary_sensor": fp_primary,
+        "slopes": {
+            "dpsi_dt":  round(dpsi_dt,  3),
+            "dtemp_dt": round(dtemp_dt, 3),
+            "dvib_dt":  round(dvib_dt,  3),
+            "ds4_dt":   round(ds4_dt,   3),
+        },
         "sensors": sensors,
     }
 
@@ -4697,6 +4739,60 @@ def _run_recovery_thread(asset_id: str) -> None:
     log.info(f"✅ Recovery complete: {asset_id} — nominal sensors restored")
 
 
+# Module-level recovery status store — written by _post_approval_monitor, read by /api/recovery-status
+RECOVERY_STATUS: dict = {}
+
+
+def _post_approval_monitor(asset_id: str) -> None:
+    """After VFD speed-down approval, monitor PIP recovery trend every 30s for 2.5 minutes.
+    Writes messages to RECOVERY_STATUS[asset_id] that the frontend polls via /api/recovery-status."""
+    log.info(f"↗ Post-approval monitor started: {asset_id}")
+    RECOVERY_STATUS[asset_id] = {"msg": "↗ Recovery initiated. Monitoring wellbore response…", "state": "pending"}
+    baseline_psi = None
+    expected_psi_rate = 24.0   # PSI/min expected recovery rate after VFD speed-down
+
+    for check_n in range(5):   # check at t+30s, t+60s, t+90s, t+120s, t+150s
+        time.sleep(30)
+        if asset_id not in active_degrades:
+            RECOVERY_STATUS[asset_id] = {
+                "msg": "✅ Recovery complete. ESP-ALPHA-1 restored to nominal. $150,000 pump replacement avoided.",
+                "state": "complete",
+            }
+            log.info(f"↗ Post-approval monitor: {asset_id} recovery complete (asset cleared)")
+            return
+
+        cs = (active_degrades.get(asset_id) or {}).get("current_sensors", {})
+        current_psi = cs.get("psi", 0.0)
+
+        if baseline_psi is None:
+            baseline_psi = current_psi
+            RECOVERY_STATUS[asset_id] = {
+                "msg": f"↗ Recovery on track. PIP rising at expected rate. Gas void migrating up annulus.",
+                "state": "recovering",
+            }
+            continue
+
+        elapsed_min = (check_n * 30) / 60.0
+        psi_gain = current_psi - baseline_psi
+        actual_rate = psi_gain / max(elapsed_min, 0.5)
+
+        if actual_rate < expected_psi_rate * 0.5:
+            RECOVERY_STATUS[asset_id] = {
+                "msg": (f"⚠ Recovery slower than projected ({actual_rate:.0f} vs {expected_psi_rate:.0f} PSI/min expected). "
+                        f"PIP at {current_psi:.0f} PSI. Consider step-down to 40 Hz if trend continues."),
+                "state": "slow",
+            }
+        else:
+            RECOVERY_STATUS[asset_id] = {
+                "msg": (f"↗ Recovery on track. PIP +{psi_gain:.0f} PSI over {elapsed_min:.0f} min "
+                        f"({actual_rate:.0f} PSI/min). Gas void migrating up annulus."),
+                "state": "recovering",
+            }
+        log.debug(f"↗ Post-approval monitor check {check_n+1}/5 for {asset_id}: {RECOVERY_STATUS[asset_id]['state']}")
+
+    log.info(f"↗ Post-approval monitor complete: {asset_id}")
+
+
 @app.post("/api/agent/hitl-approve")
 def hitl_approve(req: HitlApproveRequest):
     """
@@ -4711,6 +4807,8 @@ def hitl_approve(req: HitlApproveRequest):
         active_degrades[req.asset_id]["recovering"] = True
         t_rec = threading.Thread(target=_run_recovery_thread, args=(req.asset_id,), daemon=True)
         t_rec.start()
+        t_mon = threading.Thread(target=_post_approval_monitor, args=(req.asset_id,), daemon=True)
+        t_mon.start()
     elif req.asset_id in active_degrades:
         active_degrades[req.asset_id]["running"] = False
         active_degrades.pop(req.asset_id, None)
@@ -4754,6 +4852,48 @@ def hitl_approve(req: HitlApproveRequest):
         "net_savings": cost_avoided - req.cost_incurred,
         "outcome_message": outcome_msgs.get(intervention_type, "Intervention recorded."),
     }
+
+
+# ── Recovery Status Endpoint ─────────────────────────────────────────────────
+@app.get("/api/recovery-status/{asset_id}")
+def get_recovery_status(asset_id: str):
+    """Return current post-approval recovery monitoring message for the H1 copilot."""
+    return RECOVERY_STATUS.get(asset_id, {"msg": "", "state": "pending"})
+
+
+# ── Agent Chat Endpoint ───────────────────────────────────────────────────────
+class AgentChatRequest(BaseModel):
+    asset_id: str
+    fault_type: str = ""
+    message: str
+    context: str = ""
+
+@app.post("/api/agent/chat")
+def agent_chat(req: AgentChatRequest):
+    """H1 copilot follow-up chat — routes question + context to Gemma and returns response."""
+    prompt = (
+        f"You are the GDC Predictive Maintenance AI Copilot. "
+        f"Asset: {req.asset_id}. Active fault: {req.fault_type.replace('_',' ')}.\n"
+        f"Prior analysis context: {req.context[:600]}\n\n"
+        f"Operator question: {req.message}\n\n"
+        f"Answer concisely in 2-3 sentences. Be specific, technical, and grounded in physics. "
+        f"Cite API RP 11S or relevant standards if applicable."
+    )
+    try:
+        import requests as _req
+        r = _req.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={"model": OLLAMA_MODEL, "prompt": prompt, "stream": False,
+                  "options": {"num_predict": 200, "temperature": 0.5}},
+            timeout=20,
+        )
+        if r.status_code == 200:
+            body = r.json().get("response", "").strip()
+            if body:
+                return {"response": body}
+    except Exception as e:
+        log.warning(f"agent_chat Ollama error: {e}")
+    return {"response": "Unable to reach AI model. Please retry in a moment."}
 
 
 # ── H1-Live-1: Live Telemetry Endpoint ───────────────────────────────────────
