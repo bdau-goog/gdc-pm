@@ -768,7 +768,7 @@
     .dr-monitor{color:var(--muted)}
     /* ── H1 New 3-col Body ── */
     .h1-body{display:flex;gap:10px;flex:1;min-height:0;overflow:hidden}
-    .h1-well-strip{width:82px;flex-shrink:0;background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
+    .h1-well-strip{width:110px;flex-shrink:0;background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:6px 4px;display:flex;flex-direction:column;align-items:center;overflow:hidden}
     .h1-center{flex:0 0 36%;display:flex;flex-direction:column;min-width:0;min-height:0}
     .h1-copilot-pane{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
     .h1-copilot-pane>.h1-copilot{flex:1;min-height:0;flex-shrink:1!important}
@@ -780,6 +780,10 @@
     .h1-ic-row:last-child{border-bottom:none}
     .h1-ic-icon{font-size:0.8rem;flex-shrink:0}
     .h1-ic-txt{font-size:0.61rem;color:var(--text2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .h1-ic-time{font-size:0.55rem;color:var(--muted);flex-shrink:0;white-space:nowrap;padding-left:4px}
+    .h1-ns-handle{height:6px;cursor:ns-resize;flex-shrink:0;background:rgba(30,144,255,0.07);border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:background 0.15s;user-select:none}
+    .h1-ns-handle:hover,.h1-ns-handle.dragging{background:rgba(30,144,255,0.28)}
+    .h1-ns-handle::before{content:'···';font-size:10px;color:rgba(255,255,255,0.22);letter-spacing:2px}
   </style>
 </head>
 <body>
@@ -1208,7 +1212,7 @@
           <!-- THIN SVG WELL STRIP -->
           <div class="h1-well-strip" :class="{gaslock: h1Injected && !h1Recovering, recovering: h1Recovering}">
             <div style="font-size:0.48rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:3px;text-align:center">Well A-1</div>
-              <svg viewBox="0 0 200 265" style="width:100%;max-height:215px;display:block">
+              <svg viewBox="0 0 200 265" style="width:100%;flex:1;min-height:0;display:block">
                 <rect width="200" height="265" fill="#0b1526" rx="6"/>
                 <rect x="0" y="218" width="200" height="47" fill="#100f1e"/>
                 <line x1="0" y1="218" x2="200" y2="218" stroke="#1e1a30" stroke-width="1.5"/>
@@ -1251,8 +1255,10 @@
                 <text x="14" y="215" fill="#374151" font-size="5" text-anchor="middle">PIP</text>
               </svg>
             </div>
+          <!-- ── EW splitter: well-strip ↔ center ── -->
+          <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'left')" title="Drag to resize"></div>
           <!-- CENTER: chart + window of options -->
-          <div class="h1-center">
+          <div class="h1-center" :style="{flex: '0 0 ' + h1SplitPercent + '%'}">
             <div>
               <div style="display:flex;align-items:stretch;flex-shrink:0;height:26px;background:var(--surf2);border:1px solid var(--border);border-radius:6px 6px 0 0;padding:0 4px">
                 <span class="h1-stab" :class="{active:h1ActiveSensor==='psi'}" @click="setH1Sensor('psi')">PIP</span>
@@ -1260,8 +1266,10 @@
                 <span class="h1-stab" :class="{active:h1ActiveSensor==='temp'}" @click="setH1Sensor('temp')">Temp</span>
                 <span style="margin-left:auto;font-size:0.55rem;font-weight:700;color:var(--orange);text-transform:uppercase;align-self:center;padding-right:6px;opacity:0.8">⚡ GDC</span>
               </div>
-              <div id="h1-gdc-chart" style="height:200px;border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
+              <div id="h1-gdc-chart" :style="{height: h1ChartH + 'px'}" style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
             </div>
+            <!-- ── NS resize handle: chart ↕ Window of Options ── -->
+            <div v-if="h1Injected" class="h1-ns-handle" @mousedown="initH1NsSplit" title="Drag to resize chart height"></div>
             <!-- Window of Options Timeline -->
             <div v-if="h1Injected" class="wopt-container" style="margin-top:8px">
               <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⏱ Window of Options</div>
@@ -1300,6 +1308,9 @@
             <div v-if="h1RecoveryMsg" style="margin-top:6px;padding:6px 10px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:5px;font-size:0.64rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
           </div><!-- /h1-center -->
 
+          <!-- ── EW splitter: center ↔ copilot ── -->
+          <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'right')" title="Drag to resize"></div>
+
           <!-- RIGHT: GDC AI Copilot (dominant) -->
           <div class="h1-copilot-pane">
             <!-- Cited LLM Copilot -->
@@ -1324,6 +1335,7 @@
               <div v-for="item in h1FeedItems.slice(0,3)" :key="item.id" class="h1-ic-row" @click="openFeedModal(item)">
                 <span class="h1-ic-icon">{{ item.icon }}</span>
                 <span class="h1-ic-txt">{{ item.headline }}</span>
+                <span v-if="item.ts_label" class="h1-ic-time">{{ item.ts_label }}</span>
                 <span v-if="item.lbl_type === 'ai' || item.lbl_type === 'counterarg' || item.lbl_type === 'neutral'" class="ai-doc-badge" :style="item.lbl_type === 'counterarg' ? 'color:#fbbf24;border-color:rgba(251,191,36,0.3)' : ''">⚡ AI{{ item.lbl_type === 'counterarg' ? ' · ALT' : '' }}</span>
               </div>
               <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.65rem;font-style:italic;padding:4px 0">Loading intel…</div>
@@ -2732,7 +2744,8 @@ createApp({
       h1ActiveSensor: 'psi',
       h1Recovering: false,
       h1Dragging: false,
-      h1SplitPercent: 60,
+      h1SplitPercent: 36,
+      h1ChartH: 200,
       h1DegPollTimer: null,
       h1LivePollTimer: null,
       // H1 Redesign State (Evidence Wall, Copilot, Window of Options)
@@ -3757,32 +3770,126 @@ createApp({
       }, 180000);
     },
     _renderH1Charts(d) {
-      const sensor = this.h1ActiveSensor || 'psi';
-      const s = d.sensors?.[sensor] || d.sensors?.psi; if(!s) return;
-      const darkLayout={paper_bgcolor:'#0f172a',plot_bgcolor:'#131d2e',font:{color:'#94a3b8',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e293b'},yaxis:{gridcolor:'#1e293b'}};
-      const gdcEl=document.getElementById('h1-gdc-chart');
-      if(gdcEl) { Plotly.react(gdcEl, s.traces, {...darkLayout,...(s.layout||{})}, {displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(gdcEl,s.traces,darkLayout,{displayModeBar:false,responsive:true})); }
+      const sensor  = this.h1ActiveSensor || 'psi';
+      const s       = d.sensors?.[sensor] || d.sensors?.psi;
+      if (!s) return;
+      const gdcEl = document.getElementById('h1-gdc-chart');
+      if (!gdcEl) return;
+      // Extract specific traces from server response
+      const liveSrc  = s.traces.find(t => t.name === 'Live Telemetry') || s.traces[0];
+      const scadaSrc = s.traces.find(t => t.name === 'SCADA Alarm Threshold');
+      const projSrc  = s.traces.find(t => t.name === 'ML RUL Projection') || s.traces[1];
+      const yLabels  = { psi:'PSI', temp:'°F', amps:'Amps', vib:'mm/s', spm:'SPM' };
+      const yLabel   = yLabels[sensor] || 'Value';
+      // Build trace list — always show live sensor + SCADA threshold
+      const traces = [];
+      if (liveSrc)  traces.push({...liveSrc,  name:'Live Sensor Reading',      line:{color:'#3b82f6',width:2.5}});
+      if (scadaSrc) traces.push({...scadaSrc, name:'SCADA Alarm Threshold'});
+      // Post-injection only: ML forecast projection
+      if (this.h1Injected && projSrc) {
+        traces.push({...projSrc, name:'GDC ML Forecast', line:{color:'#f59e0b',width:2,dash:'dot'}});
+      }
+      // Build cost-zone shapes + annotations
+      const shapes = [], annotations = [];
+      const nowStr = liveSrc?.x?.[liveSrc.x.length - 1] || new Date().toISOString();
+      const nowMs  = new Date(nowStr).getTime();
+      // NOW vertical dotted line
+      shapes.push({type:'line',x0:nowStr,x1:nowStr,y0:0,y1:1,xref:'x',yref:'paper',
+        line:{color:'#475569',width:1.5,dash:'dot'}});
+      if (!this.h1Injected) {
+        // Pre-injection: clean nominal state — no fault elements
+        annotations.push({x:nowStr,y:1.0,xref:'x',yref:'paper',text:'NOW — Monitoring',
+          showarrow:false,xanchor:'right',xshift:-6,yanchor:'bottom',
+          font:{color:'#64748b',size:10,family:'Inter,sans-serif'}});
+      } else {
+        // Post-injection: cost-zone overlay
+        const scadaMin = d.time_to_scada_minutes;
+        const pnrMin   = d.time_to_pnr_minutes;
+        if (scadaMin) {
+          const scadaMs  = nowMs + scadaMin * 60000;
+          const scadaStr = new Date(scadaMs).toISOString();
+          const pnrMs    = pnrMin ? nowMs + pnrMin * 60000 : scadaMs + 5 * 60000;
+          const pnrStr   = new Date(pnrMs).toISOString();
+          const endStr   = new Date(pnrMs + 10 * 60000).toISOString();
+          // Colored cost-zone backgrounds
+          shapes.push({type:'rect',x0:nowStr,  x1:scadaStr,y0:0,y1:1,xref:'x',yref:'paper',fillcolor:'rgba(74,222,128,0.05)',line:{width:0}});
+          shapes.push({type:'rect',x0:scadaStr,x1:pnrStr,  y0:0,y1:1,xref:'x',yref:'paper',fillcolor:'rgba(251,146,60,0.07)',line:{width:0}});
+          shapes.push({type:'rect',x0:pnrStr,  x1:endStr,  y0:0,y1:1,xref:'x',yref:'paper',fillcolor:'rgba(239,68,68,0.09)',line:{width:0}});
+          // Boundary lines
+          shapes.push({type:'line',x0:scadaStr,x1:scadaStr,y0:0,y1:1,xref:'x',yref:'paper',line:{color:'rgba(239,68,68,0.55)',width:1.5,dash:'dash'}});
+          shapes.push({type:'line',x0:pnrStr,  x1:pnrStr,  y0:0,y1:1,xref:'x',yref:'paper',line:{color:'rgba(239,68,68,0.9)', width:2.5,dash:'solid'}});
+          const lbl = Math.round(scadaMin) + 'm';
+          // Event pin labels (top row)
+          annotations.push({x:nowStr,   y:0.97,xref:'x',yref:'paper',text:'<b>🤖 AI detects — ACT NOW</b>',   showarrow:false,xanchor:'left', xshift:4, font:{color:'#4ade80',size:10,family:'Inter,sans-serif'},bgcolor:'rgba(74,222,128,0.08)',borderpad:3});
+          annotations.push({x:scadaStr, y:0.97,xref:'x',yref:'paper',text:`<b>📡 SCADA alarms T+${lbl}</b>`, showarrow:false,xanchor:'center',          font:{color:'#fb923c',size:9.5,family:'Inter,sans-serif'},bgcolor:'rgba(251,146,60,0.08)',borderpad:3});
+          annotations.push({x:pnrStr,   y:0.97,xref:'x',yref:'paper',text:'<b>⛔ PNR</b>',                    showarrow:false,xanchor:'left', xshift:4, font:{color:'#ef4444',size:10,family:'Inter,sans-serif'},bgcolor:'rgba(239,68,68,0.08)',borderpad:3});
+          // Cost labels (bottom row)
+          annotations.push({x:nowStr,   y:0.07,xref:'x',yref:'paper',text:'$0 ✓ VFD now',showarrow:false,xanchor:'left', xshift:5,font:{color:'rgba(74,222,128,0.8)',  size:10,family:'Inter,sans-serif'}});
+          annotations.push({x:scadaStr, y:0.07,xref:'x',yref:'paper',text:'~$2,000',     showarrow:false,xanchor:'center',     font:{color:'rgba(251,146,60,0.8)',  size:10,family:'Inter,sans-serif'}});
+          annotations.push({x:pnrStr,   y:0.07,xref:'x',yref:'paper',text:'$150,000',    showarrow:false,xanchor:'left', xshift:5,font:{color:'rgba(239,68,68,0.8)',  size:10,family:'Inter,sans-serif'}});
+        } else {
+          annotations.push({x:nowStr,y:1.0,xref:'x',yref:'paper',text:'⚠ Analyzing…',
+            showarrow:false,xanchor:'right',xshift:-6,yanchor:'bottom',
+            font:{color:'#fb923c',size:10,family:'Inter,sans-serif'}});
+        }
+      }
+      const layout = {
+        paper_bgcolor:'#0b1526', plot_bgcolor:'#131d2e',
+        font:{color:'#94a3b8',size:11},
+        margin:{l:50,r:10,t:10,b:36},
+        xaxis:{title:'Time (UTC)',gridcolor:'#1e293b',zeroline:false},
+        yaxis:{title:yLabel,gridcolor:'#1e293b',zeroline:false},
+        shapes, annotations,
+        showlegend: this.h1Injected,
+        legend:{orientation:'h',yanchor:'bottom',y:1.02,xanchor:'right',x:1,font:{size:9}}
+      };
+      Plotly.react(gdcEl, traces, layout, {displayModeBar:false,responsive:true})
+        .catch(()=>Plotly.newPlot(gdcEl, traces, layout, {displayModeBar:false,responsive:true}));
     },
     setH1Sensor(sensor) {
       this.h1ActiveSensor = sensor;
       if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);
     },
-    initH1Resize(e) {
-      this.h1Dragging = true;
-      const startX = e.clientX;
+    initH1CenterSplit(e, side) {
+      e.preventDefault();
+      const body = e.target.closest('.h1-body');
+      if (!body) return;
+      const startX   = e.clientX;
       const startPct = this.h1SplitPercent;
-      const container = e.target.closest('.h3-main-body');
+      const bodyW    = body.offsetWidth;
+      e.target.classList.add('dragging');
       const onMove = (ev) => {
-        if (!container) return;
-        const pct = startPct + ((ev.clientX - startX) / container.offsetWidth * 100);
-        this.h1SplitPercent = Math.min(80, Math.max(20, pct));
+        const dx   = ev.clientX - startX;
+        const dPct = (dx / bodyW) * 100;
+        this.h1SplitPercent = Math.max(18, Math.min(62, startPct + dPct));
         this.$nextTick(() => {
           try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
-          try { Plotly.Plots.resize(document.getElementById('h1-scada-chart')); } catch(err) {}
         });
       };
       const onUp = () => {
         this.h1Dragging = false;
+        e.target.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    initH1NsSplit(e) {
+      e.preventDefault();
+      const startY = e.clientY;
+      const startH = this.h1ChartH;
+      e.target.classList.add('dragging');
+      const onMove = (ev) => {
+        const dy = ev.clientY - startY;
+        this.h1ChartH = Math.max(100, Math.min(420, startH + dy));
+        this.$nextTick(() => {
+          try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
+        });
+      };
+      const onUp = () => {
+        this.h1Dragging = false;
+        e.target.classList.remove('dragging');
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
       };
