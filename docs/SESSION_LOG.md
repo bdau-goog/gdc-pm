@@ -2,6 +2,21 @@
 
 ---
 
+## Session T (June 5, 2026) — *Model foundations audit + injection event log + MODEL_FOUNDATIONS.md*
+
+**Code committed:** `89040f9` (feat: injection event log + popup — non-circular model verification foundation)
+**Cluster image digest:** `sha256:34c0c8fe` (fault-trigger-ui) · `sha256:560e4ab3` (inference-api, unchanged)
+
+**What happened:** Post-deployment audit of the Session S classifiers found three critical defects: (1) Training distributions were hand-authored, not derived from `FAULT_PROFILES` — gas_lock was trained on PSI 350–800 but the live system injects at 875–1100 (confirmed by 71,794 DB rows avg 971 PSI). (2) Verification was circular — the 94% accuracy figure was measured against the same invented distribution used for training, not against live data. (3) H3's `vizier_optimize()` uses a hardcoded polynomial — the XGBoost health model is never called, making the "edge model enforces thermal constraint" claim false. Session S classifiers remain deployed but are explicitly marked NOT TRUSTED in the new `docs/MODEL_FOUNDATIONS.md`. Additionally: the `FAULT_PROFILES["slug_flow"]["vib_range"]` of (2.2, 3.2) barely separates from normal (0.8–2.0), meaning the H2 "vibration alarm" story is not plausible at live signal levels. Four disagreeing definitions of each fault were found (simulator.py, fault-trigger-ui FAULT_PROFILES, retrain_edge_models.py, train_classifiers.py) with no canonical source.
+
+**What was built:** (1) `docs/MODEL_FOUNDATIONS.md` — the authoritative model spec: canonical ESP fault-signature table (gas_lock PSI 875–1100 from live DB, slug_flow vib widened to 4.0–6.5 for H2 story), per-horizon model inventory (H1: classifier+health, H2: classifier, H3: `esp_thermal` not yet built), 4 open integrity violations with deadlines, trajectory-based training spec, and non-circular verification protocol with pass/fail thresholds (gas_lock ≥ 0.92, slug_flow ≥ 0.90 on live-distribution replay). (2) `injection_events` AlloyDB table — every inject/degrade now persists drawn values AND profile bounds. (3) `GET /api/injection-log`. (4) `showInjectionPopup()` in `app.js` — dynamically created DOM popup, 5s auto-dismiss, fires on all 3 inject points. Verified live: `gas_lock point psi_target: 882.9 [875–1100] amps_target: 23.5`.
+
+**Key decisions:** `FAULT_PROFILES` in `app.py` is the canonical source — everything derives from it. slug_flow vib must be widened to 4.0–6.5 for H2 to be credible. `esp_thermal` XGBoost model must be built for H3 to be honest. The injection event log is the non-circular verification instrument — replay its rows through `/predict`, publish the confusion matrix in `MODEL_FOUNDATIONS.md §6`.
+
+**Next task:** Clean retrain — 5-step runbook in `MODEL_FOUNDATIONS.md §7`: fix slug_flow vib range → `fault_signatures.py` → trajectory-based classifier retrain → non-circular replay verification → `esp_thermal` + wire into H3.
+
+---
+
 ## Session S (June 4, 2026) — *Model Prep complete — ESP classifier with slug_flow class 4, inference-api LOCAL_MODELS_DIR deploy*
 
 **Code committed:** `92dc9be` (feat: ESP classifier with slug_flow class 4 — inference-api LOCAL_MODELS_DIR deploy)

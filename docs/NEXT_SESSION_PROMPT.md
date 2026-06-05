@@ -1,9 +1,9 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 4, 2026 (Session S end — Model Prep complete)
-**Git Head:** `92dc9be` — clean working tree
-**inference-api image digest:** `sha256:560e4ab3` (live, has 4 classifiers + slug_flow)
-**fault-trigger-ui image digest:** `sha256:565ec44a` (unchanged this session)
+**Date:** June 5, 2026 (Session T end — Model Foundations + Injection Log)
+**Git Head:** `89040f9` — clean working tree
+**fault-trigger-ui image:** `sha256:34c0c8fe` (live — has injection_events + popup)
+**inference-api image:** `sha256:560e4ab3` (live — has 5-class ESP classifier)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -18,84 +18,92 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 
 **Expected healthy:**
-- All pods 1/1 Running (inference-api pod: `6f8c85857f-*`)
+- All pods 1/1 Running
 - ollama_online: True · model: gemma4:latest
 - field_intel: 80–120 rows · rag_documents: 18 rows
 
-**Also verify classifiers working:**
+**Also verify injection log is working:**
 ```bash
-kubectl exec -n gdc-pm deployment/inference-api -- python3 -c "
-import urllib.request, json
-data = json.dumps({'psi':520,'temp_f':230,'vibration':9.5,'motor_amps':30,'dpsi_dt':-45.0,'dtemp_dt':3.5,'dvib_dt':1.2,'damps_dt':-4.0,'asset_type':'esp'}).encode()
-req = urllib.request.Request('http://localhost:8080/predict', data=data, headers={'Content-Type':'application/json'}, method='POST')
-d = json.loads(urllib.request.urlopen(req).read())
-print('gas_lock test:', d['predicted_label'], d['confidence'])
-"
-# expect: gas_lock 0.94
+curl -s http://gdc-pm.bdau.io/api/injection-log | python3 -c "import sys,json;d=json.load(sys.stdin);print('injection_events count:',d.get('count'))"
+# expect: count ≥ 1 (at least 1 from Session T verification)
 ```
 
 ---
 
-## STEP 2: Read DEMO_MASTER.md
+## STEP 2: Read DEMO_MASTER.md + MODEL_FOUNDATIONS.md
 
 ```bash
 cat ~/gdc-pm/docs/DEMO_MASTER.md
+cat ~/gdc-pm/docs/MODEL_FOUNDATIONS.md  # NEW — canonical model spec
 ```
 
 ---
 
-## STEP 3: What Was Done This Session (Session S)
+## STEP 3: What Was Done This Session (Session T)
 
-### Model Prep COMPLETE
+### Model Foundations complete
 
-**Classifiers trained and deployed** (`92dc9be`):
-- `scripts/train_classifiers.py`: new script, all 4 asset classifiers
-- ESP: 5 classes — normal, gas_lock, sand_ingress, motor_overheat, **slug_flow (class 4)**
-- `slug_flow` training signature: vibration elevated + `dtemp_dt` ≈ 0 (flat temp = H2 discriminator)
-- Test accuracy: ESP 99.92% · all classes 100/200 correct in holdout
-- Deploy method: `LOCAL_MODELS_DIR=/app/models` (edge-native, no GCS dependency)
-- Verified live: gas_lock 94.41% · slug_flow 93.8% · sand_ingress 94.47%
-- DB: `predicted_label` now shows real values (no more `inference_error`)
+**Session S classifiers are deployed but NOT trusted** — training distributions were
+invented, not derived from `FAULT_PROFILES`. The injection event log now exists to
+provide the non-circular verification dataset needed before the clean retrain.
 
-**Known calibration issue (non-blocking):** ESP nominal state sometimes classified as `sand_ingress` at 50-63% confidence. Cause: simulator nominal amps (~88A) overlap with sand_ingress training range (42-72A). The H1 demo uses gas_lock injection (psi <800, amps <50, dpsi_dt <-8) which is unambiguous. Fix later by retraining with corrected nominal amps range if needed.
+**Commits:**
+- `92dc9be` — Session S: ESP classifier 5-class (invented ranges, known-bad)
+- `89040f9` — Session T: injection_events table + popup + MODEL_FOUNDATIONS.md
+
+**docs/MODEL_FOUNDATIONS.md (new):**
+- Canonical ESP fault-signature table (gas_lock PSI 875–1100 from live DB, not 350–800)
+- Per-horizon model inventory: H1 (classifier+health), H2 (classifier), H3 (esp_thermal — not built yet)
+- 4 open integrity violations documented
+- Clean-run verification protocol (replay injection log → confusion matrix)
+- Next-retrain-session runbook (exact commands, pass/fail thresholds)
+
+**Injection event log (live + verified):**
+- `injection_events` table in AlloyDB — persists actual drawn values + bounds every inject
+- `GET /api/injection-log` — returns events for non-circular verification replay
+- `showInjectionPopup()` in app.js — 5s popup on every inject showing drawn params vs bounds
+- Verified: `gas_lock point psi_target: 882.9 [875–1100] amps_target: 23.5`
+
+### Known integrity violations (open)
+| Violation | Status |
+|---|---|
+| `esp_classifier.ubj` trained on invented ranges, not live FAULT_PROFILES | ❌ Deployed but not trusted |
+| `esp_health.ubj` endpoint values disagree with live injection | ❌ Needs replay verification |
+| `vizier_optimize()` uses hardcoded polynomial, not XGBoost | ❌ H3 silent-lie |
+| `FAULT_PROFILES["slug_flow"]["vib_range"]` = (2.2, 3.2) — too narrow | ❌ Needs widening to (4.0, 6.5) |
 
 ---
 
-## STEP 4: Next Implementation Task — H1 V2 UI INTEGRITY FIXES
+## STEP 4: Next Implementation Task — CLEAN MODEL RETRAIN
 
-**All 7 known violations from DEMO_MASTER §12 — batch into ONE `replace_in_file` on `static/app.js`:**
+**Prerequisite:** Run ≥3 demo injections (gas_lock + slug_flow + normal) to populate
+`injection_events` with real drawn-value samples. These rows ARE the non-circular test set.
 
-### Fix 1 (INTEGRITY): Motor state from actual temperature, not timer
-Current: `h1ElapsedMin > 15` triggers "MOTOR CRITICAL". A hardcoded lie.
-Fix: motor state must derive from `h1SensorTemp` numeric value:
-- `h1SensorTemp < 220` → `motor-ok` (green)
-- `220 ≤ h1SensorTemp < 250` → `motor-warn` (amber)
-- `h1SensorTemp ≥ 250` → `motor-crit` (red)
+### The 5-step clean retrain (from MODEL_FOUNDATIONS.md §7)
 
-### Fix 2 (INTEGRITY): GAS LOCK confidence from live model, not static text
-Current: `"GAS LOCK — 94%"` is hardcoded string in dual-reality bar.
-Fix: `class_probs.gas_lock` from `/api/plot/forecast-data` response already contains live confidence. Display as `{{ (classProbs.gas_lock * 100).toFixed(0) }}%` when `h1Injected`.
+**Step 1:** Update `FAULT_PROFILES["slug_flow"]["vib_range"]` → `(4.0, 6.5)` in `app.py` (one line)
 
-### Fix 3 (INTEGRITY): SCADA gauge bars from live telemetry, not fallback
-Current: bars show hardcoded "1,400 PSI / 75.3 A" pre-injection.
-Fix: populate `h1RawPsi/Amps/Temp` from `setMainTab` baseline call to `/api/live-telemetry`.
+**Step 2:** Create `gke/shared/fault_signatures.py` — derives from live `FAULT_PROFILES` +
+event-processor's `get_slopes()` logic. This becomes the single source of truth.
 
-### Fix 4 (UX): "YOU ARE HERE" moving marker on Window of Options timeline
-Current: fixed T+10m/T+18m/PNR markers with no current-position indicator.
-Fix: compute `h1ElapsedMin` from `h1InjectTime` timestamp every tick. Show dot/arrow on timeline.
+**Step 3:** Rewrite `scripts/train_classifiers.py` to use trajectory-based approach:
+- Simulate the degrade ramp (same `((i+1)/steps)^k` formula as `_run_degrade_thread`)
+- Compute slopes using the same first-last difference as `processor.py:get_slopes()`
+- 600 trajectories × ~60 steps per fault, 6,000 normal readings
+- All distributions sourced from `FAULT_PROFILES` — never invented
 
-### Fix 5 (UX): Event-active status banner with ticking timer
-Current: only signal fault is running = Reset button appears.
-Fix: full-width banner: pre-inject = green "✓ WELL A-1 NOMINAL"; post-inject = amber "⚠ GAS LOCK ACTIVE · T+MM:SS · N min remaining".
+**Step 4:** Train + verify non-circularly:
+```sql
+-- Pull real gas_lock rows time-matched to injection_events
+SELECT te.psi, te.temp_f, te.vibration, te.motor_amps, te.failure_type
+FROM telemetry_events te
+JOIN injection_events ie ON te.asset_id = ie.asset_id
+  AND te.event_time BETWEEN ie.inject_time AND ie.inject_time + INTERVAL '10 minutes'
+WHERE ie.fault_type = 'gas_lock' LIMIT 500;
+```
+Replay these rows through `/predict`. Pass = gas_lock ≥ 0.92, slug_flow ≥ 0.90.
 
-### Fix 6 (UX): SCADA gauge directional labels
-Current: "Alarm at 800" — no direction indication.
-Fix: add "↓ Lower = worse" (PIP, Amps) or "↑ Higher = worse" (Temp) below each bar.
-
-### Fix 7 (TECHNICAL): Drop phase-plane chart
-DEMO_MASTER §15 anti-pattern. Replace with the SCADA vs GDC plain-sentence comparison block.
-
-**Implementation approach:** All 7 fixes are in `static/app.js` (~1569 lines). Grep line numbers first, then ONE batched `replace_in_file` call. Also check `static/styles.css` for motor state CSS classes.
+**Step 5:** Build `esp_thermal.ubj` + wire into `vizier_optimize()` (closes H3 silent-lie).
 
 ---
 
@@ -103,10 +111,8 @@ DEMO_MASTER §15 anti-pattern. Replace with the SCADA vs GDC plain-sentence comp
 - `terraform/gke.tf` must NOT be applied
 - No browser on SSH remote
 - `feature-trio-scenarios` stays separate from `main`
-- XGBoost `*.ubj` models — do not retrain without explicit verification step
-- No npm/webpack/React — vanilla HTML/JS + Vue.js CDN only
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - inference-api registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest`
 - "Copilot" is a Microsoft product name — do NOT use it
-- Future `index.html` edits: ~1947 lines. `app.js` edits: ~1569 lines. `app.py` edits: ~5510 lines. Always grep -n first.
+- Future `index.html` edits: ~1947 lines. `app.js` edits: ~1633 lines. `app.py` edits: ~5600 lines. Always grep -n first.
