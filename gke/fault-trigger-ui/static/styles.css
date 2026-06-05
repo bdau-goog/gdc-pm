@@ -764,6 +764,57 @@
     .h1-advisor-pane{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
     .h1-advisor-pane>.h1-advisor{flex:1;min-height:0;flex-shrink:1!important}
     .h1-advisor-pane>.h1-advisor>.h1-advisor-body{flex:1;max-height:none!important;min-height:0}
+    /* ── H1 V2: Status Banner ── */
+    .h1-status-banner{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:7px;margin-bottom:8px;flex-shrink:0;font-size:0.78rem;font-weight:700;transition:background 0.4s,border-color 0.4s;border:1px solid transparent}
+    .h1-banner-nominal{background:rgba(74,222,128,0.06);border-color:rgba(74,222,128,0.3)}
+    .h1-banner-active{background:rgba(251,146,60,0.08);border-color:rgba(251,146,60,0.45);animation:h1-banner-pulse 2s ease-in-out infinite}
+    .h1-banner-critical{background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.5);animation:h1-banner-pulse 1.2s ease-in-out infinite}
+    .h1-banner-recovering{background:rgba(74,222,128,0.07);border-color:rgba(74,222,128,0.4)}
+    .h1-banner-resolved{background:rgba(74,222,128,0.07);border-color:rgba(74,222,128,0.4)}
+    @keyframes h1-banner-pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,146,60,0.0)}50%{box-shadow:0 0 0 4px rgba(251,146,60,0.18)}}
+    .h1-sb-icon{font-size:1.1rem;flex-shrink:0}
+    .h1-sb-msg{flex:1;letter-spacing:0.04em}
+    .h1-banner-nominal .h1-sb-msg{color:var(--green)}
+    .h1-banner-active .h1-sb-msg,.h1-banner-critical .h1-sb-msg{color:var(--orange)}
+    .h1-banner-recovering .h1-sb-msg,.h1-banner-resolved .h1-sb-msg{color:var(--green)}
+    .h1-sb-right{font-size:0.68rem;font-weight:700;color:var(--orange);white-space:nowrap;flex-shrink:0;padding:2px 8px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.3)}
+    /* ── H1 V2: Two-column body ── */
+    .h1-v2-body{display:flex;gap:12px;flex:1;min-height:0;overflow:hidden}
+    .h1-v2-left{flex:0 0 50%;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+    .h1-v2-right{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
+    .h1-v2-right>.h1-advisor{flex:1;min-height:0;display:flex;flex-direction:column}
+    .h1-v2-right>.h1-advisor>.h1-advisor-body{flex:1;max-height:none!important;min-height:0}
+    /* ── H1 V2: Decision Timeline ── */
+    .h1-timeline-wrap{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 12px;flex-shrink:0}
+    .h1-tl-label{font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px}
+    .h1-tl-bar{display:flex;align-items:center;gap:6px;height:32px}
+    .h1-tl-now{font-size:0.54rem;font-weight:700;color:var(--green);white-space:nowrap;flex-shrink:0}
+    .h1-tl-fail{font-size:0.54rem;font-weight:700;color:var(--red);white-space:nowrap;flex-shrink:0}
+    .h1-tl-track{flex:1;height:12px;position:relative;border-radius:4px;overflow:visible;background:rgba(255,255,255,0.05);border:1px solid var(--border)}
+    .h1-tl-zone{position:absolute;top:0;bottom:0}
+    .h1-tl-tick{position:absolute;top:0;bottom:0;display:flex;flex-direction:column;align-items:center;pointer-events:none}
+    .h1-tl-tick-line{width:1px;height:100%;background:rgba(255,255,255,0.25)}
+    .h1-tl-tick-lbl{position:absolute;top:14px;font-size:0.48rem;color:var(--muted);transform:translateX(-50%);white-space:nowrap;line-height:1.2}
+    .h1-tl-dot{position:absolute;top:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;pointer-events:none;transition:left 0.5s ease}
+    .h1-tl-dot-pip{width:12px;height:12px;border-radius:50%;background:var(--orange);border:2px solid #fff;box-shadow:0 0 8px rgba(251,146,60,0.7)}
+    .h1-tl-dot-label{position:absolute;top:16px;font-size:0.44rem;font-weight:800;color:var(--orange);white-space:nowrap;letter-spacing:0.05em;text-shadow:0 1px 3px rgba(0,0,0,0.8)}
+    /* ── H1 V2: Sensor Bars ── */
+    .h1-sensor-bars{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 12px;display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+    .h1-sbar{display:flex;flex-direction:column;gap:3px}
+    .h1-sbar-top{display:flex;align-items:center;gap:8px}
+    .h1-sbar-label{font-size:0.62rem;font-weight:700;color:var(--text2);width:38px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.05em}
+    .h1-sbar-track{flex:1;height:10px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:4px;overflow:visible;position:relative}
+    .h1-sbar-fill{height:100%;border-radius:3px;transition:width 0.8s ease, background 0.5s ease}
+    .h1-sbar-alarm-tick{position:absolute;top:-3px;bottom:-3px;width:2px;background:rgba(239,68,68,0.7);border-radius:1px}
+    .h1-sbar-val{font-size:0.64rem;font-weight:700;color:var(--text);font-family:var(--mono);width:80px;text-align:right;flex-shrink:0}
+    .h1-sbar-meta{display:flex;justify-content:space-between;align-items:center;padding:0 0 0 46px}
+    .h1-sbar-dir{font-size:0.55rem;color:var(--muted)}
+    .h1-sbar-status{font-size:0.56rem;font-weight:700;transition:color 0.5s}
+    /* ── H1 V2: SCADA vs GDC summary ── */
+    .h1-scada-vs-gdc{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+    .h1-svg-row{display:flex;align-items:baseline;gap:8px;font-size:0.66rem;line-height:1.4}
+    .h1-svg-src{font-weight:700;color:var(--text2);white-space:nowrap;flex-shrink:0;min-width:56px}
+    .h1-svg-verdict{flex:1;line-height:1.4}
     /* ── Compact Intel Feed ── */
     .h1-intel-compact{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:7px 10px;flex-shrink:0}
     .h1-ic-hdr{font-size:0.53rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px}

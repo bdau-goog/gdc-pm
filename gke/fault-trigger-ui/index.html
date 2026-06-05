@@ -398,182 +398,142 @@
         </div>
       </div>
       <div class="h3-dashboard" style="padding:10px 12px;overflow:hidden;display:flex;flex-direction:column">
-        <!-- DUAL-REALITY BAR -->
-        <div class="dr-bar">
-          <div class="dr-col dr-scada">
-            <div class="dr-hdr">📊 SCADA · ESP-ALPHA-1</div>
-            <div class="dr-signals">
-              <span class="dr-sig">PIP <b>{{ h1SensorPsi || '--' }}</b></span>
-              <span class="dr-sig">Amps <b>{{ h1SensorAmps || '--' }}</b></span>
-              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '--' }}</b></span>
-              <span class="dr-sig">Vib <b>0.8 mm/s</b></span>
-            </div>
-            <div class="dr-verdict dr-ok">✓ 4 signals — All Nominal · No alarm</div>
-          </div>
-          <div class="dr-div"></div>
-          <div class="dr-col dr-gdc">
-            <div class="dr-hdr">🤖 GDC AI · ESP-ALPHA-1</div>
-            <div class="dr-signals">
-              <span class="dr-sig">PIP <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorPsi || '--' }}<span v-if="h1Injected"> ↓</span></b></span>
-              <span class="dr-sig">Amps <b :style="{color: h1Injected ? 'var(--orange)' : 'var(--text2)'}">{{ h1SensorAmps || '--' }}<span v-if="h1Injected"> ↓</span></b></span>
-              <span class="dr-sig">Temp <b>{{ h1SensorTemp || '--' }}</b></span>
-              <span class="dr-sig">Vib <b>0.8 mm/s ─</b></span>
-            </div>
-            <div class="dr-ctx-chips">
-              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 2}">📋 Shift note</span>
-              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 3}">🧪 Lab: GOR↑</span>
-              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 4}">⚡ VFD events</span>
-              <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 5}">📖 API RP 11S</span>
-            </div>
-            <div class="dr-verdict" :class="h1Recovering ? 'dr-ok' : h1Injected ? 'dr-alert' : 'dr-monitor'">
-              {{ h1Recovering ? 'Recovering - VFD at 44 Hz' : h1Resolved ? 'Resolved - $150,000 preserved' : h1Injected ? (h1TopClass ? (h1TopClass.replace(/_/g,' ').toUpperCase() + ' · ' + (h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'% confidence' : 'confidence building')) : 'GAS LOCK · confidence building') : 'Monitoring' }}
-            </div>
-          </div>
+
+        <!-- ── H1 V2: FULL-WIDTH STATUS BANNER ── -->
+        <div class="h1-status-banner"
+             :class="h1Recovering ? 'h1-banner-recovering' : h1Resolved ? 'h1-banner-resolved' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'h1-banner-critical' : 'h1-banner-active') : 'h1-banner-nominal'">
+          <span class="h1-sb-icon">{{ h1Recovering ? '↩' : h1Resolved ? '✓' : h1Injected ? '⚠' : '✓' }}</span>
+          <span class="h1-sb-msg" v-if="!h1Injected">WELL A-1 NOMINAL &nbsp;·&nbsp; 4 sensors within thresholds &nbsp;·&nbsp; no alarm</span>
+          <span class="h1-sb-msg" v-if="h1Injected && !h1Recovering && !h1Resolved">
+            GAS LOCK ACTIVE &nbsp;·&nbsp;
+            T+{{ String(Math.floor(h1ElapsedMin)).padStart(2,'0') }}:{{ String(Math.round((h1ElapsedMin%1)*60)).padStart(2,'0') }}
+            &nbsp;·&nbsp; {{ Math.max(0, 25 - Math.floor(h1ElapsedMin)) }} min remaining
+          </span>
+          <span class="h1-sb-msg" v-if="h1Recovering">RECOVERING &nbsp;·&nbsp; VFD 44 Hz · PIP rising</span>
+          <span class="h1-sb-msg" v-if="h1Resolved && !h1Recovering">RESOLVED &nbsp;·&nbsp; $150,000 preserved &nbsp;·&nbsp; Direct cost: $0</span>
+          <span class="h1-sb-right" v-if="h1Injected && h1TopClass && !h1Recovering && !h1Resolved">
+            {{ h1TopClass.replace(/_/g,' ').toUpperCase() }} &nbsp;·&nbsp; {{ h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'%' : '—' }} confidence
+          </span>
         </div>
-        <!-- 3-COLUMN MAIN BODY -->
-        <div class="h1-body">
-          <!-- THIN SVG WELL STRIP -->
-          <div class="h1-well-strip" :class="{gaslock: h1Injected && !h1Recovering, recovering: h1Recovering}">
-            <!-- Status header -->
-            <div class="wstrip-hdr">
-              <span class="wstrip-title">WELL A-1</span>
-              <span class="wstrip-dot" :class="h1Recovering ? 'dot-green' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'dot-red' : 'dot-amber') : 'dot-green'"></span>
-            </div>
-            <div class="wstrip-status" :style="{color: h1Recovering ? 'var(--green)' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'var(--red)' : 'var(--orange)') : 'var(--muted)'}">
-              {{ h1Recovering ? 'RECOVERING' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'CRITICAL' : 'GAS LOCK') : 'NOMINAL' }}
-            </div>
-            <!-- Wellbore fluid column -->
-            <div class="wstrip-well">
-              <div class="wstrip-casing">
-                <div class="wstrip-fluid" :class="h1Injected && !h1Recovering ? 'fluid-gaslock' : 'fluid-nominal'"></div>
-                <div class="wstrip-bubble b1"></div>
-                <div class="wstrip-bubble b2"></div>
-                <div class="wstrip-bubble b3"></div>
+
+        <!-- ── H1 V2: TWO-COLUMN BODY ── -->
+        <div class="h1-v2-body">
+
+          <!-- LEFT: Decision Timeline + Sensor Bars + SCADA vs GDC + Options -->
+          <div class="h1-v2-left">
+
+            <!-- DECISION TIMELINE WITH YOU ARE HERE -->
+            <div class="h1-timeline-wrap">
+              <div class="h1-tl-label">⏱ Decision Window — 25 minutes total from GDC detection</div>
+              <div class="h1-tl-bar">
+                <span class="h1-tl-now">NOW</span>
+                <div class="h1-tl-track">
+                  <div class="h1-tl-zone" style="left:0;width:72%;background:rgba(74,222,128,0.15)"></div>
+                  <div class="h1-tl-zone" style="left:72%;width:20%;background:rgba(251,191,36,0.15)"></div>
+                  <div class="h1-tl-zone" style="left:92%;width:8%;background:rgba(239,68,68,0.15)"></div>
+                  <!-- YOU ARE HERE dot — moves in real time -->
+                  <div v-if="h1Injected" class="h1-tl-dot"
+                       :style="{left: Math.min(94, h1ElapsedMin/25*100) + '%'}">
+                    <div class="h1-tl-dot-pip"></div>
+                    <div class="h1-tl-dot-label">YOU ARE HERE</div>
+                  </div>
+                  <!-- Threshold tick marks -->
+                  <div class="h1-tl-tick" style="left:72%">
+                    <div class="h1-tl-tick-line"></div>
+                    <div class="h1-tl-tick-lbl">T+18m<br><span style="color:var(--yellow)">$0→$2k</span></div>
+                  </div>
+                  <div class="h1-tl-tick" style="left:92%">
+                    <div class="h1-tl-tick-line" style="background:var(--red)"></div>
+                    <div class="h1-tl-tick-lbl" style="color:var(--red)">PNR<br>T+23m</div>
+                  </div>
+                </div>
+                <span class="h1-tl-fail">FAIL</span>
               </div>
-              <div class="wstrip-equip-row">
-                <div class="wstrip-pump">PUMP</div>
-                <div class="wstrip-motor" :class="h1Recovering ? 'motor-ok' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'motor-crit' : 'motor-warn') : 'motor-ok'">
-                  MOTOR<br>{{ h1Recovering ? 'Cooling' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'CRITICAL' : 'Warming') : 'Nominal' }}
+            </div>
+
+            <!-- SENSOR BARS — directional labels + alarm thresholds -->
+            <div class="h1-sensor-bars">
+              <!-- PIP -->
+              <div class="h1-sbar">
+                <div class="h1-sbar-top">
+                  <span class="h1-sbar-label">PIP</span>
+                  <div class="h1-sbar-track">
+                    <div class="h1-sbar-fill"
+                         :style="{width: h1RawPsi ? Math.min(100,h1RawPsi/1600*100)+'%' : '88%',
+                                  background: h1RawPsi && h1RawPsi < 800 ? 'var(--red)' : h1RawPsi && h1RawPsi < 950 ? 'var(--orange)' : 'var(--green)'}"></div>
+                    <div class="h1-sbar-alarm-tick" style="left:50%" title="SCADA alarm: 800 PSI"></div>
+                  </div>
+                  <span class="h1-sbar-val">{{ h1SensorPsi || '—' }}</span>
+                </div>
+                <div class="h1-sbar-meta">
+                  <span class="h1-sbar-dir">↓ Lower = worse &nbsp;·&nbsp; Alarm: &lt; 800 PSI</span>
+                  <span class="h1-sbar-status"
+                        :style="{color: h1RawPsi && h1RawPsi < 800 ? 'var(--red)' : h1Injected ? 'var(--orange)' : 'var(--green)'}">
+                    {{ h1RawPsi && h1RawPsi < 800 ? '⚠ SCADA ALARM FIRED' : h1Injected ? '↓ Declining — no alarm yet' : '✓ Above SCADA threshold' }}
+                  </span>
+                </div>
+              </div>
+              <!-- AMPS -->
+              <div class="h1-sbar">
+                <div class="h1-sbar-top">
+                  <span class="h1-sbar-label">AMPS</span>
+                  <div class="h1-sbar-track">
+                    <div class="h1-sbar-fill"
+                         :style="{width: h1RawAmps ? Math.min(100,h1RawAmps/90*100)+'%' : '83%',
+                                  background: h1RawAmps && h1RawAmps < 50 ? 'var(--red)' : h1RawAmps && h1RawAmps < 62 ? 'var(--orange)' : 'var(--green)'}"></div>
+                    <div class="h1-sbar-alarm-tick" style="left:55.6%" title="SCADA alarm: 50 A"></div>
+                  </div>
+                  <span class="h1-sbar-val">{{ h1SensorAmps || '—' }}</span>
+                </div>
+                <div class="h1-sbar-meta">
+                  <span class="h1-sbar-dir">↓ Lower = worse &nbsp;·&nbsp; Alarm: &lt; 50 A</span>
+                  <span class="h1-sbar-status"
+                        :style="{color: h1RawAmps && h1RawAmps < 50 ? 'var(--red)' : h1Injected ? 'var(--orange)' : 'var(--green)'}">
+                    {{ h1RawAmps && h1RawAmps < 50 ? '⚠ SCADA ALARM FIRED' : h1Injected ? '↓ Declining — no alarm yet' : '✓ Above SCADA threshold' }}
+                  </span>
+                </div>
+              </div>
+              <!-- TEMP -->
+              <div class="h1-sbar">
+                <div class="h1-sbar-top">
+                  <span class="h1-sbar-label">TEMP</span>
+                  <div class="h1-sbar-track">
+                    <div class="h1-sbar-fill"
+                         :style="{width: h1RawTemp ? Math.min(100,Math.max(0,(h1RawTemp-160)/160*100))+'%' : '24%',
+                                  background: h1RawTemp && h1RawTemp > 280 ? 'var(--red)' : h1RawTemp && h1RawTemp > 250 ? 'var(--orange)' : 'var(--green)'}"></div>
+                    <div class="h1-sbar-alarm-tick" style="left:75%" title="SCADA alarm: 280 °F"></div>
+                  </div>
+                  <span class="h1-sbar-val">{{ h1SensorTemp || '—' }}</span>
+                </div>
+                <div class="h1-sbar-meta">
+                  <span class="h1-sbar-dir">↑ Higher = worse &nbsp;·&nbsp; Alarm: &gt; 280 °F (Class H limit: 356 °F)</span>
+                  <span class="h1-sbar-status"
+                        :style="{color: h1RawTemp && h1RawTemp > 280 ? 'var(--red)' : h1RawTemp && h1RawTemp > 250 ? 'var(--orange)' : 'var(--green)'}">
+                    {{ h1RawTemp && h1RawTemp > 280 ? '⚠ SCADA ALARM FIRED' : h1RawTemp && h1RawTemp > 250 ? '↑ Warming — approaching alarm' : '✓ Below SCADA threshold' }}
+                  </span>
                 </div>
               </div>
             </div>
-            <!-- Instrument readings -->
-            <div class="wstrip-readings">
-              <div class="wstrip-row">
-                <span class="wstrip-param">GVF</span>
-                <span class="wstrip-val" :style="{color: h1Injected ? '#fbbf24' : '#4ade80'}">{{ h1GvfPct || '—' }}</span>
+
+            <!-- SCADA vs GDC PLAIN-TEXT SUMMARY -->
+            <div class="h1-scada-vs-gdc">
+              <div class="h1-svg-row">
+                <span class="h1-svg-src">📡 SCADA:</span>
+                <span class="h1-svg-verdict" style="color:var(--green)">4 sensors — all above individual alarm limits. No alarm fired.</span>
               </div>
-              <div class="wstrip-bar-wrap"><div class="wstrip-bar" :style="{width: h1Injected ? '90%' : '22%', background: h1Injected ? '#f59e0b' : '#3b82f6'}"></div></div>
-              <div class="wstrip-row">
-                <span class="wstrip-param">PIP</span>
-                <span class="wstrip-val" :style="{color: h1Injected ? 'var(--orange)' : '#4ade80'}">{{ h1SensorPsi || '1,429' }}<span v-if="h1Injected" style="font-size:0.52rem"> ↓</span></span>
-              </div>
-              <div class="wstrip-row">
-                <span class="wstrip-param">AMPS</span>
-                <span class="wstrip-val" :style="{color: h1Injected ? 'var(--orange)' : '#4ade80'}">{{ h1SensorAmps || '75.3 A' }}<span v-if="h1Injected" style="font-size:0.52rem"> ↓</span></span>
-              </div>
-              <div class="wstrip-row">
-                <span class="wstrip-param">TEMP</span>
-                <span class="wstrip-val" :style="{color: h1Recovering ? '#4ade80' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'var(--red)' : '#fbbf24') : '#4ade80'}">{{ h1SensorTemp || '—' }}</span>
-              </div>
-            </div>
-          </div><!-- /h1-well-strip -->
-          <!-- ── EW splitter: well-strip ↔ center ── -->
-          <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'left')" title="Drag to resize"></div>
-          <!-- LEFT: Charts (~44%) -->
-          <div class="h1-center" :style="{flex: '0 0 ' + h1SplitPercent + '%'}">
-            <!-- Phase-Plane Operating State Chart -->
-            <div>
-              <div class="h1-phase-hdr">
-                <span>⚙ Operating State Space — Motor Amps × Winding Temp</span>
-                <span v-if="h1Injected" style="color:var(--orange);font-size:0.5rem;margin-left:auto">● Gas lock trajectory</span>
-              </div>
-              <div id="h1-phase-chart" :style="{height: h1ChartH + 'px'}" style="border:1px solid var(--border);border-top:none;border-radius:0 0 6px 6px"></div>
-            </div>
-            <!-- ── NS resize handle ── -->
-            <div class="h1-ns-handle" @mousedown="initH1NsSplit" title="Drag to resize chart height"></div>
-            <!-- SCADA 4-Sensor Gauge Cluster -->
-            <div class="h1-scada-gauges">
-              <div class="sgg-hdr">
-                <span style="font-size:0.53rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em">📡 SCADA Threshold Monitor</span>
-                <span class="sgg-status" :style="{color: h1Injected && (h1RawAmps !== null && h1RawAmps < 60) ? 'var(--orange)' : '#22c55e', fontSize:'0.53rem', fontWeight:'700'}">
-                  {{ h1Injected && h1RawAmps !== null && h1RawAmps < 60 ? '⚠ Sensors changing — no alarm yet' : '✓ All nominal — no alarm' }}
+              <div class="h1-svg-row">
+                <span class="h1-svg-src">🤖 GDC:</span>
+                <span class="h1-svg-verdict" :style="{color: h1Injected ? 'var(--orange)' : 'var(--muted)'}">
+                  <span v-if="!h1Injected">Monitoring. All nominal. Ready to detect anomalies.</span>
+                  <span v-if="h1Injected && !h1Recovering">PIP + Amps declining together<span v-if="h1EvidenceActive >= 2"> · Shift note: GVF elevated</span><span v-if="h1EvidenceActive >= 3"> · Lab GOR rising</span><span v-if="h1EvidenceActive >= 4" style="font-weight:700"> → Gas lock. {{ h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'%' : '—' }} confidence.</span></span>
+                  <span v-if="h1Recovering" style="color:var(--green)">VFD at 44 Hz. Recovery confirmed. $150,000 preserved.</span>
                 </span>
               </div>
-              <div class="sgg-row">
-                <div class="sgg-lbl">PIP</div>
-                <div class="sgg-bar-wrap">
-                  <div class="sgg-fill" :style="{width: h1RawPsi ? Math.min(100,h1RawPsi/1600*100)+'%' : '87.5%', background: h1RawPsi && h1RawPsi < 800 ? '#ef4444' : h1RawPsi && h1RawPsi < 950 ? '#f97316' : '#3b82f6'}"></div>
-                  <div class="sgg-alarm-tick" style="left:50%"></div>
-                </div>
-                <div class="sgg-val">{{ h1SensorPsi || '1,400 PSI' }}</div>
-                <div class="sgg-alm">⚠ &lt;800</div>
-              </div>
-              <div class="sgg-row">
-                <div class="sgg-lbl">AMPS</div>
-                <div class="sgg-bar-wrap">
-                  <div class="sgg-fill" :style="{width: h1RawAmps ? Math.min(100,h1RawAmps/90*100)+'%' : '83.3%', background: h1RawAmps && h1RawAmps < 50 ? '#ef4444' : h1RawAmps && h1RawAmps < 62 ? '#f97316' : '#3b82f6'}"></div>
-                  <div class="sgg-alarm-tick" style="left:55.6%"></div>
-                </div>
-                <div class="sgg-val">{{ h1SensorAmps || '75.3 A' }}</div>
-                <div class="sgg-alm">⚠ &lt;50A</div>
-              </div>
-              <div class="sgg-row">
-                <div class="sgg-lbl">TEMP</div>
-                <div class="sgg-bar-wrap">
-                  <div class="sgg-fill" :style="{width: h1RawTemp ? Math.min(100,Math.max(0,(h1RawTemp-160)/140*100))+'%' : '27.1%', background: h1RawTemp && h1RawTemp > 280 ? '#ef4444' : h1RawTemp && h1RawTemp > 250 ? '#f97316' : '#10b981'}"></div>
-                  <div class="sgg-alarm-tick" style="left:85.7%"></div>
-                </div>
-                <div class="sgg-val">{{ h1SensorTemp || '198°F' }}</div>
-                <div class="sgg-alm">⚠ &gt;280°F</div>
-              </div>
-              <div class="sgg-row">
-                <div class="sgg-lbl">VIB</div>
-                <div class="sgg-bar-wrap">
-                  <div class="sgg-fill" style="width:14%;background:#10b981"></div>
-                  <div class="sgg-alarm-tick" style="left:80%"></div>
-                </div>
-                <div class="sgg-val">~0.9 mm/s</div>
-                <div class="sgg-alm">⚠ &gt;8</div>
-              </div>
-              <div class="sgg-footer">
-                <span :style="{color: h1Injected ? '#f97316' : '#22c55e'}">
-                  {{ h1Injected ? '⚠ PIP + Amps declining — still above SCADA alarm limits' : '✓ All four within SCADA thresholds — no alarm fired' }}
-                </span>
-              </div>
             </div>
-            <!-- AI Lead-Time Advantage panel (post-inject) -->
-            <div v-if="h1Injected && h1ForecastData && h1ForecastData.time_to_scada_minutes" class="h1-lead-time" style="margin-top:6px">
-              <div class="h1-lt-hdr">⚡ AI Lead-Time Advantage</div>
-              <div class="h1-lt-row">
-                <span class="h1-lt-lbl">Sensor-only model</span>
-                <span class="h1-lt-val" style="color:#f97316">{{ Math.round(h1ForecastData.time_to_scada_minutes) }} min</span>
-              </div>
-              <div class="h1-lt-row">
-                <span class="h1-lt-lbl">Context-fused (RAG)</span>
-                <span class="h1-lt-val" style="color:#fb923c">{{ Math.round(h1ForecastData.adjusted_rul_minutes) }} min</span>
-              </div>
-              <div class="h1-lt-divider"></div>
-              <div class="h1-lt-row">
-                <span class="h1-lt-lbl">⚡ RAG contribution</span>
-                <span class="h1-lt-val" style="color:#22c55e">{{ Math.round(h1ForecastData.time_to_scada_minutes - h1ForecastData.adjusted_rul_minutes) }} min</span>
-              </div>
-              <div class="h1-lt-row" style="margin-top:1px">
-                <span class="h1-lt-lbl" style="font-size:0.48rem;color:var(--muted)">Shift note + GOR lab report fused via AlloyDB RAG</span>
-              </div>
-            </div>
-            <!-- Window of Options Timeline -->
+
+            <!-- WINDOW OF OPTIONS CARDS (post-inject) -->
             <div v-if="h1Injected" class="wopt-container" style="margin-top:8px">
-              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⏱ Window of Options</div>
-              <div class="wopt-timeline">
-                <span class="wopt-now">NOW</span>
-                <div class="wopt-line" style="position:relative">
-                  <span class="wopt-marker" style="left:38%">T+10m</span>
-                  <span class="wopt-marker" style="left:70%">T+18m</span>
-                  <span class="wopt-marker wopt-pnr-lbl" style="left:90%">PNR</span>
-                </div>
-                <span class="wopt-fail">FAIL</span>
-              </div>
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">⚡ Options — select now before window closes</div>
               <div class="wopt-cards">
                 <div class="wopt-card" :class="h1OptA">
                   <div class="wopt-badge" :class="h1OptA">{{ h1OptALabel }}</div>
@@ -596,22 +556,20 @@
                 </div>
               </div>
             </div>
-            <!-- Recovery message from _post_approval_monitor -->
+            <!-- Recovery message -->
             <div v-if="h1RecoveryMsg" style="margin-top:6px;padding:6px 10px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:5px;font-size:0.64rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
-          </div><!-- /h1-center -->
 
-          <!-- ── EW splitter: center ↔ advisor ── -->
-          <div class="h1-splitter" @mousedown="initH1CenterSplit($event, 'right')" title="Drag to resize"></div>
+          </div><!-- /h1-v2-left -->
 
-          <!-- CENTER: GDC Advisor (~38%) -->
-          <div class="h1-advisor-pane">
-            <!-- GDC Advisor — Gemma 4 -->
-            <div class="h1-advisor">
+          <!-- RIGHT: GDC Advisor + Intel Feed -->
+          <div class="h1-v2-right">
+            <!-- GDC Advisor -->
+            <div class="h1-advisor" style="flex:1;min-height:0;display:flex;flex-direction:column">
               <div class="h1-advisor-hdr">
                 <span>🤖 GDC Advisor — Gemma 4 · On-Cluster · No Cloud Required</span>
                 <span v-if="h1AdvisorStreaming" class="streaming-dot"></span>
               </div>
-              <div class="h1-advisor-body">
+              <div class="h1-advisor-body" style="flex:1;max-height:none;overflow-y:auto">
                 <div v-if="!h1Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic">Monitoring ESP-ALPHA-1. All sensors nominal. Ready to analyze downhole anomalies.</div>
                 <div v-if="h1Injected" style="font-size:0.7rem;line-height:1.65;color:var(--text2)" v-html="h1AdvisorHtml"></div>
                 <div v-for="msg in h1ChatMessages" :key="msg.id" class="h1-chat-msg" :class="msg.role"><strong>{{ msg.role === 'user' ? 'You' : '🤖 Advisor' }}:</strong> {{ msg.text }}</div>
@@ -621,10 +579,10 @@
                 <button @click="sendH1Chat" class="h1-chat-send">↵</button>
               </div>
             </div>
-            <!-- Compact Intel Feed -->
+            <!-- Intel Feed -->
             <div class="h1-intel-compact">
               <div class="h1-ic-hdr">📄 {{ h1Injected ? 'Live Intelligence Feed' : 'Baseline Field Intel' }}</div>
-              <div v-for="item in h1FeedItems.slice(0,3)" :key="item.id" class="h1-ic-row" @click="openFeedModal(item)">
+              <div v-for="item in h1FeedItems.slice(0,5)" :key="item.id" class="h1-ic-row" @click="openFeedModal(item)">
                 <span class="h1-ic-icon">{{ item.icon }}</span>
                 <span class="h1-ic-txt">{{ item.headline }}</span>
                 <span v-if="item.ts_label" class="h1-ic-time">{{ item.ts_label }}</span>
@@ -632,8 +590,9 @@
               </div>
               <div v-if="h1FeedItems.length === 0" style="color:var(--muted);font-size:0.65rem;font-style:italic;padding:4px 0">Loading intel…</div>
             </div>
-          </div><!-- /h1-advisor-pane -->
-        </div><!-- /h1-body -->
+          </div><!-- /h1-v2-right -->
+
+        </div><!-- /h1-v2-body -->
       </div><!-- /h3-dashboard -->
     </div><!-- tab-horizon1 -->
 
