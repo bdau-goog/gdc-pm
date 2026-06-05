@@ -1,10 +1,26 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 5, 2026 (Session T end — Model Foundations + Injection Log)
-**Git Head:** `89040f9` — clean working tree
-**fault-trigger-ui image:** `sha256:34c0c8fe` (live — has injection_events + popup)
-**inference-api image:** `sha256:560e4ab3` (live — has 5-class ESP classifier)
+**Date:** June 5, 2026 (Session T end — scaled down for clean retrain)
+**Git Head:** `d3b5022` — clean working tree
+**fault-trigger-ui image:** `sha256:34c0c8fe` (built, scaled to 0 — bring back after retrain)
+**inference-api image:** `sha256:560e4ab3` (built, scaled to 0 — bring back after retrain)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
+
+### ⚠ Cluster state: three components scaled to 0
+
+```bash
+# These are at 0 replicas — bring back after clean retrain is verified:
+kubectl scale deployment/fault-trigger-ui --replicas=1 -n gdc-pm
+kubectl scale deployment/inference-api --replicas=1 -n gdc-pm
+kubectl scale deployment/telemetry-simulator --replicas=1 -n gdc-pm
+```
+
+**Still running (data + LLM layer intact):**
+- AlloyDB Omni (1M+ telemetry rows, RAG corpus, injection_events table)
+- RabbitMQ message broker
+- Grafana
+- event-processor (idle — no simulator publishing)
+- Ollama / Gemma4 on L4 GPU
 
 ---
 
@@ -17,16 +33,12 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**Expected healthy:**
-- All pods 1/1 Running
+**Expected healthy (Session U start):**
+- fault-trigger-ui, inference-api, telemetry-simulator: 0/0 replicas (intentional)
+- AlloyDB, RabbitMQ, Grafana, event-processor, Ollama: 1/1 Running
 - ollama_online: True · model: gemma4:latest
-- field_intel: 80–120 rows · rag_documents: 18 rows
-
-**Also verify injection log is working:**
-```bash
-curl -s http://gdc-pm.bdau.io/api/injection-log | python3 -c "import sys,json;d=json.load(sys.stdin);print('injection_events count:',d.get('count'))"
-# expect: count ≥ 1 (at least 1 from Session T verification)
-```
+- field_intel: any · rag_documents: 18 rows
+- injection_events: ≥ 1 row (from Session T test injection)
 
 ---
 
