@@ -2,6 +2,23 @@
 
 ---
 
+## Session B (June 5, 2026) — *All integrity fixes deployed + live verification passing + RabbitMQ backlog purged*
+
+**Code committed:** Session B — fix(integrity): dynamic PNR remaining time, inference-api v3 deployed, backlog purged  
+**Cluster state:** fault-trigger-ui sha256:7b97605e (1/1), inference-api sha256:d1194989 (1/1, v3 esp_classifier NOW LIVE), telemetry-simulator 1/1
+
+**What was fixed and deployed:** Three batched app.py changes in one `replace_in_file` call: (1) Line 3495: `_gemma_finding = get_gemma_finding(fault_type, asset_id)` replaces direct `GEMMA_FINDINGS.get()` for LLM context — ensures gas_lock LLM context uses the dynamic template path, not the static fallback. (2) `GEMMA_FINDING_TEMPLATES["gas_lock"]` template line: `{pnr}` → `{remaining:.0f}-min advantage window` (the live countdown). (3) `get_gemma_finding()` function: added `onset_str` → `elapsed_min` computation from `fault_onset_utc`, `remaining = max(0, PNR_MINUTES[ft] - elapsed_min)`, passed as `remaining=remaining` instead of static `pnr=25`. (4) `GEMMA_FINDINGS["gas_lock"]` static fallback: "Act within 25 minutes" → "Motor thermal window is minutes, not hours — act immediately" (honest, non-time-specific). Both fault-trigger-ui and inference-api rebuilt, pushed, and deployed with exact digest pinning. fault-trigger-ui picks up the slug_flow vib_range fix (source already correct at HEAD); inference-api picks up esp_classifier v3 from `c4ca13e`.
+
+**Live verification:** After purging 286,418-message RabbitMQ backlog (see below), live non-circular classifier verification passed all gates: normal→normal 92.5% ≥90% ✅ · gas_lock→gas_lock 100% @ conf=1.000 ✅ · slug_flow→slug_flow 100% @ conf=0.999 ✅. All offline gates now confirmed live.
+
+**RabbitMQ backlog discovery:** The `telemetry.events` queue had accumulated 286,418 messages over ~8h of cluster operation. Root cause: event-processor uses `prefetch_count=1` (synchronous). The Ollama RAG narrative generation times out after 30s per triggered message (Ollama is busy with the `_intel_generator` keepalive and `/api/agent/chat` calls). During heavy Ollama load, the consumer drains at ~2 messages/min while the simulator publishes 168/min → queue grows at 166/min. Purged the backlog (`rabbitmqctl purge_queue`). Session C should add a queue-depth check to startup commands and consider making RAG narrative generation async (non-blocking) to prevent re-accumulation.
+
+**Point injection limitation documented:** `/api/inject-fault` point injections (published synchronously to RabbitMQ) get consumed in the same batch as the telemetry-simulator's concurrent normal readings. The event-processor's batch at time T contains both fault and normal readings, but the logs only show the normal PSI values. The fault readings ARE written to DB but are indistinguishable from the rapid normal reads unless you query by asset+failure_type carefully. Use `/api/inject/degrade` for live classifier verification — the degrade thread's readings arrive on their own cadence and are more reliably isolated.
+
+**Session C required:** (a) Confidence Widget in H1 tab — `h1TopClass`/`h1TopClassProb` already wired (Session V), needs HTML/CSS probability bars for all 5 classes; (b) H2 Discern tab per DEMO_MASTER.md §5.
+
+---
+
 ## Session W (June 5, 2026) — *ESP classifier v3 — all training-fidelity bugs fixed, all offline gates pass*
 
 **Code committed:** `c4ca13e` (feat(models): Session W — ESP classifier v3 all gates pass)  

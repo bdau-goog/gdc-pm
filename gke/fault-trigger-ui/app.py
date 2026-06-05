@@ -3492,7 +3492,7 @@ def get_agent_recommend_stream(
     fault_desc = FAULT_PROFILES.get(fault_type, {}).get("description", fault_label)
     asset_class_name = ASSET_REGISTRY.get(asset_id, {}).get("asset_type", "equipment")
 
-    _gemma_finding = GEMMA_FINDINGS.get(fault_type, "")
+    _gemma_finding = get_gemma_finding(fault_type, asset_id)
 
     if _history:
         # Follow-up question mode: give the model full domain context to answer freely,
@@ -4503,7 +4503,7 @@ INTELLIGENCE_FEED = {
 GEMMA_FINDING_TEMPLATES = {
     "gas_lock": [
         "🤖 GDC Advisory: Gas lock anomaly detected ({conf}% confidence). PIP at {psi:.0f} PSI declining at rate consistent with gas entrainment. Expected unmitigated loss: $150,000 pump replacement CAPEX (65% probability of SCADA-window response failure → $97,500 risk-weighted expected cost). Recommended: SCADA VFD Speed-Down from 52 Hz (3,120 RPM) → 44 Hz (2,640 RPM). Direct cost: $0. Preserves pump asset entirely.",
-        "🤖 GDC Advisory: Current-pressure correlation confirms gas lock at {conf}% confidence. PIP {psi:.0f} PSI and motor amps {amps:.0f}A both declining — pump unloading on gas void. Reactive path: $150,000 pump pull + 5–7 day downtime. Proactive path: VFD speed-down at $0. SCADA has no active alarm — GDC has {pnr} min advantage window.",
+        "🤖 GDC Advisory: Current-pressure correlation confirms gas lock at {conf}% confidence. PIP {psi:.0f} PSI and motor amps {amps:.0f}A both declining — pump unloading on gas void. Reactive path: $150,000 pump pull + 5–7 day downtime. Proactive path: VFD speed-down at $0. SCADA has no active alarm — GDC has {remaining:.0f}-min advantage window.",
         "🤖 GDC Advisory: Gas entrainment confirmed at {psi:.0f} PSI intake, {amps:.0f}A motor current. Risk-weighted expected loss if no action: ~$97,500 (65% burnout probability × $150k replacement). VFD reduction 52 → 44 Hz (3,120 → 2,640 RPM) costs $0 and eliminates the risk. SCADA alarm threshold not yet triggered — act now.",
     ],
     "thermal_runaway": [
@@ -4533,6 +4533,17 @@ def get_gemma_finding(fault_type: str, asset_id: str) -> str:
         return GEMMA_FINDINGS.get(fault_type, "")
     cs = active_degrades.get(asset_id, {}).get("current_sensors", {})
     template = random.choice(templates)
+    # Compute remaining PNR window dynamically from fault_onset_utc
+    onset_str = active_degrades.get(asset_id, {}).get("fault_onset_utc", "")
+    if onset_str:
+        try:
+            onset_dt = datetime.fromisoformat(onset_str.replace("Z", ""))
+            elapsed_min = (datetime.utcnow() - onset_dt).total_seconds() / 60
+            remaining = max(0.0, PNR_MINUTES.get(fault_type, 30) - elapsed_min)
+        except Exception:
+            remaining = float(PNR_MINUTES.get(fault_type, 30))
+    else:
+        remaining = float(PNR_MINUTES.get(fault_type, 30))
     try:
         return template.format(
             psi=cs.get("psi", 1000),
@@ -4541,7 +4552,7 @@ def get_gemma_finding(fault_type: str, asset_id: str) -> str:
             vib=cs.get("vib", 1.0),
             gvf=random.randint(71, 85),
             conf=random.randint(88, 97),
-            pnr=PNR_MINUTES.get(fault_type, 30),
+            remaining=remaining,
         )
     except Exception:
         return random.choice(templates)
@@ -4594,7 +4605,7 @@ GEMMA_FINDINGS = {
     ),
     "gas_lock": (
         "🤖 Gemma: Intake PSI declining at -18 PSI/min below 1,000 PSI threshold — gas void fraction increasing in pump intake. "
-        "VFD frequency reduction available via SCADA. Act within 25 minutes before pump stall."
+        "VFD frequency reduction available via SCADA. Motor thermal window is minutes, not hours — act immediately."
     ),
     "slug_flow": (
         "🤖 Gemma: Vibration drift from 1.1 to 2.4 mm/s over 4 hours with motor temperature FLAT at 198°F. "
