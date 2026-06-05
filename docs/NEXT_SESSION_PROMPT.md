@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
 **Date:** June 5, 2026 (Session U end)  
-**Git Head:** `d583e39` — integrity audit + fault_signatures.py + trajectory classifier v1  
+**Git Head:** `55beab3` — integrity audit + fault_signatures.py + trajectory classifier v1  
 **fault-trigger-ui image:** `sha256:34c0c8fe` (scaled to 0)  
 **inference-api image:** `sha256:560e4ab3` (scaled to 0, still has Session S classifiers)  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
