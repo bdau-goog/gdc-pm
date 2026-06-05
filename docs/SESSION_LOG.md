@@ -2,6 +2,21 @@
 
 ---
 
+## Session C (June 5, 2026) — *H2 narrative locked; docs/narratives/ architecture introduced; no code changes*
+
+**Code committed:** None (documentation-only session — H1 V2 implementation deferred at user request)
+**Cluster state:** All 8 pods 1/1 Running · ollama_online: True · gemma4:latest · rag_documents: 18 · field_intel: 2 (pre-fault, expected) · RabbitMQ telemetry.events: 1,528 (healthy, < 5,000 threshold)
+
+**What happened:** Session opened with mandatory startup checks (all healthy). User requested deep-dive on H2 scenario before proceeding with the Session C primary task (H1 V2 visual redesign). Discussion covered: (a) the complete H2 slug-flow physics and evidence structure; (b) the honest three-layer breakdown (L1 telemetry departure, L2 classifier discrimination, L3 unstructured context fusion); (c) the critical design question: *"Won't a multivariate SCADA provide the same insights minus the AI/ML part?"* — answered directly: Layer 1 is conceded to a good SCADA, Layer 2 is scoped carefully as "calibrated probability, learned not hand-authored, pre-threshold, scalable," and Layer 3 (4 of 6 H2 evidence sources are unstructured field documents SCADA has no architecture to read) is the categorically unique differentiator.
+
+**Design decision made this session:** H2 visual directive: **lead with Layer 3 / Context Fusion as the hero; treat the two-line chart as the setup, not the punchline.** The choke log + separator test + shift note + OEM "do not pull well" retrieval assembled into a cited Advisor verdict is what a controls engineer cannot replicate with any SCADA product. The two-line chart creates the question; the evidence fusion answers it. This is locked in DEMO_MASTER.md §5 and in the new narrative doc.
+
+**New artifact introduced: `docs/narratives/` directory.** `docs/narratives/H2_SLUG_FLOW.md` is the first in a planned series of per-horizon narrative documents (H1, H2, H3). Canonical role: the *narrative rationale* layer above DEMO_MASTER.md's spec — includes SCADA-challenge rebuttals, honest Layer-2 claim wording, code-grounded mechanism description, and visual design directives. DEMO_MASTER.md §5 now points to this file.
+
+**Next task (pending "proceed with C" from user):** H1 V2 visual redesign per DEMO_MASTER.md §12 and NEXT_SESSION_PROMPT.md STEP 3 — status banner, decision timeline with YOU ARE HERE, directional sensor bars, SCADA-vs-GDC plain-text comparison. Two `replace_in_file` calls: `index.html` + `styles.css`. Then build/push/rollout.
+
+---
+
 ## Session B (June 5, 2026) — *All integrity fixes deployed + live verification passing + RabbitMQ backlog purged*
 
 **Code committed:** Session B — fix(integrity): dynamic PNR remaining time, inference-api v3 deployed, backlog purged  

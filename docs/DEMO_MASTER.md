@@ -210,6 +210,17 @@ Well schematic: the pump glows GREEN (healthy) while the surface flowline shows 
 
 **$1,500 vs $150,000 decision outcome is stated by the LLM.** No separate financial card.
 
+### H2 Visual Design Directive (Session C decision — immutable)
+
+**The two-line chart is the setup, not the punchline.** Lead with Layer 3 / Context Fusion as the hero.
+
+The two-line chart creates the surface-vs-downhole ambiguity — it shows *there is a question to answer*. The punchline is: the choke log + separator test + shift note + OEM "do not pull well" retrieval assembled into a cited Advisor verdict. That assembly is what no SCADA system, however sophisticated, can produce. Design H2 so the evidence wall and Advisor verdict receive equal or more visual prominence than the chart.
+
+**The honest SCADA-vs-GDC scope for H2 (do not overclaim):**
+A skilled controls engineer with a multivariate SCADA system can also notice vibration rising with flat motor temperature on a trend chart (Layer 1 — concede this). The ML classifier adds calibrated pre-threshold probability, learned not hand-authored, scalable to thousands of wells (Layer 2 — scope carefully). What is categorically impossible for any SCADA product: reading the shift note, the separator test report, the surface choke log, and the OEM troubleshooting manual and assembling them into a documented evidence chain (Layer 3 — this is the unique differentiator). 4 of the 6 H2 evidence sources are unstructured field documents with no SCADA-readable form.
+
+**Full narrative rationale:** `docs/narratives/H2_SLUG_FLOW.md` (includes SCADA-challenge rebuttals, mechanism details, and the honest Layer-2 claim wording).
+
 ---
 
 ## 6. H3 SPECIFICATION — VFD BAYESIAN OPTIMIZATION
