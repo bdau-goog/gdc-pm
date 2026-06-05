@@ -1,26 +1,10 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 5, 2026 (Session T end — scaled down for clean retrain)
-**Git Head:** `d3b5022` — clean working tree
-**fault-trigger-ui image:** `sha256:34c0c8fe` (built, scaled to 0 — bring back after retrain)
-**inference-api image:** `sha256:560e4ab3` (built, scaled to 0 — bring back after retrain)
+**Date:** June 5, 2026 (Session U end)  
+**Git Head:** `d583e39` — integrity audit + fault_signatures.py + trajectory classifier v1  
+**fault-trigger-ui image:** `sha256:34c0c8fe` (scaled to 0)  
+**inference-api image:** `sha256:560e4ab3` (scaled to 0, still has Session S classifiers)  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
-
-### ⚠ Cluster state: three components scaled to 0
-
-```bash
-# These are at 0 replicas — bring back after clean retrain is verified:
-kubectl scale deployment/fault-trigger-ui --replicas=1 -n gdc-pm
-kubectl scale deployment/inference-api --replicas=1 -n gdc-pm
-kubectl scale deployment/telemetry-simulator --replicas=1 -n gdc-pm
-```
-
-**Still running (data + LLM layer intact):**
-- AlloyDB Omni (1M+ telemetry rows, RAG corpus, injection_events table)
-- RabbitMQ message broker
-- Grafana
-- event-processor (idle — no simulator publishing)
-- Ollama / Gemma4 on L4 GPU
 
 ---
 
@@ -33,89 +17,75 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**Expected healthy (Session U start):**
+**Expected healthy (Session V start):**
 - fault-trigger-ui, inference-api, telemetry-simulator: 0/0 replicas (intentional)
 - AlloyDB, RabbitMQ, Grafana, event-processor, Ollama: 1/1 Running
 - ollama_online: True · model: gemma4:latest
-- field_intel: any · rag_documents: 18 rows
-- injection_events: ≥ 1 row (from Session T test injection)
+- mlops/status: connection refused (expected — fault-trigger-ui is at 0)
+- field_intel: 80–120 rows · rag_documents: 18 rows
 
 ---
 
-## STEP 2: Read DEMO_MASTER.md + MODEL_FOUNDATIONS.md
+## STEP 2: Read DEMO_MASTER.md + INTEGRITY_AUDIT.md
 
 ```bash
 cat ~/gdc-pm/docs/DEMO_MASTER.md
-cat ~/gdc-pm/docs/MODEL_FOUNDATIONS.md  # NEW — canonical model spec
+cat ~/gdc-pm/docs/INTEGRITY_AUDIT.md   # NEW Session U — read before writing any code
 ```
+
+**INTEGRITY_AUDIT.md is mandatory reading before Session V.** It contains the complete classified table of violations to fix.
 
 ---
 
-## STEP 3: What Was Done This Session (Session T)
+## STEP 3: Known Integrity State — Fix in Session V
 
-### Model Foundations complete
+All 9 items below are 🔴 VIOLATION per `docs/INTEGRITY_AUDIT.md` (Session U). Session V fixes them all before any feature work.
 
-**Session S classifiers are deployed but NOT trusted** — training distributions were
-invented, not derived from `FAULT_PROFILES`. The injection event log now exists to
-provide the non-circular verification dataset needed before the clean retrain.
+| ID | File | Line(s) | Problem | Fix |
+|---|---|---|---|---|
+| V-01 | index.html | 377 | `"94% confidence"` claim — model not yet verified | Replace with `"≥92% once confirmed"` + ⓘ citation |
+| V-02 | index.html | 429 | `'GAS LOCK - 94% confidence'` static badge text | Bind to `h1TopClass` + `h1TopClassProb` from `class_probs` |
+| V-03 | index.html | 440–456 | `h1ElapsedMin > 15` drives CRITICAL motor state | Bind to `h1SensorTemp >= 260` threshold |
+| V-04 | index.html | 464 | GVF `'68%' : '22%'` hardcoded | Bind `h1GvfPct` from inject params / degrade-status API |
+| V-05 | index.html | 647,681 | `"52%"` in H2 Physics text — no model backing | Replace with `"initially low, building to ≥90% once confirmed"` |
+| V-06 | index.html | 731 | H2 AI Confidence card `52% (Ambiguous)` — H2 not built | Add `"PREVIEW — not yet live"` badge to H2 tab |
+| V-07 | app.js | 1413 | `'Gas lock diagnosis confirmed at 94% confidence'` advisor pre-load | Remove hardcoded %; use `"pattern detected · confidence building"` |
+| V-08 | app.py | 60-63, 4870 | `OLLAMA_DISPLAY_MODEL` — designed to show wrong model name | Delete OLLAMA_DISPLAY_MODEL; report `OLLAMA_MODEL` |
+| V-09 | index.html | 1459–1724, 1800 | Architecture tab chips look live; `$1,200` amount wrong | Add `"Walkthrough Example — not live data"` banner; fix `$1,200` |
 
-**Commits:**
-- `92dc9be` — Session S: ESP classifier 5-class (invented ranges, known-bad)
-- `89040f9` — Session T: injection_events table + popup + MODEL_FOUNDATIONS.md
+**Additional Session V task:** Wire `h1TopClass` / `h1TopClassProb` / `h1TopClassAll` from the existing `class_probs` field in `/api/plot/forecast-data` into the H1 tab Vue data. The backend already returns this dict; the frontend never consumes it.
 
-**docs/MODEL_FOUNDATIONS.md (new):**
-- Canonical ESP fault-signature table (gas_lock PSI 875–1100 from live DB, not 350–800)
-- Per-horizon model inventory: H1 (classifier+health), H2 (classifier), H3 (esp_thermal — not built yet)
-- 4 open integrity violations documented
-- Clean-run verification protocol (replay injection log → confusion matrix)
-- Next-retrain-session runbook (exact commands, pass/fail thresholds)
-
-**Injection event log (live + verified):**
-- `injection_events` table in AlloyDB — persists actual drawn values + bounds every inject
-- `GET /api/injection-log` — returns events for non-circular verification replay
-- `showInjectionPopup()` in app.js — 5s popup on every inject showing drawn params vs bounds
-- Verified: `gas_lock point psi_target: 882.9 [875–1100] amps_target: 23.5`
-
-### Known integrity violations (open)
-| Violation | Status |
-|---|---|
-| `esp_classifier.ubj` trained on invented ranges, not live FAULT_PROFILES | ❌ Deployed but not trusted |
-| `esp_health.ubj` endpoint values disagree with live injection | ❌ Needs replay verification |
-| `vizier_optimize()` uses hardcoded polynomial, not XGBoost | ❌ H3 silent-lie |
-| `FAULT_PROFILES["slug_flow"]["vib_range"]` = (2.2, 3.2) — too narrow | ❌ Needs widening to (4.0, 6.5) |
+**Approach for all V-02 / V-03 / V-04 fixes:** One batched `replace_in_file` call to `index.html` + one batched call to `app.js`. Verify after with grep that no hardcoded values remain. Do NOT make sequential single-block edits.
 
 ---
 
-## STEP 4: Next Implementation Task — CLEAN MODEL RETRAIN
+## STEP 4: Session W — Model Recreate (after Session V is deployed + verified)
 
-**Prerequisite:** Run ≥3 demo injections (gas_lock + slug_flow + normal) to populate
-`injection_events` with real drawn-value samples. These rows ARE the non-circular test set.
+See `docs/MODEL_FOUNDATIONS.md §9` for the full Session W runbook. Summary:
 
-### The 5-step clean retrain (from MODEL_FOUNDATIONS.md §7)
+1. **Fix `train_classifiers.py` slope window** (Step 3b): match 60-reading deque + `dt_minutes = (n−1)/12` to `processor.py:get_slopes()` exactly
+2. **Tag ramp-progress `t`** per training row (Step 3c): enables stage-stratified verification (overall + developed precision)
+3. **Scale up fault-trigger-ui + inference-api + telemetry-simulator:**
+   ```bash
+   kubectl scale deployment/fault-trigger-ui --replicas=1 -n gdc-pm
+   kubectl scale deployment/inference-api --replicas=1 -n gdc-pm
+   kubectl scale deployment/telemetry-simulator --replicas=1 -n gdc-pm
+   ```
+4. **Run ≥3 injections** (gas_lock + slug_flow + normal) to populate `injection_events`
+5. **Retrain**: `python3 scripts/train_classifiers.py --asset-class esp --n-trajectories 600 --n-normal 6000 --rounds 300`
+6. **Verify non-circular**: replay `injection_events` rows through `/predict` → confusion matrix → pass = gas_lock ≥ 0.92 developed, slug_flow ≥ 0.90 developed
+7. **Build `esp_thermal.ubj`** + wire into `vizier_optimize()` (closes M-03 / V3 in MODEL_FOUNDATIONS)
+8. **Rebuild + deploy inference-api** with exact digest
 
-**Step 1:** Update `FAULT_PROFILES["slug_flow"]["vib_range"]` → `(4.0, 6.5)` in `app.py` (one line)
+---
 
-**Step 2:** Create `gke/shared/fault_signatures.py` — derives from live `FAULT_PROFILES` +
-event-processor's `get_slopes()` logic. This becomes the single source of truth.
+## STEP 5: After Session W — Confidence Widget
 
-**Step 3:** Rewrite `scripts/train_classifiers.py` to use trajectory-based approach:
-- Simulate the degrade ramp (same `((i+1)/steps)^k` formula as `_run_degrade_thread`)
-- Compute slopes using the same first-last difference as `processor.py:get_slopes()`
-- 600 trajectories × ~60 steps per fault, 6,000 normal readings
-- All distributions sourced from `FAULT_PROFILES` — never invented
-
-**Step 4:** Train + verify non-circularly:
-```sql
--- Pull real gas_lock rows time-matched to injection_events
-SELECT te.psi, te.temp_f, te.vibration, te.motor_amps, te.failure_type
-FROM telemetry_events te
-JOIN injection_events ie ON te.asset_id = ie.asset_id
-  AND te.event_time BETWEEN ie.inject_time AND ie.inject_time + INTERVAL '10 minutes'
-WHERE ie.fault_type = 'gas_lock' LIMIT 500;
-```
-Replay these rows through `/predict`. Pass = gas_lock ≥ 0.92, slug_flow ≥ 0.90.
-
-**Step 5:** Build `esp_thermal.ubj` + wire into `vizier_optimize()` (closes H3 silent-lie).
+Build the "Live Diagnostic Confidence" widget in H1 tab (approved Session U):
+- Live `class_probs` bars for all 5 classes, sorted descending, color by stage
+- Stage badge: Emerging (<60%) / Developing (60–85%) / Confirmed (≥85%)
+- Static chip: "Overall precision: 81% · Confirmed-stage: 92%" (both numbers, with ⓘ explaining the distinction)
+- Binds dual-reality bar string (V-02) to live top class + prob
 
 ---
 
@@ -123,8 +93,9 @@ Replay these rows through `/predict`. Pass = gas_lock ≥ 0.92, slug_flow ≥ 0.
 - `terraform/gke.tf` must NOT be applied
 - No browser on SSH remote
 - `feature-trio-scenarios` stays separate from `main`
-- **Batch all edits to same file in ONE `replace_in_file` call**
+- Batch all edits to same file in ONE `replace_in_file` call
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - inference-api registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest`
-- "Copilot" is a Microsoft product name — do NOT use it
-- Future `index.html` edits: ~1947 lines. `app.js` edits: ~1633 lines. `app.py` edits: ~5600 lines. Always grep -n first.
+- "Copilot" is a Microsoft product name — do NOT use it anywhere
+- No static values that imitate live output — global `.clinerules §6` now enforces this
+- Failing model `.ubj` files are NEVER committed — only passing models (per ML Integrity rule)

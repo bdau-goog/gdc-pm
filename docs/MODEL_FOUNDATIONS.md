@@ -256,11 +256,55 @@ kubectl set image deployment/inference-api inference-api=${DIGEST} -n gdc-pm
 | Item | Status | Commit |
 |---|---|---|
 | Session S classifiers (trained on invented ranges) | ❌ Deployed but not trusted | `92dc9be` |
-| injection_events table + event log | ✅ Added Session T | — |
-| Injection popup (UI) | ✅ Added Session T | — |
-| Canonical fault_signatures.py | ❌ Not yet created | — |
-| Trajectory-based classifier retrain | ❌ Not yet executed | — |
+| injection_events table + event log | ✅ Added Session T | `89040f9` |
+| Injection popup (UI) | ✅ Added Session T | `89040f9` |
+| Canonical fault_signatures.py | ✅ Created Session U | — |
+| slug_flow vib_range fix (2.2→4.0, 3.2→6.5) | ✅ Fixed Session U | — |
+| Trajectory-based classifier retrain | ⚠ Session U v1 built — fails precision thresholds (gas_lock 0.815, slug_flow 0.746); NOT committed | see §9 |
 | esp_health replay verification | ❌ Not yet executed | — |
 | esp_thermal model | ❌ Not yet built | — |
 | vizier_optimize() wired to esp_thermal | ❌ Not yet wired | — |
-| Non-circular confusion matrix (§6) | ❌ Pending retrain | — |
+| Non-circular confusion matrix (§6) | ❌ Pending Session W retrain | — |
+
+---
+
+## 9. SESSION U FINDINGS — TRAJECTORY CLASSIFIER v1 (June 5, 2026)
+
+### What was built
+- `gke/shared/fault_signatures.py` — canonical 8-feature fault signature table, single source of truth
+- `scripts/train_classifiers.py` rewritten with trajectory-based approach (matches `_run_degrade_thread` ramp formula and `processor.py` slope logic)
+- v1 trained: 600 trajectories × 30–80 steps × 4 fault classes + 6,000 normal = 108,937 rows
+
+### v1 Results (internal holdout — NOT non-circular)
+| Class | Precision | Threshold | Pass? |
+|---|---|---|---|
+| normal | 1.000 | 0.95 | ✅ |
+| gas_lock | 0.815 | 0.92 | ❌ |
+| sand_ingress | 0.804 | 0.85 | ❌ |
+| motor_overheat | 0.821 | 0.85 | ❌ |
+| slug_flow | 0.746 | 0.90 | ❌ |
+
+### Root cause (diagnosed Session U)
+**Label-noise from indistinguishable early-ramp readings.** At ramp step ~12 (warmup cutoff), `t = (13/55)^3.5 ≈ 0.012` — sensors have moved ~1% toward the fault endpoint. These readings are sensor-indistinguishable across all four fault classes (all near-nominal), but each carries a different fault label. XGBoost can't discriminate them; precision collapses to ~0.81 for all fault classes while confusion between fault types dominates.
+
+**Secondary: slope-window mismatch.** Training uses a 12-reading window with `scale = 12/n`. Live `processor.py:get_slopes()` uses a **60-reading deque** with `dt_minutes = (n−1)/12`. The slope feature magnitudes at inference differ from training, degrading calibration on top of the label-noise problem.
+
+### Design decision (approved Session U by user)
+**Do not trim the early readings. Train on the full ramp.** Rationale:
+- The gradual-confidence behavior (34% → 58% → 79% → 94%) IS the demo story. Instant 94% at inject would contradict the core "probability scoring before thresholds" argument in DEMO_MASTER §2 Claim 2.
+- Early readings appearing near-normal reflects physical truth. The health regressor owns the "something is degrading" early detection. The classifier owns "which fault is this" once a pattern exists.
+- XGBoost's softprob naturally spreads probability early (low confidence) and concentrates as slopes steepen (high confidence) — the confidence ramp emerges for free from honest data.
+
+### Verification metric decision (approved Session U by user)
+Report **two numbers**, not one:
+- **Overall precision** (~0.81): measured across all readings including early ambiguous ramp — honest figure
+- **Developed-stage precision** (target ≥0.92 / ≥0.90): measured on readings at ramp progress t ≥ 0.5 (well past the ambiguous early region) — the figure tied to the on-screen claim
+
+Both numbers shown in the UI (confidence widget), as approved. The ⓘ popover explains the distinction. Neither number is cherry-picked.
+
+### Session W fix plan (Step 3b/3c)
+1. **Match slope window to `processor.py`**: use 60-reading history deque with `dt_minutes = (n−1)/12`, eliminating training-serving skew
+2. **Tag ramp-progress `t` per training row**: enables stage-stratified verification (emit both overall and developed-stage precision in train output)
+3. **Retrain** with same 600-trajectory spec; expect developed-stage to clear thresholds given well-separated fault endpoints
+4. **Non-circular verification**: replay `injection_events` rows through `/predict`, publish confusion matrix in §6
+5. **Commit only if ALL precision thresholds pass** (both overall documented, developed-stage ≥ threshold)

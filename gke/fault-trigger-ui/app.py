@@ -852,7 +852,7 @@ FAULT_PROFILES = {
         "label": "Flowline Slug Flow", "asset_class": "esp",
         "description": "Flowline slugging causes hydraulic tubing vibration downhole, motor temperature nominal",
         "color": "#ffb300",
-        "psi_range": (1300, 1500), "temp_range": (190, 205), "vib_range": (2.2, 3.2),
+        "psi_range": (1300, 1500), "temp_range": (190, 205), "vib_range": (4.0, 6.5),
         "amps_range": (70, 80),
     },
     # ── Gas Lift Compressor Faults ────────────────────────────────────────────

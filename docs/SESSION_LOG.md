@@ -2,6 +2,19 @@
 
 ---
 
+## Session U (June 5, 2026) — *Integrity audit + canonical fault signatures + trajectory classifier v1 (not committed)*
+
+**Code committed:** Session U commit — fault_signatures.py, train_classifiers.py rewrite, INTEGRITY_AUDIT.md, clinerules §6, MODEL_FOUNDATIONS §9, app.py slug_flow fix  
+**Cluster state:** fault-trigger-ui / inference-api / telemetry-simulator at 0 replicas (intentional, unchanged from Session T)
+
+**What happened:** Full integrity audit of the GDC-PM demo frontend — first systematic classification of all hardcoded values. Root cause: every fake confidence value (94%, 52%, 91.4%) is a fossil from the pre-model era (Session R found inference-api returned `inference_error` on every call since day one — no classifier existed when the UI was built). Placeholders were never retired when Session S trained classifiers. Nine violations classified (V-01 through V-09) across Display, Health/Identity, and Illustrative-without-marker dimensions. Model integrity finding: v1 trajectory-based classifier trained (108,937 rows, 600 trajectories/class) using correct distributions for the first time, but failed precision thresholds (gas_lock 0.815 vs 0.92 required, slug_flow 0.746 vs 0.90). Root cause diagnosed: label-noise from indistinguishable early-ramp readings (at ramp step 12, t≈0.012 — sensors 1% toward fault endpoint, indistinguishable across all fault classes). v1 NOT committed per ML Integrity rule — git checkout'd to restore Session S classifier.
+
+**What was built:** (1) `gke/shared/fault_signatures.py` — canonical 8-feature ESP fault signature table; single source of truth replacing four previously-disagreeing definitions. (2) `scripts/train_classifiers.py` full rewrite to trajectory-based approach: uses same `((i+1)/steps)^k` ramp formula as `_run_degrade_thread`, distributions from fault_signatures.py (gas_lock PSI 875–1100, slug_flow vib 4.0–6.5). (3) `app.py` one-line fix: `slug_flow vib_range (2.2, 3.2) → (4.0, 6.5)`. (4) `docs/INTEGRITY_AUDIT.md` — full classified violation table (9 violations with precise fix instructions). (5) Global `~/.clinerules §6` — "Integrity, End to End" five-dimension rule (Display / Model / Provenance / Health / Documentation), portable to all projects.
+
+**Key decisions:** (a) Gradual-confidence design approved: early-ramp uncertainty is on-message ("probability scoring before thresholds" — DEMO_MASTER §2 Claim 2). (b) Two-number metric approved: show both overall (~0.81) and developed-stage (≥0.92) precision — neither cherry-picked. (c) v1 classifier explicitly NOT committed. (d) `OLLAMA_DISPLAY_MODEL` flagged as Dimension-4 (Health/Identity) violation (V-08). (e) Three-session cadence: V = fix 9 violations, W = model recreate + non-circular verify, V+ = confidence widget.
+
+---
+
 ## Session T (June 5, 2026) — *Model foundations audit + injection event log + MODEL_FOUNDATIONS.md*
 
 **Code committed:** `89040f9` (feat: injection event log + popup — non-circular model verification foundation)
