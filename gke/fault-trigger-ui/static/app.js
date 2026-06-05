@@ -122,6 +122,7 @@ createApp({
       h1ChatMessages: [],
       h1InjectedAt: null,
       h1ElapsedMin: 0,
+      h1WindowTotal: null, // Per-run thermal window (minutes) captured at first non-null forecast poll — varies every inject
       h1TopClass: null,
       h1TopClassProb: null,
       h1GvfPct: null,
@@ -1149,7 +1150,12 @@ createApp({
             if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
           }}
           const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
-          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1PhasePlane(d);}}
+          if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;
+            // Capture per-run window total on first non-null thermal deadline (failure contributor = motor-winding thermal, API RP 11S §4.2)
+            if(!this.h1WindowTotal){const _tl=d.thermal_lead_time_minutes;const _sc=d.time_to_scada_minutes;
+              if(_tl&&_tl>0)this.h1WindowTotal=Math.round(_tl);
+              else if(_sc&&_sc>0)this.h1WindowTotal=Math.round(_sc);}
+            this._renderH1PhasePlane(d);}}
         }, 5000);
       } catch(e) { this.showToast('Error injecting gas lock','var(--red)'); }
     },
@@ -1170,7 +1176,7 @@ createApp({
       this.h1AdvisorLastFeedId=null; this.h1AdvisorLastContextTime=0;
       this.h1AdvisorUpdateTimers.forEach(t=>clearTimeout(t)); this.h1AdvisorUpdateTimers=[];
       this.h1ChatMessages=[]; this.h1ChatInput='';
-      this.h1InjectedAt=null; this.h1ElapsedMin=0;
+      this.h1InjectedAt=null; this.h1ElapsedMin=0; this.h1WindowTotal=null;
       this.h1TopClass=null; this.h1TopClassProb=null; this.h1GvfPct=null;
       this.h1OptA='wopt-viable'; this.h1OptALabel='VIABLE';
       this.h1OptB='wopt-viable'; this.h1OptBLabel='VIABLE';
@@ -1451,10 +1457,13 @@ createApp({
     },
     _updateOptionsViability() {
       const elapsed = this.h1ElapsedMin;
-      if (elapsed >= 23) { this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXPIRED'; }
-      else if (elapsed >= 18) { this.h1OptA = 'wopt-marginal'; this.h1OptALabel = 'MARGINAL'; }
+      const total = this.h1WindowTotal || 25; // fallback prevents division-by-zero before window is set
+      const frac = elapsed / total;
+      // 0.72 / 0.92 = fraction of per-run window at which options expire — ratios, not hardcoded minutes
+      if (frac >= 0.92) { this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXPIRED'; }
+      else if (frac >= 0.72) { this.h1OptA = 'wopt-marginal'; this.h1OptALabel = 'MARGINAL'; }
       else { this.h1OptA = 'wopt-viable'; this.h1OptALabel = 'VIABLE'; }
-      if (elapsed >= 23) { this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED'; }
+      if (frac >= 0.92) { this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED'; }
       else { this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE'; }
     },
     async sendH1Chat() {

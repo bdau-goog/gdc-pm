@@ -375,7 +375,7 @@
               <ul class="pp-list">
                 <li>Continuously calculates <em>dPSI/dt</em> and <em>dAmps/dt</em> slopes at 5s cadence across all wells simultaneously</li>
                 <li>XGBoost detects the correlated 4-sensor signature (falling PIP, falling amps, stable temp, stable vibration) at ≥92% once the fault pattern is confirmed — before any single sensor crosses an alarm threshold</li>
-                <li><span class="pp-em">Lead time: 25 minutes</span> before SCADA would alarm</li>
+                <li><span class="pp-em">Lead time: ~15–30 min</span> before SCADA would alarm (conservative range, per API RP 11S)</li>
               </ul>
             </div>
           </div>
@@ -407,7 +407,7 @@
           <span class="h1-sb-msg" v-if="h1Injected && !h1Recovering && !h1Resolved">
             GAS LOCK ACTIVE &nbsp;·&nbsp;
             T+{{ String(Math.floor(h1ElapsedMin)).padStart(2,'0') }}:{{ String(Math.round((h1ElapsedMin%1)*60)).padStart(2,'0') }}
-            &nbsp;·&nbsp; {{ Math.max(0, 25 - Math.floor(h1ElapsedMin)) }} min remaining
+            &nbsp;·&nbsp; {{ h1ForecastData && h1ForecastData.thermal_lead_time_minutes != null ? Math.round(Math.max(0, h1ForecastData.thermal_lead_time_minutes)) : (h1WindowTotal ? Math.round(Math.max(0, h1WindowTotal - h1ElapsedMin)) : '—') }} min to 280°F limit
           </span>
           <span class="h1-sb-msg" v-if="h1Recovering">RECOVERING &nbsp;·&nbsp; VFD 44 Hz · PIP rising</span>
           <span class="h1-sb-msg" v-if="h1Resolved && !h1Recovering">RESOLVED &nbsp;·&nbsp; $150,000 preserved &nbsp;·&nbsp; Direct cost: $0</span>
@@ -424,7 +424,7 @@
 
             <!-- DECISION TIMELINE WITH YOU ARE HERE -->
             <div class="h1-timeline-wrap">
-              <div class="h1-tl-label">⏱ Decision Window — 25 minutes total from GDC detection</div>
+              <div class="h1-tl-label">⏱ Decision Window — {{ h1WindowTotal ? h1WindowTotal + ' min this run (varies per injection)' : 'live model estimate' }} · thermal failure at 280°F</div>
               <div class="h1-tl-bar">
                 <span class="h1-tl-now">NOW</span>
                 <div class="h1-tl-track">
@@ -433,18 +433,18 @@
                   <div class="h1-tl-zone" style="left:92%;width:8%;background:rgba(239,68,68,0.15)"></div>
                   <!-- YOU ARE HERE dot — moves in real time -->
                   <div v-if="h1Injected" class="h1-tl-dot"
-                       :style="{left: Math.min(94, h1ElapsedMin/25*100) + '%'}">
+                       :style="{left: Math.min(94, h1WindowTotal ? h1ElapsedMin/h1WindowTotal*100 : 0) + '%'}">
                     <div class="h1-tl-dot-pip"></div>
                     <div class="h1-tl-dot-label">YOU ARE HERE</div>
                   </div>
                   <!-- Threshold tick marks -->
                   <div class="h1-tl-tick" style="left:72%">
                     <div class="h1-tl-tick-line"></div>
-                    <div class="h1-tl-tick-lbl">T+18m<br><span style="color:var(--yellow)">$0→$2k</span></div>
+                    <div class="h1-tl-tick-lbl"><span style="color:var(--yellow)">$0→$2k<br>72% of window</span></div>
                   </div>
                   <div class="h1-tl-tick" style="left:92%">
                     <div class="h1-tl-tick-line" style="background:var(--red)"></div>
-                    <div class="h1-tl-tick-lbl" style="color:var(--red)">PNR<br>T+23m</div>
+                    <div class="h1-tl-tick-lbl" style="color:var(--red)">PNR<br>92% of window</div>
                   </div>
                 </div>
                 <span class="h1-tl-fail">FAIL</span>
@@ -539,14 +539,14 @@
                   <div class="wopt-badge" :class="h1OptA">{{ h1OptALabel }}</div>
                   <div class="wopt-action">VFD 52→44 Hz via SCADA</div>
                   <div class="wopt-cost">$0 direct cost</div>
-                  <div class="wopt-window">Viable now → T+18m</div>
+                  <div class="wopt-window">Viable now → 72% of window</div>
                   <button v-if="h1Injected && !h1Resolved && !h1Recovering && h1OptA !== 'wopt-expired'" @click="approveH1VFD" class="wopt-approve-btn">✔ Execute Now</button>
                 </div>
                 <div class="wopt-card" :class="h1OptB">
                   <div class="wopt-badge" :class="h1OptB">{{ h1OptBLabel }}</div>
                   <div class="wopt-action">Emergency shutdown + restart</div>
                   <div class="wopt-cost">~$2,000 workover cost</div>
-                  <div class="wopt-window">Viable now → T+23m</div>
+                  <div class="wopt-window">Viable now → 92% of window</div>
                 </div>
                 <div class="wopt-card wopt-last-resort">
                   <div class="wopt-badge wopt-postpnr">POST-PNR ONLY</div>
