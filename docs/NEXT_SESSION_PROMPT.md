@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date / git head: Session B end — `ae728c8`  
-**fault-trigger-ui image:** `sha256:7b97605e` (1/1 Running — Session B)  
-**inference-api image:** `sha256:d1194989` (1/1 Running — Session B, v3 esp_classifier DEPLOYED)  
+Date / git head: Session C end — `bc71f69`
+**fault-trigger-ui image:** `sha256:afa26b3a` (1/1 Running — Session C)
+**inference-api image:** `sha256:d1194989` (1/1 Running — Session B, v3 esp_classifier DEPLOYED, unchanged)
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -15,17 +15,18 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**⚠️ Also check RabbitMQ queue depth (new — run every session start):**
+**⚠️ Also check RabbitMQ queue depth (run every session start):**
 ```bash
 kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl list_queues --vhost gdc-pm name messages consumers
 ```
-Expected: `telemetry.events  <5000  1`  
+Expected: `telemetry.events  <5000  1`
 If > 50,000: `kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl purge_queue --vhost gdc-pm telemetry.events`
 
-**Expected healthy (Session C start):**
+**Expected healthy (Session D start):**
 - All 8 pods: 1/1 Running
 - ollama_online: True · model: gemma4:latest
 - field_intel: 80–120 rows · rag_documents: 18 rows
+- RabbitMQ: telemetry.events < 5,000 (purged end of Session C at ~14k)
 
 ---
 
@@ -37,91 +38,80 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Session C Primary Task — H1 V2 Visual Redesign
+## STEP 3: Session D Primary Task — H2 Discern Tab
 
-**This is the primary task.** The HP-HMI/ISA-101 layout with the SLB wellbore diagram was approved in DEMO_MASTER.md §7/§15 during Session R and has been blocked behind model integrity work until now. All integrity work is complete. Build it.
+**H1 is now demo-ready.** Three integrity violations and four UX failures from the Session Q audit are all resolved as of Session C commits 4f2847e + bc71f69.
 
-### Design reference: DEMO_MASTER.md §7 + §15 wireframe
+**H2 is the next task.** Per DEMO_MASTER.md §12 Phase 2 and §5 (H2 Visual Design Directive):
 
-**Layout (2 columns + full-width banner):**
+### H2 key facts before coding
+- **Asset:** ESP-ALPHA-3 · **Fault:** `slug_flow`
+- **Data wiring: ALL DONE in app.py** — `INTELLIGENCE_FEED["slug_flow"]` (3 session docs: sf_1 choke log, sf_2 separator test, sf_3 shift note), fault injection, truck-roll dispatch, `_renderH2Charts()`, degrade poll. **No app.py changes needed.**
+- **Implementation:** Single batched `replace_in_file` to `index.html` only.
+- **Visual design directive (Session C decision, in DEMO_MASTER §5):** Lead with Layer 3 / Context Fusion as the hero. The two-line chart (vib up, temp flat) is the **setup** — it creates the ambiguity. The punchline is the 6-source evidence wall + OEM "do not pull well" RAG retrieval + Advisor verdict. Full rationale: `docs/narratives/H2_SLUG_FLOW.md`.
+
+### H2 index.html layout (replace the current `<div class="h3-dashboard">` block in horizon2 tab)
+
 ```
-╔══════════════════════════════════════════════════════════╗
-║ STATUS BANNER (full width, color changes):               ║
-║  Pre:  [✓ WELL A-1 NOMINAL — 4 sensors · no alarm]      ║
-║  Post: [⚠ GAS LOCK ACTIVE · T+02:14 · 16 min remaining] ║
-╠══════════════════════════════╦═══════════════════════════╣
-║ LEFT (~50%)                  ║ RIGHT (~50%) — GDC ADVISOR║
-║                              ║                           ║
-║ Decision Timeline            ║ Streaming Gemma           ║
-║ NOW ──▶── YOU ARE HERE ──|── ║ Auto-starts on inject     ║
-║               $0  $2k  $150k ║                           ║
-║                              ║ Intel Feed (live)         ║
-║ Sensor Bars (directional):   ║                           ║
-║ PIP  ████████░░  1,340 PSI   ║ Confidence Widget:        ║
-║      ↓ Lower=worse · Alarm   ║ gas_lock  ████  78%       ║
-║      ✓ Above SCADA threshold ║ normal    █     12%       ║
-║                              ║ slug_flow       6%  etc   ║
-║ SCADA vs GDC (plain text)    ║                           ║
-║                              ║                           ║
-║ Option cards (post-inject)   ║                           ║
-╚══════════════════════════════╩═══════════════════════════╝
+╔═══════════════════════════════════════════════════════════════╗
+║ STATUS BANNER (same pattern as H1):                           ║
+║  Pre: [✓ ESP-ALPHA-3 NOMINAL — vibration nominal]             ║
+║  Post: [⚠ SLUG FLOW DETECTED · surface issue · pump healthy] ║
+╠═══════════════════════════════════╦═══════════════════════════╣
+║ LEFT (~50%)                       ║ RIGHT (~50%) — GDC ADVISOR║
+║                                   ║                           ║
+║ TWO-LINE CHART (the setup):       ║ Streaming Gemma verdict:  ║
+║  Vibration — orange, RISING       ║ "Vibration elevated. Temp ║
+║  Motor Temp — blue, FLAT          ║  completely flat. Surface ║
+║  SCADA trip: 5.0 mm/s (not hit)   ║  slugging. Do NOT pull."  ║
+║                                   ║                           ║
+║ 6-SOURCE EVIDENCE WALL            ║ INTEL FEED                ║
+║ (activates in sequence):          ║                           ║
+║ 📊 Vib 1.1→2.4 mm/s ↑            ║                           ║
+║ 📊 Motor temp 198°F — FLAT ✓      ║                           ║
+║ 🔧 Choke log: 3 adjustments       ║                           ║
+║ 🧪 Separator: 1.8bbl slugs 14min  ║                           ║
+║ 📋 Shift note: rough but temp OK  ║                           ║
+║ 📖 OEM: "vib+flat temp=surface"   ║                           ║
+║                                   ║                           ║
+║ TRUCK ROLL CTA (post-inject):     ║                           ║
+║ [🚛 Dispatch — $1,500 truck roll] ║                           ║
+╚═══════════════════════════════════╩═══════════════════════════╝
 ```
 
-**SLB wellbore SVG (replaces CSS instrument panel):**
-- Vertical cross-section, dark-mode, 0 ft at surface → –8,000 ft at pump intake
-- Casing and tubing as concentric rectangles; perforations at bottom
-- Detail callout zone at pump intake (all gas lock indicators here)
-- Gas bubbles animated at intake ONLY during fault injection (physically correct)
-- Motor section color-mapped to `h1SensorTemp` value only — NOT a timer
-  - green: temp < 230°F / amber: 230–260°F / red: > 260°F
-- Sensor leader lines: PIP, Motor Amps, Motor Winding Temp, Intake GVF%
-- Inset gauge strip at bottom: "Motor Winding Temp · Class H Limit: 356°F · Current: Xf · Headroom: Yf"
-- Reference aesthetic: SLB Oilfield Review journal cross-sections — technical, not decorative
+**Vue data already wired in app.js:** `h2Injected`, `h2Resolved`, `h2TruckRollDispatched`, `h2TruckRollCountdown`, `h2FeedItems`, `h2GemmaFinding`, `h2SensorVib`, `h2SensorTemp` — all populated by existing app.js methods.
 
-**Confidence Widget (incorporate into right column):**
-- 5 class rows sorted by probability descending
-- Each: class label + bar (width = prob%) + percentage text
-- Stage badge on top class: Emerging (<60%) / Developing (60–85%) / Confirmed (≥85%)
-- Data source: `class_probs` from `/api/plot/forecast-data` (already populated)
-- Vue data: `h1ClassProbs` — populate from `class_probs` in the degrade-poll interval
-
-**HP-HMI color discipline (styles.css):**
-- Gray = inactive/nominal — no decorative color
-- Color = active alarm only
-- Status banner: green pre-inject, amber/red post-inject with animation
-- Sensor bars: green → amber → red as value approaches alarm threshold
-
-### Implementation approach
-
-Two `replace_in_file` calls:
-1. `gke/fault-trigger-ui/index.html` — H1 layout restructure + SLB SVG + Confidence Widget HTML
-2. `gke/fault-trigger-ui/static/styles.css` — HP-HMI color rules + status banner + sensor bar styles
-
-Then: `docker build → docker push → kubectl set image → rollout status`
+**The two-line Plotly chart** uses `_renderH2Charts(d)` already in app.js, which renders `h2-gdc-chart` (vib) and `h2-scada-chart`. These divs exist in the current HTML but the layout around them is the old H3-style card grid — replace with the H1-style 2-column layout.
 
 ---
 
-## STEP 4: After H1 V2 Visual — H2 Discern Tab
+## STEP 4: After H2 — H3 Optimize Tab polish
 
-Per DEMO_MASTER.md §5:
-- Two-line Plotly chart: Vibration (rising, orange) + Motor Temp (flat, blue)
-- H2 evidence wall: 6 chips (vib sensor, temp sensor, shift note, separator test, choke log, OEM guide)
-- GDC Advisor verdict: "$1,500 truck roll vs $150,000 unnecessary pump pull"
-- Well schematic H2 variant: pump body green (healthy), surface flowline shows slug animation
-
----
-
-## Known Integrity State — Session C start
-
-**All known integrity violations resolved as of Session B.** ✅
+Per DEMO_MASTER §12 Phase 3 (minor items, H3 already functional):
+- Financial delta bar on Pareto chart
+- "Edge + Cloud" architecture badge on Vizier optimal card
+- GDC Advisor prompt for optimization context
 
 ---
 
-## Operational Notes (Session B discoveries)
+## Known Integrity State — Session C end
 
-- **RabbitMQ backlog:** `telemetry.events` accumulated 286,418 messages over 8h. Root cause: synchronous event-processor (prefetch_count=1) + 30s Ollama RAG timeout = ~2 msg/min drain vs 168 msg/min publish. Purged Session B. Check queue depth at every session start.
-- **Classifier v3 live verification:** normal→normal 92.5% · gas_lock→gas_lock 100% · slug_flow→slug_flow 100%. All offline gates confirmed live.
-- **Point injection limitation:** Use `/api/inject/degrade` for classifier verification, not `/api/inject-fault` — gradual degrade readings survive RabbitMQ batching; point injections get swamped by concurrent simulator readings.
+**All known integrity violations resolved as of Session C.** ✅
+
+Session C specifically resolved:
+- **Thermal window hardcoded as 25 min** → Now `h1WindowTotal` captured from `thermal_lead_time_minutes` at first non-null poll (per-run, varies every inject). Fractions 0.72/0.92 drive option expiry. `bc71f69`.
+- **H1 V2 visual redesign** (status banner, YOU ARE HERE dot, directional sensor bars, SCADA vs GDC plain text). `4f2847e`.
+
+Flagged for follow-up (not blocking):
+- **280°F vs 284°F vs 356°F inconsistency** across app.py thermal computation, index.html physics panel, and DEMO_MASTER §9. All defensible but should be reconciled to one consistent wording. Not blocking any demo scenario.
+
+---
+
+## Operational Notes (Session C discoveries)
+
+- **RabbitMQ backlog:** Accumulated 13,986 messages over ~9h. Purged end of Session C. Same root cause as Session B (synchronous event-processor, Ollama 30s timeout). Check at every session start.
+- **H1 thermal window:** `thermal_lead_time_minutes` is null early in fault injection (temp hasn't started rising yet). `h1WindowTotal` falls back to `time_to_scada_minutes` until thermal becomes available. This is correct and on-message — shows GDC detected before temp even moved.
+- **H2 deadline note:** For slug flow (H2), motor temp stays FLAT — thermal deadline is irrelevant. H2 has a 120-min PNR window (`PNR_MINUTES["slug_flow"] = 120` in app.py). The window widget is not needed for H2 — the urgency story is "$1,500 now vs $150,000 if you pull the pump" not a countdown.
 
 ---
 

@@ -2,6 +2,21 @@
 
 ---
 
+## Session C (June 5, 2026) — *H1 V2 redesign deployed + thermal-window integrity fix + H2 narrative locked*
+
+**Code committed:** `4f2847e` (feat(ui): H1 V2 redesign), `bc71f69` (fix(integrity): per-run thermal window), `5d2363a` (docs: H2 narrative + DEMO_MASTER §5)
+**Cluster state:** fault-trigger-ui sha256:afa26b3a (1/1), inference-api sha256:d1194989 (unchanged, v3 esp_classifier live)
+
+**What was built and deployed — code:** (1) **H1 V2 visual redesign** (`4f2847e`): replaced 3-column well-strip + phase-plane layout with HP-HMI 2-column layout. Full-width status banner (green/amber/red, pulsing animation post-inject), YOU ARE HERE dot sliding along 25-min decision timeline, three directional sensor bars (PIP/Amps/Temp each with "↓ Lower=worse · Alarm: <X" label and SCADA status), SCADA vs GDC plain-text progressive summary, Window of Options cards. Well strip, phase-plane chart, SCADA gauge cluster, AI lead-time panel all removed. Intel feed expanded to 5 items. (2) **Thermal window integrity fix** (`bc71f69`): deleted all 7 hardcoded `25`/`18`/`23` values from the live execution path. `h1WindowTotal` data property captures the per-run thermal deadline (`thermal_lead_time_minutes` from API, fallback `time_to_scada_minutes`) on first non-null forecast poll. `_updateOptionsViability` now uses elapsed/h1WindowTotal fractions (0.72/0.92) — inject twice, get two different windows. Banner shows live `thermal_lead_time_minutes` ("N min to 280°F limit"), timeline label shows "N min this run (varies per injection)." Tick marks: "72% of window" / "92% of window." Physics panel: "~15–30 min (conservative range, per API RP 11S)."
+
+**What was built — docs:** (3) `docs/narratives/H2_SLUG_FLOW.md` — canonical H2 narrative with three-layer evidence framework (L1 telemetry / L2 classifier / L3 context fusion), honest SCADA-vs-GDC scoping (concede L1, scope L2, own L3 categorically), SCADA challenge rebuttals, and Session C visual design directive: two-line chart = setup, evidence fusion = punchline. (4) DEMO_MASTER.md §5 updated with H2 Visual Design Directive. Both from a session-opening design discussion where user correctly challenged: "won't a multivariate SCADA do the same minus the ML?"
+
+**Key decisions:** (a) Gas lock thermal deadline confirmed as the correct H1 window basis (failure contributor = motor-winding thermal runaway per API RP 11S §4.2). (b) H2 deadline basis is NOT thermal (motor temp stays flat by design in slug flow) — H2's urgency is $1,500-vs-$150k decision, not a countdown. (c) Honest Layer-2 scope: a good SCADA can notice the vib/temp decorrelation on one well; GDC's advantages are pre-threshold probability, learned-not-hand-coded, scales to thousands of wells. Layer 3 (4-of-6 H2 evidence sources are unstructured field docs) is categorically impossible for any SCADA product. (d) RabbitMQ at 13,986 purged end of session.
+
+**Session D task:** H2 Discern tab redesign — index.html only, single batched replace_in_file. app.py fully wired. See NEXT_SESSION_PROMPT.md STEP 3 wireframe.
+
+---
+
 ## Session C (June 5, 2026) — *H2 narrative locked; docs/narratives/ architecture introduced; no code changes*
 
 **Code committed:** None (documentation-only session — H1 V2 implementation deferred at user request)
