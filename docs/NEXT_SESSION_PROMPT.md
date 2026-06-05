@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 
-**Date:** June 5, 2026 (Session U end)  
-**Git Head:** `55beab3` — integrity audit + fault_signatures.py + trajectory classifier v1  
-**fault-trigger-ui image:** `sha256:34c0c8fe` (scaled to 0)  
+**Date:** June 5, 2026 (Session V end)  
+**Git Head:** `bd28fdf` — all 9 integrity violations resolved (V-01 through V-09)  
+**fault-trigger-ui image:** `sha256:b57066d4` (scaled to 1, **running**)  
 **inference-api image:** `sha256:560e4ab3` (scaled to 0, still has Session S classifiers)  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
@@ -17,11 +17,11 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**Expected healthy (Session V start):**
-- fault-trigger-ui, inference-api, telemetry-simulator: 0/0 replicas (intentional)
+**Expected healthy (Session W start):**
+- fault-trigger-ui: 1/1 Running (scaled up Session V)
+- inference-api, telemetry-simulator: 0/0 replicas (intentional)
 - AlloyDB, RabbitMQ, Grafana, event-processor, Ollama: 1/1 Running
 - ollama_online: True · model: gemma4:latest
-- mlops/status: connection refused (expected — fault-trigger-ui is at 0)
 - field_intel: 80–120 rows · rag_documents: 18 rows
 
 ---
@@ -30,62 +30,58 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ```bash
 cat ~/gdc-pm/docs/DEMO_MASTER.md
-cat ~/gdc-pm/docs/INTEGRITY_AUDIT.md   # NEW Session U — read before writing any code
+cat ~/gdc-pm/docs/INTEGRITY_AUDIT.md
 ```
 
-**INTEGRITY_AUDIT.md is mandatory reading before Session V.** It contains the complete classified table of violations to fix.
+**Session V completed all 9 🔴 violations from INTEGRITY_AUDIT.md.** The audit is now clean for all display violations. Remaining model integrity issues (M-01 through M-04) are tracked in MODEL_FOUNDATIONS.md.
 
 ---
 
-## STEP 3: Known Integrity State — Fix in Session V
+## STEP 3: Known Integrity State — Session W
 
-All 9 items below are 🔴 VIOLATION per `docs/INTEGRITY_AUDIT.md` (Session U). Session V fixes them all before any feature work.
+All 9 display violations from Session U are **resolved and deployed** as of `bd28fdf`:
 
-| ID | File | Line(s) | Problem | Fix |
-|---|---|---|---|---|
-| V-01 | index.html | 377 | `"94% confidence"` claim — model not yet verified | Replace with `"≥92% once confirmed"` + ⓘ citation |
-| V-02 | index.html | 429 | `'GAS LOCK - 94% confidence'` static badge text | Bind to `h1TopClass` + `h1TopClassProb` from `class_probs` |
-| V-03 | index.html | 440–456 | `h1ElapsedMin > 15` drives CRITICAL motor state | Bind to `h1SensorTemp >= 260` threshold |
-| V-04 | index.html | 464 | GVF `'68%' : '22%'` hardcoded | Bind `h1GvfPct` from inject params / degrade-status API |
-| V-05 | index.html | 647,681 | `"52%"` in H2 Physics text — no model backing | Replace with `"initially low, building to ≥90% once confirmed"` |
-| V-06 | index.html | 731 | H2 AI Confidence card `52% (Ambiguous)` — H2 not built | Add `"PREVIEW — not yet live"` badge to H2 tab |
-| V-07 | app.js | 1413 | `'Gas lock diagnosis confirmed at 94% confidence'` advisor pre-load | Remove hardcoded %; use `"pattern detected · confidence building"` |
-| V-08 | app.py | 60-63, 4870 | `OLLAMA_DISPLAY_MODEL` — designed to show wrong model name | Delete OLLAMA_DISPLAY_MODEL; report `OLLAMA_MODEL` |
-| V-09 | index.html | 1459–1724, 1800 | Architecture tab chips look live; `$1,200` amount wrong | Add `"Walkthrough Example — not live data"` banner; fix `$1,200` |
+| ID | Status | Notes |
+|---|---|---|
+| V-01 | ✅ Fixed | `≥92% once confirmed` |
+| V-02 | ✅ Fixed | Bound to `h1TopClass`/`h1TopClassProb` from `class_probs` |
+| V-03 | ✅ Fixed | Motor state from `parseInt(h1SensorTemp)` thresholds |
+| V-04 | ✅ Fixed | GVF from intel feed parse; `'—'` pre-inject |
+| V-05 | ✅ Fixed | `builds to ≥90% as slug pattern confirms` |
+| V-06 | ✅ Fixed | `PREVIEW — not yet live` badge |
+| V-07 | ✅ Fixed | `pattern detected · confidence building` |
+| V-08 | ✅ Fixed | `OLLAMA_DISPLAY_MODEL` deleted; reports `OLLAMA_MODEL` |
+| V-09 | ✅ Fixed | Arch tab banner + `$1,200 → ~$2,000` |
 
-**Additional Session V task:** Wire `h1TopClass` / `h1TopClassProb` / `h1TopClassAll` from the existing `class_probs` field in `/api/plot/forecast-data` into the H1 tab Vue data. The backend already returns this dict; the frontend never consumes it.
-
-**Approach for all V-02 / V-03 / V-04 fixes:** One batched `replace_in_file` call to `index.html` + one batched call to `app.js`. Verify after with grep that no hardcoded values remain. Do NOT make sequential single-block edits.
+**One note on V-04 (GVF):** `h1GvfPct` is populated by parsing the `_intel_generator` GVF shift note from `h1FeedItems`. This populates ~20s after injection when the first GVF doc arrives. Pre-inject shows `'—'` (honest). This is intentional and correct.
 
 ---
 
-## STEP 4: Session W — Model Recreate (after Session V is deployed + verified)
+## STEP 4: Session W — Model Recreate
 
 See `docs/MODEL_FOUNDATIONS.md §9` for the full Session W runbook. Summary:
 
-1. **Fix `train_classifiers.py` slope window** (Step 3b): match 60-reading deque + `dt_minutes = (n−1)/12` to `processor.py:get_slopes()` exactly
-2. **Tag ramp-progress `t`** per training row (Step 3c): enables stage-stratified verification (overall + developed precision)
-3. **Scale up fault-trigger-ui + inference-api + telemetry-simulator:**
+1. **Fix `train_classifiers.py` slope window** (Step 3b): match 60-reading deque + `dt_minutes = (n−1)/12`
+2. **Tag ramp-progress `t`** per training row (Step 3c)
+3. **Scale up inference-api + telemetry-simulator:**
    ```bash
-   kubectl scale deployment/fault-trigger-ui --replicas=1 -n gdc-pm
    kubectl scale deployment/inference-api --replicas=1 -n gdc-pm
    kubectl scale deployment/telemetry-simulator --replicas=1 -n gdc-pm
    ```
 4. **Run ≥3 injections** (gas_lock + slug_flow + normal) to populate `injection_events`
 5. **Retrain**: `python3 scripts/train_classifiers.py --asset-class esp --n-trajectories 600 --n-normal 6000 --rounds 300`
-6. **Verify non-circular**: replay `injection_events` rows through `/predict` → confusion matrix → pass = gas_lock ≥ 0.92 developed, slug_flow ≥ 0.90 developed
-7. **Build `esp_thermal.ubj`** + wire into `vizier_optimize()` (closes M-03 / V3 in MODEL_FOUNDATIONS)
-8. **Rebuild + deploy inference-api** with exact digest
+6. **Verify non-circular**: replay `injection_events` through `/predict` → confusion matrix → gas_lock ≥ 0.92, slug_flow ≥ 0.90
+7. **Build `esp_thermal.ubj`** + wire into `vizier_optimize()`
+8. **Rebuild + deploy inference-api**
 
 ---
 
 ## STEP 5: After Session W — Confidence Widget
 
 Build the "Live Diagnostic Confidence" widget in H1 tab (approved Session U):
-- Live `class_probs` bars for all 5 classes, sorted descending, color by stage
+- Live `class_probs` bars for all 5 classes, sorted descending
 - Stage badge: Emerging (<60%) / Developing (60–85%) / Confirmed (≥85%)
-- Static chip: "Overall precision: 81% · Confirmed-stage: 92%" (both numbers, with ⓘ explaining the distinction)
-- Binds dual-reality bar string (V-02) to live top class + prob
+- `h1TopClass`/`h1TopClassProb` are now wired — the widget just needs the HTML/CSS
 
 ---
 
@@ -97,5 +93,5 @@ Build the "Live Diagnostic Confidence" widget in H1 tab (approved Session U):
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - inference-api registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest`
 - "Copilot" is a Microsoft product name — do NOT use it anywhere
-- No static values that imitate live output — global `.clinerules §6` now enforces this
-- Failing model `.ubj` files are NEVER committed — only passing models (per ML Integrity rule)
+- No static values that imitate live output — global `.clinerules §6` enforces this
+- Failing model `.ubj` files are NEVER committed

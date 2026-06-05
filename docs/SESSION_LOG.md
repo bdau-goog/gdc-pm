@@ -2,6 +2,21 @@
 
 ---
 
+## Session V (June 5, 2026) — *Integrity audit fixes — all 9 violations resolved and deployed*
+
+**Code committed:** `bd28fdf` (fix(integrity): Session V — all 9 violations resolved V-01 through V-09)  
+**Cluster image digest:** `sha256:b57066d4` (fault-trigger-ui) · pod `fault-trigger-ui-699f7667c7-nljrm` 1/1 Running
+
+**What was built and deployed:** All 9 🔴 VIOLATION items from the Session U integrity audit (`docs/INTEGRITY_AUDIT.md`) fixed in three batched `replace_in_file` calls — one per file. **(1) app.py V-08:** Deleted `OLLAMA_DISPLAY_MODEL` variable entirely (4 lines removed) — `/api/mlops/status` now reports `OLLAMA_MODEL` directly. Verified live: `ollama_online: True · model: gemma4:latest`. **(2) app.js V-07 + wire-up:** Replaced advisor pre-load string `"Gas lock diagnosis confirmed at 94% confidence"` with `"Gas lock pattern detected · confidence building"`. Added `h1TopClass`, `h1TopClassProb`, `h1GvfPct` Vue data properties. Wired `class_probs` from `/api/plot/forecast-data` into `h1TopClass`/`h1TopClassProb` in the degrade-poll interval. Added GVF parsing from intel feed items (`/estimated at (\d+)%/` regex). Added reset in `resetHorizon1`. **(3) index.html V-01 through V-09 (9 SEARCH/REPLACE blocks):** V-01 `"94% confidence"` → `"≥92% once confirmed"`; V-02 dual-reality bar badge bound to `h1TopClass`/`h1TopClassProb` live values; V-03 all 6 `h1ElapsedMin > 15` occurrences replaced with `parseInt(h1SensorTemp||'0') >= 260` (motor state now from actual winding temp); V-04 GVF display bound to `h1GvfPct || '—'`; V-05 H2 physics text `"52%"` → `"builds to ≥90% as slug pattern confirms"`; V-06 H2 confidence card `"52% (Ambiguous)"` → `"— PREVIEW — not yet live"`; V-07 arch tab banner added; V-09 `$1,200` → `~$2,000` in arch tab walkthrough.
+
+**Key decisions:** V-04 (GVF) implemented as an intel-feed parse rather than a new API endpoint — `_intel_generator` already writes the GVF value as text (`"estimated at {gvf}%"`) into `field_intel`, so the frontend regex-parses it from `h1FeedItems`. This avoids app.py changes and is honest: shows `'—'` pre-inject, shows the actual drawn GVF value ~20s after injection. V-03 threshold chosen as `>= 260°F` (between nominal 198°F and SCADA alarm 280°F) to give meaningful WARMING → CRITICAL progression. `parseInt()` on the `"199°F"` string correctly returns 199 in both browsers and Vue templates.
+
+**Verification:** Pod 1/1 Running · digest `sha256:b57066d4` · `/api/mlops/status` → `ollama_online: True, model: gemma4:latest` ✓. Git clean on `feature-trio-scenarios`.
+
+**Next task (Session W):** Classifier model recreate — fix `train_classifiers.py` slope window, retrain, non-circular verification, deploy. See NEXT_SESSION_PROMPT.md STEP 4. After W: build Live Diagnostic Confidence widget in H1 tab (h1TopClass/h1TopClassProb now wired — widget just needs HTML/CSS).
+
+---
+
 ## Session U (June 5, 2026) — *Integrity audit + canonical fault signatures + trajectory classifier v1 (not committed)*
 
 **Code committed:** Session U commit — fault_signatures.py, train_classifiers.py rewrite, INTEGRITY_AUDIT.md, clinerules §6, MODEL_FOUNDATIONS §9, app.py slug_flow fix  
