@@ -1,5 +1,5 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date / git head: Session B (June 5, 2026) — commit to be tagged after this write  
+Date / git head: Session B end — `ae728c8`  
 **fault-trigger-ui image:** `sha256:7b97605e` (1/1 Running — Session B)  
 **inference-api image:** `sha256:d1194989` (1/1 Running — Session B, v3 esp_classifier DEPLOYED)  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
@@ -15,22 +15,17 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**Expected healthy (Session C start):**
-- fault-trigger-ui: 1/1 Running (sha256:7b97605e)
-- inference-api: 1/1 Running (sha256:d1194989 — v3 model live)
-- telemetry-simulator: 1/1 Running
-- AlloyDB, RabbitMQ, Grafana, event-processor, Ollama: 1/1 Running
-- ollama_online: True · model: gemma4:latest
-- field_intel: 80–120 rows · rag_documents: 18 rows
-
-**⚠️ RabbitMQ backlog check (new):**
+**⚠️ Also check RabbitMQ queue depth (new — run every session start):**
 ```bash
 kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl list_queues --vhost gdc-pm name messages consumers
 ```
-Expected: `telemetry.events  <5000  1` — if messages > 50,000, purge before proceeding:
-```bash
-kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl purge_queue --vhost gdc-pm telemetry.events
-```
+Expected: `telemetry.events  <5000  1`  
+If > 50,000: `kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl purge_queue --vhost gdc-pm telemetry.events`
+
+**Expected healthy (Session C start):**
+- All 8 pods: 1/1 Running
+- ollama_online: True · model: gemma4:latest
+- field_intel: 80–120 rows · rag_documents: 18 rows
 
 ---
 
@@ -42,66 +37,91 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Session C — Confidence Widget (H1)
+## STEP 3: Session C Primary Task — H1 V2 Visual Redesign
 
-### 3a. Build the Live Diagnostic Confidence Widget in H1 tab
+**This is the primary task.** The HP-HMI/ISA-101 layout with the SLB wellbore diagram was approved in DEMO_MASTER.md §7/§15 during Session R and has been blocked behind model integrity work until now. All integrity work is complete. Build it.
 
-`h1TopClass` and `h1TopClassProb` are already wired in Vue data (Session V). The widget needs HTML/CSS only — probability bars for all 5 ESP classes, sorted descending, with a stage badge.
+### Design reference: DEMO_MASTER.md §7 + §15 wireframe
 
-**Spec:**
-- Poll source: `class_probs` dict from `/api/plot/forecast-data` (already populated)
-- 5 class rows: gas_lock / slug_flow / sand_ingress / motor_overheat / normal — ordered by probability descending
-- Each row: class label + horizontal bar (width = prob × 100%) + percentage text
+**Layout (2 columns + full-width banner):**
+```
+╔══════════════════════════════════════════════════════════╗
+║ STATUS BANNER (full width, color changes):               ║
+║  Pre:  [✓ WELL A-1 NOMINAL — 4 sensors · no alarm]      ║
+║  Post: [⚠ GAS LOCK ACTIVE · T+02:14 · 16 min remaining] ║
+╠══════════════════════════════╦═══════════════════════════╣
+║ LEFT (~50%)                  ║ RIGHT (~50%) — GDC ADVISOR║
+║                              ║                           ║
+║ Decision Timeline            ║ Streaming Gemma           ║
+║ NOW ──▶── YOU ARE HERE ──|── ║ Auto-starts on inject     ║
+║               $0  $2k  $150k ║                           ║
+║                              ║ Intel Feed (live)         ║
+║ Sensor Bars (directional):   ║                           ║
+║ PIP  ████████░░  1,340 PSI   ║ Confidence Widget:        ║
+║      ↓ Lower=worse · Alarm   ║ gas_lock  ████  78%       ║
+║      ✓ Above SCADA threshold ║ normal    █     12%       ║
+║                              ║ slug_flow       6%  etc   ║
+║ SCADA vs GDC (plain text)    ║                           ║
+║                              ║                           ║
+║ Option cards (post-inject)   ║                           ║
+╚══════════════════════════════╩═══════════════════════════╝
+```
+
+**SLB wellbore SVG (replaces CSS instrument panel):**
+- Vertical cross-section, dark-mode, 0 ft at surface → –8,000 ft at pump intake
+- Casing and tubing as concentric rectangles; perforations at bottom
+- Detail callout zone at pump intake (all gas lock indicators here)
+- Gas bubbles animated at intake ONLY during fault injection (physically correct)
+- Motor section color-mapped to `h1SensorTemp` value only — NOT a timer
+  - green: temp < 230°F / amber: 230–260°F / red: > 260°F
+- Sensor leader lines: PIP, Motor Amps, Motor Winding Temp, Intake GVF%
+- Inset gauge strip at bottom: "Motor Winding Temp · Class H Limit: 356°F · Current: Xf · Headroom: Yf"
+- Reference aesthetic: SLB Oilfield Review journal cross-sections — technical, not decorative
+
+**Confidence Widget (incorporate into right column):**
+- 5 class rows sorted by probability descending
+- Each: class label + bar (width = prob%) + percentage text
 - Stage badge on top class: Emerging (<60%) / Developing (60–85%) / Confirmed (≥85%)
-- Color: gas_lock = red, slug_flow = amber, others = grey; normal = green
-- Pre-injection: shows "normal 97%" in green (correct — classifier is working)
-- Post-injection: shows fault class rising with stage progression
+- Data source: `class_probs` from `/api/plot/forecast-data` (already populated)
+- Vue data: `h1ClassProbs` — populate from `class_probs` in the degrade-poll interval
 
-**Wire-up locations in index.html:**
-- Find the H1 Detect tab section containing `h1TopClass` / `h1TopClassProb` refs
-- Add the widget HTML below the SCADA sensor bars or in the dual-reality bar right column
-- CSS: add to styles.css (`.conf-widget` block)
-- Vue: `h1ClassProbs` should already be populated from `class_probs` in forecast-data poll; confirm or add
+**HP-HMI color discipline (styles.css):**
+- Gray = inactive/nominal — no decorative color
+- Color = active alarm only
+- Status banner: green pre-inject, amber/red post-inject with animation
+- Sensor bars: green → amber → red as value approaches alarm threshold
 
-**One-file change:** index.html only (HTML for the widget) + styles.css for `.conf-widget` CSS.  
-Batch both into a single pair of `replace_in_file` calls (one per file).
+### Implementation approach
 
-### 3b. Live verification after deploy
+Two `replace_in_file` calls:
+1. `gke/fault-trigger-ui/index.html` — H1 layout restructure + SLB SVG + Confidence Widget HTML
+2. `gke/fault-trigger-ui/static/styles.css` — HP-HMI color rules + status banner + sensor bar styles
 
-After deploy, inject gas_lock degrade for 90s and verify `h1ClassProbs.gas_lock` climbs in the UI.  
-Check queue depth BEFORE injecting (should be <5000).
+Then: `docker build → docker push → kubectl set image → rollout status`
 
 ---
 
-## STEP 4: Session C follow-on — H2 Discern Tab
+## STEP 4: After H1 V2 Visual — H2 Discern Tab
 
-After Confidence Widget verified:
-- Build H2 tab per DEMO_MASTER.md §5
-- Two-line chart (vib rising, temp flat)
-- H2 evidence wall (6 chips)
-- GDC Advisor verdict: "$1,500 vs $150,000"
+Per DEMO_MASTER.md §5:
+- Two-line Plotly chart: Vibration (rising, orange) + Motor Temp (flat, blue)
+- H2 evidence wall: 6 chips (vib sensor, temp sensor, shift note, separator test, choke log, OEM guide)
+- GDC Advisor verdict: "$1,500 truck roll vs $150,000 unnecessary pump pull"
+- Well schematic H2 variant: pump body green (healthy), surface flowline shows slug animation
 
 ---
 
 ## Known Integrity State — Session C start
 
-| ID | Status | Notes |
-|---|---|---|
-| V-01 through V-09 | ✅ Fixed Session V | Display violations resolved |
-| gas_lock `{pnr}` static template | ✅ Fixed Session B | Now `{remaining:.0f}-min advantage window` computed from `fault_onset_utc` |
-| `GEMMA_FINDINGS["gas_lock"]` static | ✅ Fixed Session B | "Motor thermal window is minutes, not hours — act immediately" |
-| inference-api live container | ✅ Fixed Session B | sha256:d1194989 has v3 esp_classifier |
-| fault-trigger-ui slug_flow vib_range | ✅ Fixed Session B | sha256:7b97605e has correct (4.0, 6.5) range |
-
-**All known integrity violations resolved as of Session B.**
+**All known integrity violations resolved as of Session B.** ✅
 
 ---
 
 ## Operational Notes (Session B discoveries)
 
-- **RabbitMQ backlog:** The `telemetry.events` queue accumulated 286,418 messages over 8h of cluster operation. Root cause: event-processor's Ollama RAG narrative generation times out after 30s per message (Ollama is busy with keepalive/intel-generator). Each timeout blocks the consumer thread. At 2 messages/min during heavy Ollama load, the queue grows faster than it drains. **Purged Session B.** Monitor at each session start.
-- **Classifier v3 live verification:** normal→normal 92.5% ≥90% ✅ · gas_lock→gas_lock 100% @ conf=1.000 ✅ · slug_flow→slug_flow 100% @ conf=0.999 ✅. All offline gates pass on live cluster.
-- **Point injection limitation:** Direct `/api/inject-fault` point injections get swamped by the telemetry-simulator's normal readings in the same batch. Use `/api/inject/degrade` for verification — gradual degrade readings arrive on a separate thread and survive batching.
+- **RabbitMQ backlog:** `telemetry.events` accumulated 286,418 messages over 8h. Root cause: synchronous event-processor (prefetch_count=1) + 30s Ollama RAG timeout = ~2 msg/min drain vs 168 msg/min publish. Purged Session B. Check queue depth at every session start.
+- **Classifier v3 live verification:** normal→normal 92.5% · gas_lock→gas_lock 100% · slug_flow→slug_flow 100%. All offline gates confirmed live.
+- **Point injection limitation:** Use `/api/inject/degrade` for classifier verification, not `/api/inject-fault` — gradual degrade readings survive RabbitMQ batching; point injections get swamped by concurrent simulator readings.
 
 ---
 
