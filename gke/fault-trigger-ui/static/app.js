@@ -171,6 +171,12 @@ createApp({
       selectedFaultForInjection: null,
       injectDuration: 3600,
       injectionRunning: false,
+      // Injection event popup (shows drawn params vs bounds for 5s on every inject)
+      injectionPopupVisible: false,
+      injectionPopupData: null,
+      // Injection event log (reviewable history from /api/injection-log)
+      injectionLogItems: [],
+      injectionLogOpen: false,
       // Feed
       feedItems: [],
       visibleFeedCount: 0,
@@ -589,6 +595,8 @@ createApp({
       try {
         const r=await fetch('/api/inject/degrade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({asset_id:this.ddAssetId,fault_type:this.selectedFaultForInjection,duration_seconds:this.injectDuration})});
         if(r.ok){
+          const _injD = await r.json();
+          if (_injD.injection_params) this.showInjectionPopup(_injD.injection_params);
           this.ddFaultType=this.selectedFaultForInjection;
           this.injectionRunning=true;
           this._tabManuallySelected=false;
@@ -870,6 +878,60 @@ createApp({
       this._toastTimer=setTimeout(()=>{el.style.display='none';},3000);
     },
 
+    // ── Injection popup — shows drawn params vs bounds for 5s on every inject ──
+    // Creates the DOM element lazily (no index.html dependency required).
+    showInjectionPopup(params) {
+      if (!params) return;
+      let el = document.getElementById('inj-popup');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'inj-popup';
+        el.style.cssText = [
+          'position:fixed','top:68px','right:20px','z-index:9999',
+          'background:#0d1e2e','border:1px solid #ff8c00','border-radius:8px',
+          'padding:14px 18px','font-family:JetBrains Mono,monospace','font-size:11px',
+          'max-width:360px','color:#d0d8e0',
+          'box-shadow:0 4px 24px rgba(0,0,0,0.6)',
+          'line-height:1.7','transition:opacity .3s',
+        ].join(';');
+        document.body.appendChild(el);
+      }
+      const p = params;
+      const row = (label, val, lo, hi, unit='') => {
+        const v = val != null ? Number(val).toFixed(1) : '—';
+        const range = (lo != null && hi != null) ? `<span style="color:#2a5a6a"> [${lo}–${hi}]</span>` : '';
+        return `<tr><td style="color:#4a7a8a;padding-right:14px">${label}</td><td>${v}${unit}${range}</td></tr>`;
+      };
+      const modeLabel = p.injection_mode === 'gradual' ? '⬆ GRADUAL RAMP' : '⚡ POINT';
+      const faultLabel = (p.fault_type||'').replace(/_/g,' ').toUpperCase();
+      const rampRow = p.ramp_k != null ? `<tr><td style="color:#4a7a8a;padding-right:14px">ramp k</td><td>${Number(p.ramp_k).toFixed(3)}</td></tr>` : '';
+      const ampsRow = p.amps_target != null ? row('Amps target', p.amps_target, p.amps_range?.[0], p.amps_range?.[1], ' A') : '';
+      el.innerHTML = `
+        <div style="color:#ff8c00;font-weight:bold;margin-bottom:8px;letter-spacing:.04em">${modeLabel} · ${faultLabel}</div>
+        <table style="border-collapse:collapse;width:100%">
+          ${row('PSI target',  p.psi_target,  p.psi_range?.[0],  p.psi_range?.[1],  ' PSI')}
+          ${row('Temp target', p.temp_target, p.temp_range?.[0], p.temp_range?.[1], '°F')}
+          ${row('Vib target',  p.vib_target,  p.vib_range?.[0],  p.vib_range?.[1],  ' mm/s')}
+          ${ampsRow}${rampRow}
+        </table>
+        <div style="color:#1a3a4a;font-size:9px;margin-top:8px">✅ Logged to injection_events · auto-dismiss 5s · <a href="#" onclick="document.getElementById('inj-popup').style.display='none';return false;" style="color:#2a5a6a">dismiss</a></div>
+      `;
+      el.style.display = 'block'; el.style.opacity = '1';
+      clearTimeout(this._injPopupTimer);
+      this._injPopupTimer = setTimeout(() => {
+        if (el) { el.style.opacity='0'; setTimeout(()=>{el.style.display='none'; el.style.opacity='1';},300); }
+      }, 5000);
+      // Also refresh the injection log list
+      this.fetchInjectionLog();
+    },
+
+    async fetchInjectionLog() {
+      try {
+        const r = await fetch('/api/injection-log?limit=25');
+        if (r.ok) { const d = await r.json(); this.injectionLogItems = d.events || []; }
+      } catch(e) {}
+    },
+
     // ── Phase 15 — Asset Context Menu methods ──
     showAssetContextMenu(event, assetId) {
       event.stopPropagation();
@@ -1041,8 +1103,9 @@ createApp({
       this.h1OptA = 'wopt-viable'; this.h1OptALabel = 'VIABLE';
       this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE';
       try {
-        await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
+        const _h1InjR = await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', duration_seconds:900})});
+        if (_h1InjR.ok) { const _h1InjD = await _h1InjR.json(); if (_h1InjD.injection_params) this.showInjectionPopup(_h1InjD.injection_params); }
         this.showToast('⚡ Gas Lock injected on ESP-ALPHA-1','var(--orange)');
         const feed = await fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock');
         if (feed.ok) { const d=await feed.json(); this.h1FeedItems=d.items||[]; this.h1GemmaFinding=d.gemma_finding||''; }
@@ -1408,8 +1471,9 @@ createApp({
       this.h2SensorVib = '2.4 mm/s ↑';
       this.h2SensorTemp = '198°F — Nominal';
       try {
-        await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
+        const _h2InjR = await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({asset_id:'ESP-ALPHA-3', fault_type:'slug_flow', duration_seconds:3600})});
+        if (_h2InjR.ok) { const _h2InjD = await _h2InjR.json(); if (_h2InjD.injection_params) this.showInjectionPopup(_h2InjD.injection_params); }
         this.showToast('⚡ Slug Flow injected on ESP-ALPHA-3','var(--yellow)');
         const feed=await fetch('/api/intelligence-feed/ESP-ALPHA-3?fault_type=slug_flow');
         if(feed.ok) { const d=await feed.json(); this.h2FeedItems=d.items||[]; this.h2GemmaFinding=d.gemma_finding||'🤖 Gemma: Vibration drift 1.1→2.4 mm/s with flat motor temperature (198°F). Flowline slugging signature — not downhole motor failure. Dispatch surface technician to adjust choke valve. Do NOT pull well.'; }
@@ -1555,6 +1619,7 @@ createApp({
   mounted() {
     this.loadGrafana();
     this.fetchKpis();this.fetchHorizonAlerts();this.fetchMlopsStatus();
+    this.fetchInjectionLog();
     this._pollKpis=setInterval(()=>{this.fetchKpis();this.lastRefresh=new Date().toLocaleTimeString();},10000);
     this._pollHorizon=setInterval(()=>this.fetchHorizonAlerts(),5000);
     this._pollMlops=setInterval(()=>this.fetchMlopsStatus(),15000);

@@ -444,7 +444,38 @@ def _ensure_field_intel_table() -> None:
                 CREATE INDEX IF NOT EXISTS idx_fault_sessions_injected
                   ON fault_sessions(injected_at DESC);
                 CREATE INDEX IF NOT EXISTS idx_fault_sessions_asset
-                  ON fault_sessions(asset_id, injected_at DESC);
+                   ON fault_sessions(asset_id, injected_at DESC);
+
+                -- Session T: injection event log for non-circular model verification
+                -- Records the actual drawn parameter values (not just the profile bounds)
+                -- for every point injection and gradual degrade. Used to replay through
+                -- the classifier to produce a ground-truth confusion matrix.
+                CREATE TABLE IF NOT EXISTS injection_events (
+                  id              SERIAL PRIMARY KEY,
+                  inject_time     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                  asset_id        TEXT NOT NULL,
+                  fault_type      TEXT NOT NULL,
+                  injection_mode  TEXT NOT NULL,     -- 'point' | 'gradual'
+                  psi_range_lo    NUMERIC,
+                  psi_range_hi    NUMERIC,
+                  temp_range_lo   NUMERIC,
+                  temp_range_hi   NUMERIC,
+                  vib_range_lo    NUMERIC,
+                  vib_range_hi    NUMERIC,
+                  amps_range_lo   NUMERIC,
+                  amps_range_hi   NUMERIC,
+                  psi_target      NUMERIC,           -- actual drawn value
+                  temp_target     NUMERIC,
+                  vib_target      NUMERIC,
+                  amps_target     NUMERIC,
+                  ramp_k          NUMERIC,           -- NULL for point injections
+                  duration_s      INTEGER,           -- NULL for point injections
+                  reading_count   INTEGER            -- for point injections
+                );
+                CREATE INDEX IF NOT EXISTS idx_injection_events_time
+                   ON injection_events(inject_time DESC);
+                CREATE INDEX IF NOT EXISTS idx_injection_events_asset
+                   ON injection_events(asset_id, inject_time DESC);
             """)
         conn.commit()
         conn.close()
@@ -1746,9 +1777,52 @@ def inject_fault(req: InjectRequest):
             publish_to_rabbitmq(reading)
             injected.append(reading)
 
+    # ── Log to injection_events for non-circular model verification ──────────
+    _first = injected[0] if injected else {}
+    _profile = FAULT_PROFILES.get(req.fault_type, {}) if req.fault_type != "normal" else {}
+    _s4c = SENSOR4_CONFIG.get(asset_class)
+    _amps_lo = _profile.get(_s4c["range_key"], (None, None))[0] if (_s4c and _s4c["range_key"] in _profile) else None
+    _amps_hi = _profile.get(_s4c["range_key"], (None, None))[1] if (_s4c and _s4c["range_key"] in _profile) else None
+    _nr = NORMAL_RANGES.get(asset_class, {})
+    _ie_params = {
+        "injection_mode": "point",
+        "fault_type": req.fault_type,
+        "psi_range": _profile.get("psi_range", _nr.get("psi")),
+        "temp_range": _profile.get("temp_range", _nr.get("temp")),
+        "vib_range": _profile.get("vib_range", _nr.get("vib")),
+        "amps_range": (_amps_lo, _amps_hi) if _amps_lo is not None else _s4c["normal_range"] if _s4c else None,
+        "psi_target": _first.get("psi"),
+        "temp_target": _first.get("temp_f"),
+        "vib_target": _first.get("vibration"),
+        "amps_target": _first.get(_s4c["key"]) if _s4c else None,
+        "reading_count": count,
+    }
+    try:
+        _ie_conn = get_db()
+        _pr = _ie_params.get("psi_range") or (None, None)
+        _tr = _ie_params.get("temp_range") or (None, None)
+        _vr = _ie_params.get("vib_range") or (None, None)
+        _ar = _ie_params.get("amps_range") or (None, None)
+        with _ie_conn.cursor() as _cur:
+            _cur.execute("""
+                INSERT INTO injection_events
+                  (asset_id, fault_type, injection_mode,
+                   psi_range_lo, psi_range_hi, temp_range_lo, temp_range_hi,
+                   vib_range_lo, vib_range_hi, amps_range_lo, amps_range_hi,
+                   psi_target, temp_target, vib_target, amps_target, reading_count)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (req.asset_id, req.fault_type, "point",
+                  _pr[0], _pr[1], _tr[0], _tr[1], _vr[0], _vr[1], _ar[0], _ar[1],
+                  _ie_params["psi_target"], _ie_params["temp_target"],
+                  _ie_params["vib_target"], _ie_params["amps_target"], count))
+        _ie_conn.commit()
+        _ie_conn.close()
+    except Exception as _e:
+        log.warning(f"injection_events write failed (non-fatal): {_e}")
+
     log.info(f"Injected {count}× {req.fault_type} on {req.asset_id}")
     return {"status": "injected", "fault": req.fault_type, "asset": req.asset_id,
-            "count": count, "readings": injected}
+            "count": count, "readings": injected, "injection_params": _ie_params}
 
 
 # ── Gradual Degradation ────────────────────────────────────────────────────────
@@ -1765,11 +1839,62 @@ def _run_degrade_thread(asset_id: str, fault_type: str, duration_seconds: int) -
     _vib_target  = random.uniform(*profile["vib_range"])
     _k           = random.uniform(3.0, 4.0)  # randomize ramp exponent slightly
 
+    # 4th-sensor target (ESP: amps, Mud Pump: spm)
+    _s4c_d = SENSOR4_CONFIG.get(asset_class)
+    _s4_target = None
+    _s4_range  = None
+    if _s4c_d and _s4c_d["range_key"] in profile:
+        _s4_range = profile[_s4c_d["range_key"]]
+        _s4_target = (_s4_range[0] + _s4_range[1]) / 2.0  # midpoint of fault range
+
     active_degrades[asset_id] = {
         "running": True, "fault_type": fault_type, "step": 0, "steps": steps,
         "fault_onset_utc": datetime.utcnow().isoformat() + "Z",  # Task 7: authoritative onset for PNR/Cloud calc
         "ramp_k": _k, "ramp_target_psi": _psi_target,
     }
+
+    # ── Log to injection_events for non-circular model verification ──────────
+    _degrade_ie_params = {
+        "injection_mode": "gradual",
+        "fault_type": fault_type,
+        "psi_range": profile["psi_range"],
+        "temp_range": profile["temp_range"],
+        "vib_range": profile["vib_range"],
+        "amps_range": _s4_range,
+        "psi_target": round(_psi_target, 1),
+        "temp_target": round(_temp_target, 1),
+        "vib_target": round(_vib_target, 3),
+        "amps_target": round(_s4_target, 1) if _s4_target is not None else None,
+        "ramp_k": round(_k, 3),
+        "duration_s": duration_seconds,
+    }
+    # Store on active_degrades so inject_degrade can return it in its API response
+    active_degrades[asset_id]["injection_params"] = _degrade_ie_params
+    try:
+        _die_conn = get_db()
+        _pr = profile["psi_range"]
+        _tr = profile["temp_range"]
+        _vr = profile["vib_range"]
+        _ar = _s4_range or (None, None)
+        with _die_conn.cursor() as _cur:
+            _cur.execute("""
+                INSERT INTO injection_events
+                  (asset_id, fault_type, injection_mode,
+                   psi_range_lo, psi_range_hi, temp_range_lo, temp_range_hi,
+                   vib_range_lo, vib_range_hi, amps_range_lo, amps_range_hi,
+                   psi_target, temp_target, vib_target, amps_target,
+                   ramp_k, duration_s)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            """, (asset_id, fault_type, "gradual",
+                  _pr[0], _pr[1], _tr[0], _tr[1], _vr[0], _vr[1], _ar[0], _ar[1],
+                  _degrade_ie_params["psi_target"], _degrade_ie_params["temp_target"],
+                  _degrade_ie_params["vib_target"], _degrade_ie_params["amps_target"],
+                  _degrade_ie_params["ramp_k"], duration_seconds))
+        _die_conn.commit()
+        _die_conn.close()
+    except Exception as _e:
+        log.warning(f"injection_events degrade write failed (non-fatal): {_e}")
+
     log.info(f"▶ Gradual degrade: {fault_type} on {asset_id} ({steps} steps)")
 
     for i in range(steps):
@@ -1926,6 +2051,46 @@ def inject_degrade(req: DegradeRequest):
 @app.get("/api/degrade-status")
 def get_degrade_status():
     return {"active": active_degrades}
+
+
+@app.get("/api/injection-log")
+def get_injection_log(limit: int = 50):
+    """
+    Return the last `limit` injection events with drawn parameters and bounds.
+    Used for:
+    (a) Non-circular model verification: replay these rows through /predict
+        to get a ground-truth confusion matrix.
+    (b) Demo transparency: the UI shows drawn values vs profile bounds for each
+        injection so the audience can see the randomization is real.
+    """
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, inject_time, asset_id, fault_type, injection_mode,
+                       psi_range_lo, psi_range_hi, psi_target,
+                       temp_range_lo, temp_range_hi, temp_target,
+                       vib_range_lo, vib_range_hi, vib_target,
+                       amps_range_lo, amps_range_hi, amps_target,
+                       ramp_k, duration_s, reading_count
+                FROM injection_events
+                ORDER BY inject_time DESC
+                LIMIT %s
+            """, (min(limit, 200),))
+            rows = cur.fetchall()
+            cols = [d[0] for d in cur.description]
+        conn.close()
+        events = []
+        for row in rows:
+            d = dict(zip(cols, row))
+            # Convert timestamps to ISO strings
+            if d.get("inject_time"):
+                d["inject_time"] = d["inject_time"].isoformat()
+            events.append(d)
+        return {"events": events, "count": len(events)}
+    except Exception as e:
+        log.error(f"injection-log query error: {e}")
+        return {"events": [], "count": 0, "error": str(e)}
 
 
 @app.post("/api/cancel-degrade/{asset_id}")
