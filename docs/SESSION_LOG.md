@@ -2,6 +2,25 @@
 
 ---
 
+## Session W (June 5, 2026) — *ESP classifier v3 — all training-fidelity bugs fixed, all offline gates pass*
+
+**Code committed:** `c4ca13e` (feat(models): Session W — ESP classifier v3 all gates pass)  
+**Cluster state:** fault-trigger-ui sha256:b57066d4 (1/1), inference-api sha256:62e007c5 (1/1, STALE — v3 model not yet deployed), telemetry-simulator 1/1
+
+**Root cause investigation:** Full end-to-end audit of the training-serving path revealed four independently hand-authored fault definitions (simulator.py dead code, app.py FAULT_PROFILES, fault_signatures.py, MODEL_FOUNDATIONS) that disagreed. All four ESP fault endpoint ranges in fault_signatures.py (sand_ingress, motor_overheat, slug_flow) were reconciled to match app.py FAULT_PROFILES as the authoritative source. The physics of the fault scenarios was validated as correct — the failures were training-fidelity bugs, not physics bugs.
+
+**Three fidelity bugs fixed in train_classifiers.py:** (1) Slope-window mismatch: training used 12-reading window with formula `scale=12/n`; live processor.py uses 60-reading deque with `dt_minutes=(n-1)/12.0`. Fixed to match exactly. (2) Normal-class slope skew: the root cause of live 97%-confidence false alarms. Training drew slopes from flat bands (±2 PSI/min); live noise-driven slopes are σ≈18.7 PSI/min at the 60-window. Fixed by simulating 60-reading steady-state trajectories with absolute simulator noise (psi σ=65, temp σ=8, amps σ=6). Normal precision went from 0% to 1.000 on hold-phase test. (3) Fault noise mismatch: training used flat 1.5% noise; degrade thread uses per-sensor fractions (psi 2%, temp 1%, vib 5%, amps 1%) and amps_end=midpoint of range. Fixed to match.
+
+**Two additional fixes:** (1) Hold-phase training samples (N=20/trajectory): offline verifier revealed that without hold-phase training, the model returned to "normal" once slopes collapsed at the fault endpoint. Fixed by generating 60-reading steady-state samples at the fault endpoint per trajectory. Gas_lock recall went from 0% to 100% at hold phase. (2) Gas_lock departure filter: applied sensor-departure threshold (psi<1335 OR amps<69, i.e. >1σ from normal) to exclude ambiguous early-ramp training rows. Gas_lock precision went from 0.826 to 0.971. Detection threshold is at 4.6% PSI decline below nominal vs SCADA alarm at 43% — the early-detection advantage over SCADA is fully preserved.
+
+**New tool:** `scripts/verify_classifier_offline.py` — full serving-path replica (degrade ramp → 60-window deque → inference-api feature construction → model → confusion matrix). All offline gates pass independently (seed=99 vs training seed=42): normal 1.000, gas_lock 0.971, sand_ingress 0.974, motor_overheat 0.890, slug_flow 0.946, slug→sand FP 0.000.
+
+**Key decisions:** Option B chosen for gas_lock boundary fix (sensor-departure filter) vs Option A (accept 0.90 precision) or Option C (lower the gate). Rationale: Option A had ~22% chance of spurious alarm during a 5-min normal demo window; Option C weakens the precision claim; Option B is physically honest and preserves the early-detection story. The "25 minutes" static value in app.py GEMMA_FINDING_TEMPLATES/GEMMA_FINDINGS was identified as an integrity violation (shows static PNR regardless of elapsed time) but deferred to Session B (app.py batch). DEMO_MASTER.md design was not changed.
+
+**Session B required:** (a) Fix app.py `{pnr}` template → dynamic elapsed-time remaining (lines 4506, 4527, 4597); (b) rebuild fault-trigger-ui (slug_flow vib_range container still stale at 2.2–3.2, source correct at 4.0–6.5); (c) rebuild inference-api with v3 model; (d) live non-circular verification; (e) Confidence Widget for H1 tab.
+
+---
+
 ## Session V (June 5, 2026) — *Integrity audit fixes — all 9 violations resolved and deployed*
 
 **Code committed:** `bd28fdf` (fix(integrity): Session V — all 9 violations resolved V-01 through V-09)  
