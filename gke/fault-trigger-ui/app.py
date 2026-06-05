@@ -56,11 +56,6 @@ OLLAMA_URL   = os.environ.get("OLLAMA_URL",   "http://ollama.gdc-pm.svc.cluster.
 # gemma:2b was too small; gemma3:27b is too slow. 12b hits the sweet spot.
 # Override via OLLAMA_MODEL env var if a different model is pulled.
 OLLAMA_MODEL = os.environ.get("OLLAMA_MODEL", "gemma4:latest")
-# Phase 16: Separate display label from actual model call.
-# Allows showing "gemma:27b" in the UI even while gemma:2b is actually loaded
-# (until the L4 GPU node pool is provisioned and gemma:27b is pulled).
-# Override: kubectl set env deployment/fault-trigger-ui -n gdc-pm OLLAMA_DISPLAY_MODEL="gemma:27b"
-OLLAMA_DISPLAY_MODEL = os.environ.get("OLLAMA_DISPLAY_MODEL", OLLAMA_MODEL)
 
 # ── Health Score Model Registry (Phase 5.1) ───────────────────────────────────
 # Single edge-calibrated XGBoost Health Score model per asset class.
@@ -4867,7 +4862,7 @@ def get_mlops_status():
         "models_loaded": list(HEALTH_MODELS.keys()),
         "model_drift_detected": False,
         "last_cloud_sync": _get_last_event_time(),
-        "ollama_model": OLLAMA_DISPLAY_MODEL if ollama_online else "offline",
+        "ollama_model": OLLAMA_MODEL if ollama_online else "offline",
         "ollama_online": ollama_online,
         "inference_latency_ms": random.randint(28, 95) if ollama_online else None,
         "ts": datetime.utcnow().isoformat() + "Z",

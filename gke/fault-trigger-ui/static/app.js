@@ -122,6 +122,9 @@ createApp({
       h1ChatMessages: [],
       h1InjectedAt: null,
       h1ElapsedMin: 0,
+      h1TopClass: null,
+      h1TopClassProb: null,
+      h1GvfPct: null,
       h1ElapsedTimer: null,
       h1OptA: 'wopt-viable',
       h1OptALabel: 'VIABLE',
@@ -1071,7 +1074,12 @@ createApp({
               if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
             }}
             const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
-            if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;this._renderH1Charts(d);}}
+            if(rfd.ok){const d=await rfd.json();if(d.sensors){
+              this.h1ForecastData=d;this._renderH1Charts(d);
+              if(d.class_probs){const top=Object.entries(d.class_probs).sort((a,b)=>b[1]-a[1])[0];if(top){this.h1TopClass=top[0];this.h1TopClassProb=top[1];}}
+              const gvfItem=this.h1FeedItems.find(i=>(i.content||'').includes('estimated at'));
+              if(gvfItem){const m=(gvfItem.content||'').match(/estimated at (\d+)%/);if(m)this.h1GvfPct=m[1]+'%';}
+            }}
           }, 5000);
         }
       }
@@ -1163,6 +1171,7 @@ createApp({
       this.h1AdvisorUpdateTimers.forEach(t=>clearTimeout(t)); this.h1AdvisorUpdateTimers=[];
       this.h1ChatMessages=[]; this.h1ChatInput='';
       this.h1InjectedAt=null; this.h1ElapsedMin=0;
+      this.h1TopClass=null; this.h1TopClassProb=null; this.h1GvfPct=null;
       this.h1OptA='wopt-viable'; this.h1OptALabel='VIABLE';
       this.h1OptB='wopt-viable'; this.h1OptBLabel='VIABLE';
       this.h1RecoveryMsg='';
@@ -1410,7 +1419,7 @@ createApp({
     },
     _startAdvisorStream() {
       const base = this.h1GemmaFinding ||
-        `Gas lock diagnosis confirmed at 94% confidence on ESP-ALPHA-1. ` +
+        `Gas lock pattern detected · confidence building on ESP-ALPHA-1. ` +
         `Pump Intake Pressure declining at \u221214 PSI/min\u00b9, motor amps declining at \u22122.3 A/min\u00b9 \u2014 ` +
         `the correlated 4-sensor pattern is the diagnostic signature of gas void fraction exceeding the pump handling threshold\u2075. ` +
         `Separator gas test confirms GOR 1,310 scf/bbl \u2014 up 19% from prior tour\u00b3. ` +

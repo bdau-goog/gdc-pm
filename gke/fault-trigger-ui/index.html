@@ -374,7 +374,7 @@
               <div class="pp-section-title">⚡ How GDC Improves Detection</div>
               <ul class="pp-list">
                 <li>Continuously calculates <em>dPSI/dt</em> and <em>dAmps/dt</em> slopes at 5s cadence across all wells simultaneously</li>
-                <li>XGBoost detects the correlated 4-sensor signature (falling PIP, falling amps, stable temp, stable vibration) at 94% confidence — before any single sensor crosses an alarm threshold</li>
+                <li>XGBoost detects the correlated 4-sensor signature (falling PIP, falling amps, stable temp, stable vibration) at ≥92% once the fault pattern is confirmed — before any single sensor crosses an alarm threshold</li>
                 <li><span class="pp-em">Lead time: 25 minutes</span> before SCADA would alarm</li>
               </ul>
             </div>
@@ -426,7 +426,7 @@
               <span class="dr-ctx-chip" :class="{active: h1EvidenceActive >= 5}">📖 API RP 11S</span>
             </div>
             <div class="dr-verdict" :class="h1Recovering ? 'dr-ok' : h1Injected ? 'dr-alert' : 'dr-monitor'">
-              {{ h1Recovering ? 'Recovering - VFD at 44 Hz' : h1Resolved ? 'Resolved - $150,000 preserved' : h1Injected ? 'GAS LOCK - 94% confidence' : 'Monitoring' }}
+              {{ h1Recovering ? 'Recovering - VFD at 44 Hz' : h1Resolved ? 'Resolved - $150,000 preserved' : h1Injected ? (h1TopClass ? (h1TopClass.replace(/_/g,' ').toUpperCase() + ' · ' + (h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'% confidence' : 'confidence building')) : 'GAS LOCK · confidence building') : 'Monitoring' }}
             </div>
           </div>
         </div>
@@ -437,10 +437,10 @@
             <!-- Status header -->
             <div class="wstrip-hdr">
               <span class="wstrip-title">WELL A-1</span>
-              <span class="wstrip-dot" :class="h1Recovering ? 'dot-green' : h1Injected ? (h1ElapsedMin > 15 ? 'dot-red' : 'dot-amber') : 'dot-green'"></span>
+              <span class="wstrip-dot" :class="h1Recovering ? 'dot-green' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'dot-red' : 'dot-amber') : 'dot-green'"></span>
             </div>
-            <div class="wstrip-status" :style="{color: h1Recovering ? 'var(--green)' : h1Injected ? (h1ElapsedMin > 15 ? 'var(--red)' : 'var(--orange)') : 'var(--muted)'}">
-              {{ h1Recovering ? 'RECOVERING' : h1Injected ? (h1ElapsedMin > 15 ? 'CRITICAL' : 'GAS LOCK') : 'NOMINAL' }}
+            <div class="wstrip-status" :style="{color: h1Recovering ? 'var(--green)' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'var(--red)' : 'var(--orange)') : 'var(--muted)'}">
+              {{ h1Recovering ? 'RECOVERING' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'CRITICAL' : 'GAS LOCK') : 'NOMINAL' }}
             </div>
             <!-- Wellbore fluid column -->
             <div class="wstrip-well">
@@ -452,8 +452,8 @@
               </div>
               <div class="wstrip-equip-row">
                 <div class="wstrip-pump">PUMP</div>
-                <div class="wstrip-motor" :class="h1Recovering ? 'motor-ok' : h1Injected ? (h1ElapsedMin > 15 ? 'motor-crit' : 'motor-warn') : 'motor-ok'">
-                  MOTOR<br>{{ h1Recovering ? 'Cooling' : h1Injected ? (h1ElapsedMin > 15 ? 'CRITICAL' : 'Warming') : 'Nominal' }}
+                <div class="wstrip-motor" :class="h1Recovering ? 'motor-ok' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'motor-crit' : 'motor-warn') : 'motor-ok'">
+                  MOTOR<br>{{ h1Recovering ? 'Cooling' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'CRITICAL' : 'Warming') : 'Nominal' }}
                 </div>
               </div>
             </div>
@@ -461,7 +461,7 @@
             <div class="wstrip-readings">
               <div class="wstrip-row">
                 <span class="wstrip-param">GVF</span>
-                <span class="wstrip-val" :style="{color: h1Injected ? '#fbbf24' : '#4ade80'}">{{ h1Injected ? '68%' : '22%' }}</span>
+                <span class="wstrip-val" :style="{color: h1Injected ? '#fbbf24' : '#4ade80'}">{{ h1GvfPct || '—' }}</span>
               </div>
               <div class="wstrip-bar-wrap"><div class="wstrip-bar" :style="{width: h1Injected ? '90%' : '22%', background: h1Injected ? '#f59e0b' : '#3b82f6'}"></div></div>
               <div class="wstrip-row">
@@ -474,7 +474,7 @@
               </div>
               <div class="wstrip-row">
                 <span class="wstrip-param">TEMP</span>
-                <span class="wstrip-val" :style="{color: h1Recovering ? '#4ade80' : h1Injected ? (h1ElapsedMin > 15 ? 'var(--red)' : '#fbbf24') : '#4ade80'}">{{ h1SensorTemp || '198°F' }}</span>
+                <span class="wstrip-val" :style="{color: h1Recovering ? '#4ade80' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'var(--red)' : '#fbbf24') : '#4ade80'}">{{ h1SensorTemp || '—' }}</span>
               </div>
             </div>
           </div><!-- /h1-well-strip -->
@@ -644,7 +644,7 @@
           <h2 class="hb-title">🟡 Horizon 2 — Mid-Term: Flowline Slug Flow & Choke Adjustment</h2>
           <p class="hb-desc">
             <strong>Asset:</strong> ESP-ALPHA-3 &nbsp;·&nbsp;
-            <strong>Physics:</strong> Flowline slug flow causes hydraulic tubing vibration (1.1→2.4 mm/s). Motor temp nominal. AI Confidence: 52%. &nbsp;·&nbsp;
+            <strong>Physics:</strong> Flowline slug flow causes hydraulic tubing vibration (1.1→2.4 mm/s). Motor temp nominal. AI Confidence: initially low, building to ≥90% as slug pattern confirms. &nbsp;·&nbsp;
             <strong>SCADA trip limit:</strong> 5.0 mm/s — not triggered &nbsp;·&nbsp;
             <strong>Correct action:</strong> Surface choke adjustment, NOT a $150k well pull
           </p>
@@ -678,7 +678,7 @@
               <div class="pp-section-title">⚡ How GDC Distinguishes Surface vs Downhole</div>
               <ul class="pp-list">
                 <li>XGBoost correlates vibration rise vs. winding temperature stability in real-time across all wells</li>
-                <li>52% confidence "slug_flow" (ambiguous, surface issue) vs high-confidence downhole fault</li>
+                <li>slug_flow confidence builds to ≥90% as surface slug pattern confirms — distinct from high-confidence downhole fault (motor temp stays flat)</li>
                 <li>Gemma retrieves OEM troubleshooting guide: <em>"Vibration drift without motor temperature elevation indicates surface flowline slugging"</em></li>
                 <li>Synthesized assessment: <span class="pp-em">Do NOT pull. Dispatch surface technician to adjust choke valve.</span></li>
               </ul>
@@ -728,7 +728,7 @@
             <div class="h3-card-title">⚡ GDC AI Analysis</div>
             <div class="h3-card-row"><span>Vibration Drift:</span><span class="h3-card-val" style="color:var(--yellow)">1.1 → 2.4 mm/s</span></div>
             <div class="h3-card-row"><span>Motor Temp Correlation:</span><span class="h3-card-val" style="color:var(--green)">✓ Flat — No Motor Damage</span></div>
-            <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--yellow)">52% (Ambiguous)</span></div>
+            <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--muted)">— <span style="font-size:0.6rem;font-weight:600;color:var(--muted);text-transform:uppercase">PREVIEW — not yet live</span></span></div>
             <div class="h3-card-outcome">
               <span style="font-size:0.62rem;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:0.07em">⚠ Inconclusive</span>
               <span class="h3-card-cash" style="color:var(--yellow)">SURFACE ISSUE</span>
@@ -1086,6 +1086,9 @@
 
         <!-- ══ TAB: ARCHITECTURE ══ -->
     <div id="tab-architecture" class="main-tab-content" :class="{active: mainTab==='architecture'}">
+      <div style="background:#1c1400;border:1px solid #78350f;color:#fbbf24;padding:6px 16px;font-size:0.72rem;font-weight:600;letter-spacing:0.04em;border-radius:0">
+        ⚠ Walkthrough Example — not live data · Values shown illustrate a single pipeline execution
+      </div>
       <div class="arch-outer">
 
         <!-- Sub-tab navigation bar -->
@@ -1797,7 +1800,7 @@
                     <div style="font-size:0.68rem;color:var(--text2);margin-top:2px">Inspect intake valve + gas separator</div>
                   </div>
                   <div style="text-align:right">
-                    <div style="font-size:0.7rem;font-weight:700;font-family:var(--mono);color:var(--yellow)">$1,200</div>
+                    <div style="font-size:0.7rem;font-weight:700;font-family:var(--mono);color:var(--yellow)">~$2,000</div>
                     <div style="font-size:0.57rem;color:var(--muted)">4 hours</div>
                   </div>
                 </div>
