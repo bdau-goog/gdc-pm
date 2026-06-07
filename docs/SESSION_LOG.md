@@ -2,6 +2,21 @@
 
 ---
 
+## Session E (June 7, 2026) — *Phase 2 H1 integrity fixes — deployed and verified*
+
+**Code committed:** `a493549` (fix(ui): Phase 2 H1 integrity fixes — Claim Ledger conformance)  
+**Cluster image digest:** `sha256:ec5b0306` (fault-trigger-ui) · pod `fault-trigger-ui-cd6495468-bmpbz` 1/1 Running
+
+**What was built and deployed:** Four H1 integrity violations from the CLAIM_LEDGER.md (Session D) fixed in two batched `replace_in_file` calls (index.html 5 blocks, app.js 3 blocks), then built, pushed, and force-deployed with explicit digest pinning. (1) **$0→$2,500 fix (Claim Ledger C1):** Corrected in 3 locations — physics panel comparison table, RESOLVED banner, Window of Options VFD card. The "$0 direct cost" was a known integrity violation: `RESOLUTION_OPTIONS["gas_lock"]["early"]["cost_incurred"] = 2500`. (2) **Vibration sensor bar added (Claim Ledger S1):** 4th H1 sensor bar (VIB) now rendered — scales to 10 mm/s, alarm tick at 80% (8.0 mm/s SCADA threshold), cavitation status "↑ Elevated — cavitation · no alarm" during gas lock injection. `h1RawVib` + `h1SensorVib` data properties added to app.js; extracted from forecast-data trace in `_renderH1PhasePlane`; included in reset. (3) **Thermal countdown clamped (I3):** Banner now gates on `h1ForecastData.slopes.dtemp_dt > 0.2` before showing countdown; shows "— monitoring temp rise" at injection onset when temperature hasn't moved yet (eliminates the "993 min" absurdity). (4) **Sensor source unified:** `_renderH1PhasePlane` now updates `h1SensorAmps/Psi/Temp/Vib` from the DB trace directly (not from the stale `activeDegradesMap.current_sensors` first-write path). With P0 queue fix (AI_NARRATIVE_ENABLED=false, queue=0), DB trace is always current.
+
+**Verification note:** `rollout restart` re-used cached `:latest` tag and pulled the OLD image (`sha256:afa26b3a`). Fixed by `kubectl set image` with explicit new digest (`sha256:ec5b0306`). Confirmed running. API `/api/degrade-status/ESP-ALPHA-1` → `is_active: False, health: 1.0`. All 4 changes verified with grep against deployed files.
+
+**Key decisions:** (a) The "SCADA alarm fires within seconds" root cause was the RabbitMQ backlog (stale DB rows), fixed in Session D by P0 (AI_NARRATIVE_ENABLED=false). The sensor source desync was a secondary contributor but also addressed by unifying to the DB trace source. (b) VIB bar uses `crit_vib=8.0` (from ASSET_REGISTRY) not 4.0 — gas lock vib stays at 2-3.5 mm/s, well below the alarm, which correctly shows "SCADA doesn't alarm" while showing the sensor is elevated. (c) Thermal countdown gates on `dtemp_dt > 0.2` per the Claim Ledger rationale: GDC's story is "classifier fires first, temp moves LATER." A blank "— monitoring temp rise" at T+00:10 is MORE on-message than a garbage large number.
+
+**Next task (Session F):** User red-lines `docs/CLAIM_LEDGER.md` (esp. C2 = SCADA reactive path $8-15k, 🔴 NEEDS-EXPERT). After ledger is signed off with all SURVIVES rows, Phase 3 = H1 Decision Clock UI redesign around the honest cost-ladder story.
+
+---
+
 ## Session D (June 7, 2026) — *Governance + Claim Ledger + RabbitMQ fix*
 
 **Code committed:** `11d5430` (docs: archive superseded docs, add conformance report, rewrite README), `77be959` (fix: AI_NARRATIVE_ENABLED=false — kills per-message Gemma call, unclogs queue)

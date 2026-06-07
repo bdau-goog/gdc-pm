@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** Session D end — June 7, 2026  
-**git head:** `77be959` (pre-session D docs commit pending)  
-**fault-trigger-ui image:** `sha256:afa26b3a` (1/1 Running — unchanged this session)  
-**inference-api image:** `sha256:d1194989` (1/1 Running — unchanged this session)  
+**Date:** Session E end — June 7, 2026  
+**git head:** `a493549` (Phase 2 H1 integrity fixes)  
+**fault-trigger-ui image:** `sha256:ec5b0306` (1/1 Running — deployed Session E)  
+**inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -21,12 +21,12 @@ Also check RabbitMQ every session start:
 kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl list_queues --vhost gdc-pm name messages consumers
 ```
 
-**Expected healthy (Session E start):**
+**Expected healthy (Session F start):**
 - All 8 pods: 1/1 Running
 - ollama_online: True · model: gemma4:latest
 - field_intel: 0–5 rows (only grows during active fault — correct)
 - rag_documents: 18 rows
-- RabbitMQ: **< 500 messages** ← P0 fix was deployed; if > 5,000 again, check event-processor logs
+- RabbitMQ: **< 500 messages** ← P0 fix deployed Session D; if > 5,000, check event-processor logs
 
 **If RabbitMQ > 5,000:** Check that `AI_NARRATIVE_ENABLED=false` is live:
 ```bash
@@ -55,50 +55,49 @@ cat ~/gdc-pm/docs/BACKEND_CONFORMANCE_REPORT.md
 
 ### ✅ PHASE 1 — Truth (DONE, Session D)
 - `docs/CLAIM_LEDGER.md` drafted — 14 claims in 4 sections, each tagged 🟢/🟡/🔴
-- Integrity discrepancies reconciled: **$0 → $2,500** (cheapest option), **25-min PNR ≠ 45-min failure window** (not contradicting)
-- One-sentence H1 claim written (Section 5 of ledger)
-- **Action required from USER before Phase 2:** Red-line `docs/CLAIM_LEDGER.md` as domain owner. Mark 🔴 rows VERIFY/SOFTEN/CUT. Send flagged rows to O&G SME. Only SURVIVES rows become pixels.
+- Integrity discrepancies reconciled: **$0 → $2,500** (cheapest option), **25-min PNR ≠ 45-min failure window**
 
-### 🔜 PHASE 2 — Backend Truth (next session, after ledger is signed off)
-Target: make the code emit EXACTLY the ledger's numbers, cleanly.
-1. **Fix $0→$2,500 integrity bug:** UI says "$0 direct cost" but `RESOLUTION_OPTIONS["gas_lock"]["early"]` = $2,500. Fix in index.html Window of Options cards.
-2. **Fix sensor bar data source desync (I1, the thesis-killer):** `h1RawAmps/Psi/Temp/Vib` read from stale DB trace → read from `/api/degrade-status/ESP-ALPHA-1.current_sensors` (in-memory, immediate). ONE batched replace_in_file on app.js.
-3. **Add Vibration sensor bar (I2):** banner claims "4 sensors" but only shows 3. One sensor bar block in index.html.
-4. **Clamp thermal countdown (I3):** gate on `dtemp_dt > 0.2` before showing "N min to 280°F."
-5. **Reconcile FAULT_PHYSICS["gas_lock"]:** total_hours=0.75 (45min) is total failure window; PNR_MINUTES=25 is when cheap options close. These are NOT contradicting — the UI must show 25-min PNR and not conflate with 45-min total failure.
-6. **Resume backend narrative walkthrough** (paused Session D): trace H1 inject→advisor chain against DEMO_MASTER §13, verify each step produces the ledger's claimed outputs. Mark any new gaps in BACKEND_CONFORMANCE_REPORT.md.
+### ✅ PHASE 2 — Backend Truth (DONE, Session E)
+All 4 targeted H1 integrity fixes deployed and verified at `sha256:ec5b0306`:
+1. **$0→$2,500 fixed** (3 locations in index.html: physics panel, RESOLVED banner, Window of Options card)
+2. **Vibration sensor bar added** (4th sensor, `h1RawVib`/`h1SensorVib` wired through app.js)
+3. **Thermal countdown clamped** (gates on `slopes.dtemp_dt > 0.2`; shows "— monitoring temp rise" at onset)
+4. **Sensor source unified** (`_renderH1PhasePlane` now sets all 4 sensor display values from same DB trace source)
 
-### 🔜 PHASE 3 — UI Truth, H1 only (after Phase 2 verified)
-Build the H1 Decision Clock + honest cost-ladder visual, against ONLY the SURVIVES claims from the ledger.
-- Hero: "GDC fires at minute 2 while all 4 SCADA thresholds are green — production continuity vs reactive shut-in"
-- Clock: GDC acts → SCADA would trip → PNR → failure window (honest escalation, not binary)
-- Cost ladder: $2,500 now / $8-15k reactive / $150k worst case (🔴 row C2 must be resolved first)
-- Do NOT start this phase until Phase 2 is verified deployed.
+**⚠️ Action still required from USER before Phase 3:** Red-line `docs/CLAIM_LEDGER.md` as domain owner. Mark 🔴 rows VERIFY/SOFTEN/CUT (esp. C2 = SCADA reactive path costs). Send to O&G SME. Only SURVIVES rows drive the Phase 3 UI redesign.
+
+### 🔜 PHASE 3 — H1 UI Redesign (after Claim Ledger signed off by user)
+Build the Decision Clock + honest cost-ladder visual around ONLY the SURVIVES claims.
+- Hero: "GDC fires at minute 2 while all 4 SCADA bars stay green — production continuity vs reactive shut-in"
+- Clock: GDC acts ($2,500) → SCADA would shut-in (~$8-15k, 🔴 needs SME) → PNR → failure window
+- 4 sensor bars now showing correctly in current deployment — foundation is set
+- Do NOT redesign until Claim Ledger C2 is resolved (SME or softened to a range)
 
 ### 🔜 PHASE 4 — Verify H1
-Live inject on cluster, confirm every on-screen number == its ledger row. SCADA comparison is honest. H1 is demo-ready.
+Live inject on cluster, confirm every on-screen number == its Claim Ledger row. SCADA comparison is honest. H1 is demo-ready.
 
 ### 🔜 PHASE 5 — Replicate to H2, then H3
 Same gated pipeline. H2/H3 Claim Ledger sections not yet drafted — do after H1 is stable.
 
 ---
 
-## Known Integrity State — Session D end
+## Known Integrity State — Session E end
 
 | Item | File | Status |
 |---|---|---|
-| "$0 direct cost" in UI (should be $2,500) | index.html | ❌ Phase 2 — known, queued |
-| h1RawAmps reads stale DB (SCADA alarm fires false) | app.js:1237 | ❌ Phase 2 — known, queued |
-| Missing Vibration sensor bar | index.html:516 | ❌ Phase 2 — known, queued |
-| Thermal countdown garbage early | index.html:410 | ❌ Phase 2 — known, queued |
-| FAULT_PHYSICS total_hours=45min conflated with PNR=25min | app.py | ⚠ Phase 2 — not contradicting, but must be clarified |
+| "$0 direct cost" → "$2,500" | index.html | ✅ Fixed Session E (a493549) |
+| Missing Vibration sensor bar | index.html | ✅ Fixed Session E (a493549) |
+| Thermal countdown "993 min" at onset | index.html | ✅ Fixed Session E (a493549) |
+| Sensor source unified (DB trace) | app.js | ✅ Fixed Session E (a493549) |
+| FAULT_PHYSICS 45min vs PNR 25min | app.py (comment only) | ⚠ Not contradicting; comment update deferred |
 | H3 Vizier hardcoded polynomial | app.py:~5293 | ❌ Phase 3+ — not blocking H1/H2 |
 | esp_classifier trained on invented ranges | inference-api/models | ⚠ Phase 5 retrain |
+| CLAIM_LEDGER C2 (SCADA reactive $8-15k) | docs/CLAIM_LEDGER.md | 🔴 NEEDS-EXPERT — do NOT show as hard fact |
 
 **Integrity notes from CLAIM_LEDGER.md:**
-- C2 (SCADA reactive path $8k–15k) is 🔴 NEEDS-EXPERT — do NOT show as a hard number until SME verifies
+- C2 ($8k–15k SCADA reactive cost) is 🔴 — must be verified/softened BEFORE Phase 3 UI redesign
 - C3 ($150k workover) SURVIVES with qualification — "representative, varies by well"
-- All of Section 1 (physics) and Section 2 (SCADA limits) are 🟢 TEXTBOOK — safe to show
+- Sections 1 (physics) and 2 (SCADA limits) are 🟢 TEXTBOOK — safe to show
 
 ---
 
