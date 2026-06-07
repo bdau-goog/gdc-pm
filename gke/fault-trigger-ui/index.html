@@ -388,7 +388,7 @@
                   <tr><td>Detection</td><td>Single-threshold alarm when PIP &lt; 180 PSI</td><td>Multivariate XGBoost slope correlation</td></tr>
                   <tr><td>Timing</td><td>~5 min before lockup</td><td class="pp-em">25 min advance notice</td></tr>
                   <tr><td>Action</td><td>Emergency shut-in + pump pull evaluation</td><td>VFD reduction 52Hz → 44Hz via SCADA</td></tr>
-                  <tr><td>Capital</td><td class="pp-danger">$150,000 pump replacement</td><td>$0 — remote SCADA command</td></tr>
+                  <tr><td>Capital</td><td class="pp-danger">~$150,000 pump replacement</td><td>~$2,500 — remote VFD command</td></tr>
                   <tr><td>Downtime</td><td class="pp-danger">5–7 days (pull + replace)</td><td class="pp-em">Zero downtime</td></tr>
                   <tr><td>Net avoided</td><td>—</td><td class="pp-em">$150,000</td></tr>
                 </tbody>
@@ -407,10 +407,10 @@
           <span class="h1-sb-msg" v-if="h1Injected && !h1Recovering && !h1Resolved">
             GAS LOCK ACTIVE &nbsp;·&nbsp;
             T+{{ String(Math.floor(h1ElapsedMin)).padStart(2,'0') }}:{{ String(Math.round((h1ElapsedMin%1)*60)).padStart(2,'0') }}
-            &nbsp;·&nbsp; {{ h1ForecastData && h1ForecastData.thermal_lead_time_minutes != null ? Math.round(Math.max(0, h1ForecastData.thermal_lead_time_minutes)) : (h1WindowTotal ? Math.round(Math.max(0, h1WindowTotal - h1ElapsedMin)) : '—') }} min to 280°F limit
+            &nbsp;·&nbsp; {{ h1ForecastData && h1ForecastData.slopes && h1ForecastData.slopes.dtemp_dt > 0.2 && h1ForecastData.thermal_lead_time_minutes != null && h1ForecastData.thermal_lead_time_minutes > 0 ? Math.round(h1ForecastData.thermal_lead_time_minutes) + ' min to 280°F limit' : '— monitoring temp rise' }}
           </span>
           <span class="h1-sb-msg" v-if="h1Recovering">RECOVERING &nbsp;·&nbsp; VFD 44 Hz · PIP rising</span>
-          <span class="h1-sb-msg" v-if="h1Resolved && !h1Recovering">RESOLVED &nbsp;·&nbsp; $150,000 preserved &nbsp;·&nbsp; Direct cost: $0</span>
+          <span class="h1-sb-msg" v-if="h1Resolved && !h1Recovering">RESOLVED &nbsp;·&nbsp; ~$150,000 workover cost avoided &nbsp;·&nbsp; Direct cost: ~$2,500</span>
           <span class="h1-sb-right" v-if="h1Injected && h1TopClass && !h1Recovering && !h1Resolved">
             {{ h1TopClass.replace(/_/g,' ').toUpperCase() }} &nbsp;·&nbsp; {{ h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'%' : '—' }} confidence
           </span>
@@ -513,6 +513,26 @@
                   </span>
                 </div>
               </div>
+              <!-- VIB — 4th gas-lock sensor: cavitation onset, rises during gas lock but stays below SCADA alarm -->
+              <div class="h1-sbar">
+                <div class="h1-sbar-top">
+                  <span class="h1-sbar-label">VIB</span>
+                  <div class="h1-sbar-track">
+                    <div class="h1-sbar-fill"
+                         :style="{width: h1RawVib ? Math.min(100,h1RawVib/10*100)+'%' : '14%',
+                                  background: h1RawVib && h1RawVib > 8.0 ? 'var(--red)' : h1RawVib && h1RawVib > 3.5 ? 'var(--orange)' : 'var(--green)'}"></div>
+                    <div class="h1-sbar-alarm-tick" style="left:80%" title="SCADA alarm: 8.0 mm/s"></div>
+                  </div>
+                  <span class="h1-sbar-val">{{ h1SensorVib || '—' }}</span>
+                </div>
+                <div class="h1-sbar-meta">
+                  <span class="h1-sbar-dir">↑ Higher = worse &nbsp;·&nbsp; Alarm: &gt; 8.0 mm/s</span>
+                  <span class="h1-sbar-status"
+                        :style="{color: h1RawVib && h1RawVib > 8.0 ? 'var(--red)' : h1Injected && h1RawVib && h1RawVib > 1.6 ? 'var(--orange)' : 'var(--green)'}">
+                    {{ h1RawVib && h1RawVib > 8.0 ? '⚠ SCADA ALARM FIRED' : h1Injected && h1RawVib && h1RawVib > 1.6 ? '↑ Elevated — cavitation · no alarm' : '✓ Below SCADA threshold' }}
+                  </span>
+                </div>
+              </div>
             </div>
 
             <!-- SCADA vs GDC PLAIN-TEXT SUMMARY -->
@@ -538,7 +558,7 @@
                 <div class="wopt-card" :class="h1OptA">
                   <div class="wopt-badge" :class="h1OptA">{{ h1OptALabel }}</div>
                   <div class="wopt-action">VFD 52→44 Hz via SCADA</div>
-                  <div class="wopt-cost">$0 direct cost</div>
+                  <div class="wopt-cost">~$2,500 — VFD command</div>
                   <div class="wopt-window">Viable now → 72% of window</div>
                   <button v-if="h1Injected && !h1Resolved && !h1Recovering && h1OptA !== 'wopt-expired'" @click="approveH1VFD" class="wopt-approve-btn">✔ Execute Now</button>
                 </div>

@@ -91,6 +91,8 @@ createApp({
       h1RawPsi: null,
       h1RawAmps: null,
       h1RawTemp: null,
+      h1RawVib: null,
+      h1SensorVib: null,
       h1PhasePlaneHistory: [],
       h1DetectionTime: null,
       h1AdvisorLastFeedId: null,
@@ -1171,7 +1173,7 @@ createApp({
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
       this.h1FeedItems=[]; this.h1GemmaFinding=''; this.h1ForecastData=null; this.h1ActiveSensor='psi';
       this.h1EvidenceActive=0; this.h1AdvisorHtml=''; this.h1AdvisorStreaming=false; this.h1RulHistory=[];
-      this.h1RawPsi=null; this.h1RawAmps=null; this.h1RawTemp=null;
+      this.h1RawPsi=null; this.h1RawAmps=null; this.h1RawTemp=null; this.h1RawVib=null; this.h1SensorVib=null;
       this.h1PhasePlaneHistory=[]; this.h1DetectionTime=null;
       this.h1AdvisorLastFeedId=null; this.h1AdvisorLastContextTime=0;
       this.h1AdvisorUpdateTimers.forEach(t=>clearTimeout(t)); this.h1AdvisorUpdateTimers=[];
@@ -1237,10 +1239,13 @@ createApp({
       const rawAmps = d.sensors?.amps?.traces?.[0]?.y?.slice(-1)?.[0] ?? null;
       const rawTemp = d.sensors?.temp?.traces?.[0]?.y?.slice(-1)?.[0] ?? null;
       const rawPsi  = d.sensors?.psi?.traces?.[0]?.y?.slice(-1)?.[0]  ?? null;
-      // Store for reactive gauge bindings
-      if (rawAmps !== null) this.h1RawAmps = rawAmps;
-      if (rawTemp !== null) this.h1RawTemp = rawTemp;
-      if (rawPsi  !== null) this.h1RawPsi  = rawPsi;
+      const rawVib  = d.sensors?.vib?.traces?.[0]?.y?.slice(-1)?.[0]  ?? null;
+      // Store for reactive gauge bindings — single source of truth (DB trace from forecast-data)
+      // With AI_NARRATIVE_ENABLED=false and queue=0, these values are always current.
+      if (rawAmps !== null) { this.h1RawAmps = rawAmps; this.h1SensorAmps = rawAmps.toFixed(1) + ' A'; }
+      if (rawTemp !== null) { this.h1RawTemp = rawTemp; this.h1SensorTemp = rawTemp.toFixed(0) + '°F'; }
+      if (rawPsi  !== null) { this.h1RawPsi  = rawPsi;  this.h1SensorPsi  = rawPsi.toFixed(0)  + ' PSI'; }
+      if (rawVib  !== null) { this.h1RawVib  = rawVib;  this.h1SensorVib  = rawVib.toFixed(2)  + ' mm/s'; }
       // Detect GDC detection moment (first time health_score drops below 0.85)
       if (d.health_score && d.health_score < 0.85 && !this.h1DetectionTime) {
         this.h1DetectionTime = Date.now();
