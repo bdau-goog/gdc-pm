@@ -67,7 +67,7 @@ spec:
             # "rag" uses pgvector + sentence-transformers + Ollama Gemma 2B (Phase 2).
             # Falls back gracefully to rule_based while Ollama is initializing.
             - name: AI_NARRATIVE_ENABLED
-              value: "rag"
+              value: "false"
             - name: GCP_PROJECT
               value: "gdc-pm"
             - name: OLLAMA_MODEL
