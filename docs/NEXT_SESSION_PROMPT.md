@@ -1,7 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: Session D (June 7, 2026) / git head: `6bc8a8a` (pre-session D)  
-**fault-trigger-ui image:** `sha256:afa26b3a` (1/1 Running)  
-**inference-api image:** `sha256:d1194989` (1/1 Running)  
+**Date:** Session D end — June 7, 2026  
+**git head:** `77be959` (pre-session D docs commit pending)  
+**fault-trigger-ui image:** `sha256:afa26b3a` (1/1 Running — unchanged this session)  
+**inference-api image:** `sha256:d1194989` (1/1 Running — unchanged this session)  
 **Branch:** `feature-trio-scenarios` — do NOT merge to main
 
 ---
@@ -15,21 +16,23 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-Also check RabbitMQ queue depth every session start:
+Also check RabbitMQ every session start:
 ```bash
 kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl list_queues --vhost gdc-pm name messages consumers
 ```
 
-**Expected healthy:**
+**Expected healthy (Session E start):**
 - All 8 pods: 1/1 Running
 - ollama_online: True · model: gemma4:latest
-- field_intel: 0–5 rows (only grows during active fault injection — correct)
+- field_intel: 0–5 rows (only grows during active fault — correct)
 - rag_documents: 18 rows
-- RabbitMQ: **< 500 messages** (if still > 5,000 → P0 kill-list not yet applied — do it first)
+- RabbitMQ: **< 500 messages** ← P0 fix was deployed; if > 5,000 again, check event-processor logs
 
-**If RabbitMQ > 5,000 at session start:**
-1. Apply P0 kill first (see STEP 3)
-2. Then purge: `kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl purge_queue --vhost gdc-pm telemetry.events`
+**If RabbitMQ > 5,000:** Check that `AI_NARRATIVE_ENABLED=false` is live:
+```bash
+kubectl exec -n gdc-pm deployment/event-processor -- env | grep AI_NARRATIVE
+```
+If it shows `rag`, the k8s deployment diverged from the yaml — re-apply: `kubectl apply -f gke/event-processor/k8s/event-processor.yaml --validate=false`
 
 ---
 
@@ -42,47 +45,60 @@ cat ~/gdc-pm/docs/BACKEND_CONFORMANCE_REPORT.md
 
 ---
 
-## STEP 3: Session D Task List (in priority order)
+## STEP 3: Session E Primary Work — The 6-Phase Program
 
-### P0 — Kill System 2 / Fix RabbitMQ (blocking everything else)
-**What:** Change `AI_NARRATIVE_ENABLED` from `rag` to `false` in event-processor k8s YAML.  
-**File:** `gke/event-processor/k8s/event-processor.yaml` line ~69  
-**Why:** Synchronous per-message Gemma call is the SOLE cause of the 32k RabbitMQ backlog. Backlog causes stale DB reads → SCADA fires falsely in H1.  
-**Verify:** After `kubectl rollout restart deployment/event-processor -n gdc-pm`, wait 2 min, check queue depth — should stop growing and drain below 500.
+**Where we are:** Phases 0 and 1 are complete. Phases 2–5 are the roadmap.
 
-### P1 — H1 Integrity Fixes (three bugs, one batched edit to index.html + app.js)
+### ✅ PHASE 0 — Governance (DONE, Session D)
+- Prime Directive (O&G scrutiny rule) + confidence tags prepended to `.clinerules`
+- Claim Ledger mechanism established
 
-**P1a — Sensor bar data source desync (THESIS-KILLER)**  
-Root cause: `h1RawAmps/Psi/Temp` are read from forecast-data DB trace (laggy). Must read from `/api/degrade-status/ESP-ALPHA-1.current_sensors` (in-memory, immediate).  
-Fix: In the `launchHorizon1()` degrade-status poll (app.js ~line 1144), extract `current_sensors` and set `h1RawPsi`, `h1RawAmps`, `h1RawTemp`, `h1RawVib` from those fields. Remove the `_renderH1PhasePlane()` call that currently sets them from the DB trace.
+### ✅ PHASE 1 — Truth (DONE, Session D)
+- `docs/CLAIM_LEDGER.md` drafted — 14 claims in 4 sections, each tagged 🟢/🟡/🔴
+- Integrity discrepancies reconciled: **$0 → $2,500** (cheapest option), **25-min PNR ≠ 45-min failure window** (not contradicting)
+- One-sentence H1 claim written (Section 5 of ledger)
+- **Action required from USER before Phase 2:** Red-line `docs/CLAIM_LEDGER.md` as domain owner. Mark 🔴 rows VERIFY/SOFTEN/CUT. Send flagged rows to O&G SME. Only SURVIVES rows become pixels.
 
-**P1b — Missing Vibration bar**  
-Add 4th sensor bar in index.html after the TEMP bar. `↑ Higher = worse · Alarm: > 4.0 mm/s`. Read from `h1RawVib`.
+### 🔜 PHASE 2 — Backend Truth (next session, after ledger is signed off)
+Target: make the code emit EXACTLY the ledger's numbers, cleanly.
+1. **Fix $0→$2,500 integrity bug:** UI says "$0 direct cost" but `RESOLUTION_OPTIONS["gas_lock"]["early"]` = $2,500. Fix in index.html Window of Options cards.
+2. **Fix sensor bar data source desync (I1, the thesis-killer):** `h1RawAmps/Psi/Temp/Vib` read from stale DB trace → read from `/api/degrade-status/ESP-ALPHA-1.current_sensors` (in-memory, immediate). ONE batched replace_in_file on app.js.
+3. **Add Vibration sensor bar (I2):** banner claims "4 sensors" but only shows 3. One sensor bar block in index.html.
+4. **Clamp thermal countdown (I3):** gate on `dtemp_dt > 0.2` before showing "N min to 280°F."
+5. **Reconcile FAULT_PHYSICS["gas_lock"]:** total_hours=0.75 (45min) is total failure window; PNR_MINUTES=25 is when cheap options close. These are NOT contradicting — the UI must show 25-min PNR and not conflate with 45-min total failure.
+6. **Resume backend narrative walkthrough** (paused Session D): trace H1 inject→advisor chain against DEMO_MASTER §13, verify each step produces the ledger's claimed outputs. Mark any new gaps in BACKEND_CONFORMANCE_REPORT.md.
 
-**P1c — Thermal countdown shows garbage early**  
-Gate on `dtemp_dt > 0.2`: banner shows `"— monitoring temp"` until temp is actually rising. See index.html line 410.
+### 🔜 PHASE 3 — UI Truth, H1 only (after Phase 2 verified)
+Build the H1 Decision Clock + honest cost-ladder visual, against ONLY the SURVIVES claims from the ledger.
+- Hero: "GDC fires at minute 2 while all 4 SCADA thresholds are green — production continuity vs reactive shut-in"
+- Clock: GDC acts → SCADA would trip → PNR → failure window (honest escalation, not binary)
+- Cost ladder: $2,500 now / $8-15k reactive / $150k worst case (🔴 row C2 must be resolved first)
+- Do NOT start this phase until Phase 2 is verified deployed.
 
-### P2 — H1 "Race" UI Redesign (after P1 verified)
-See DEMO_MASTER.md §4 H1 V2 Redesign wireframe and §15 Requirements R1-R7.  
-Hero is: GDC fires (red) while all 4 SCADA bars stay green. Decision timeline with moving YOU ARE HERE dot.  
-This is the big H1 UI work. Do NOT start until P0+P1 are verified.
+### 🔜 PHASE 4 — Verify H1
+Live inject on cluster, confirm every on-screen number == its ledger row. SCADA comparison is honest. H1 is demo-ready.
 
-### P3 — H2 Discern Tab (after H1 is stable)
-See DEMO_MASTER.md §5 and NEXT_SESSION_PROMPT previous version for full layout wireframe.  
-All app.py plumbing is done. Single batched replace_in_file to index.html only.
+### 🔜 PHASE 5 — Replicate to H2, then H3
+Same gated pipeline. H2/H3 Claim Ledger sections not yet drafted — do after H1 is stable.
 
 ---
 
-## Known Integrity State — Session D
+## Known Integrity State — Session D end
 
 | Item | File | Status |
 |---|---|---|
-| System 2 Gemma per-message (clogs queue) | event-processor.yaml | ❌ LIVE — P0 |
-| h1RawAmps reads stale DB (SCADA fires false) | app.js:1237 | ❌ P1a |
-| Missing Vibration sensor bar | index.html:516 | ❌ P1b |
-| Thermal countdown garbage early | index.html:410 | ❌ P1c |
-| H3 Vizier hardcoded polynomial (not XGBoost) | app.py:~5293 | ❌ P2 (label fix) |
-| esp_classifier trained on invented ranges | inference-api/models | ⚠ P3 (retrain) |
+| "$0 direct cost" in UI (should be $2,500) | index.html | ❌ Phase 2 — known, queued |
+| h1RawAmps reads stale DB (SCADA alarm fires false) | app.js:1237 | ❌ Phase 2 — known, queued |
+| Missing Vibration sensor bar | index.html:516 | ❌ Phase 2 — known, queued |
+| Thermal countdown garbage early | index.html:410 | ❌ Phase 2 — known, queued |
+| FAULT_PHYSICS total_hours=45min conflated with PNR=25min | app.py | ⚠ Phase 2 — not contradicting, but must be clarified |
+| H3 Vizier hardcoded polynomial | app.py:~5293 | ❌ Phase 3+ — not blocking H1/H2 |
+| esp_classifier trained on invented ranges | inference-api/models | ⚠ Phase 5 retrain |
+
+**Integrity notes from CLAIM_LEDGER.md:**
+- C2 (SCADA reactive path $8k–15k) is 🔴 NEEDS-EXPERT — do NOT show as a hard number until SME verifies
+- C3 ($150k workover) SURVIVES with qualification — "representative, varies by well"
+- All of Section 1 (physics) and Section 2 (SCADA limits) are 🟢 TEXTBOOK — safe to show
 
 ---
 
@@ -96,3 +112,4 @@ All app.py plumbing is done. Single batched replace_in_file to index.html only.
 - inference-api registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest`
 - Do NOT use "Copilot" anywhere in H1/H2/H3
 - Failing model `.ubj` files are NEVER committed
+- All claims on screen must have a SURVIVES row in CLAIM_LEDGER.md before code is written

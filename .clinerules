@@ -1,5 +1,55 @@
 # Cline Rules for gdc-pm project
 
+## ── PRIME DIRECTIVE: SURVIVE O&G ENGINEER SCRUTINY ──────────────────────────
+#
+# This is Rule #1. It supersedes all other rules including velocity.
+# A slower, honest demo beats a fast demo that an engineer dismantles in the
+# first five minutes.
+#
+# Before writing ANY code that asserts a fact to the audience, the claim MUST
+# pass all five of the following gates:
+#
+# 1. TRUTH — Is this claim physically correct for real upstream O&G operations?
+#    Cite the standard or physical principle (API RP, SPE paper, IEEE, OEM manual).
+#
+# 2. SOURCE — Does the number trace to something verifiable: our code
+#    (FAULT_PROFILES, RESOLUTION_OPTIONS, FAULT_PHYSICS), a model output, or a
+#    citeable public reference? "Invented for the demo" = FAIL.
+#    If it cannot be sourced, reword, soften to a defensible range, or cut it.
+#
+# 3. CHALLENGE — Write the one-sentence hostile-engineer rebuttal first.
+#    If there is no honest answer to that rebuttal, the claim does not ship.
+#
+# 4. NO STRAW MAN — Do not make SCADA/competitors dumber than they are.
+#    Concede what advanced SCADA genuinely does (rate alarms, underload trips,
+#    multivariate threshold rules). Win only on what is real and defensible:
+#    context fusion of unstructured documents, pre-threshold probability scoring,
+#    production continuity vs reactive shut-in. Never imply "SCADA lets the pump
+#    die" — it trips and shuts the well in to protect the pump. Be honest.
+#
+# 5. NO SILENT LIE — Displayed value must equal actual value in the code.
+#    A UI that shows X while the system holds Y is a blocking violation.
+#    (See: Integrity — No Silent Lies rule below.)
+#
+# ENFORCEMENT MECHANISM — THE CLAIM LEDGER:
+# Each horizon (H1/H2/H3) has a Claim Ledger in docs/CLAIM_LEDGER.md.
+# Every on-screen assertion is a row: Claim | Tag | Source | Challenge | Rebuttal | Status
+# A claim is "pixel-eligible" ONLY when Status = SURVIVES.
+# The user reviews the ledger (as domain owner) before any pixel is drawn.
+# No claim goes on screen without a SURVIVES row in the ledger.
+# Update the ledger BEFORE writing the code.
+#
+# CONFIDENCE TAGS (required on every Claim Ledger row):
+# 🟢 TEXTBOOK   — grounded in a citeable standard (API RP, SPE, IEEE, OEM manual)
+# 🟡 OUR-CODE   — number comes from FAULT_PROFILES/RESOLUTION_OPTIONS/FAULT_PHYSICS;
+#                  grep-verifiable; "true to our system" (system values may still need SME review)
+# 🔴 NEEDS-EXPERT — plausible but not authoritatively sourced; my estimate;
+#                   operationally specific (field economics, lease practices).
+#                   🔴 claims MAY NOT ship as hard facts. They must be:
+#                   (a) softened to a defensible range, OR
+#                   (b) verified by an O&G SME before use, OR
+#                   (c) cut entirely.
+
 ## Engineering Decision-Making
 - State technical positions clearly and defend them. Do not immediately defer or present excessive alternatives when a clear best answer exists.
 - If the user pushes back or asks a clarifying question, it is NOT a signal to abandon the recommendation — evaluate the substance of the pushback and either update the position with reasoning or hold it.

@@ -2,6 +2,22 @@
 
 ---
 
+## Session D (June 7, 2026) — *Governance + Claim Ledger + RabbitMQ fix*
+
+**Code committed:** `11d5430` (docs: archive superseded docs, add conformance report, rewrite README), `77be959` (fix: AI_NARRATIVE_ENABLED=false — kills per-message Gemma call, unclogs queue)
+
+**What was built and deployed:** (1) **RabbitMQ P0 fix** — root-caused the 32k-message queue backlog to `AI_NARRATIVE_ENABLED=rag` in the event-processor, which was calling Ollama synchronously on every message (legacy from the old power-gen demo). Changed to `false`, restarted deployment, one-time purge of backlog. Verified: queue holds at 0 messages under live load. This fix also eliminates the stale-DB root cause of the "SCADA alarm fires in seconds" UI bug (I1 from the conformance report). (2) **Doc cleanup** — archived 13 superseded pre-pivot docs to `docs/archive/`; wrote `BACKEND_CONFORMANCE_REPORT.md` (component audit against DEMO_MASTER with integrity violations I1–I5 and legacy kill-list L1–L5); rewrote `README.md`; active doc set reduced to 7 files. (3) **Prime Directive** — prepended "Survive O&G Engineer Scrutiny" as rule #1 to `.clinerules` with 5-gate check, 🟢/🟡/🔴 confidence-tag system, and Claim Ledger enforcement mechanism. (4) **H1 Claim Ledger** — drafted `docs/CLAIM_LEDGER.md`: 14 claims across 4 sections (failure physics, SCADA limits, GDC detection, cost ladder), each sourced and challenge-tested. Key outcomes: the honest H1 story is "production continuity vs reactive shut-in" (not "GDC saves pump from death"); $0→$2,500 UI integrity bug identified; 25-min PNR and 45-min total failure window clarified as non-contradicting; C2 (SCADA reactive-path cost) flagged 🔴 NEEDS-EXPERT for SME validation before display.
+
+**Key decisions this session:** (a) Established 6-phase program: Governance → Truth → Backend Truth → UI → Verify → Replicate H2/H3. (b) Prime Directive: every on-screen claim must pass a 5-gate scrutiny test + have a SURVIVES row in the Claim Ledger before any pixel is drawn. (c) The honest SCADA-vs-GDC comparison: SCADA's underload trip *protects the pump by stopping it*; GDC's advantage is *production continuity* — clearing the gas void before the trip fires. Never imply SCADA lets the pump die. (d) Conservative Claim Ledger drafting: 🔴 claims show as ranges or are SME-verified; no false precision. (e) Token budget discipline: no large-file (app.py/index.html) edits this session.
+
+**Key rejections:** Rejected prior "binary $0 vs $150k" framing (was oversimplifying and misleading). Rejected "SCADA can't see multi-sensor correlation" (modern SCADA CAN, in principle — GDC wins on pre-threshold probability and context fusion, not sensor blindness). Rejected "start over" impulse — the right architecture (System 1 GDC Advisor) already exists and works; problem was legacy code + stale docs creating confusion.
+
+**Verification:** Queue = 0 messages, 1 consumer, confirmed stable. All 8 pods 1/1 Running. `AI_NARRATIVE_ENABLED=false` in live event-processor deployment.
+
+**Next task (Session E):** User red-lines `docs/CLAIM_LEDGER.md`; SME verifies 🔴 rows (esp. C2). After ledger is signed off: Phase 2 backend truth fixes (4 bugs in app.js/index.html in one batched call, verify deployed). Then Phase 3 H1 Decision Clock UI on a truthful foundation.
+
+---
+
 ## Session C (June 5, 2026) — *H1 V2 redesign deployed + thermal-window integrity fix + H2 narrative locked*
 
 **Code committed:** `4f2847e` (feat(ui): H1 V2 redesign), `bc71f69` (fix(integrity): per-run thermal window), `5d2363a` (docs: H2 narrative + DEMO_MASTER §5)
