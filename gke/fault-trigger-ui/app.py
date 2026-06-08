@@ -822,6 +822,13 @@ FAULT_PROFILES = {
         "psi_range": (875, 1100), "temp_range": (195, 210), "vib_range": (2.0, 3.5),
         "amps_range": (20, 45),
     },
+    "fluid_drawdown": {
+        "label": "Fluid Drawdown", "asset_class": "esp",
+        "description": "Fluid level depletion — pump efficiency degrading, intake pressure declining toward critical drawdown",
+        "color": "#ff6d00",
+        "psi_range": (875, 1100), "temp_range": (195, 210), "vib_range": (2.0, 3.5),
+        "amps_range": (20, 45),
+    },
     "sand_ingress": {
         "label": "Sand Ingress", "asset_class": "esp",
         "description": "Formation sand erodes impeller stages — all sensors drift over days",
@@ -920,6 +927,7 @@ FAULTS_BY_CLASS = {
 # Used in the Edge vs Cloud comparison chart to quantify the response window.
 PNR_MINUTES = {
     "gas_lock":                   25,   # Gas fraction >70% — pump impeller stalls
+    "fluid_drawdown":             25,   # Fluid depletion — dynamic submergence lost
     "slug_flow":                  120,  # Slow vibration drift allows 2h response window
     "sand_ingress":               120,  # Impeller erosion accumulates over hours
     "motor_overheat":             30,   # Winding insulation fails above 280°F
@@ -948,6 +956,12 @@ REMEDIATION_TIERED = {
         "urgent":   {"action": "Immediate VFD cutback to 60% + page on-call field engineer for pump inspection",   "type": "field_notification", "time_to_execute": "15–20 min", "cost_incurred": 8000},
         "critical": {"action": "Emergency VFD shutdown + initiate staged pump restart protocol via SCADA",         "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 15000},
         "post_pnr": {"action": "Pull and replace ESP string — impeller stalled, order workover rig",               "type": "workover", "time_to_execute": "3–5 days", "cost_incurred": 150000},
+    },
+    "fluid_drawdown": {   # PNR=25m
+        "early":    {"action": "Do NOT trim VFD speed — slowing the pump down drops velocity below critical lift, causing sand/debris to bridge string. Safest action: Emergency shutdown.", "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 8000},
+        "urgent":   {"action": "Do NOT trim VFD speed — dynamic dynamic fluid level is dangerously low. Prepare emergency shut-in.", "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 8000},
+        "critical": {"action": "Emergency shutdown via SCADA — prevent sand bridging and pump burnout", "type": "emergency_procedure", "time_to_execute": "<5 min", "cost_incurred": 15000},
+        "post_pnr": {"action": "ESP string seized — pull ESP string and replace motor/impeller stages; run cleanout", "type": "workover", "time_to_execute": "3–5 days", "cost_incurred": 150000},
     },
     "slug_flow": {   # PNR=120m
         "early":    {"action": "Dispatch surface technician (truck roll) to inspect surface choke valve backpressure. Do not pull well.", "type": "field_notification", "time_to_execute": "30–60 min", "cost_incurred": 1500},
@@ -1028,6 +1042,7 @@ REMEDIATION_TIERED = {
 # Represents the financial risk prevented by early Edge AI detection.
 REMEDIATION_COSTS = {
     "gas_lock":                   150000,  # Production stopped + workover
+    "fluid_drawdown":             150000,  # Avoided downhole sand-bridge seizure
     "slug_flow":                  150000,  # Avoided premature ESP well pull
     "vizier_optimal":             150000,  # Optimization savings
     "sand_ingress":                85000,  # Workover + impeller replacement
@@ -1453,6 +1468,16 @@ FAULT_PHYSICS = {
     },
     # ── Short Horizon (Minutes) — Automated/SCADA Control ────────────────────
     "gas_lock": {
+        "horizon_label": "Minutes",
+        "total_hours": 0.75,          # 45 min
+        "scada_alarm_health": 0.30,
+        "pnr_health": 0.12,
+        "scada_sensor": "psi",        # PSI drops below 800 psi critical threshold
+        "pnr_sensor": "temp",         # Winding temperature burnout at PNR
+        "primary_sensor": "psi",      # Intake Pressure is the causal leading sensor
+        "intervention_type": "operational_control",
+    },
+    "fluid_drawdown": {
         "horizon_label": "Minutes",
         "total_hours": 0.75,          # 45 min
         "scada_alarm_health": 0.30,
@@ -2030,6 +2055,23 @@ def inject_degrade(req: DegradeRequest):
                     "\u2014 all sensors remain within configured thresholds. Recommend continued monitoring.",
                     "HIGH \u2014 GVF above pump handling threshold (~60\u201365%%); combined with rising GOR, "
                     "pattern is consistent with early-stage gas lock and imminent loss of motor cooling flow.",
+                    "\U0001f4cb", "AI", "ai"
+                ))
+            elif req.fault_type == "fluid_drawdown":
+                cur.execute("""
+                    INSERT INTO field_intel
+                      (asset_id, asset_class, fault_context, doc_type, headline, detail,
+                       ai_relevance, icon, lbl, lbl_type)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """, (
+                    req.asset_id, asset_class, "fluid_drawdown", "sonic_log",
+                    "Tour 2 Dynamic Sonic Survey \u2014 Fluid Drawdown Detected",
+                    "Operator dynamic fluid survey (06:00 sonic log) measured dyn fluid level at 150 ft above ESP intake. "
+                    "Casing annulus liquid column shows steady depletion without free gas zone migration (casing pressure flat at 40 PSI). "
+                    "No SCADA alarm has fired. Slowing pump speed will drop dynamic lift velocity below critical lift, "
+                    "risking sand bridging and downhole string pump seizure. Emergency shutdown recommended.",
+                    "CRITICAL \u2014 Dynamic fluid level at 150 ft above intake is close to minimum required submergence (120 ft). "
+                    "Slowing ESP (VFD trim) risks sand settling and bridging downhole string, causing severe mechanical seizure.",
                     "\U0001f4cb", "AI", "ai"
                 ))
         conn.commit()
@@ -4010,6 +4052,46 @@ SITE_KPI_BASE = {
 }
 
 INTELLIGENCE_FEED = {
+    "fluid_drawdown": [
+        {
+            "id": "fd_1a", "type": "sonic_log", "source": "Dynamic Sonic Log",
+            "ts_label": "06:00 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "Dynamic dynamic fluid level: 150 ft above intake ↓ · Depleting",
+            "ai_relevance": "Sonic log dynamic dynamic fluid level is approaching the critical 120 ft minimum submergence. Drawdown confirmed.",
+            "detail": (
+                "Acoustic Sonic Survey — ESP-ALPHA-1\n"
+                "· Dynamic dynamic fluid level: 150 ft above pump intake (critical limit: 120 ft)\n"
+                "· Intake pressure: 1,040 PSI (nominal: 1,400 PSI; declining at -18 PSI/hr)\n"
+                "· Motor current: 58A (nominal: 75A; declining — pump unloading)\n"
+                "· Note: 'Submergence dynamically dropping. Well is reservoir-limited. No free gas observed in annulus.'\n"
+                "· SCADA: All readings within green alarm limits."
+            ),
+        },
+        {
+            "id": "fd_1b", "type": "separator_test", "source": "Separator Test",
+            "ts_label": "04:30 this morning", "icon": "🧪", "is_anomaly": True,
+            "headline": "Separator GOR stable: 1,104 scf/bbl · Casing pressure flat at 40 PSI",
+            "ai_relevance": "Flat GOR and annulus pressure rule out gas zone migration, confirming fluid drawdown as the sole cause of pressure drop",
+            "detail": (
+                "Separator Test — Pad Alpha production header\n"
+                "· GOR: 1,104 scf/bbl (fully nominal baseline)\n"
+                "· Casing annulus pressure: 40 PSI (stable and flat since yesterday)\n"
+                "· Analysis: Flat GOR + stable casing pressure excludes gas lock. Unloading is purely fluid level depletion."
+            ),
+        },
+        {
+            "id": "fd_2a", "type": "technical_standard", "source": "Field Technical Guidelines",
+            "ts_label": "last 2 hours", "icon": "📖", "is_anomaly": True,
+            "headline": "Critical lift velocity limit: 4.2 ft/s · Sand bridging risk on speed-down",
+            "ai_relevance": "Reducing VFD speed reduces dynamic fluid velocity below critical lift, causing suspended sand to bridge and seize pump",
+            "detail": (
+                "Technical Standard — West Texas ESP Operational Limits\n"
+                "· Critical lift fluid velocity: 4.2 ft/s at 52 Hz\n"
+                "· Sand bridging warning: Speed-down below 48 Hz during drawdown drops velocity to 3.1 ft/s, causing solids to settle down the tubing string.\n"
+                "· VFD Trim is strictly contraindicated."
+            ),
+        }
+    ],
     "gas_lock": [
         {
             "id": "gl_1a", "type": "well_test", "source": "Daily Well Test Report",
@@ -4501,6 +4583,10 @@ INTELLIGENCE_FEED = {
 # Replaces static GEMMA_FINDINGS strings with sensor-interpolated templates for
 # gas_lock. Other fault types fall back to the static GEMMA_FINDINGS dict.
 GEMMA_FINDING_TEMPLATES = {
+    "fluid_drawdown": [
+        "🤖 GDC Advisory: Anomaly detected on ESP-ALPHA-1. Current-pressure correlation suggests fluid unloading, but dynamic RAG evidence confirms extreme reservoir FLUID DRAWDOWN ({conf}% confidence). Dynamic level measured at 150 ft above intake (from 06:00 sonic log). Slowing VFD speed will drop critical lift velocity, causing sand bridging and pump seizure. DO NOT TRIM VFD SPEED. Emergency shutdown is recommended.",
+        "🤖 GDC Advisory: Critical Reservoir Drawdown detected ({conf}% confidence). Dynamic fluid level at 150 ft above pump intake. Proactive path: VFD Speed-Down to 44 Hz is unsafe — risks sand settling and bridging downhole string (~$150k representative pull-rig cost). Recommended action: Emergency shutdown.",
+    ],
     "gas_lock": [
         "🤖 GDC Advisory: Gas lock anomaly detected ({conf}% confidence). PIP at {psi:.0f} PSI declining at rate consistent with gas entrainment. Expected unmitigated loss: $150,000 pump replacement CAPEX (65% probability of SCADA-window response failure → $97,500 risk-weighted expected cost). Recommended: SCADA VFD Speed-Down from 52 Hz (3,120 RPM) → 44 Hz (2,640 RPM). Direct cost: $0. Preserves pump asset entirely.",
         "🤖 GDC Advisory: Current-pressure correlation confirms gas lock at {conf}% confidence. PIP {psi:.0f} PSI and motor amps {amps:.0f}A both declining — pump unloading on gas void. Reactive path: $150,000 pump pull + 5–7 day downtime. Proactive path: VFD speed-down at $0. SCADA has no active alarm — GDC has {remaining:.0f}-min advantage window.",

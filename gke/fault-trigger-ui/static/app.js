@@ -94,6 +94,9 @@ createApp({
       h1RawVib: null,
       h1EnvelopeHistory: [],
       h1PumpOffExcluded: false,
+      h1GasLockExcluded: false,
+      h1FaultType: '',
+      h1Seized: false,
       h1SensorVib: null,
       h1PhasePlaneHistory: [],
       h1DetectionTime: null,
@@ -301,10 +304,16 @@ createApp({
       else if (oldVal === 'MARGINAL' && newVal === 'EXPIRED') this._triggerAdvisoryUpdate('critical', null);
     },
     h1EvidenceActive(val) {
-      // When 2nd evidence source (06:15 Shift Note) is retrieved, exclude Pump-Off risk on envelope
-      if (val >= 2 && !this.h1PumpOffExcluded) {
-        this.h1PumpOffExcluded = true;
-        this._renderEnvelopeChart();
+      if (val >= 2) {
+        if (this.h1FaultType === 'fluid_drawdown' && !this.h1GasLockExcluded) {
+          // Drawdown confirmed by sonic log: Gas Lock zone is excluded
+          this.h1GasLockExcluded = true;
+          this._renderEnvelopeChart();
+        } else if (this.h1FaultType !== 'fluid_drawdown' && !this.h1PumpOffExcluded) {
+          // Gas Lock confirmed by shift note: Pump-Off risk zone is excluded
+          this.h1PumpOffExcluded = true;
+          this._renderEnvelopeChart();
+        }
       }
     },
   },
@@ -1108,15 +1117,34 @@ createApp({
       }
     },
     
-    // ── Horizon 1: Gas Lock ──
-    async launchHorizon1() {
+    // ── Horizon 1: Gas Lock or Fluid Drawdown ──
+    async launchHorizon1(faultType) {
       if (this.h1Injected) return;
+      const ft = faultType || 'gas_lock';
+      this.h1FaultType = ft;
       this.h1Injected = true;
       this.h1Resolved = false;
+      this.h1Seized = false;
+      this.h1PumpOffExcluded = false;
+      this.h1GasLockExcluded = false;
       this.h1HealthScore = '82.0%';
       this.h1InjectedAt = Date.now();
       this.h1EvidenceActive = 0;
       this.h1EvidenceWall.forEach(e => { e.active = false; });
+      // Dynamically configure evidence wall content for chosen fault type
+      if (ft === 'fluid_drawdown') {
+        this.h1EvidenceWall[0].content = 'PIP −14 PSI/min \u2193 · Amps −2.3 A/min \u2193 · 4-sensor correlated decline at 5-second cadence';
+        this.h1EvidenceWall[1].content = '"06:00 sonic survey: Dynamic fluid level 150 ft above pump intake. Reservoir depleting." — Tour 2 sonic log';
+        this.h1EvidenceWall[2].content = 'Separator GOR stable: 1,104 scf/bbl (nominal baseline) · Casing pressure flat at 40 PSI — no free gas migration';
+        this.h1EvidenceWall[3].content = 'Acoustic survey confirms: static fluid level at critical submergence limit. Sand bridging risk on speed-down confirmed.';
+        this.h1EvidenceWall[4].content = 'Field Guidelines §9.3: Speed-down during drawdown drops fluid velocity below critical lift (4.2 ft/s). VFD trim is CONTRAINDICATED.';
+      } else {
+        this.h1EvidenceWall[0].content = 'PIP −14 PSI/min \u2193 · Amps −2.3 A/min \u2193 · 4-sensor correlated decline at 5-second cadence';
+        this.h1EvidenceWall[1].content = '"Higher than usual GVF this morning — possibly gas migration from upper zone." — 06:15 tour note';
+        this.h1EvidenceWall[2].content = 'Separator gas rate 142 Mscf/d \u2191 · GOR 1,310 scf/bbl \u2191 · Casing pressure +18 PSI vs prior tour';
+        this.h1EvidenceWall[3].content = 'Soft unload events × 3 in last 45 min · Power factor 0.71 \u2193 · Underload flag approaching threshold';
+        this.h1EvidenceWall[4].content = 'API RP 11S §5.3: VFD speed-down is primary intervention. Class H limit: 180°C (IEEE 117). Baker Hughes: GVF >65% triggers unloading.';
+      }
       this.h1CopilotHtml = '';
       this.h1CopilotStreaming = false;
       this.h1ChatMessages = [];
@@ -1124,14 +1152,14 @@ createApp({
       this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE';
       try {
         const _h1InjR = await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', duration_seconds:900})});
+          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type: ft, duration_seconds:900})});
         if (_h1InjR.ok) { const _h1InjD = await _h1InjR.json(); if (_h1InjD.injection_params) this.showInjectionPopup(_h1InjD.injection_params); }
-        this.showToast('⚡ Gas Lock injected on ESP-ALPHA-1','var(--orange)');
-        const feed = await fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock');
+        this.showToast(`\u26a1 ${ft === 'fluid_drawdown' ? 'Fluid Drawdown' : 'Gas Lock'} injected on ESP-ALPHA-1`, 'var(--orange)');
+        const feed = await fetch(`/api/intelligence-feed/ESP-ALPHA-1?fault_type=${ft}`);
         if (feed.ok) { const d=await feed.json(); this.h1FeedItems=d.items||[]; this.h1GemmaFinding=d.gemma_finding||''; }
         if (this.h1FeedPollInterval) clearInterval(this.h1FeedPollInterval);
         this.h1FeedPollInterval = setInterval(() => {
-          fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=gas_lock')
+          fetch(`/api/intelligence-feed/ESP-ALPHA-1?fault_type=${ft}`)
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d && this.h1Injected && !this.h1Resolved) this.h1FeedItems = d.items || []; });
         }, 15000);
@@ -1195,6 +1223,7 @@ createApp({
       this.h1EvidenceWall.forEach(e => { e.active = false; });
       try { Plotly.purge('h1-phase-chart'); } catch{}
       this.h1EnvelopeHistory = []; this.h1PumpOffExcluded = false;
+      this.h1GasLockExcluded = false; this.h1FaultType = ''; this.h1Seized = false;
       try { Plotly.purge('h1-envelope-chart'); } catch{}
       this.showToast('↺ Horizon 1 reset','var(--green)');
       const _pollLive1 = async () => {
@@ -1211,7 +1240,29 @@ createApp({
       fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
         .then(r=>r.ok?r.json():null).then(d=>{ if(d&&!this.h1Injected) this.h1FeedItems=d.items||[]; });
     },
+    async executeH1Shutdown() {
+      // Safe action during Fluid Drawdown: emergency shut-in preserves the pump
+      this.h1Resolved = true;
+      this.h1Recovering = false;
+      this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXECUTED';
+      this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED';
+      if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
+      this.h1AdvisorHtml += '<br><br><strong style="color:var(--green)">✅ Emergency shutdown executed. Well A-1 shut in. Pump integrity confirmed. Fluid level recovery underway — well can restart once submergence is restored.</strong>';
+      this.showToast('✅ Safe shut-in executed — pump preserved', 'var(--green)');
+      try { await fetch('/api/cancel-degrade/ESP-ALPHA-1', {method:'POST'}); } catch(e) {}
+    },
     async approveH1VFD() {
+      // Intercept: if fluid_drawdown is active, VFD trim is the WRONG choice
+      if (this.h1FaultType === 'fluid_drawdown' && !this.h1Resolved) {
+        this.h1Seized = true;
+        this.h1Resolved = true;
+        this.h1Recovering = false;
+        if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
+        this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — velocity dropped below critical lift. Sand settling downhole. Pump unresponsive on restart. Engineering assessment required.</strong>';
+        this.showToast('⚠ Pump unresponsive — VFD trim contraindicated during drawdown', 'var(--red)');
+        try { await fetch('/api/cancel-degrade/ESP-ALPHA-1', {method:'POST'}); } catch(e) {}
+        return;
+      }
       this.h1Resolved = true;
       this.h1Recovering = true;
       this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXECUTED';
@@ -1338,22 +1389,27 @@ createApp({
       }
       const hx = this.h1EnvelopeHistory.map(p => p.x);
       const hy = this.h1EnvelopeHistory.map(p => p.y);
-      const excluded = this.h1PumpOffExcluded;
-      const pumpOffFill = excluded ? 'rgba(100,116,139,0.06)' : 'rgba(239,68,68,0.10)';
-      const pumpOffLine = excluded ? 'rgba(100,116,139,0.15)' : 'rgba(239,68,68,0.2)';
+      const pumpOffExcluded = this.h1PumpOffExcluded;
+      const gasLockExcluded = this.h1GasLockExcluded;
+      const pumpOffFill = pumpOffExcluded ? 'rgba(100,116,139,0.04)' : 'rgba(239,68,68,0.10)';
+      const pumpOffLine = pumpOffExcluded ? 'rgba(100,116,139,0.12)' : 'rgba(239,68,68,0.2)';
+      const gasLockFill = gasLockExcluded ? 'rgba(100,116,139,0.04)' : 'rgba(251,146,60,0.08)';
+      const gasLockLine = gasLockExcluded ? 'rgba(100,116,139,0.12)' : 'rgba(0,0,0,0)';
       const shapes = [
         { type:'rect', x0:55, x1:125, y0:900, y1:1600, fillcolor:'rgba(74,222,128,0.06)', line:{width:0}, layer:'below' },
-        { type:'rect', x0:0,  x1:85,  y0:450, y1:1250, fillcolor:'rgba(251,146,60,0.08)', line:{width:0}, layer:'below' },
+        { type:'rect', x0:0,  x1:85,  y0:450, y1:1250, fillcolor:gasLockFill, line:{color:gasLockLine,width:1}, layer:'below' },
         { type:'rect', x0:0,  x1:75,  y0:0,   y1:700,  fillcolor:pumpOffFill, line:{color:pumpOffLine,width:1}, layer:'below' },
         { type:'line', x0:0, x1:125, y0:800, y1:800, line:{color:'rgba(239,68,68,0.45)',width:1,dash:'dot'} },
         { type:'line', x0:50, x1:50, y0:0, y1:1600, line:{color:'rgba(239,68,68,0.45)',width:1,dash:'dot'} },
       ];
+      const gasLockLabel = gasLockExcluded ? '❌ Gas Lock\nEXCLUDED\n(L3 Fused)' : 'Gas Lock';
+      const gasLockColor = gasLockExcluded ? 'rgba(74,222,128,0.75)' : 'rgba(251,146,60,0.65)';
+      const pumpOffLabel = pumpOffExcluded ? '❌ Pump-Off\nEXCLUDED\n(L3 Fused)' : 'Pump-Off\nRisk';
+      const pumpOffColor = pumpOffExcluded ? 'rgba(74,222,128,0.75)' : 'rgba(239,68,68,0.55)';
       const annotations = [
-        { x:98, y:1540, text:'Nominal',      showarrow:false, font:{size:9,color:'rgba(74,222,128,0.55)'},  xanchor:'center' },
-        { x:30, y:980,  text:'Gas Lock',     showarrow:false, font:{size:9,color:'rgba(251,146,60,0.65)'},  xanchor:'center' },
-        { x:28, y:320,  text: excluded ? '❌ Pump-Off\nEXCLUDED\n(L3 Fused)' : 'Pump-Off\nRisk',
-          showarrow:false, font:{size:8, color: excluded ? 'rgba(74,222,128,0.75)' : 'rgba(239,68,68,0.55)'},
-          xanchor:'center', align:'center' },
+        { x:98, y:1540, text:'Nominal', showarrow:false, font:{size:9,color:'rgba(74,222,128,0.55)'}, xanchor:'center' },
+        { x:30, y:980,  text:gasLockLabel, showarrow:false, font:{size:8, color:gasLockColor}, xanchor:'center', align:'center' },
+        { x:28, y:320,  text:pumpOffLabel, showarrow:false, font:{size:8, color:pumpOffColor}, xanchor:'center', align:'center' },
         { x:2, y:820,   text:'SCADA PIP: 800', showarrow:false, font:{size:7,color:'rgba(239,68,68,0.45)'}, xanchor:'left' },
         { x:52, y:120,  text:'SCADA\n50A', showarrow:false, font:{size:7,color:'rgba(239,68,68,0.45)'}, xanchor:'left' },
       ];

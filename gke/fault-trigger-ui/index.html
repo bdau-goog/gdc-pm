@@ -343,12 +343,13 @@
     <div class="main-tab-content" :class="{active: mainTab==='horizon1'}">
       <div class="horizon-banner" style="padding:8px 20px;gap:12px">
         <div style="display:flex;align-items:center;gap:8px;flex:1">
-          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Detect — ESP Gas Lock</h2>
-          <span style="font-size:0.65rem;color:var(--muted)">· ESP-ALPHA-1</span>
+          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Detect — ESP Fluid Unloading</h2>
+          <span style="font-size:0.65rem;color:var(--muted)">· ESP-ALPHA-1 &nbsp;·&nbsp; <span v-if="h1FaultType==='fluid_drawdown'" style="color:var(--orange)">Fluid Drawdown</span><span v-else-if="h1FaultType==='gas_lock'" style="color:var(--red)">Gas Lock</span><span v-else>Choose scenario</span></span>
           <button class="hb-btn btn-info" :class="{active: showH1Info}" @click="showH1Info=!showH1Info" style="padding:3px 8px;font-size:0.63rem">ⓘ</button>
         </div>
         <div class="hb-actions" style="gap:8px">
-          <button class="hb-btn btn-inject" @click="launchHorizon1">⚡ Inject Gas Lock</button>
+          <button class="hb-btn btn-inject" @click="launchHorizon1('gas_lock')" :disabled="h1Injected" style="background:linear-gradient(135deg,#b91c1c,#7f1d1d)">⚡ Gas Lock</button>
+          <button class="hb-btn btn-inject" @click="launchHorizon1('fluid_drawdown')" :disabled="h1Injected" style="background:linear-gradient(135deg,#c2410c,#7c2d12)">⚡ Fluid Drawdown</button>
           <button class="hb-btn btn-reset" @click="resetHorizon1" v-if="h1Injected">↺ Reset</button>
         </div>
       </div>
@@ -616,25 +617,54 @@
               <div class="h1-split-row">
                 <div class="h1-split-body">
                   <div class="h1-split-tag ambiguous">⚠ Ambiguous Symptom</div>
-                  <div style="font-size:0.59rem">PIP & Amps declining. Raw telemetry cannot distinguish <strong>Gas Lock</strong> from <strong>Reservoir Pump-Off</strong>.</div>
-                  <div class="h1-split-evidence">Misdiagnose as Gas Lock → execute speed-down on a pump-off → sand bridges pump → <strong>~$150k stuck pump</strong>.</div>
-                  <div style="color:var(--yellow);font-size:0.58rem;font-weight:600;margin-top:2px">Safest action: wait for underload trip (well goes offline, $3k–$8k restart)</div>
+                  <div style="font-size:0.59rem">PIP & Amps declining simultaneously. Raw telemetry signature is <strong>physically identical</strong> for Gas Lock (VFD trim is safe) and Fluid Drawdown (VFD trim causes sand bridging).</div>
+                  <div class="h1-split-evidence">SCADA has no document access. Misdiagnosis risk: ~representative stuck-pump cost.</div>
+                  <div style="color:var(--yellow);font-size:0.58rem;font-weight:600;margin-top:2px">Conservative path: wait for underload trip (well shuts in; $3k–$8k restart)</div>
                 </div>
-                <div class="h1-split-body gdc-body">
+                <!-- GDC Column: Gas Lock scenario -->
+                <div v-if="h1FaultType !== 'fluid_drawdown'" class="h1-split-body gdc-body">
                   <div class="h1-split-tag confirmed" v-if="h1PumpOffExcluded">✅ Gas Lock Confirmed — L3 Fused</div>
                   <div class="h1-split-tag ambiguous" v-else>⏳ Retrieving L3 context…</div>
                   <div v-if="h1PumpOffExcluded" style="font-size:0.59rem">
-                    <div class="h1-split-evidence">📄 06:15 Shift Note: GVF elevated at pump intake<br>📊 Annulus fluid level: stable (Pump-Off excluded)</div>
-                    Safe to trim. Well stays online at 44 Hz while gas void clears.
+                    <div class="h1-split-evidence">📄 06:15 Shift Note: GVF elevated at pump intake<br>📊 Casing GOR rising · Annulus pressure building · Pump-Off excluded</div>
+                    Gas lock confirmed. Safe to trim. Well stays online at 44 Hz while gas void clears.
                   </div>
-                  <div v-else style="color:var(--muted);font-style:italic;font-size:0.57rem">Awaiting shift note retrieval from AlloyDB RAG…</div>
+                  <div v-else style="color:var(--muted);font-style:italic;font-size:0.57rem">Retrieving shift note from AlloyDB RAG…</div>
                   <button v-if="h1PumpOffExcluded && !h1Resolved && !h1Recovering"
                           @click="approveH1VFD"
                           class="h1-split-approve">
                     ✔ APPROVE VFD TRIM &nbsp;·&nbsp; 52→44 Hz
                   </button>
                   <div v-if="h1Recovering" style="color:var(--green);font-size:0.58rem;font-weight:600">↩ VFD at 44 Hz · Monitoring recovery…</div>
-                  <div v-if="h1Resolved && !h1Recovering" style="color:var(--green);font-size:0.58rem;font-weight:600">✅ Resolved · ~$150k workover avoided</div>
+                  <div v-if="h1Resolved && !h1Recovering && !h1Seized" style="color:var(--green);font-size:0.58rem;font-weight:600">✅ Resolved · Well online · Pump protected</div>
+                </div>
+                <!-- GDC Column: Fluid Drawdown scenario -->
+                <div v-if="h1FaultType === 'fluid_drawdown'" class="h1-split-body gdc-body">
+                  <div class="h1-split-tag confirmed" v-if="h1GasLockExcluded && !h1Seized" style="background:rgba(251,146,60,0.12);color:var(--orange);border-color:var(--orange)">⚠ Fluid Drawdown — VFD TRIM CONTRAINDICATED</div>
+                  <div class="h1-split-tag confirmed" v-else-if="h1Seized" style="background:rgba(239,68,68,0.12);color:var(--red);border-color:var(--red)">❌ Pump Seized — Sand Bridged Downhole</div>
+                  <div class="h1-split-tag ambiguous" v-else>⏳ Retrieving sonic log context…</div>
+                  <div v-if="h1GasLockExcluded && !h1Seized" style="font-size:0.59rem">
+                    <div class="h1-split-evidence">📋 06:00 Sonic survey: Dynamic fluid level 150 ft above intake<br>🧪 GOR stable (1,104 scf/bbl) · Casing pressure flat · Gas Lock excluded</div>
+                    Reservoir depleting. Speed-down drops velocity below critical lift → sand bridges string. Emergency shut-in is the correct action.
+                  </div>
+                  <div v-else-if="h1Seized" style="font-size:0.59rem">
+                    <div class="h1-split-evidence" style="color:var(--red)">VFD trim executed during fluid drawdown. Fluid velocity dropped below critical lift (4.2 ft/s). Sand settled and bridged downhole string. Motor unresponsive on restart.</div>
+                    Engineering assessment required before next start attempt.
+                  </div>
+                  <div v-else style="color:var(--muted);font-style:italic;font-size:0.57rem">Retrieving 06:00 sonic log from AlloyDB RAG…</div>
+                  <!-- Correct action: Emergency Shutdown -->
+                  <button v-if="h1GasLockExcluded && !h1Resolved && !h1Seized"
+                          @click="executeH1Shutdown"
+                          class="h1-split-approve" style="background:linear-gradient(135deg,#c2410c,#7c2d12)">
+                    ✔ APPROVE EMERGENCY SHUTDOWN
+                  </button>
+                  <!-- Wrong action: VFD Trim still visible during drawdown to demonstrate consequence -->
+                  <button v-if="h1GasLockExcluded && !h1Resolved && !h1Seized"
+                          @click="approveH1VFD"
+                          style="margin-top:4px;padding:5px 10px;border-radius:5px;border:1px solid rgba(239,68,68,0.4);background:rgba(239,68,68,0.06);color:var(--red);font-size:0.58rem;cursor:pointer;width:100%">
+                    ⚠ VFD TRIM 52→44 Hz &nbsp;(contraindicated — sand bridge risk)
+                  </button>
+                  <div v-if="h1Resolved && !h1Seized" style="color:var(--green);font-size:0.58rem;font-weight:600">✅ Well shut in safely · Pump integrity preserved</div>
                 </div>
               </div>
             </div>
