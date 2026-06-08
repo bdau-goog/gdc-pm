@@ -40,14 +40,14 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ### Next Tasks (Session I):
 
-**Option A: Wire Pump-Off Exclusion to actual RAG retrieval**
-Currently `h1PumpOffExcluded` is set when `h1EvidenceActive >= 2` (2nd evidence wall item activated at 2s delay). To make it fully honest, tie it to retrieval of a specific "annulus level" or "pump-off excluded" field_intel document instead of the timer. Requires small `app.py` change to include a `pump_off_excluded` field in the intel feed item type, and `app.js` to watch for it.
+**Build Act 1 and Act 3 of the Interactive H1 Unloading Game:**
+1. **The Dual Injection Buttons:** Add `⚡ Inject Gas Lock` and `⚡ Inject Fluid Drawdown` as active choices on the Detect Tab.
+2. **Fluid Drawdown Seed Document:** In `app.py`, write the `fluid_drawdown` RAG seed document containing the 06:00 sonic log ("Fluid level 150 ft above intake").
+3. **The Exclusion Logic:** Wire `app.js` so that if `fluid_drawdown` is active, the Gas Lock zone grays out and the VFD Trim button is disabled. If `gas_lock` is active, the Fluid Drawdown zone grays out.
+4. **The "Wrong Choice" Consequence:** Wire the `[APPROVE VFD TRIM]` button so that clicking it during a Fluid Drawdown event triggers a motor seizure error screen with an explicit stuck pump animation.
 
-**Option B: Phase 2 — RAG Document Cards (clickable, styled as field docs)**
-Style the Intel Feed cards in the right column to look like authentic field documents (file-type badges, metadata header). Implement the Document Viewer Modal (click feed card → opens full doc content with source, author, timestamp).
-
-**Option C: H2 Slug Flow discriminator chart + Evidence Board**
-Build the two-line chart (Vibration rising, Motor Temp flat) + H2 evidence board (6 cards). This is the `$1,500 vs $150,000` false-positive-prevention demo. All wiring is in `app.py` — pure `index.html` addition.
+**Optional — Phase 5+ MLOps Integrity:**
+Train the `esp_thermal` XGBoost model and wire it into `vizier_optimize()` to eliminate the H3 static polynomial.
 
 ---
 

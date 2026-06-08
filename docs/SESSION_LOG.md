@@ -16,8 +16,9 @@
    - **Decision Split Card:** SCADA box (ambiguous, Pump-Off risk, conservative trip path) vs GDC Advisor box (L3 confirmed, safe to trim, [APPROVE VFD TRIM] HITL button).
 
 **Key decisions:** (a) H1's economic story is now "production continuity vs. offline trip" NOT a simple $500 dollar-gap. (b) "Operational-Lead with Benchmark Dollars" framing adopted — physical risk reality leads, representative costs are supporting. (c) `h1PumpOffExcluded` keyed to `h1EvidenceActive >= 2` as a pragmatic proxy for RAG shift-note retrieval — close enough for now; a future session can tie it to a specific `pump_off_excluded` flag from `app.py`.
+(d) Adopted "Fluid Drawdown" and "Fluid Unloading" as canonical domain terminology. Clarified that no sensor can distinguish them; GDC RAG context is the decider.
 
-**Next task (Session I):** Option B or C — either styled RAG document cards (Phase 2) or H2 Slug Flow discriminator chart + evidence board (Phase 3).
+**Next task (Session I):** Build Act 1 & 3 of the Interactive H1 Unloading Game (dual-path injection, Fluid Drawdown RAG log, exclusion logic, and "wrong choice" stuck-pump simulation).
 
 ---
 

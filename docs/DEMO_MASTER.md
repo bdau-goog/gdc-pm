@@ -39,16 +39,28 @@ The core argument is framed as a **three-tier capability stack** (L1, L2, L3) th
 
 ---
 
-## 4. H1 SPECIFICATION — ESP GAS LOCK (THE DISCERNING OPERATOR)
+## 4. H1 SPECIFICATION — ESP UNLOADING (THE DISCERNING OPERATOR & INTERACTIVE CHOICE GAME)
 
 ### The Core Story (The Competing Views Dilemma)
-When an ESP's PIP and Motor Amps decline, the raw telemetry signature is **physically ambiguous**. It is identical for two completely different root causes:
-1. **Gas Lock (GVF rising):** Slowing the pump by trimming VFD frequency safely clears the gas void. The well stays online. **(Correct: trim the Hz)**
-2. **Reservoir Pump-Off (Drawdown):** Slowing the pump during low fluid-level conditions drops the fluid velocity below critical lift, causing sand/debris to settle on top of the pump — bridging it. Result: $150k stuck pump. **(Catastrophic: do NOT trim)**
+When an ESP's PIP and Motor Amps decline, the raw telemetry signature is **physically ambiguous**. It represents a state of **fluid unloading** — the pump is losing its liquid head. This is identical for two completely different root causes:
+1. **Gas Lock (GVF rising):** The casing fluid level is high, but gas has entered the pump. Slowing the pump down by trimming VFD frequency safely clears the gas void. The well stays online. **(Correct choice: [APPROVE VFD TRIM])**
+2. **Fluid Drawdown (Reservoir depletion):** The reservoir fluid level is actually low. Slowing the pump down drops the fluid velocity below "critical lift", causing sand/debris to settle and bridge the downhole string. **(Correct choice: [EMERGENCY SHUTDOWN]; wrong choice: trim VFD → $150k stuck pump)**
 
-**SCADA's Dilemma:** SCADA sees the declining PSI and Amps but is **structurally blind to context** (no unstructured document access). The penalty for misdiagnosis (acting on a pump-off as if it's gas lock) is a destroyed $150k downhole pump. The penalty for conservative inaction (letting SCADA trip a true gas lock) is $3k–$8k. Under these asymmetric risks, the operator's **only rational choice is to wait for the protective trip**. The well shuts in.
+**SCADA's Dilemma:** SCADA sees the declining PSI and Amps but is **structurally blind to context** (no unstructured document access). The penalty for misdiagnosis (executing a VFD trim during fluid drawdown) is a seized $150k downhole pump. The penalty for conservative inaction (letting SCADA trip a true gas lock) is $3k–$8k. Under these asymmetric risks, the operator's **only rational choice is the conservative, inactive path**: wait for the protective underload trip. The well shuts in.
 
-**The GDC Resolution:** GDC's RAG pipeline retrieves the **06:15 Operator Shift Note** (High GVF documented on Pad Alpha) and verifies stable **Annulus fluid level** (ruling out Pump-Off). With Pump-Off **excluded by document evidence**, the only remaining hypothesis is Gas Lock. GDC provides the safety permit to act. The operator approves the VFD trim. **The well never shuts in.**
+**The GDC Resolution:** GDC's RAG pipeline retrieves the **06:15 Operator Shift Note** (High GVF documented) or **06:00 Lab fluid-level log** (Annulus low). This L3 context **excludes the wrong hypothesis** on the operating envelope itself, giving the operator the high-confidence safety permit to act.
+
+---
+
+### The Interactive Trade-Show Choice Game (How it runs)
+To draw traffic at the trade-show booth, H1 runs as an **interactive game with consequences**:
+- The screen starts on the **Pad Alpha Map** (14 wells nominal, all gray status dots).
+- **The Presenter Prompt:** The presenter clicks either **`⚡ Inject Gas Lock`** OR **`⚡ Inject Fluid Drawdown`** (and tells the visitor: *"You are the operator. Both look identical. Do you trim the speed to stay online, or shut down?"*).
+- **The Symptom:** Well A-1 pulses amber. The operating point `YOU ARE HERE` drifts into the ambiguous lower-left quadrant of the **Operating Envelope Chart**.
+- **The Climax (GDC RAG reveals the truth):**
+  - **In Gas Lock:** GDC retrieves the shift note. The `Fluid Drawdown` zone grays out. GDC flags: *"Gas Lock Confirmed (92%). Safe to trim Hz."* The user clicks `[APPROVE VFD TRIM]`. The well recovers smoothly. **(Savings: ~$150k preserved, well online).**
+  - **In Fluid Drawdown:** GDC retrieves the low annulus log. The `Gas Lock` zone grays out. GDC flags: *"⚠ DANGER: FLUID DRAWDOWN (94%). Stuck pump risk. Do NOT speed down."* The user must click `[EMERGENCY SHUTDOWN]`.
+- **The Trap (Making the wrong choice):** If the user ignores the GDC warning during Fluid Drawdown and clicks `[APPROVE VFD TRIM]` anyway, the wellbore SVG animates sand falling backward and bridging the pump. The motor housing flashes red, and a critical error screen pops up: *"❌ FAILURE: STUCK PUMP SEIZURE. Motor amperage spiked on startup. String bridged. Pull rig required (~$150k, 5 days downtime)."* This spectacularly proves that GDC's context is what prevents the $150k mistake.
 
 ---
 
