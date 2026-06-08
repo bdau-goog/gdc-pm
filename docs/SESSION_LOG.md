@@ -2,6 +2,18 @@
 
 ---
 
+## Session I+1 (June 8, 2026) — *Doc-only: Clean-Slate H1 Discern Tab spec locked; no code changes*
+
+**Code committed:** docs only (DEMO_MASTER.md, NEXT_SESSION_PROMPT.md)
+
+**What was done:** Following user rejection of the layered, complex Session I H1 UI (operating envelope scatter chart, 14-well pad map, dual inject buttons, tacked-on narrative), the H1 specification was completely redesigned from first principles. DEMO_MASTER.md §4 was rewritten to define the **ESP Unloading Double-Blind Choice Game**: (1) A single `⚡ Inject Unloading Anomaly` button randomly selects Gas Lock or Fluid Drawdown behind the scenes. (2) The screen splits into shared persistent telemetry (Left 40%) — sensor bars + dual-axis PIP/Amps Plotly trend chart — and a switchable Decision Console (Right 60%) with two sub-tabs: SCADA View (blind gamble) and GDC Advisor (informed clarity). (3) The GDC Advisor tab exclusively shows: a clickable pgvector RAG card (click-through to a professional field form modal), a GDC-only Dynamic Wellbore Digital Twin (CSS/HTML, casing fluid column responds to telemetry — high stable fluid for Gas Lock with gold gas bubbles; depleted fluid with brown sand settling for Drawdown), a high-confidence GDC verdict, and informed action buttons with a mandatory override modal if the operator attempts to VFD Trim during a Drawdown. The key physical insight locked: dynamic fluid level does NOT drop during Gas Lock (casing annulus remains flooded; only gas enters the pump stages) — only a sonic log or shift note can distinguish this, which is GDC's categorical L3 moat. NEXT_SESSION_PROMPT.md updated with the 10-step Session J implementation runbook.
+
+**Key decisions:** (a) No dual inject buttons — the double-blind only works if the fault type is unknown before GDC reveals it. (b) The wellbore schematic is exclusive to the GDC tab — SCADA cannot see the downhole digital twin. (c) Both VFD Trim and Emergency Shutdown are available on both sides — the difference is informed vs blind, not gated vs ungated. (d) No dollar hardcoding in the SCADA view — only representative framing.
+
+**Next task (Session J):** Implement the clean-slate H1 Discern tab per DEMO_MASTER.md §4 and NEXT_SESSION_PROMPT.md STEP 3.
+
+---
+
 ## Session I (June 8, 2026) — *Interactive H1 Unloading Game — Dual-Inject Fluid Drawdown deployed*
 
 **Code committed:** `5485592` (feat(ui): Session I — Fluid Drawdown dual-inject game, dual-zone envelope exclusion, seizure diagnostic state)
