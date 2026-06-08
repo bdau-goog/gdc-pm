@@ -2,7 +2,29 @@
 **Session U — June 5, 2026**  
 **Scope:** `gke/fault-trigger-ui/index.html`, `gke/fault-trigger-ui/static/app.js`, `gke/fault-trigger-ui/app.py`  
 **Auditor:** Cline / Session U  
-**Status:** Complete — fixes assigned to Session V
+**Status:** ✅ ALL V-ITEMS RESOLVED — verified Session H (June 8, 2026)
+
+---
+
+## ✅ Session H Reconciliation (June 8, 2026) — All Display Violations Cleared
+
+Grep-verified against live code (`git a2eee90`). Every V-item from the Session U audit has been fixed in Sessions V/E/G:
+
+| ID | Status | Verification |
+|---|---|---|
+| V-01 | ✅ FIXED | `grep "94%" index.html` → empty |
+| V-02 | ✅ FIXED | `h1TopClassProb` / `h1TopClass` bound from `class_probs` in app.js:1082 |
+| V-03 | ✅ FIXED | Motor state from `h1SensorTemp` thresholds (Session V; audited Session G) |
+| V-04 | ✅ FIXED | `h1GvfPct` bound live from `field_intel` feed in app.js:1083–1084; `grep "68%\|22%" index.html` → empty |
+| V-05 | ✅ FIXED | `grep "52%" index.html` → empty |
+| V-06 | ✅ FIXED | `grep "52%" index.html` → empty |
+| V-07 | ✅ FIXED | `grep "94%" app.js` → empty |
+| V-08 | ✅ FIXED | `OLLAMA_DISPLAY_MODEL` removed; `app.py:4876` reports `OLLAMA_MODEL` directly |
+| V-09 | ✅ FIXED | Walkthrough banner at `index.html:1068`; `$1,200` value removed (`grep` → empty) |
+
+**No open display-integrity violations remain for H1. INTEGRITY_AUDIT.md is now archived — all items closed.**
+
+---
 
 ---
 

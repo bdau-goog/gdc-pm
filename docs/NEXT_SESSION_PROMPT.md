@@ -71,7 +71,9 @@ With `AI_NARRATIVE_ENABLED=false`, the `_intel_generator` is NOT running so no p
 
 ---
 
-## Known Integrity State — Session G end
+## Known Integrity State — Session H (reconciled)
+
+**INTEGRITY_AUDIT.md fully reconciled**: all 9 V-items (Sessions U–G) grep-verified FIXED as of `a2eee90`.
 
 | Item | File | Status |
 |---|---|---|
@@ -79,10 +81,14 @@ With `AI_NARRATIVE_ENABLED=false`, the `_intel_generator` is NOT running so no p
 | Missing Vibration sensor bar | index.html | ✅ Fixed Session E (a493549) |
 | Thermal countdown "993 min" at onset | index.html | ✅ Fixed Session E (a493549) |
 | Sensor source unified (DB trace) | app.js | ✅ Fixed Session E (a493549) |
-| Motor CRITICAL state from elapsed time | index.html | ✅ Audited Session G — already fixed in Session V; banner uses h1SensorTemp |
-| Pre-injection sensor bar fill widths hardcoded | app.js | ✅ Fixed Session G (a2eee90) — h1RawPsi/Temp/Amps set from live-telemetry |
-| Timeline tick "$0→$2k" wrong | index.html | ✅ Fixed Session G (a2eee90) → "SCADA reactive · ~$3k–$8k" |
-| Wopt card B cost "$2,000" wrong | index.html | ✅ Fixed Session G (a2eee90) → "$3,000–$8,000" + C2 footnote |
+| Motor CRITICAL from elapsed timer (V-03) | index.html | ✅ Fixed Session V; audited clean Session G |
+| Pre-injection sensor bar fill widths (V-04 related) | app.js | ✅ Fixed Session G (a2eee90) |
+| Timeline tick + Wopt card B cost labels | index.html | ✅ Fixed Session G (a2eee90) |
+| Hardcoded "94% confidence" strings (V-01/02/07) | index.html, app.js | ✅ Fixed (grep → empty); live `h1TopClassProb` from `class_probs` |
+| Hardcoded "52%" H2 confidence (V-05/06) | index.html | ✅ Fixed (grep → empty) |
+| Hardcoded GVF "68%/22%" (V-04) | index.html | ✅ Fixed; `h1GvfPct` live from feed |
+| `OLLAMA_DISPLAY_MODEL` deception infra (V-08) | app.py | ✅ Fixed; `app.py:4876` reports `OLLAMA_MODEL` directly |
+| Arch-tab walkthrough banner (V-09) | index.html | ✅ Fixed; banner at line 1068; `$1,200` removed |
 | RAG seed doc collapses after ~5 min | app.py | ⚠ Non-issue with AI_NARRATIVE_ENABLED=false (no prune fires) |
 | FAULT_PHYSICS 45min vs PNR 25min comment | app.py | ⚠ Comment update deferred |
 | H3 Vizier hardcoded polynomial | app.py:~5293 | ❌ Phase 5+ — not blocking H1/H2 |
