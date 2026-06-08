@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Session H end)  
-**git head:** `2cd9768` (feat(ui): Phase 1 H1 — Pad Alpha map, Operating Envelope, Split card)  
-**fault-trigger-ui image:** `sha256:39bbce50` (1/1 Running — Session H)  
-**inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)  
+**Date:** June 8, 2026 (Session I end)
+**git head:** `5485592` (feat(ui): Session I — Fluid Drawdown dual-inject game, dual-zone envelope exclusion, seizure diagnostic state)
+**fault-trigger-ui image:** `sha256:1b7a05fb` (1/1 Running — Session I)
+**inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -17,6 +17,12 @@ source .env && kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgre
 source .env && kubectl exec -n gdc-pm gdc-pm-rabbitmq-server-0 -- rabbitmqctl list_queues --vhost gdc-pm name messages consumers
 ```
 
+**Expected when healthy:**
+- All 8 pods 1/1 Running · ollama replicas: 1
+- ollama_online: True · model: gemma4:latest
+- field_intel: ~2 (pre-fault, grows after inject) · rag_documents: 18
+- telemetry.events: 0 messages · 1 consumer
+
 ---
 
 ## STEP 2: Read DEMO_MASTER.md
@@ -27,27 +33,30 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Session H State Summary & Next Tasks
+## STEP 3: Session I State Summary & Next Tasks
 
-### What was done Session H:
-1. **Document consolidation (clean break):** `feature-trio-clean` branch created. Standalone `CLAIM_LEDGER.md` deleted — merged into `DEMO_MASTER.md` appendix. `INTEGRITY_AUDIT.md` and `BACKEND_CONFORMANCE_REPORT.md` archived. Active docs reduced to 3 files.
-2. **Phase 1 H1 UI deployed (`2cd9768`):**
-   - **Pad Alpha overview strip:** 14-well Vue-driven map above the H1 banner. Well A-1 pulses amber when fault injected. Proves scale story visually.
-   - **3-column layout:** Left (25% sensors + timeline), Center (40% Operating Envelope + Decision Split Card), Right (35% GDC Advisor + Intel Feed).
-   - **Operating Envelope (Plotly scatter):** X=Motor Amps, Y=Intake PSI. Live trail migrates from Nominal → Gas Lock zone. Three background zones (Nominal/Gas Lock/Pump-Off Risk). SCADA alarm lines. When `h1EvidenceActive >= 2` (shift note retrieved), Pump-Off zone dims to gray + `❌ EXCLUDED (L3 Fused)` label.
-   - **Decision Split Card:** Left half: SCADA (Ambiguous, Pump-Off risk); Right half: GDC (L3 context fused, safe to trim, `[APPROVE VFD TRIM]` HITL button).
-   - `h1EnvelopeHistory[]`, `h1PumpOffExcluded` Vue state + `_renderEnvelopeChart()` + watcher on `h1EvidenceActive`.
+### What was done Session I:
+1. **Interactive H1 Unloading Game deployed (`5485592`):**
+   - **Dual Inject Buttons:** `⚡ Gas Lock` (red) and `⚡ Fluid Drawdown` (orange) on the Detect tab banner. Both buttons disabled after first inject (anti-double-click).
+   - **Dynamic Evidence Wall:** Evidence cards swap content based on which fault is active. Gas Lock → GVF separator logs, shift note. Fluid Drawdown → 06:00 sonic log, flat GOR, sand bridging contraindication.
+   - **Dual-Zone Operating Envelope Exclusion:**
+     - Gas Lock: Pump-Off Risk zone grays out + `❌ Pump-Off EXCLUDED (L3 Fused)` label after evidence wall reaches item 2.
+     - Fluid Drawdown: Gas Lock zone grays out + `❌ Gas Lock EXCLUDED (L3 Fused)` label after evidence wall reaches item 2.
+   - **Fluid Drawdown backend:** `fluid_drawdown` added to `FAULT_PROFILES`, `PNR_MINUTES`, `REMEDIATION_TIERED`, `FAULT_PHYSICS`, `REMEDIATION_COSTS`, `INTELLIGENCE_FEED`, `GEMMA_FINDING_TEMPLATES`. 06:00 Sonic Log RAG seed document auto-inserted on inject.
+   - **Decision Split Card rewired:** GDC column switches between Gas Lock path (VFD Trim is correct) and Fluid Drawdown path (Emergency Shutdown is correct + VFD Trim shown as contraindicated option that still works to demonstrate consequence).
+   - **h1Seized state:** If user clicks VFD Trim during Fluid Drawdown, `h1Seized = true` → split card shows `❌ Pump Seized — Sand Bridged Downhole` diagnostic with explanation. Professional, non-theatrical.
+   - **executeH1Shutdown():** New method for safe Fluid Drawdown resolution. Cancels degrade, marks resolved, shows green success text.
 
-### Next Tasks (Session I):
+### Known Design Decisions (Session I):
+- (a) No CSS animations for seizure state — inline styles in the split card are sufficient and more professional.
+- (b) VFD Trim button during Fluid Drawdown is intentionally still clickable (shows as red warning) so the presenter can demonstrate the consequence path without it being a dead end.
+- (c) `h1FaultType` is tracked in Vue state (not derived from API) — it's set at inject time and cleared on reset.
+- (d) `_startAdvisorStream()` still uses the `h1GemmaFinding` from the API (which is now fault-type-aware) rather than hardcoded text.
 
-**Build Act 1 and Act 3 of the Interactive H1 Unloading Game:**
-1. **The Dual Injection Buttons:** Add `⚡ Inject Gas Lock` and `⚡ Inject Fluid Drawdown` as active choices on the Detect Tab.
-2. **Fluid Drawdown Seed Document:** In `app.py`, write the `fluid_drawdown` RAG seed document containing the 06:00 sonic log ("Fluid level 150 ft above intake").
-3. **The Exclusion Logic:** Wire `app.js` so that if `fluid_drawdown` is active, the Gas Lock zone grays out and the VFD Trim button is disabled. If `gas_lock` is active, the Fluid Drawdown zone grays out.
-4. **The "Wrong Choice" Consequence:** Wire the `[APPROVE VFD TRIM]` button so that clicking it during a Fluid Drawdown event triggers a motor seizure error screen with an explicit stuck pump animation.
-
-**Optional — Phase 5+ MLOps Integrity:**
-Train the `esp_thermal` XGBoost model and wire it into `vizier_optimize()` to eliminate the H3 static polynomial.
+### Next Tasks (Session J):
+1. **Operating Envelope context banner:** When `h1PumpOffExcluded` is true (Gas Lock), the existing `.h1-pumpoff-excluded` banner text is accurate. When `h1GasLockExcluded` is true (Drawdown), the center section still shows the old Gas Lock text. Update the envelope section `v-if` conditions to show the correct exclusion text for each scenario.
+2. **Status Banner text for Fluid Drawdown:** The `h1-sb-msg` when `h1Injected && !h1Recovering && !h1Resolved` always says `"GAS LOCK ACTIVE"` regardless of `h1FaultType`. Add a `v-if` condition to show `"FLUID DRAWDOWN ACTIVE"` or `"GAS LOCK ACTIVE"` based on `h1FaultType`.
+3. **Optional — Phase 5+ MLOps Integrity:** Train the `esp_thermal` XGBoost model and wire it into `vizier_optimize()` to eliminate the H3 static polynomial.
 
 ---
 
@@ -58,3 +67,4 @@ Train the `esp_thermal` XGBoost model and wire it into `vizier_optimize()` to el
 - ALL kubectl/gcloud commands require `source .env &&` prefix
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - Do NOT use "Copilot" anywhere in the UI
+- `feature-trio-clean` branch — do NOT merge to main

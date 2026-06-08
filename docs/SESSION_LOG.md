@@ -2,6 +2,18 @@
 
 ---
 
+## Session I (June 8, 2026) — *Interactive H1 Unloading Game — Dual-Inject Fluid Drawdown deployed*
+
+**Code committed:** `5485592` (feat(ui): Session I — Fluid Drawdown dual-inject game, dual-zone envelope exclusion, seizure diagnostic state)
+
+**What was done:** (1) **Dual Inject Buttons deployed:** Single `⚡ Inject Gas Lock` button replaced with two distinct buttons — `⚡ Gas Lock` (dark red) and `⚡ Fluid Drawdown` (dark orange). Both disabled after first inject. Tab subtitle dynamically shows active fault type. (2) **Dynamic Evidence Wall:** `launchHorizon1(faultType)` now accepts a fault type param and overwrites evidence wall card content before injection. Gas Lock: GVF separator logs + 06:15 shift note. Fluid Drawdown: 06:00 sonic log (dynamic fluid level 150 ft), flat GOR/casing pressure confirming no gas migration, sand bridging contraindication. (3) **Dual-Zone Operating Envelope Exclusion:** `_renderEnvelopeChart()` now reads both `h1PumpOffExcluded` and `h1GasLockExcluded`. Gas Lock → Pump-Off Risk zone grays out with `❌ EXCLUDED (L3 Fused)`. Fluid Drawdown → Gas Lock zone grays out with same treatment. Watcher `h1EvidenceActive` routes to the correct exclusion based on `h1FaultType`. (4) **Fluid Drawdown backend:** `fluid_drawdown` added to FAULT_PROFILES (identical sensor ranges to gas_lock — this IS the physical ambiguity), PNR_MINUTES, REMEDIATION_TIERED, FAULT_PHYSICS, REMEDIATION_COSTS, INTELLIGENCE_FEED (sonic log, separator test, sand bridging guideline), GEMMA_FINDING_TEMPLATES. RAG seed doc: 06:00 dynamic sonic survey (fluid level 150 ft above intake, casing pressure flat, VFD trim contraindicated). (5) **Decision Split Card rewired:** GDC column switches between Gas Lock path (VFD Trim correct) and Fluid Drawdown path (Emergency Shutdown correct + VFD Trim shown as red contraindicated option that still fires to demonstrate consequence). (6) **h1Seized state:** If user clicks VFD Trim during Fluid Drawdown, `h1Seized = true`, split card shows `❌ Pump Seized — Sand Bridged Downhole` with physics explanation. Professional, no animations. (7) **executeH1Shutdown():** New method for safe Fluid Drawdown resolution — cancels degrade, marks resolved, shows green confirmation.
+
+**Key decisions:** (a) No CSS seizure animations — inline styles in split card are sufficient and more professional for O&G audience. (b) VFD Trim button during Fluid Drawdown remains clickable (styled red/warning) — intentional so presenter can demonstrate the consequence path. (c) `h1FaultType` tracked in Vue state (set at inject, cleared on reset). (d) Status banner text "GAS LOCK ACTIVE" still hardcoded regardless of fault type — flagged as Next Task for Session J.
+
+**Next task (Session J):** (1) Fix status banner text to show "FLUID DRAWDOWN ACTIVE" vs "GAS LOCK ACTIVE" based on `h1FaultType`. (2) Fix operating envelope context banner — `h1-pumpoff-excluded` shows Gas Lock text even during Drawdown. Both are minor `v-if` patches in `index.html`, one batched call.
+
+---
+
 ## Session H (June 8, 2026) — *Phase 1 H1 UI — Operating Envelope + Discerning Operator narrative deployed*
 
 **Code committed:** `2cd9768` (feat(ui): Phase 1 H1 — Pad Alpha map, Operating Envelope, Split SCADA/GDC card, Pump-Off exclusion)
