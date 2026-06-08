@@ -2,6 +2,18 @@
 
 ---
 
+## Session L Design (June 8, 2026) — *H1 Comparative Detection Scenario spec locked — doc-only, no code*
+
+**Code committed:** docs only (DEMO_MASTER.md, NEXT_SESSION_PROMPT.md)
+
+**What was designed:** Following user review of the deployed H1 "Discern" tab (Session J/K), three foundational design requirements were identified and fully specced: (1) **De-Gamification**: All "game", "gamble", and "🎲" language removed throughout the UI and spec. The scenario is now called the **"Comparative Detection Scenario"** and the SCADA trigger is now called **"Reactive Manual Intervention"**. The inject button becomes `⚡ Ingest Pad Anomalies`. (2) **Panel Resizability**: Both horizontal (left/right column width via `.h1-splitter` drag handle) and vertical (sparkline card height via `.h1-v-splitter` drag handle) resizability are required. Plotly charts must resize via `$nextTick` listeners. (3) **Workload Scaling / Pad Triage Scenario**: The single-well injection is replaced by a **6-well Pad Alpha triage experience** — the ingestion button randomly selects a target well (`h1TargetWell`, from A-1 to A-6) and a fault type (gas_lock or fluid_drawdown). Two adjacent wells simultaneously experience benign transient nuisance disturbances triggering SCADA alarms, which GDC suppresses via Daily Well Test RAG retrieval. The operator faces a realistic multi-alarm triage rather than a single-well event. Additionally, a **Departure Rate** toggle (Standard/Accelerated) sets `duration_seconds` to 900 or 300. Horizontal progress bars (4 ISA-101 sensor bars) are entirely removed and replaced with **4 individual stacked Plotly sparkline trend cards** — each with a bold live digital readout via annotation and a subtle horizontal red dashed SCADA alarm threshold line.
+
+**Key decisions:** (a) "Game" framing rejected entirely per user direction — O&G domain requires professional, operationally-framed scenarios. (b) Random well selection is the correct randomization mechanism — it removes the predictability of "always well A-1" while keeping the disambiguation narrative intact. (c) Nuisance suppression is the strongest "at-scale" argument: SCADA floods the operator with 3 concurrent alarms; GDC filters to 1 critical alert while suppressing the other 2 based on retrieved context — this is unambiguously superior operational intelligence. (d) Sparklines beat bars: dynamic trending is more credible as a live operational interface than ISA-101 progress bars for a demo context. (e) Standard/Accelerated departure rate toggle was specifically requested to allow the presenter to dial-up the urgency for high-impact audiences.
+
+**Next task (Session L implementation):** Complete implementation of the 9-step NEXT_SESSION_PROMPT.md Session L runbook: update DEMO_MASTER.md §4 (done), app.js state/methods, index.html Left column rebuild, styles.css additions, build/deploy/verify.
+
+---
+
 ## Session K (June 8, 2026) — *Tab navigation labels corrected — Discern / Classify — deployed*
 
 **Code committed:** `e8838af` (fix(ui): Session K — header nav tab labels Detect→Discern, Discern→Classify)

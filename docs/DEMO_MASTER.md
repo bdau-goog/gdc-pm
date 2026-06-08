@@ -17,7 +17,7 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 
 | Act | Tab | Scenario | Asset | Core Claim | GDC Advantage |
 |-----|-----|----------|-------|------------|---------------|
-| **H1** | **Discern** | Gas Lock or Fluid Drawdown | ESP-ALPHA-1 | *Discerning Operator: Context & Scale* | L3 document fusion resolves the ambiguous unloading signal; allows safe proactive intervention vs. blind gamble |
+| **H1** | **Discern** | Gas Lock or Fluid Drawdown | ESP-ALPHA-1–6 (random) | *Discerning Operator: Context & Scale* | L3 document fusion resolves the ambiguous unloading signal; enables safe proactive intervention vs. reactive manual action under operator workload |
 | **H2** | **Classify** | Slug Flow | ESP-ALPHA-3 | *Fault Discrimination: Prevent False Alarms* | Fuses L3 docs to prevent $150k unnecessary pump pull |
 | **H3** | **Optimize** | VFD Optimization | ESP-ALPHA-1 | *Edge-Cloud Collaboration* | Local XGBoost checks limits; Vertex AI Vizier drives search |
 
@@ -37,7 +37,7 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 
 ---
 
-## 4. H1 SPECIFICATION — THE DISCERN TAB (ESP UNLOADING DOUBLE-BLIND CHOICE GAME)
+## 4. H1 SPECIFICATION — THE DISCERN TAB (ESP UNLOADING COMPARATIVE DETECTION SCENARIO)
 
 ### 4.1 The Core Problem: Physically Identical Unloading Telemetry
 
@@ -57,58 +57,65 @@ When an ESP's **Pump Intake Pressure (PIP)** and **Motor Current (Amps)** both d
 
 ---
 
-### 4.2 The Interactive Double-Blind Choice Game: Screen Architecture
+### 4.2 The Comparative Detection Scenario: Screen Architecture
 
-The H1 "Discern" tab is structured as a **persistent telemetry column** (always visible, identical for both views) and a **switchable Decision Console** with two sub-tabs: SCADA View and GDC Advisor.
+The H1 "Discern" tab is structured as an interactive **Pad Alpha well surveillance grid** (A-1 to A-6), a **persistent telemetry column** with live sparkline trend cards, and a **switchable Decision Console** with SCADA View and GDC Advisor sub-tabs. All panels are horizontally and vertically resizable via drag handles.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  DISCERN — ESP FLUID UNLOADING DISAMBIGUATION    [⚡ Inject Anomaly]  [↺ Reset] │
-│  ESP-ALPHA-1 · Well A-1 · Pad Alpha                                          │
+│  DISCERN — ESP FLUID UNLOADING   [⚡ Ingest Pad Anomalies] [Std|Accel] [↺]  │
+├─────────────────── Pad Alpha ─────────────────────────────────────────────  │
+│  [ A-1: ⚠ Alerting ] [ A-2: ✓ ] [ A-3: ⚠ Suppressed ] [ A-4: ✓ ] ...     │
 ├──────────────────────────────────────┬──────────────────────────────────────┤
-│  📡 SHARED TELEMETRY (Left 40%)      │  ⚖ DECISION CONSOLE (Right 60%)       │
-│  (Identical for SCADA & GDC views)   │   ┌────────────────┬───────────────┐  │
-│                                      │   │ 🟡 SCADA VIEW   │ 🟢 GDC ADVISOR│  │
-│  PIP:  [████████░░ 1,180 PSI] ↓      │   └────────────────┴───────────────┘  │
-│  AMPS: [██████░░░░ 62A] ↓            │                                        │
-│  TEMP: [198°F] ✓                     │   SCADA tab: Ambiguous telemetry,      │
-│  VIB:  [1.3mm/s] ✓                   │   blind gamble warning, two blind      │
-│                                      │   action buttons.                      │
-│  📈 Combined Trend:                  │                                        │
-│  ┌──────────────────────────────┐    │   GDC tab: RAG card (click-through),   │
-│  │ PIP (Blue, left axis)        │    │   GDC-only wellbore digital twin,      │
-│  │ Amps (Green, right axis)     │    │   guided informed action buttons.      │
-│  │ Both declining together…     │    │                                        │
-│  └──────────────────────────────┘    │                                        │
+│  📡 SHARED TELEMETRY (resizable L)   │  ⚖ DECISION CONSOLE (resizable R)    │
+│                                      │   ┌────────────────┬───────────────┐  │
+│  PIP:  [ 📈 Sparkline · 1,180 PSI ] │   │ 🟡 SCADA VIEW   │ 🟢 GDC ADVISOR│  │
+│  AMPS: [ 📈 Sparkline · 62A      ] │   └────────────────┴───────────────┘  │
+│  TEMP: [ 📈 Sparkline · 198°F    ] │                                        │
+│  VIB:  [ 📈 Sparkline · 1.3mm/s  ] │   SCADA: Manual intervention warning   │
+│  ↕ Drag handle (chart height)        │   GDC: RAG card + wellbore twin       │
+│                                      │       + informed action buttons       │
 └──────────────────────────────────────┴──────────────────────────────────────┘
+                 ↔ Drag splitter (column width)
 ```
 
-The injection selects one of the two hidden fault types **randomly** (GDC chooses behind the scenes via `launchHorizon1Unloading()`). The presenter and audience do not know which was injected until GDC reveals the retrieved document.
+Clicking `⚡ Ingest Pad Anomalies`:
+1. **Randomly selects a target well** from A-1 to A-6 to receive the unloading anomaly.
+2. **Randomly selects** Gas Lock or Fluid Drawdown (50/50, fault type hidden until GDC reveals it).
+3. **Sets departure rate** based on `h1RampSpeed`: Standard (900s) or Accelerated (300s).
+4. **Initiates benign transient disturbances** (gas venting) on two adjacent wells, triggering SCADA nuisance alarms which GDC suppresses via retrieved Daily Well Test logs.
+
+Clicking any well in the surveillance grid dynamically loads that well's telemetry and GDC assessment.
 
 ---
 
-### 4.3 Component A: Shared Telemetry Column (Left 40%)
+### 4.3 Component A: Shared Telemetry Column (Left 40%, resizable)
 
 **Always visible.** Proves that SCADA and GDC are reading the **same physical sensors**.
 
-- **Four ISA-101 Sensor Bars**: PIP (↓ declining), Motor Amps (↓ declining), Winding Temp (stable), Motor Vibration (stable).
-- **Combined Dual-Axis Trend Chart (Plotly.js)**: One chart, two y-axes:
-  - Left axis: Intake Pressure (PSI), blue line
-  - Right axis: Motor Current (Amps), green line
-  - Both lines shown declining in synchronization — the visual proof that the sensor signature is **identical** for Gas Lock and Drawdown.
-- **Design principle**: Grayscale/slate engineering HMI aesthetic (ISA-101 style). No color alarms fired yet.
+- **Pad Alpha 6-Well Surveillance Grid**: Interactive well cards at the top of the column. Each card displays the well label, a pulsing status dot (✓ nominal / ⚠ alerting / ⚠ suppressed), and real-time health. Clicking a card loads that well's telemetry into the sparkline cards below.
+- **Four Stacked Plotly Sparkline Cards** (replaces horizontal progress bars):
+  - `#h1-spark-psi`: Pump Intake Pressure (PSI) — declining trend for target well
+  - `#h1-spark-amps`: Motor Current (Amps) — declining trend for target well
+  - `#h1-spark-temp`: Winding Temperature (°F) — stable for both fault types
+  - `#h1-spark-vib`: Motor Vibration (mm/s) — slightly elevated for gas lock
+  - Each card renders a live Plotly trend line with a **large bold live digital readout** via annotation in the top-right corner.
+  - Each card includes a **subtle horizontal dashed red line** at the SCADA alarm threshold.
+- **Drag Handles**:
+  - `.h1-splitter`: vertical drag handle (between Left and Right columns) controlling `h1SplitPercent` (25%–75%). Double-click resets to 38%.
+  - `.h1-v-splitter`: horizontal drag handle (inside Left column, below sparklines) controlling `h1ChartH` (80px–320px). Double-click resets to 140px.
 
 ---
 
-### 4.4 Component B: Sub-Tab 1 — 🟡 Traditional SCADA View (Blind Gamble)
+### 4.4 Component B: Sub-Tab 1 — 🟡 Traditional SCADA View (Reactive Manual Intervention)
 
 **The Operator's Dilemma Without Document Context.**
 
 - **SCADA Alarm State**: `⚠ AMBIGUOUS STATE — Fluid Unloading Detected`
 - **The Dilemma Text**: *"PIP and Amps declining simultaneously. Physical telemetry signature is identical for Gas Lock (VFD trim is safe) and Reservoir Fluid Drawdown (VFD trim seizes pump). SCADA has no document access. Misdiagnosis risk: representative $150k stuck-pump cost. Conservative path: wait for underload trip (well shuts in; ~$3k–$8k restart estimate)."*
-- **Action Buttons (Blind Gamble)**:
-  - **`[Execute VFD Speed-Down: 52 → 44 Hz]` (Blind Gamble)**:
-    - *If Gas Lock (hidden)*: Lucky! Well stabilizes. GDC log: *"SCADA operator gambled and succeeded (the anomaly was Gas Lock). Without GDC, this had ~50% downside risk."*
+- **Action Buttons (Reactive Manual Intervention)**:
+  - **`[Execute VFD Speed-Down: 52 → 44 Hz]` (Standard Response)**:
+    - *If Gas Lock (hidden)*: Well stabilizes. GDC log: *"SCADA operator intervened manually — successful on Gas Lock. Without GDC, this had ~50% downside risk."*
     - *If Drawdown (hidden)*: Pump seizes. `h1Seized = true`. Screen: `❌ PUMP SEIZED — Sand bridged downhole. Motor unresponsive on restart.` Plus representative Capex breakdown (~$150k).
   - **`[Execute Conservative Shutdown]` (Safe Inaction)**:
     - Well shuts in. Avoids damage. `h1Resolved = true`. Log: *"SCADA conservative shutdown. Well offline. Representative deferred oil restart: ~$3k–$8k."*
@@ -145,16 +152,18 @@ The injection selects one of the two hidden fault types **randomly** (GDC choose
 
 ---
 
-### 4.6 Injection Mechanics
+### 4.6 Injection & Workload Scaling Mechanics
 
-- **Single Injector**: One `⚡ Inject Unloading Anomaly` button. The hidden fault type is chosen randomly by `launchHorizon1Unloading()`.
-- **VFD Trim vs. Shutdown**: Both actions are available on BOTH the SCADA and GDC sides. The difference is whether the operator has the GDC digital twin and document context to make the decision intelligently.
-- **No dual inject buttons**: The physical ambiguity is the point. The attendee should not know whether it's Gas Lock or Drawdown before GDC reveals it. Exposing the fault type before revelation defeats the narrative entirely.
+- **Single Trigger**: `⚡ Ingest Pad Anomalies` button. Randomly selects a target well (A-1 to A-6) and fault type (gas_lock or fluid_drawdown, 50/50). The fault type is hidden until GDC reveals it.
+- **Departure Rate**: `h1RampSpeed` toggle in banner — `Standard` (900s duration, 15–30 min window) or `Accelerated` (300s duration, 5–10 min window).
+- **Nuisance Well Suppression**: Two adjacent wells receive benign transient disturbances triggering SCADA nuisance alarms. GDC suppresses them via Daily Well Test RAG retrieval. SCADA floods the operator with 3 concurrent alerts; GDC filters to 1 critical alert.
+- **VFD Trim vs. Shutdown**: Both actions available on BOTH SCADA and GDC sides. Difference is informed vs. uninformed, not gated vs. ungated.
 - **Outcome Mapping**:
   - Gas Lock + VFD Trim → Recovery (correct)
   - Gas Lock + Emergency Shutdown → Safe shut-in (conservative but acceptable)
   - Drawdown + VFD Trim → `h1Seized` (catastrophic — shows the $150k consequence)
   - Drawdown + Emergency Shutdown → Safe shut-in (correct)
+  - Suppressed nuisance well viewed → GDC shows nominal wellbore twin + Daily Well Test RAG card
 
 ---
 

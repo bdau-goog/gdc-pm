@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Session K — tab nav labels fixed, deployed)
-**git head:** `e8838af` (fix(ui): Session K — header nav tab labels Detect→Discern, Discern→Classify)
+**Date:** June 8, 2026 (Session L prep — Triage & Surveillance redesign spec locked)
+**git head:** `ff27e7f` (docs: Session K handoff)
 **fault-trigger-ui image:** `sha256:d66b61e6` (1/1 Running — Session K)
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
@@ -33,42 +33,93 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Task — Session L
 
-### What Was Completed in Sessions J + K
+### Context: Design Decisions Locked in Session L Prep
 
-- **Session J:** Complete H1 "Discern" tab clean-slate rewrite — Double-Blind Choice Game fully deployed (`sha256:2fe914a6`)
-- **Session K:** Header nav tab labels corrected: "Detect" → "Discern" (H1), "Discern" → "Classify" (H2) (`sha256:d66b61e6`)
+**CRITICAL — READ BEFORE WRITING CODE:**
 
-### Current State of the Live Demo
+The user reviewed the H1 "Discern" tab and identified three fundamental design requirements that require a clean-slate rework of the Left telemetry column:
 
-**Header Nav:** `How It Works | Discern | Classify | Optimize` ✅ (correct per DEMO_MASTER §7)
+**Decision 1 — De-Gamification:** Remove ALL game/gamble terminology:
+- "Double-Blind Choice Game" → **"Comparative Detection Scenario"**
+- "Blind Gamble" / "🎲" → **"Reactive Manual Intervention"**
+- "Ready for Double-Blind Choice Game" → **"Pad Alpha Surveillance Active"**
+- "Inject Unloading Anomaly" → **"Ingest Pad Anomalies"**
 
-**H1 Discern Tab:** Complete Double-Blind Choice Game deployed and working:
-- Single inject button, random 50/50 Gas Lock / Fluid Drawdown
-- Left 40%: telemetry column + dual-axis PIP/Amps trend chart
-- Right 60%: SCADA View (blind gamble) + GDC Advisor (RAG card, wellbore twin, verdict, override modal)
-- Field log modals (Shift Note + Sonic Log)
-- Status banner double-blind until h1RagRevealed = true
+**Decision 2 — Resizability:** ALL panels must be resizable:
+- **Horizontal**: A vertical `.h1-splitter` drag handle between the Left (Telemetry) and Right (Decision Console) columns, adjusting `h1SplitPercent` from 25%–75%.
+- **Vertical**: A horizontal `.h1-v-splitter` drag handle inside the Left column between sensor cards and the trend sparkline area, adjusting `h1ChartH` from 80px–320px.
+- Plotly chart resize must fire after both drags via `$nextTick`.
 
-**H2 Classify Tab:** Functional but uses old layout (no SCADA/GDC split pane, no narrative).
+**Decision 3 — Workload Scaling via Randomized Pad Triage:**
+- Replace single-well sensor bars with a **Pad Alpha 6-well surveillance grid** (Wells A-1 to A-6, interactive click-through) at the top of the Left column.
+- Clicking `⚡ Ingest Pad Anomalies` **randomly selects a target well** to inject the unloading anomaly (gas lock or drawdown, 50/50 as before).
+- Two adjacent wells experience **benign transient disturbances** (gas venting) that trigger SCADA nuisance alarms — but GDC automatically suppresses them based on retrieved Daily Well Test logs.
+- Clicking any well (alerting, suppressed, or nominal) dynamically loads that well's live sensor data and GDC Advisor verdict.
 
-**H3 Optimize Tab:** Complete — Vizier Bayesian optimization, working.
+**Decision 4 — Live Sparkline Cards replacing Sensor Bars:**
+- Remove the 4 ISA-101 horizontal progress bars entirely.
+- Replace with **4 individual stacked Plotly sparkline trend charts** (PIP, Amps, Temp, Vib).
+- Each card has a **large bold digital readout** (live real-time value in the chart title/annotation).
+- Each card has a **subtle horizontal dashed red line** at the SCADA alarm threshold.
 
-### Next Tasks (in priority order)
+**Decision 5 — Anomaly Departure Rate:**
+- Add a `h1RampSpeed` selector in the banner: **Standard** (900s / 15–30 min window) and **Accelerated** (300s / 5–10 min window). This maps directly to `duration_seconds` in the API call.
 
-**Task L-1 — Browser smoke-test of the full H1 Discern demo flow**
-Since no browser is available on this SSH remote, ask the user to:
-1. Navigate to `http://gdc-pm.bdau.io`
-2. Click the **Discern** tab
-3. Click ⚡ Inject Unloading Anomaly
-4. Verify: (a) status banner shows "UNLOADING ANOMALY ACTIVE — FAULT TYPE UNKNOWN" until ~2s; (b) switching to GDC Advisor shows "⏳ Retrieving…" then the RAG card; (c) click the RAG card → field log modal opens; (d) try VFD trim from GDC tab during Drawdown → override modal fires
-5. Report any visual issues back so they can be fixed
+---
 
-**Task L-2 — H2 "Classify" tab upgrade** (from DEMO_MASTER §5)
-The current H2 tab shows the old layout (3 cards + 2 charts + truck roll). Per DEMO_MASTER.md §5, the Classify tab needs:
-- Same two-pane structure: Left 40% shared telemetry, Right 60% SCADA vs GDC console
-- SCADA View: "⚠ VIBRATION ALARM — Possible ESP bearing failure"  ($150k false positive risk)
-- GDC Advisor: RAG retrieval reveals surface slug flow (OEM guide + separator test), verdict "PUMP IS HEALTHY — surface issue", dispatch truck roll ($1,500)
-- This is a clean redesign of lines 716–850 in index.html + minor app.js additions
+### Session L Implementation Steps (in order)
+
+**Step 1 — Update DEMO_MASTER.md §4** (doc only — confirm spec before coding):
+- Update §4 heading, all action button labels, all "game/gamble" language per decisions above.
+- No code written until spec is confirmed.
+
+**Step 2 — app.js data() state additions:**
+```js
+h1SelectedWell: 'ESP-ALPHA-1',    // currently viewed well in left column
+h1TargetWell: null,               // randomly injected alerting well
+h1NuisanceWells: [],              // benign disturbance wells (2 adjacent)
+h1SplitPercent: 38,               // horizontal split % between L/R columns
+h1ChartH: 140,                    // vertical sparkline height (px)
+h1RampSpeed: 'standard',          // 'standard' | 'accelerated'
+h1WellData: {},                   // per-well telemetry cache: { 'ESP-ALPHA-N': {psi, amps, temp, vib} }
+```
+
+**Step 3 — launchHorizon1Unloading()** changes:
+- Pick `h1TargetWell` randomly from `['ESP-ALPHA-1'..'ESP-ALPHA-6']`.
+- Pick two adjacent well IDs as `h1NuisanceWells`.
+- Inject `fault_type` (gas_lock or fluid_drawdown, 50/50) on `h1TargetWell` only.
+- Set `duration_seconds = h1RampSpeed === 'accelerated' ? 300 : 900`.
+
+**Step 4 — initH1SplitterDrag() and initH1ChartVerticalDrag()** (new app.js methods):
+- Horizontal drag: track `mousedown` on `.h1-splitter`, update `h1SplitPercent` on mousemove, call `Plotly.Plots.resize` on all 4 sparkline DOM elements.
+- Vertical drag: track `mousedown` on `.h1-v-splitter`, update `h1ChartH` on mousemove, call Plotly resize.
+- Double-click on either handle resets to defaults.
+
+**Step 5 — _renderH1Charts(d)** rewrite:
+- Remove the existing dual-axis PIP/Amps combined chart.
+- Render 4 separate Plotly sparklines into `#h1-spark-psi`, `#h1-spark-amps`, `#h1-spark-temp`, `#h1-spark-vib`.
+- Each chart uses `height: this.h1ChartH`.
+- Traces use historical data from `d.sensors.psi.traces[0]` etc.
+- Add a horizontal `shape` (dashed red line) at the SCADA threshold (800 PSI, 50A, 280°F, 8.0 mm/s).
+- Add an `annotation` in top-right corner with the current live value in large text.
+
+**Step 6 — index.html Left column rebuild:**
+- Replace the existing `.h1-telemetry-col` contents.
+- Add interactive Pad Alpha Surveillance Grid (6 well cards, clickable, color-coded by status).
+- Stack 4 sparkline chart divs (`h1-spark-psi`, `h1-spark-amps`, `h1-spark-temp`, `h1-spark-vib`).
+- Insert `.h1-v-splitter` handle below the Pad Grid.
+- Insert `.h1-splitter` handle between Left and Right columns.
+
+**Step 7 — index.html Right column changes:**
+- Update banner: "Ingest Pad Anomalies" button with a ramp speed toggle.
+- De-gamify all text labels per Decisions 1 above.
+
+**Step 8 — styles.css additions:**
+- `.h1-splitter`, `.h1-v-splitter`: cursor, size, hover/drag states.
+- `.h1-well-card`, `.h1-well-card-alerting`, `.h1-well-card-suppressed`: grid/hover colors.
+- `.h1-spark-card`: container for each individual trend chart.
+
+**Step 9 — Build, push, rollout, verify** per standard procedure.
 
 ---
 
@@ -76,9 +127,10 @@ The current H2 tab shows the old layout (3 cards + 2 charts + truck roll). Per D
 
 | Item | Status | Note |
 |------|--------|------|
-| All H1 Discern features | ✅ Live | Session J deployed, Session K labels fixed |
-| H2 Classify layout | ⚠ Old | Functional but lacks SCADA/GDC split narrative |
-| H3 Optimize | ✅ Complete | No changes needed |
+| H1 game/gamble labels | ⚠ Stale — Session L | All to be replaced per Decision 1 |
+| H1 sensor bars (horizontal) | ⚠ Remove — Session L | Replace with sparkline cards |
+| H1 dual-axis chart | ⚠ Remove — Session L | Replace with 4 individual sparklines |
+| H1 resizability | ⚠ Missing — Session L | Add horizontal + vertical drag handles |
 
 ---
 
