@@ -2,6 +2,25 @@
 
 ---
 
+## Session H (June 8, 2026) — *Phase 1 H1 UI — Operating Envelope + Discerning Operator narrative deployed*
+
+**Code committed:** `2cd9768` (feat(ui): Phase 1 H1 — Pad Alpha map, Operating Envelope, Split SCADA/GDC card, Pump-Off exclusion)
+
+**What was done:**
+1. **Critical H1 re-analysis:** Traced the $2,500-vs-$8,000 dollar gap math error — the gap at the low end is only $500, not "an order of magnitude." Resolved by pivoting H1 entirely off the dollar-ladder and onto the **"Discerning Operator / Pump-Off Risk"** paradigm: raw PIP+Amps drops are physically identical for Gas Lock (trim is safe) and Reservoir Pump-Off (trim causes $150k sand-bridge). SCADA cannot safely auto-trim without the document context GDC provides.
+2. **Document Consolidation (clean break):** Created `feature-trio-clean` branch. Deleted `CLAIM_LEDGER.md` (merged as appendix into `DEMO_MASTER.md`). Archived `INTEGRITY_AUDIT.md` + `BACKEND_CONFORMANCE_REPORT.md`. Active doc footprint reduced to 3 files. `DEMO_MASTER.md` rewrote with L1/L2/L3 capability stack, H1 Three-Act Screen spec, and updated Claims Ledger.
+3. **Phase 1 UI deployed:**
+   - **Pad Alpha 14-well overview strip:** 14 Vue-driven well icons. A-1 pulses amber on fault inject. Proves scale story.
+   - **3-column H1 layout:** Left 23% (ISA-101 sensor bars + timeline), Center 40% (Operating Envelope + Decision Split Card), Right 37% (GDC Advisor + Intel Feed).
+   - **Operating Envelope (Plotly scatter):** PSI vs Motor Amps with Gas Lock / Pump-Off / Nominal background zones. Live dot trail migrates out of Nominal during fault. When `h1EvidenceActive >= 2` (shift note retrieved), Pump-Off zone dims to gray + "❌ EXCLUDED (L3 Fused)" label — the key visual moment.
+   - **Decision Split Card:** SCADA box (ambiguous, Pump-Off risk, conservative trip path) vs GDC Advisor box (L3 confirmed, safe to trim, [APPROVE VFD TRIM] HITL button).
+
+**Key decisions:** (a) H1's economic story is now "production continuity vs. offline trip" NOT a simple $500 dollar-gap. (b) "Operational-Lead with Benchmark Dollars" framing adopted — physical risk reality leads, representative costs are supporting. (c) `h1PumpOffExcluded` keyed to `h1EvidenceActive >= 2` as a pragmatic proxy for RAG shift-note retrieval — close enough for now; a future session can tie it to a specific `pump_off_excluded` flag from `app.py`.
+
+**Next task (Session I):** Option B or C — either styled RAG document cards (Phase 2) or H2 Slug Flow discriminator chart + evidence board (Phase 3).
+
+---
+
 ## Session H (June 8, 2026) — *Total Document Sweep & Narrative Consolidation*
 
 **Code committed:** `feature-trio-clean` (new branch, all cruft purged, authoritative master consolidated)

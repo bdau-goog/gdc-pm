@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Post-Consolidation)  
-**git head:** `feature-trio-clean` — branch for clean UI rebuild  
-**fault-trigger-ui image:** `sha256:df7f9433` (1/1 Running — last deployed Session G)  
+**Date:** June 8, 2026 (Session H end)  
+**git head:** `2cd9768` (feat(ui): Phase 1 H1 — Pad Alpha map, Operating Envelope, Split card)  
+**fault-trigger-ui image:** `sha256:39bbce50` (1/1 Running — Session H)  
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)  
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -27,36 +27,27 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Phase 1 — H1 UI Rebuild (Three-Act Screen)
+## STEP 3: Session H State Summary & Next Tasks
 
-### What to build (all in `index.html` + `static/styles.css` + `static/app.js`):
+### What was done Session H:
+1. **Document consolidation (clean break):** `feature-trio-clean` branch created. Standalone `CLAIM_LEDGER.md` deleted — merged into `DEMO_MASTER.md` appendix. `INTEGRITY_AUDIT.md` and `BACKEND_CONFORMANCE_REPORT.md` archived. Active docs reduced to 3 files.
+2. **Phase 1 H1 UI deployed (`2cd9768`):**
+   - **Pad Alpha overview strip:** 14-well Vue-driven map above the H1 banner. Well A-1 pulses amber when fault injected. Proves scale story visually.
+   - **3-column layout:** Left (25% sensors + timeline), Center (40% Operating Envelope + Decision Split Card), Right (35% GDC Advisor + Intel Feed).
+   - **Operating Envelope (Plotly scatter):** X=Motor Amps, Y=Intake PSI. Live trail migrates from Nominal → Gas Lock zone. Three background zones (Nominal/Gas Lock/Pump-Off Risk). SCADA alarm lines. When `h1EvidenceActive >= 2` (shift note retrieved), Pump-Off zone dims to gray + `❌ EXCLUDED (L3 Fused)` label.
+   - **Decision Split Card:** Left half: SCADA (Ambiguous, Pump-Off risk); Right half: GDC (L3 context fused, safe to trim, `[APPROVE VFD TRIM]` HITL button).
+   - `h1EnvelopeHistory[]`, `h1PumpOffExcluded` Vue state + `_renderEnvelopeChart()` + watcher on `h1EvidenceActive`.
 
-**ACT 1 — Pad Alpha Well Map (Entry Point)**
-- A dark-mode Vue-driven grid of 14 well-icons (CSS divs, no SVG library).
-- Nominal: all wells show gray status dots.
-- On fault inject: `ESP-ALPHA-1` pulses amber + GDC Alert banner slides in.
-- Clicking `ESP-ALPHA-1` transitions to the Single-Well Diagnostic Screen (Act 2+3).
+### Next Tasks (Session I):
 
-**ACT 2 — 3-Column Single-Well Diagnostic Screen**
-- Col 1 (~25%): ISA-101 horizontal sensor bars (PIP, Amps, Temp, Vib) with directional labels + SCADA alarm ticks.
-- Col 2 (~40%): The **Operating Envelope Plotly scatter chart** (see below).
-- Col 3 (~35%): GDC Advisor (streaming Gemma text + superscript citations) + Intel Feed (file-styled RAG document cards that pulse-glow on new AI doc generation).
+**Option A: Wire Pump-Off Exclusion to actual RAG retrieval**
+Currently `h1PumpOffExcluded` is set when `h1EvidenceActive >= 2` (2nd evidence wall item activated at 2s delay). To make it fully honest, tie it to retrieval of a specific "annulus level" or "pump-off excluded" field_intel document instead of the timer. Requires small `app.py` change to include a `pump_off_excluded` field in the intel feed item type, and `app.js` to watch for it.
 
-**ACT 3 — The Decision Split Card (full width, below 3 columns)**
-- LEFT box (yellow): SCADA View — Ambiguous. Pump-Off risk visible. Conservative path only.
-- RIGHT box (green): GDC Advisor — Gas Lock Confirmed. L3 evidence listed. `[APPROVE VFD TRIM]` HITL button.
+**Option B: Phase 2 — RAG Document Cards (clickable, styled as field docs)**
+Style the Intel Feed cards in the right column to look like authentic field documents (file-type badges, metadata header). Implement the Document Viewer Modal (click feed card → opens full doc content with source, author, timestamp).
 
-**The Operating Envelope Chart (Plotly — the most engineeringly credible visual)**
-- X-axis: Motor Amps (0–120A), Y-axis: Intake Pressure PSI (0–1,600)
-- Plotly background shapes: Green=Nominal, Amber=Gas Lock, Red=Pump-Off Risk zones.
-- SCADA alarm dashed lines: Horizontal at 800 PSI, Vertical at 50A.
-- Live orange dot trail (last 20 operating points) migrates into the Gas Lock zone during fault.
-- **L3 Exclusion Transition (the key demo moment):** When RAG retrieves the shift note, the Pump-Off zone dims to dark gray + label *"❌ EXCLUDED: L3 Context — Pump-Off ruled out"* appears dynamically.
-
-### Implementation approach:
-- All changes go into `index.html`, `static/styles.css`, `static/app.js` as a single batched `replace_in_file` per file.
-- No `app.py` changes required (all backend endpoints exist: `/api/inject-fault`, `/api/degrade-status`, `/api/live-telemetry`, `/api/agent/recommend-stream`).
-- Deploy: `docker build → docker push → kubectl rollout restart`.
+**Option C: H2 Slug Flow discriminator chart + Evidence Board**
+Build the two-line chart (Vibration rising, Motor Temp flat) + H2 evidence board (6 cards). This is the `$1,500 vs $150,000` false-positive-prevention demo. All wiring is in `app.py` — pure `index.html` addition.
 
 ---
 
