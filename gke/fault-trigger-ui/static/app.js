@@ -1065,7 +1065,8 @@ createApp({
         // Always poll live telemetry for SCADA card (ticking even before fault injection)
         const _pollLive1 = async () => {
           if (this.h1Injected) return; // fault degrade thread owns sensor values when injected
-          const r = await fetch('/api/live-telemetry/ESP-ALPHA-1');
+          const _liveWell = this.h1SelectedWell || 'ESP-ALPHA-1';
+          const r = await fetch(`/api/live-telemetry/${_liveWell}`);
           if (r.ok) { const d = await r.json();
             if (d.psi)        { this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';        this.h1RawPsi  = d.psi; }
             if (d.temp_f)     { this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';       this.h1RawTemp = d.temp_f; }
@@ -1077,28 +1078,31 @@ createApp({
         // Fetch baseline chart on tab open (shows live data even before injection)
         if (!this.h1Injected) {
           this.$nextTick(() => {
-            fetch('/api/plot/forecast-data/ESP-ALPHA-1')
+            const _baseWell = this.h1SelectedWell || 'ESP-ALPHA-1';
+            fetch(`/api/plot/forecast-data/${_baseWell}`)
               .then(r=>r.ok?r.json():null)
               .then(d=>{ if(d&&d.sensors&&!this.h1Injected){this.h1ForecastData=d;this.$nextTick(()=>this._renderH1Charts(d));} });
           });
         }
         // Fetch baseline intel docs if no fault injected
         if (!this.h1Injected && this.h1FeedItems.length === 0) {
-          fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
+          const _intelWell = this.h1SelectedWell || 'ESP-ALPHA-1';
+          fetch(`/api/intelligence-feed/${_intelWell}?fault_type=normal`)
             .then(r=>r.ok?r.json():null).then(d=>{ if(d&&!this.h1Injected) this.h1FeedItems=d.items||[]; });
         }
         // Restart fault degrade poll if returning to an active, unresolved scenario
         if (this.h1Injected && (!this.h1Resolved || this.h1Recovering)) {
           this.h1DegPollTimer = setInterval(async()=>{
-            const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
+            const _tw = this.h1TargetWell || 'ESP-ALPHA-1';
+            const r=await fetch(`/api/degrade-status/${_tw}`);
             if(r.ok){const d=await r.json(); if(d.is_active){
               this.h1HealthScore=(d.health_score*100).toFixed(1)+'%';
-              const cs=this.activeDegradesMap['ESP-ALPHA-1']?.current_sensors||{};
+              const cs=this.activeDegradesMap[_tw]?.current_sensors||{};
               if(cs.psi) this.h1SensorPsi=cs.psi.toFixed(0)+' PSI';
               if(cs.temp) this.h1SensorTemp=cs.temp.toFixed(0)+'°F';
               if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
             }}
-            const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
+            const rfd=await fetch(`/api/plot/forecast-data/${_tw}`);
             if(rfd.ok){const d=await rfd.json();if(d.sensors){
               this.h1ForecastData=d;this._renderH1Charts(d);
               if(d.class_probs){const top=Object.entries(d.class_probs).sort((a,b)=>b[1]-a[1])[0];if(top){this.h1TopClass=top[0];this.h1TopClassProb=top[1];}}
@@ -1180,12 +1184,12 @@ createApp({
         const _h1InjR = await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({asset_id: _assetId, fault_type: ft, duration_seconds: _durSecs})});
         if (_h1InjR.ok) { const _h1InjD = await _h1InjR.json(); if (_h1InjD.injection_params) this.showInjectionPopup(_h1InjD.injection_params); }
-        this.showToast(`\u26a1 ${ft === 'fluid_drawdown' ? 'Fluid Drawdown' : 'Gas Lock'} injected on ESP-ALPHA-1`, 'var(--orange)');
-        const feed = await fetch(`/api/intelligence-feed/ESP-ALPHA-1?fault_type=${ft}`);
+        this.showToast(`\u26a1 ${ft === 'fluid_drawdown' ? 'Fluid Drawdown' : 'Gas Lock'} injected on ${_assetId}`, 'var(--orange)');
+        const feed = await fetch(`/api/intelligence-feed/${_assetId}?fault_type=${ft}`);
         if (feed.ok) { const d=await feed.json(); this.h1FeedItems=d.items||[]; this.h1GemmaFinding=d.gemma_finding||''; }
         if (this.h1FeedPollInterval) clearInterval(this.h1FeedPollInterval);
         this.h1FeedPollInterval = setInterval(() => {
-          fetch(`/api/intelligence-feed/ESP-ALPHA-1?fault_type=${ft}`)
+          fetch(`/api/intelligence-feed/${_assetId}?fault_type=${ft}`)
             .then(r => r.ok ? r.json() : null)
             .then(d => { if (d && this.h1Injected && !this.h1Resolved) this.h1FeedItems = d.items || []; });
         }, 15000);
@@ -1206,15 +1210,16 @@ createApp({
         }, 5000);
         // Forecast poll
         this.h1DegPollTimer = setInterval(async()=>{
-          const r=await fetch('/api/degrade-status/ESP-ALPHA-1');
+          const _tw2 = this.h1TargetWell || _assetId || 'ESP-ALPHA-1';
+          const r=await fetch(`/api/degrade-status/${_tw2}`);
           if(r.ok){const d=await r.json(); if(d.is_active){
             this.h1HealthScore=(d.health_score*100).toFixed(1)+'%';
-            const cs=this.activeDegradesMap['ESP-ALPHA-1']?.current_sensors||{};
+            const cs=this.activeDegradesMap[_tw2]?.current_sensors||{};
             if(cs.psi) this.h1SensorPsi=cs.psi.toFixed(0)+' PSI';
             if(cs.temp) this.h1SensorTemp=cs.temp.toFixed(0)+'°F';
             if(cs.motor_amps !== undefined && cs.motor_amps !== null) this.h1SensorAmps = cs.motor_amps.toFixed(1)+' A';
           }}
-          const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-1');
+          const rfd=await fetch(`/api/plot/forecast-data/${_tw2}`);
           if(rfd.ok){const d=await rfd.json();if(d.sensors){this.h1ForecastData=d;
             // Capture per-run window total on first non-null thermal deadline (failure contributor = motor-winding thermal, API RP 11S §4.2)
             if(!this.h1WindowTotal){const _tl=d.thermal_lead_time_minutes;const _sc=d.time_to_scada_minutes;
@@ -1231,7 +1236,8 @@ createApp({
       if (this.h1AdvisorTimer)      { clearInterval(this.h1AdvisorTimer);      this.h1AdvisorTimer      = null; }
       if (this.h1FeedPollInterval)  { clearInterval(this.h1FeedPollInterval);  this.h1FeedPollInterval  = null; }
       if (this.h1RecoveryPollTimer) { clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null; }
-      try { await fetch('/api/cancel-degrade/ESP-ALPHA-1',{method:'POST'}); } catch{}
+      const _cancelWell = this.h1TargetWell || 'ESP-ALPHA-1';
+      try { await fetch(`/api/cancel-degrade/${_cancelWell}`,{method:'POST'}); } catch{}
       this.h1Injected=false; this.h1Resolved=false; this.h1Recovering=false;
       this.h1SensorPsi=null; this.h1SensorTemp=null; this.h1SensorAmps=null; this.h1HealthScore=null;
       this.h1FeedItems=[]; this.h1GemmaFinding=''; this.h1ForecastData=null; this.h1ActiveSensor='psi';
@@ -1282,9 +1288,11 @@ createApp({
       this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXECUTED';
       this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED';
       if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
-      this.h1AdvisorHtml += '<br><br><strong style="color:var(--green)">✅ Emergency shutdown executed. Well A-1 shut in. Pump integrity confirmed. Fluid level recovery underway — well can restart once submergence is restored.</strong>';
+      const _shutWell = this.h1TargetWell || 'ESP-ALPHA-1';
+      const _shutLabel = _shutWell.replace('ESP-ALPHA-','A-');
+      this.h1AdvisorHtml += `<br><br><strong style="color:var(--green)">✅ Emergency shutdown executed. Well ${_shutLabel} shut in. Pump integrity confirmed. Fluid level recovery underway — well can restart once submergence is restored.</strong>`;
       this.showToast('✅ Safe shut-in executed — pump preserved', 'var(--green)');
-      try { await fetch('/api/cancel-degrade/ESP-ALPHA-1', {method:'POST'}); } catch(e) {}
+      try { await fetch(`/api/cancel-degrade/${_shutWell}`, {method:'POST'}); } catch(e) {}
     },
     async approveH1VFD() {
       // GDC Advisor view: intercept VFD trim during drawdown — show override modal instead
@@ -1300,7 +1308,8 @@ createApp({
         if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
         this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — velocity dropped below critical lift (4.2 ft/s). Sand settling and bridging downhole string. Motor unresponsive on restart. Engineering assessment required.</strong>';
         this.showToast('⚠ Pump seized — VFD trim contraindicated during fluid drawdown', 'var(--red)');
-        try { await fetch('/api/cancel-degrade/ESP-ALPHA-1', {method:'POST'}); } catch(e) {}
+        const _seizeWell = this.h1TargetWell || 'ESP-ALPHA-1';
+        try { await fetch(`/api/cancel-degrade/${_seizeWell}`, {method:'POST'}); } catch(e) {}
         return;
       }
       this.h1Resolved = true;
@@ -1311,18 +1320,20 @@ createApp({
       this.h1AdvisorHtml += '<br><br><strong style="color:var(--green)">↗ VFD speed-down command sent (52 → 44 Hz / 3,120 → 2,640 RPM). Recovery initiated. Monitoring wellbore response…</strong>';
       this.showToast('↗ VFD command sent — monitoring wellbore recovery. $150k pump replacement avoided.','var(--green)');
       try {
+        const _vfdWell = this.h1TargetWell || 'ESP-ALPHA-1';
         await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({asset_id:'ESP-ALPHA-1',fault_type:'gas_lock',action_taken:'VFD reduced to 44 Hz (2,640 RPM) via SCADA — gas void migrating up annulus',cost_incurred:0})});
+          body:JSON.stringify({asset_id:_vfdWell,fault_type:this.h1FaultType||'gas_lock',action_taken:'VFD reduced to 44 Hz (2,640 RPM) — gas void migrating up annulus',cost_incurred:0})});
       } catch(e) {}
       // Poll _post_approval_monitor messages every 30s
       this.h1RecoveryPollTimer = setInterval(async () => {
+        const _vfdWell2 = this.h1TargetWell || 'ESP-ALPHA-1';
         try {
-          const r = await fetch('/api/recovery-status/ESP-ALPHA-1');
+          const r = await fetch(`/api/recovery-status/${_vfdWell2}`);
           if (r.ok) { const d = await r.json();
             if (d.msg) { this.h1RecoveryMsg = d.msg; }
             if (d.state === 'complete') {
               this.h1Recovering = false;
-              this.h1AdvisorHtml += '<br><strong style="color:var(--green)">✅ Recovery complete. ESP-ALPHA-1 nominal. $150,000 pump replacement avoided.</strong>';
+              this.h1AdvisorHtml += `<br><strong style="color:var(--green)">✅ Recovery complete. ${_vfdWell2} nominal. $150,000 pump replacement avoided.</strong>`;
               clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null;
               if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
             }
@@ -1357,32 +1368,72 @@ createApp({
     _renderH1Charts(d) {
       if (!d || !d.sensors) return;
       const h = this.h1ChartH;
+      // EMA smoothing (alpha=0.18): removes tick-level sensor noise while preserving trend direction.
+      // Consistent with ISA-101 process trend display practices for DCS/HMI systems.
+      const _ema = (vals, alpha) => {
+        if (!vals || vals.length === 0) return [];
+        const out = [vals[0]];
+        for (let i = 1; i < vals.length; i++) out.push(alpha * vals[i] + (1 - alpha) * out[i-1]);
+        return out;
+      };
       const _spark = (domId, sensorKey, label, color, thresholdY, thresholdDir, unit, decimals) => {
         const el = document.getElementById(domId);
         if (!el) return;
-        const traceData = d.sensors?.[sensorKey]?.traces?.[0];
-        const xs = traceData?.x || [];
-        const ys = traceData?.y || [];
+        const sensorData = d.sensors?.[sensorKey];
+        const histTrace  = sensorData?.traces?.[0];
+        const projTrace  = sensorData?.traces?.[1];
+        const coneTrace  = sensorData?.traces?.[2];
+        const xs    = histTrace?.x || [];
+        const ysRaw = histTrace?.y || [];
+        // Apply EMA to smooth display (raw Gaussian noise σ≈65 PSI on ESP nominal, per fault_signatures.py)
+        const ys    = _ema(ysRaw, 0.18);
         const liveVal = ys.length ? ys[ys.length - 1] : null;
         const liveStr = liveVal != null ? (liveVal.toFixed(decimals) + ' ' + unit) : '—';
         const alarmFired = liveVal != null && (thresholdDir === 'low' ? liveVal < thresholdY : liveVal > thresholdY);
         const annColor = alarmFired ? '#ef4444' : '#94a3b8';
+        // Threshold line (horizontal dashed red at SCADA alarm limit)
         const shapes = [{
           type: 'line', x0: 0, x1: 1, xref: 'paper',
           y0: thresholdY, y1: thresholdY, yref: 'y',
           line: { color: 'rgba(239,68,68,0.55)', width: 1.5, dash: 'dash' }
         }];
+        // NOW divider: vertical dotted line separating history from ML projection
+        if (projTrace && projTrace.x && projTrace.x.length > 0) {
+          shapes.push({
+            type: 'line', x0: projTrace.x[0], x1: projTrace.x[0], xref: 'x',
+            y0: 0, y1: 1, yref: 'paper',
+            line: { color: 'rgba(100,116,139,0.5)', width: 1, dash: 'dot' }
+          });
+        }
         const annotations = [{
           xref: 'paper', yref: 'paper', x: 0.98, y: 0.96, xanchor: 'right', yanchor: 'top',
           text: '<b>' + liveStr + '</b>',
           font: { size: 13, color: annColor, family: 'monospace' },
           showarrow: false, bgcolor: 'rgba(0,0,0,0)'
         }];
+        // Historical trace: smoothed, solid
         const traces = [{
-          x: xs, y: ys, type: 'scatter', mode: 'lines',
+          x: xs, y: ys, type: 'scatter', mode: 'lines', name: label,
           line: { color: color, width: 2 },
-          hovertemplate: '<b>' + label + ':</b> %{y:.' + decimals + 'f} ' + unit + '<extra></extra>'
+          hovertemplate: '<b>' + label + ' (live):</b> %{y:.' + decimals + 'f} ' + unit + '<extra></extra>'
         }];
+        // ML Projection trace: dotted, same color — shows where sensor is predicted to go
+        if (projTrace && projTrace.y && projTrace.y.length > 0) {
+          traces.push({
+            x: projTrace.x, y: projTrace.y, type: 'scatter', mode: 'lines', name: 'GDC Forecast',
+            line: { color: color, width: 1.5, dash: 'dot' },
+            hovertemplate: '<b>' + label + ' forecast:</b> %{y:.' + decimals + 'f} ' + unit + '<extra></extra>'
+          });
+        }
+        // Confidence cone: translucent fill around projection
+        if (coneTrace && coneTrace.y && coneTrace.y.length > 0) {
+          const coneColorMap = {'#3b82f6':'rgba(59,130,246,0.09)','#22c55e':'rgba(34,197,94,0.09)','#f97316':'rgba(249,115,22,0.09)','#a78bfa':'rgba(167,139,250,0.09)'};
+          traces.push({
+            x: coneTrace.x, y: coneTrace.y, type: 'scatter', mode: 'none',
+            fill: 'toself', fillcolor: coneColorMap[color] || 'rgba(100,116,139,0.08)',
+            line: { width: 0 }, hoverinfo: 'skip', showlegend: false, name: 'Confidence'
+          });
+        }
         const layout = {
           paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(15,23,42,0.25)',
           height: h,
@@ -1542,7 +1593,7 @@ createApp({
       try {
         const r = await fetch('/api/agent/chat', {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', message, context: this.h1AdvisorText.slice(0,350)})
+          body: JSON.stringify({asset_id: this.h1TargetWell||'ESP-ALPHA-1', fault_type: this.h1FaultType||'gas_lock', message, context: this.h1AdvisorText.slice(0,350)})
         });
         if (r.ok) {
           const resp = ((await r.json()).response || '').trim();
@@ -1561,7 +1612,7 @@ createApp({
     },
     _startAdvisorStream() {
       const base = this.h1GemmaFinding ||
-        `Gas lock pattern detected · confidence building on ESP-ALPHA-1. ` +
+        `Unloading anomaly detected · confidence building on ${this.h1TargetWell||'ESP-ALPHA-1'}. ` +
         `Pump Intake Pressure declining at \u221214 PSI/min\u00b9, motor amps declining at \u22122.3 A/min\u00b9 \u2014 ` +
         `the correlated 4-sensor pattern is the diagnostic signature of gas void fraction exceeding the pump handling threshold\u2075. ` +
         `Separator gas test confirms GOR 1,310 scf/bbl \u2014 up 19% from prior tour\u00b3. ` +
@@ -1610,7 +1661,7 @@ createApp({
       this.h1ChatMessages.push({id: uid+'a', role:'assistant', text: '…'});
       try {
         const r = await fetch('/api/agent/chat', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type:'gas_lock', message: q, context: this.h1AdvisorText.slice(0,600)})});
+          body: JSON.stringify({asset_id: this.h1TargetWell||'ESP-ALPHA-1', fault_type: this.h1FaultType||'gas_lock', message: q, context: this.h1AdvisorText.slice(0,600)})});
         if (r.ok) { const d = await r.json(); this.h1ChatMessages[this.h1ChatMessages.length-1].text = d.response || 'No response from model.'; }
         else { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
       } catch(e) { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }

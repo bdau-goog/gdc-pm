@@ -479,57 +479,66 @@
               <span v-if="h1ConsoleTab==='gdc'" style="font-size:0.52rem;color:var(--green);margin-left:auto;padding-right:8px;align-self:center">pgvector RAG · AlloyDB on-cluster</span>
             </div>
 
-            <!-- SCADA VIEW -->
+            <!-- SCADA VIEW — Bare-metal industrial console (no GDC context) -->
             <div v-if="h1ConsoleTab==='scada'" class="h1-scada-view">
               <div class="h1-scada-alarm-banner">
                 <span style="font-size:1.1rem">⚠</span>
                 <div style="flex:1">
-                  <div style="font-weight:700;font-size:0.72rem;letter-spacing:0.04em">AMBIGUOUS STATE — FLUID UNLOADING DETECTED</div>
-                  <div style="font-size:0.57rem;color:rgba(251,191,36,0.8);margin-top:1px">L1 alarm: raw telemetry threshold crossed · No document context available</div>
+                  <div style="font-weight:700;font-size:0.72rem;letter-spacing:0.04em">ALARM: PUMP UNDERLOAD — UNLOADING PATTERN</div>
+                  <div style="font-size:0.57rem;color:rgba(251,191,36,0.8);margin-top:1px">{{ h1TargetWell || 'ESP-ALPHA-X' }} · PIP declining · Amps declining</div>
                 </div>
               </div>
-              <div class="h1-scada-dilemma">
-                <div style="font-size:0.62rem;font-weight:700;color:var(--text2);margin-bottom:6px">The Operator's Dilemma</div>
-                <p style="font-size:0.60rem;color:var(--text2);line-height:1.65;margin:0 0 8px">PIP and Motor Amps are declining simultaneously. The raw telemetry signature is <strong>physically identical</strong> for two completely different causes:</p>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-                  <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:5px;padding:8px 10px">
-                    <div style="font-size:0.56rem;font-weight:700;color:var(--yellow);margin-bottom:3px">POSSIBILITY A — Gas Lock</div>
-                    <div style="font-size:0.57rem;color:var(--text2);line-height:1.5">Casing annulus is full. VFD trim (52→44 Hz) is safe. Well stays online.</div>
-                  </div>
-                  <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:5px;padding:8px 10px">
-                    <div style="font-size:0.56rem;font-weight:700;color:var(--red);margin-bottom:3px">POSSIBILITY B — Fluid Drawdown</div>
-                    <div style="font-size:0.57rem;color:var(--text2);line-height:1.5">Reservoir depleting. VFD trim drops velocity below 4.2 ft/s. Sand bridges string. ~$150k.</div>
-                  </div>
+              <!-- Live sensor values — what SCADA shows -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px 12px;flex-shrink:0">
+                <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
+                  <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Pump Intake Pressure</div>
+                  <div style="font-size:1.1rem;font-weight:800;color:var(--yellow);font-family:var(--mono)">{{ h1SensorPsi || '—' }}</div>
+                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: <800 PSI (hard trip)</div>
                 </div>
-                <div style="font-size:0.57rem;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:8px">SCADA has no document access. Misdiagnosis risk: ~$150k stuck-pump cost. Conservative path: wait for underload trip (~$3k–$8k restart).</div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
+                  <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Motor Current</div>
+                  <div style="font-size:1.1rem;font-weight:800;color:var(--yellow);font-family:var(--mono)">{{ h1SensorAmps || '—' }}</div>
+                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: <50 A (underload trip)</div>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
+                  <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Winding Temp</div>
+                  <div style="font-size:1.1rem;font-weight:800;color:var(--green);font-family:var(--mono)">{{ h1SensorTemp || '—' }}</div>
+                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: >280°F</div>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
+                  <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Motor Vibration</div>
+                  <div style="font-size:1.1rem;font-weight:800;color:var(--green);font-family:var(--mono)">{{ h1SensorVib || '—' }}</div>
+                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: >8.0 mm/s</div>
+                </div>
               </div>
+              <!-- Action row — no guidance, bare SCADA choice -->
               <div style="padding:10px 12px;background:var(--surf);border-top:1px solid var(--border);flex-shrink:0">
-                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Reactive Manual Intervention — Without Document Context</div>
+                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Operator Action Required</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                   <button v-if="!h1Resolved && !h1Seized" @click="approveH1VFD()" class="h1-action-btn h1-btn-gamble">
-                    Execute VFD Speed-Down<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">52 → 44 Hz (Standard Response)</span>
+                    VFD Speed-Down<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">52 → 44 Hz</span>
                   </button>
                   <button v-if="!h1Resolved && !h1Seized" @click="executeH1Shutdown()" class="h1-action-btn h1-btn-shutdown">
-                    🛑 Conservative Shutdown<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">~$3k–$8k · pump safe</span>
+                    🛑 Shut-In Well<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">Safe · deferred restart</span>
                   </button>
                 </div>
                 <div v-if="h1Seized" class="h1-outcome-seized">
-                  ❌ PUMP SEIZED — The anomaly was <strong>Fluid Drawdown</strong>. VFD trim during drawdown dropped velocity below 4.2 ft/s. Sand settled and bridged the downhole string. Representative cost: ~$150,000 pull-rig.
+                  ❌ PUMP SEIZED — VFD trim during fluid drawdown. Velocity below 4.2 ft/s. Sand bridge confirmed. ~$150,000 pull-rig.
                 </div>
                 <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
-                  ✅ <span v-if="h1Recovering">RECOVERING — VFD at 44 Hz · monitoring wellbore response</span>
-                  <span v-else>RESOLVED — {{ h1FaultType === 'gas_lock' ? 'Gas Lock cleared · well online' : 'Safe conservative shutdown executed' }}</span>
+                  ✅ <span v-if="h1Recovering">RECOVERING — VFD at 44 Hz</span>
+                  <span v-else>RESOLVED</span>
                 </div>
               </div>
-              <!-- Recovery message + advisor (scada tab) -->
               <div v-if="h1RecoveryMsg" style="padding:5px 12px;font-size:0.60rem;color:var(--green);border-top:1px solid var(--border)">{{ h1RecoveryMsg }}</div>
             </div><!-- /scada-view -->
 
             <!-- GDC ADVISOR VIEW -->
             <div v-if="h1ConsoleTab==='gdc'" class="h1-gdc-view">
-              <!-- RAG CARD -->
+              <!-- RAG CARD — scanning state before reveal, populated card after -->
               <div v-if="!h1RagRevealed" class="h1-rag-pending">
-                ⏳ Retrieving contextual document from AlloyDB pgvector RAG pipeline…
+                <span class="streaming-dot"></span>
+                &nbsp;Searching AlloyDB pgvector RAG for downhole context documents…
               </div>
               <div v-if="h1RagRevealed" class="h1-rag-card"
                    @click="h1FaultType==='fluid_drawdown' ? h1SonicLogModalOpen=true : h1ShiftNoteModalOpen=true"
@@ -644,9 +653,26 @@
                 </div><!-- /verdict-col -->
               </div><!-- /gdc-content -->
 
-              <!-- Pre-reveal placeholder -->
+              <!-- Pre-reveal scanning state: show downhole digital twin in nominal/scanning mode -->
               <div v-if="!h1RagRevealed" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center">
-                <div style="font-size:0.60rem;color:var(--muted);line-height:1.65">GDC pgvector RAG pipeline is searching AlloyDB for documents relevant to this unloading signature…<br>The retrieved document will disambiguate Gas Lock vs Fluid Drawdown.</div>
+                <!-- Scanning wellbore schematic (nominal state — no fault revealed yet) -->
+                <div style="display:flex;gap:16px;align-items:center">
+                  <div class="h1-wellbore-schematic" style="opacity:0.65;filter:grayscale(0.4)">
+                    <div class="h1-wb-fluid-col">
+                      <div class="h1-wb-fluid-gaslock" style="height:82%;opacity:0.5;background:linear-gradient(180deg,rgba(30,64,175,0.3) 0%,rgba(59,130,246,0.4) 100%)"></div>
+                    </div>
+                    <div class="h1-wb-pump">PUMP</div>
+                    <div class="h1-wb-motor h1-wb-motor-ok">MOTOR</div>
+                  </div>
+                  <div style="text-align:left">
+                    <div style="font-size:0.60rem;font-weight:700;color:var(--muted);margin-bottom:4px">📡 GDC CONTEXT FUSION</div>
+                    <div style="font-size:0.57rem;color:var(--muted);line-height:1.7">
+                      Searching AlloyDB pgvector for<br>shift notes · sonic logs · separator tests<br>
+                      <span class="streaming-dot" style="display:inline-block;margin-right:4px"></span>
+                      <span style="font-style:italic">Disambiguating Gas Lock vs Fluid Drawdown…</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
             </div><!-- /gdc-view -->
