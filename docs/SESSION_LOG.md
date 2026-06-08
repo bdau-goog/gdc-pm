@@ -2,6 +2,18 @@
 
 ---
 
+## Session G (June 8, 2026) — *Phase 3 cost-ladder + sensor bar integrity fixes — deployed and verified*
+
+**Code committed:** `a2eee90` (fix(ui): Phase 3 — cost-ladder ticks, wopt card B cost, sensor bar widths pre-injection)
+
+**What was done:** (1) **Decision timeline tick labels corrected (CLAIM_LEDGER C2):** Tick at 72% changed from `$0→$2k` to `SCADA reactive · ~$3k–$8k` per C2 math ($1,900–$3,800 production loss + $700–$1,400 labor + $500–$1,500 thermal cycling = $3k–$8k range, 300 BPD @ $76/bbl net-back, API RP 11S §7.2). Tick at 92% changed from bare `PNR` to `PNR · ~$150k only`. (2) **Wopt card B cost corrected:** `~$2,000 workover cost` → `~$3,000–$8,000 (shut-in + restart)` with full C2 footnote: "2–4h production loss + restart labor + motor thermal cycling. 300 BPD @ $76/bbl net-back. Varies by well." (3) **Sensor bar fill widths fixed (pre-injection):** PIP/AMPS/TEMP sensor bar fill widths were rendering at hardcoded fallbacks (88%/83%/24%) before fault injection because `h1RawPsi/Temp/Amps` were only set during degrade-poll. Fixed by also setting them in `_pollLive1` (both `setMainTab` and `resetHorizon1`). Bars now show live telemetry widths from the moment the Detect tab opens. (4) **Motor CRITICAL state audited:** `h1ElapsedMin > 15` is NOT in the codebase — already correctly fixed in Session V. Banner uses `parseInt(h1SensorTemp||'0') >= 260`. Integrity table corrected to ✅. (5) **RAG seed collapse assessed:** With `AI_NARRATIVE_ENABLED=false`, `_intel_generator` is not running, no prune fires, seed doc persists throughout fault. Not an active bug; deferred.
+
+**Key decisions:** (a) Wopt card B correction from $2k to $3k–$8k is the honest display per CLAIM_LEDGER C2 — the old $2k mapped to the `SCHEDULED` tier (inspect intake valve), not the SCADA-reactive shut-in path. (b) Sensor bar fix targets `h1RawPsi/Temp/Amps` — the text value was already live; only the bar fill width was hardcoded. VIB bar still uses hardcoded 14% pre-injection (VIB not available from `/api/live-telemetry`) — acceptable. (c) Atomic-fix rule followed: 3 related fixes shipped as one commit, verified deployed before handoff.
+
+**Next task (Session H):** Option A — H1 cost-ladder row visual below the decision timeline (`$2,500 GDC ACT NOW` → `$3k–$8k SCADA` → `$150k PNR ONLY` labeled nodes as a horizontal strip). Pure index.html, single batched `replace_in_file`.
+
+---
+
 ## Session F (June 8, 2026) — *Workspace isolation + Claim Ledger C2 resolved — Phase 3 unblocked*
 
 **Code committed:** `39da363` (chore: bootstrap workspace isolation), `1518b5e` (docs: Claim Ledger C2 resolved)
