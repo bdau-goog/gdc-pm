@@ -917,8 +917,22 @@
     ══════════════════════════════════════════════════════════════════════════ */
 
     /* ── Layout columns ── */
-    .h1-telemetry-col{flex:0 0 38%;max-width:38%;display:flex;flex-direction:column;gap:0;min-height:0;padding-bottom:4px}
+    .h1-telemetry-col{display:flex;flex-direction:column;gap:0;min-height:0;padding-bottom:4px;flex-shrink:0;padding-right:4px}
     .h1-decision-col{flex:1;display:flex;flex-direction:column;min-height:0;border:1px solid var(--border);border-radius:8px;background:var(--surf);overflow:hidden}
+    /* Session L: vertical chart-height drag handle */
+    .h1-v-splitter{height:5px;cursor:row-resize;flex-shrink:0;border-radius:3px;background:var(--border);transition:background 0.15s;margin:4px 0}
+    .h1-v-splitter:hover,.h1-v-splitter.dragging{background:var(--blue);opacity:0.7}
+    /* Session L: Pad Alpha 6-well surveillance grid cards */
+    .h1-well-card{background:rgba(15,23,42,0.5);border:1px solid var(--border);border-radius:5px;padding:5px 7px;cursor:pointer;transition:all 0.2s}
+    .h1-well-card:hover{border-color:rgba(100,116,139,0.5);background:rgba(30,41,59,0.7)}
+    .h1-well-card-selected{border-color:rgba(59,130,246,0.5)!important;background:rgba(59,130,246,0.08)!important}
+    .h1-well-card-alerting{border-color:rgba(239,68,68,0.55)!important;background:rgba(239,68,68,0.06)!important;animation:h1-card-pulse 1.8s ease-in-out infinite}
+    .h1-well-card-suppressed{border-color:rgba(251,191,36,0.4)!important;background:rgba(251,191,36,0.05)!important}
+    @keyframes h1-card-pulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0);}50%{box-shadow:0 0 0 3px rgba(239,68,68,0.22);}}
+    /* Session L: sparkline chart card containers */
+    .h1-spark-card{background:var(--surf);border:1px solid var(--border);border-radius:5px;padding:4px 6px;flex-shrink:0}
+    .h1-spark-label{font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:2px}
+    .h1-pulse-alert{animation:h1-card-pulse 1.8s ease-in-out infinite;display:inline-block}
 
     /* ── Pre-injection placeholder ── */
     .h1-preinjection-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:14px;padding:28px 20px;text-align:center}

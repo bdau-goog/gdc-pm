@@ -344,11 +344,15 @@
       <div class="horizon-banner" style="padding:8px 20px;gap:12px">
         <div style="display:flex;align-items:center;gap:8px;flex:1">
           <h2 class="hb-title" style="margin:0;font-size:0.88rem">Discern — ESP Fluid Unloading</h2>
-          <span style="font-size:0.65rem;color:var(--muted)">· ESP-ALPHA-1 &nbsp;·&nbsp; Well A-1 &nbsp;·&nbsp; Pad Alpha</span>
+          <span style="font-size:0.65rem;color:var(--muted)">· {{ h1SelectedWell || 'ESP-ALPHA-1' }} &nbsp;·&nbsp; Pad Alpha &nbsp;·&nbsp; Comparative Detection Scenario</span>
         </div>
-        <div class="hb-actions" style="gap:8px">
+        <div class="hb-actions" style="gap:8px;align-items:center">
+          <div style="display:flex;gap:2px;background:rgba(15,23,42,0.5);border:1px solid var(--border);border-radius:5px;padding:2px" v-if="!h1Injected">
+            <button @click="h1RampSpeed='standard'" :style="{background: h1RampSpeed==='standard' ? 'rgba(59,130,246,0.3)' : 'transparent', color: h1RampSpeed==='standard' ? '#93c5fd' : 'var(--muted)'}" style="font-size:0.55rem;padding:3px 8px;border:none;border-radius:3px;cursor:pointer;transition:all 0.15s">Standard</button>
+            <button @click="h1RampSpeed='accelerated'" :style="{background: h1RampSpeed==='accelerated' ? 'rgba(249,115,22,0.3)' : 'transparent', color: h1RampSpeed==='accelerated' ? '#fdba74' : 'var(--muted)'}" style="font-size:0.55rem;padding:3px 8px;border:none;border-radius:3px;cursor:pointer;transition:all 0.15s">Accelerated</button>
+          </div>
           <button class="hb-btn btn-inject" @click="launchHorizon1Unloading()" :disabled="h1Injected"
-                  style="background:linear-gradient(135deg,#b91c1c,#7f1d1d)">⚡ Inject Unloading Anomaly</button>
+                  style="background:linear-gradient(135deg,#b91c1c,#7f1d1d)">⚡ Ingest Pad Anomalies</button>
           <button class="hb-btn btn-reset" @click="resetHorizon1" v-if="h1Injected">↺ Reset</button>
         </div>
       </div>
@@ -357,7 +361,7 @@
            :class="h1Recovering ? 'h1-banner-recovering' : h1Resolved ? 'h1-banner-resolved' : h1Injected ? (parseInt(h1SensorTemp||'0') >= 260 ? 'h1-banner-critical' : 'h1-banner-active') : 'h1-banner-nominal'"
            style="margin:0 12px 6px">
         <span class="h1-sb-icon">{{ h1Recovering ? '↩' : h1Resolved ? '✓' : h1Injected ? '⚠' : '✓' }}</span>
-        <span class="h1-sb-msg" v-if="!h1Injected">WELL A-1 NOMINAL &nbsp;·&nbsp; 4 sensors within thresholds &nbsp;·&nbsp; no alarm</span>
+        <span class="h1-sb-msg" v-if="!h1Injected">PAD ALPHA SURVEILLANCE ACTIVE &nbsp;·&nbsp; 6 wells nominal &nbsp;·&nbsp; no alarms</span>
         <span class="h1-sb-msg" v-if="h1Injected && !h1Recovering && !h1Resolved">
           {{ h1RagRevealed ? (h1FaultType==='fluid_drawdown' ? 'FLUID DRAWDOWN CONFIRMED — VFD TRIM CONTRAINDICATED' : 'GAS LOCK CONFIRMED — SAFE TO TRIM') : 'UNLOADING ANOMALY ACTIVE — FAULT TYPE UNKNOWN · RETRIEVING CONTEXT…' }}
           &nbsp;·&nbsp; T+{{ String(Math.floor(h1ElapsedMin)).padStart(2,'0') }}:{{ String(Math.round((h1ElapsedMin%1)*60)).padStart(2,'0') }}
@@ -370,122 +374,93 @@
         </span>
       </div>
 
-      <!-- MAIN BODY: Left Telemetry + Right Decision Console -->
-      <div style="display:flex;gap:12px;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden">
+      <!-- MAIN BODY: Left Telemetry + Right Decision Console (Session L — resizable) -->
+      <div style="display:flex;gap:0;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden">
 
-        <!-- LEFT 40%: Shared Persistent Telemetry -->
-        <div class="h1-telemetry-col">
+        <!-- LEFT: Shared Persistent Telemetry (resizable via .h1-splitter) -->
+        <div class="h1-telemetry-col" :style="{flexBasis: h1SplitPercent+'%', maxWidth: h1SplitPercent+'%'}">
           <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:5px;padding:0 2px">
             📡 SHARED TELEMETRY — identical on both views
           </div>
-          <!-- SENSOR BARS -->
-          <div class="h1-sensor-bars">
-            <!-- PIP -->
-            <div class="h1-sbar">
-              <div class="h1-sbar-top">
-                <span class="h1-sbar-label">PIP</span>
-                <div class="h1-sbar-track">
-                  <div class="h1-sbar-fill"
-                       :style="{width: h1RawPsi ? Math.min(100,h1RawPsi/1600*100)+'%' : '88%',
-                                background: h1RawPsi && h1RawPsi < 800 ? 'var(--red)' : h1RawPsi && h1RawPsi < 950 ? 'var(--orange)' : 'var(--green)'}"></div>
-                  <div class="h1-sbar-alarm-tick" style="left:50%" title="SCADA alarm: 800 PSI"></div>
+
+          <!-- PAD ALPHA 6-WELL SURVEILLANCE GRID -->
+          <div style="background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 10px;flex-shrink:0;margin-bottom:6px">
+            <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">Pad Alpha Surveillance</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px">
+              <div v-for="n in [1,2,3,4,5,6]" :key="n"
+                   class="h1-well-card"
+                   :class="{
+                     'h1-well-card-alerting':   h1TargetWell === ('ESP-ALPHA-'+n),
+                     'h1-well-card-suppressed': h1NuisanceWells.includes('ESP-ALPHA-'+n),
+                     'h1-well-card-selected':   h1SelectedWell === ('ESP-ALPHA-'+n)
+                   }"
+                   @click="h1SelectedWell = 'ESP-ALPHA-'+n"
+                   :title="'Well A-'+n+' — click to view telemetry'">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+                  <span style="font-size:0.56rem;font-weight:700;letter-spacing:0.04em">A-{{ n }}</span>
+                  <span style="font-size:0.75rem;line-height:1"
+                        :class="h1TargetWell === ('ESP-ALPHA-'+n) ? 'h1-pulse-alert' : ''">
+                    {{ h1TargetWell === ('ESP-ALPHA-'+n) ? '⚠' : h1NuisanceWells.includes('ESP-ALPHA-'+n) ? '⚠' : '✓' }}
+                  </span>
                 </div>
-                <span class="h1-sbar-val">{{ h1SensorPsi || '—' }}</span>
-              </div>
-              <div class="h1-sbar-meta">
-                <span class="h1-sbar-dir">↓ Lower = worse &nbsp;·&nbsp; Alarm: < 800 PSI</span>
-                <span class="h1-sbar-status" :style="{color: h1RawPsi && h1RawPsi < 800 ? 'var(--red)' : h1Injected ? 'var(--orange)' : 'var(--green)'}">
-                  {{ h1RawPsi && h1RawPsi < 800 ? '⚠ SCADA ALARM FIRED' : h1Injected ? '↓ Declining — no alarm yet' : '✓ Above SCADA threshold' }}
-                </span>
+                <div style="font-size:0.50rem;line-height:1.3"
+                     :style="{color: h1TargetWell === ('ESP-ALPHA-'+n) ? 'var(--red)' : h1NuisanceWells.includes('ESP-ALPHA-'+n) ? 'var(--yellow)' : 'var(--green)'}">
+                  {{ h1TargetWell === ('ESP-ALPHA-'+n) ? 'Alerting' : h1NuisanceWells.includes('ESP-ALPHA-'+n) ? 'Suppressed' : 'Nominal' }}
+                </div>
               </div>
             </div>
-            <!-- AMPS -->
-            <div class="h1-sbar">
-              <div class="h1-sbar-top">
-                <span class="h1-sbar-label">AMPS</span>
-                <div class="h1-sbar-track">
-                  <div class="h1-sbar-fill"
-                       :style="{width: h1RawAmps ? Math.min(100,h1RawAmps/90*100)+'%' : '83%',
-                                background: h1RawAmps && h1RawAmps < 50 ? 'var(--red)' : h1RawAmps && h1RawAmps < 62 ? 'var(--orange)' : 'var(--green)'}"></div>
-                  <div class="h1-sbar-alarm-tick" style="left:55.6%" title="SCADA alarm: 50 A"></div>
-                </div>
-                <span class="h1-sbar-val">{{ h1SensorAmps || '—' }}</span>
-              </div>
-              <div class="h1-sbar-meta">
-                <span class="h1-sbar-dir">↓ Lower = worse &nbsp;·&nbsp; Alarm: < 50 A</span>
-                <span class="h1-sbar-status" :style="{color: h1RawAmps && h1RawAmps < 50 ? 'var(--red)' : h1Injected ? 'var(--orange)' : 'var(--green)'}">
-                  {{ h1RawAmps && h1RawAmps < 50 ? '⚠ SCADA ALARM FIRED' : h1Injected ? '↓ Declining — no alarm yet' : '✓ Above SCADA threshold' }}
-                </span>
-              </div>
-            </div>
-            <!-- TEMP -->
-            <div class="h1-sbar">
-              <div class="h1-sbar-top">
-                <span class="h1-sbar-label">TEMP</span>
-                <div class="h1-sbar-track">
-                  <div class="h1-sbar-fill"
-                       :style="{width: h1RawTemp ? Math.min(100,Math.max(0,(h1RawTemp-160)/160*100))+'%' : '24%',
-                                background: h1RawTemp && h1RawTemp > 280 ? 'var(--red)' : h1RawTemp && h1RawTemp > 250 ? 'var(--orange)' : 'var(--green)'}"></div>
-                  <div class="h1-sbar-alarm-tick" style="left:75%" title="SCADA alarm: 280°F"></div>
-                </div>
-                <span class="h1-sbar-val">{{ h1SensorTemp || '—' }}</span>
-              </div>
-              <div class="h1-sbar-meta">
-                <span class="h1-sbar-dir">↑ Higher = worse &nbsp;·&nbsp; Alarm: > 280°F</span>
-                <span class="h1-sbar-status" :style="{color: h1RawTemp && h1RawTemp > 280 ? 'var(--red)' : h1RawTemp && h1RawTemp > 250 ? 'var(--orange)' : 'var(--green)'}">
-                  {{ h1RawTemp && h1RawTemp > 280 ? '⚠ SCADA ALARM FIRED' : h1RawTemp && h1RawTemp > 250 ? '↑ Warming — approaching alarm' : '✓ Below SCADA threshold' }}
-                </span>
-              </div>
-            </div>
-            <!-- VIB -->
-            <div class="h1-sbar">
-              <div class="h1-sbar-top">
-                <span class="h1-sbar-label">VIB</span>
-                <div class="h1-sbar-track">
-                  <div class="h1-sbar-fill"
-                       :style="{width: h1RawVib ? Math.min(100,h1RawVib/10*100)+'%' : '14%',
-                                background: h1RawVib && h1RawVib > 8.0 ? 'var(--red)' : h1RawVib && h1RawVib > 3.5 ? 'var(--orange)' : 'var(--green)'}"></div>
-                  <div class="h1-sbar-alarm-tick" style="left:80%" title="SCADA alarm: 8.0 mm/s"></div>
-                </div>
-                <span class="h1-sbar-val">{{ h1SensorVib || '—' }}</span>
-              </div>
-              <div class="h1-sbar-meta">
-                <span class="h1-sbar-dir">↑ Higher = worse &nbsp;·&nbsp; Alarm: > 8.0 mm/s</span>
-                <span class="h1-sbar-status" :style="{color: h1RawVib && h1RawVib > 8.0 ? 'var(--red)' : h1Injected && h1RawVib && h1RawVib > 1.6 ? 'var(--orange)' : 'var(--green)'}">
-                  {{ h1RawVib && h1RawVib > 8.0 ? '⚠ SCADA ALARM FIRED' : h1Injected && h1RawVib && h1RawVib > 1.6 ? '↑ Elevated — cavitation · no alarm' : '✓ Below SCADA threshold' }}
-                </span>
-              </div>
+            <div v-if="h1NuisanceWells.length" style="font-size:0.48rem;color:var(--muted);margin-top:5px;line-height:1.4">
+              <span style="color:var(--yellow)">⚠ Suppressed:</span> GDC auto-dismissed nuisance alarms on {{ h1NuisanceWells.map(w=>w.replace('ESP-ALPHA-','A-')).join(' & ') }} via Daily Well Test retrieval.
             </div>
           </div>
 
-          <!-- DUAL-AXIS TREND CHART -->
-          <div style="margin-top:8px;flex:1;min-height:0;display:flex;flex-direction:column">
-            <div style="font-size:0.5rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between;flex-shrink:0">
-              <span>📈 PIP & Amps — Combined Trend</span>
-              <span style="color:var(--orange);font-weight:700" v-if="h1Injected && !h1RagRevealed">↓ BOTH DECLINING</span>
-              <span style="font-style:italic" v-if="!h1Injected">nominal</span>
+          <!-- VERTICAL DRAG HANDLE (chart height) -->
+          <div class="h1-v-splitter"
+               @mousedown="initH1ChartVerticalDrag($event)"
+               @dblclick="h1ChartH=140"
+               title="Drag to resize sparklines · Double-click to reset"></div>
+
+          <!-- 4 SPARKLINE TREND CARDS -->
+          <div style="display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1;min-height:0">
+            <div class="h1-spark-card">
+              <div class="h1-spark-label">PIP <span style="color:var(--muted)">· Alarm <800 PSI</span></div>
+              <div id="h1-spark-psi" :style="{height: h1ChartH+'px'}" style="width:100%"></div>
             </div>
-            <div id="h1-unloading-chart" style="width:100%;height:195px;border:1px solid var(--border);border-radius:5px;background:rgba(15,23,42,0.25);flex-shrink:0"></div>
-            <div style="font-size:0.48rem;color:var(--muted);margin-top:3px;line-height:1.4;flex-shrink:0">
-              <strong style="color:#3b82f6">—</strong> PIP &nbsp; <strong style="color:#22c55e">- -</strong> Amps &nbsp;·&nbsp; <em>Identical pattern for Gas Lock AND Drawdown</em>
+            <div class="h1-spark-card">
+              <div class="h1-spark-label">AMPS <span style="color:var(--muted)">· Alarm <50 A</span></div>
+              <div id="h1-spark-amps" :style="{height: h1ChartH+'px'}" style="width:100%"></div>
+            </div>
+            <div class="h1-spark-card">
+              <div class="h1-spark-label">TEMP <span style="color:var(--muted)">· Alarm >280 °F</span></div>
+              <div id="h1-spark-temp" :style="{height: h1ChartH+'px'}" style="width:100%"></div>
+            </div>
+            <div class="h1-spark-card">
+              <div class="h1-spark-label">VIB <span style="color:var(--muted)">· Alarm >8.0 mm/s</span></div>
+              <div id="h1-spark-vib" :style="{height: h1ChartH+'px'}" style="width:100%"></div>
             </div>
           </div>
         </div><!-- /h1-telemetry-col -->
 
-        <!-- RIGHT 60%: Decision Console -->
+        <!-- HORIZONTAL DRAG SPLITTER -->
+        <div class="h1-splitter"
+             @mousedown="initH1SplitterDrag($event)"
+             @dblclick="h1SplitPercent=38"
+             title="Drag to resize columns · Double-click to reset"></div>
+
+        <!-- RIGHT: Decision Console -->
         <div class="h1-decision-col">
 
           <!-- PRE-INJECTION PLACEHOLDER -->
           <div v-if="!h1Injected" class="h1-preinjection-placeholder">
             <div style="font-size:1.8rem">⚡</div>
-            <div style="font-size:0.78rem;font-weight:700;color:var(--text2)">Ready for Double-Blind Choice Game</div>
+            <div style="font-size:0.78rem;font-weight:700;color:var(--text2)">Pad Alpha Surveillance Active</div>
             <div style="font-size:0.62rem;color:var(--muted);max-width:380px;line-height:1.65;text-align:center">
-              Click <strong>⚡ Inject Unloading Anomaly</strong> to inject a hidden fault. GDC randomly selects Gas Lock or Fluid Drawdown — neither the presenter nor the audience will know which until GDC reveals its retrieved document.
+              Click <strong>⚡ Ingest Pad Anomalies</strong> to begin the Comparative Detection Scenario. GDC randomly selects a target well and fault type — neither the presenter nor the audience will know which until GDC retrieves the contextual document.
             </div>
             <div style="font-size:0.57rem;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:8px 14px;background:rgba(15,23,42,0.5);line-height:1.7;text-align:left">
-              📡 PIP & Amps decline <em>identically</em> for both faults<br>
-              🟡 SCADA must guess — 50% chance of ~$150k consequence<br>
-              🟢 GDC retrieves the correct field document in <2 seconds
+              📡 PIP & Amps decline <em>identically</em> for both fault types<br>
+              🟡 SCADA faces 3 concurrent alarms — cannot distinguish signal from noise<br>
+              🟢 GDC retrieves correct field document in <2 seconds
             </div>
           </div>
 
@@ -529,10 +504,10 @@
                 <div style="font-size:0.57rem;color:var(--muted);line-height:1.5;border-top:1px solid var(--border);padding-top:8px">SCADA has no document access. Misdiagnosis risk: ~$150k stuck-pump cost. Conservative path: wait for underload trip (~$3k–$8k restart).</div>
               </div>
               <div style="padding:10px 12px;background:var(--surf);border-top:1px solid var(--border);flex-shrink:0">
-                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Blind Gamble — Choose Without Context</div>
+                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Reactive Manual Intervention — Without Document Context</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
                   <button v-if="!h1Resolved && !h1Seized" @click="approveH1VFD()" class="h1-action-btn h1-btn-gamble">
-                    🎲 Execute VFD Speed-Down<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">52 → 44 Hz (Blind Gamble)</span>
+                    Execute VFD Speed-Down<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">52 → 44 Hz (Standard Response)</span>
                   </button>
                   <button v-if="!h1Resolved && !h1Seized" @click="executeH1Shutdown()" class="h1-action-btn h1-btn-shutdown">
                     🛑 Conservative Shutdown<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">~$3k–$8k · pump safe</span>

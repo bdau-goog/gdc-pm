@@ -106,11 +106,16 @@ createApp({
       h1ActiveSensor: 'psi',
       h1Recovering: false,
       h1Dragging: false,
-      h1SplitPercent: 36,
-      h1ChartH: 200,
+      h1SplitPercent: 38,
+      h1ChartH: 140,
       h1DegPollTimer: null,
       h1LivePollTimer: null,
-      // H1 Session J State (Double-Blind Choice Game)
+      // H1 Session L State — Comparative Detection Scenario
+      h1SelectedWell: 'ESP-ALPHA-1', // well whose telemetry is shown in left column
+      h1TargetWell: null,            // randomly injected alerting well
+      h1NuisanceWells: [],           // benign disturbance wells (2 adjacent)
+      h1RampSpeed: 'standard',       // 'standard' (900s) | 'accelerated' (300s)
+      h1WellData: {},                // per-well telemetry cache
       h1ConsoleTab: 'scada',        // 'scada' | 'gdc' — which decision console sub-tab is shown
       h1RagRevealed: false,         // true when GDC's pgvector RAG document has been retrieved
       h1ShiftNoteModalOpen: false,  // click-through Shift Handover Note modal
@@ -1116,9 +1121,18 @@ createApp({
       }
     },
     
-    // ── Horizon 1: Single-button randomized injection (Double-Blind Choice Game) ──
+    // ── Horizon 1: Pad Triage — Ingest Pad Anomalies (Comparative Detection Scenario) ──
     launchHorizon1Unloading() {
       if (this.h1Injected) return;
+      // Randomly select target well from Pad Alpha (A-1 to A-6)
+      const wells = ['ESP-ALPHA-1','ESP-ALPHA-2','ESP-ALPHA-3','ESP-ALPHA-4','ESP-ALPHA-5','ESP-ALPHA-6'];
+      const idx = Math.floor(Math.random() * wells.length);
+      this.h1TargetWell = wells[idx];
+      this.h1SelectedWell = this.h1TargetWell;
+      // Two adjacent wells receive benign transient disturbances (nuisance alarms)
+      const prevIdx = (idx - 1 + wells.length) % wells.length;
+      const nextIdx = (idx + 1) % wells.length;
+      this.h1NuisanceWells = [wells[prevIdx], wells[nextIdx]];
       // Randomly select fault type — audience does not know which was injected
       const ft = Math.random() < 0.5 ? 'gas_lock' : 'fluid_drawdown';
       this.launchHorizon1(ft);
@@ -1161,8 +1175,10 @@ createApp({
       this.h1OptA = 'wopt-viable'; this.h1OptALabel = 'VIABLE';
       this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE';
       try {
+        const _assetId = this.h1TargetWell || 'ESP-ALPHA-1';
+        const _durSecs = this.h1RampSpeed === 'accelerated' ? 300 : 900;
         const _h1InjR = await fetch('/api/inject/degrade', {method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({asset_id:'ESP-ALPHA-1', fault_type: ft, duration_seconds:900})});
+          body: JSON.stringify({asset_id: _assetId, fault_type: ft, duration_seconds: _durSecs})});
         if (_h1InjR.ok) { const _h1InjD = await _h1InjR.json(); if (_h1InjD.injection_params) this.showInjectionPopup(_h1InjD.injection_params); }
         this.showToast(`\u26a1 ${ft === 'fluid_drawdown' ? 'Fluid Drawdown' : 'Gas Lock'} injected on ESP-ALPHA-1`, 'var(--orange)');
         const feed = await fetch(`/api/intelligence-feed/ESP-ALPHA-1?fault_type=${ft}`);
@@ -1234,7 +1250,10 @@ createApp({
       try { Plotly.purge('h1-phase-chart'); } catch{}
       this.h1EnvelopeHistory = []; this.h1PumpOffExcluded = false;
       this.h1GasLockExcluded = false; this.h1FaultType = ''; this.h1Seized = false;
+      this.h1TargetWell = null; this.h1NuisanceWells = []; this.h1WellData = {};
+      this.h1SelectedWell = 'ESP-ALPHA-1';
       try { Plotly.purge('h1-envelope-chart'); } catch{}
+      ['h1-spark-psi','h1-spark-amps','h1-spark-temp','h1-spark-vib'].forEach(id => { try { Plotly.purge(id); } catch{} });
       this.showToast('↺ Horizon 1 reset','var(--green)');
       const _pollLive1 = async () => {
         if (this.h1Injected) return;
@@ -1336,38 +1355,48 @@ createApp({
       this._renderH1Charts(d);
     },
     _renderH1Charts(d) {
-      const el = document.getElementById('h1-unloading-chart');
-      if (!el) return;
-      const pipTrace  = d.sensors?.psi?.traces?.[0];
-      const ampsTrace = d.sensors?.amps?.traces?.[0];
-      if (!pipTrace || !ampsTrace) return;
-      // Trim to historical only (no projection lines — keep only non-null y values)
-      const pipX  = pipTrace.x  || [];
-      const pipY  = pipTrace.y  || [];
-      const ampsX = ampsTrace.x || [];
-      const ampsY = ampsTrace.y || [];
-      const traces = [
-        { x: pipX, y: pipY, name: 'PIP (PSI)', type: 'scatter', mode: 'lines',
-          line: { color: '#3b82f6', width: 2 },
-          yaxis: 'y', hovertemplate: '<b>PIP:</b> %{y:.0f} PSI<extra></extra>' },
-        { x: ampsX, y: ampsY, name: 'Motor Amps', type: 'scatter', mode: 'lines',
-          line: { color: '#22c55e', width: 2, dash: 'dot' },
-          yaxis: 'y2', hovertemplate: '<b>Amps:</b> %{y:.1f} A<extra></extra>' },
-      ];
-      const layout = {
-        paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(15,23,42,0.25)',
-        margin: { l: 46, r: 46, t: 6, b: 36 },
-        xaxis: { tickfont: { size: 8, color: '#64748b' }, gridcolor: 'rgba(100,116,139,0.08)', showgrid: true, type: 'date' },
-        yaxis:  { title: { text: 'PSI', font: { size: 9, color: '#3b82f6' } },
-                  tickfont: { size: 8, color: '#3b82f6' }, gridcolor: 'rgba(100,116,139,0.08)', showgrid: true },
-        yaxis2: { title: { text: 'Amps', font: { size: 9, color: '#22c55e' } },
-                  tickfont: { size: 8, color: '#22c55e' }, overlaying: 'y', side: 'right', showgrid: false },
-        showlegend: true,
-        legend: { x: 0.01, y: 0.99, bgcolor: 'rgba(0,0,0,0.4)', bordercolor: 'rgba(255,255,255,0.08)', borderwidth: 1,
-                  font: { size: 8, color: '#94a3b8' }, orientation: 'h' },
-        font: { family: 'monospace' },
+      if (!d || !d.sensors) return;
+      const h = this.h1ChartH;
+      const _spark = (domId, sensorKey, label, color, thresholdY, thresholdDir, unit, decimals) => {
+        const el = document.getElementById(domId);
+        if (!el) return;
+        const traceData = d.sensors?.[sensorKey]?.traces?.[0];
+        const xs = traceData?.x || [];
+        const ys = traceData?.y || [];
+        const liveVal = ys.length ? ys[ys.length - 1] : null;
+        const liveStr = liveVal != null ? (liveVal.toFixed(decimals) + ' ' + unit) : '—';
+        const alarmFired = liveVal != null && (thresholdDir === 'low' ? liveVal < thresholdY : liveVal > thresholdY);
+        const annColor = alarmFired ? '#ef4444' : '#94a3b8';
+        const shapes = [{
+          type: 'line', x0: 0, x1: 1, xref: 'paper',
+          y0: thresholdY, y1: thresholdY, yref: 'y',
+          line: { color: 'rgba(239,68,68,0.55)', width: 1.5, dash: 'dash' }
+        }];
+        const annotations = [{
+          xref: 'paper', yref: 'paper', x: 0.98, y: 0.96, xanchor: 'right', yanchor: 'top',
+          text: '<b>' + liveStr + '</b>',
+          font: { size: 13, color: annColor, family: 'monospace' },
+          showarrow: false, bgcolor: 'rgba(0,0,0,0)'
+        }];
+        const traces = [{
+          x: xs, y: ys, type: 'scatter', mode: 'lines',
+          line: { color: color, width: 2 },
+          hovertemplate: '<b>' + label + ':</b> %{y:.' + decimals + 'f} ' + unit + '<extra></extra>'
+        }];
+        const layout = {
+          paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(15,23,42,0.25)',
+          height: h,
+          margin: { l: 40, r: 10, t: 4, b: 24 },
+          xaxis: { tickfont: { size: 7, color: '#64748b' }, gridcolor: 'rgba(100,116,139,0.06)', showgrid: true, type: 'date' },
+          yaxis: { tickfont: { size: 7, color: color }, gridcolor: 'rgba(100,116,139,0.06)', showgrid: true },
+          shapes, annotations, showlegend: false, font: { family: 'monospace' },
+        };
+        Plotly.react(domId, traces, layout, { responsive: true, displayModeBar: false });
       };
-      Plotly.react('h1-unloading-chart', traces, layout, { responsive: true, displayModeBar: false });
+      _spark('h1-spark-psi',  'psi',  'PIP',  '#3b82f6', 800,  'low',  'PSI',   0);
+      _spark('h1-spark-amps', 'amps', 'Amps', '#22c55e', 50,   'low',  'A',     1);
+      _spark('h1-spark-temp', 'temp', 'Temp', '#f97316', 280,  'high', '°F',    0);
+      _spark('h1-spark-vib',  'vib',  'Vib',  '#a78bfa', 8.0,  'high', 'mm/s',  2);
     },
     _renderEnvelopeChart() { /* replaced by _renderH1Charts in Session J */ },
     _legacyEnvelopeShapes() {
@@ -1417,20 +1446,20 @@ createApp({
       this.h1ActiveSensor = sensor;
       if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);
     },
-    initH1CenterSplit(e, side) {
+    initH1SplitterDrag(e) {
       e.preventDefault();
-      const body = e.target.closest('.h1-body');
-      if (!body) return;
       const startX   = e.clientX;
       const startPct = this.h1SplitPercent;
-      const bodyW    = body.offsetWidth;
+      const bodyW    = (e.target.parentElement || document.body).offsetWidth;
       e.target.classList.add('dragging');
       const onMove = (ev) => {
         const dx   = ev.clientX - startX;
         const dPct = (dx / bodyW) * 100;
-        this.h1SplitPercent = Math.max(18, Math.min(62, startPct + dPct));
+        this.h1SplitPercent = Math.max(25, Math.min(75, startPct + dPct));
         this.$nextTick(() => {
-          try { Plotly.Plots.resize(document.getElementById('h1-phase-chart')); } catch(err) {}
+          ['h1-spark-psi','h1-spark-amps','h1-spark-temp','h1-spark-vib'].forEach(id => {
+            try { Plotly.Plots.resize(document.getElementById(id)); } catch(err) {}
+          });
         });
       };
       const onUp = () => {
@@ -1442,17 +1471,20 @@ createApp({
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
-    initH1NsSplit(e) {
+    initH1CenterSplit(e, side) { this.initH1SplitterDrag(e); }, // backward-compat alias
+    initH1ChartVerticalDrag(e) {
       e.preventDefault();
       const startY = e.clientY;
       const startH = this.h1ChartH;
       e.target.classList.add('dragging');
       const onMove = (ev) => {
         const dy = ev.clientY - startY;
-        this.h1ChartH = Math.max(100, Math.min(420, startH + dy));
+        this.h1ChartH = Math.max(80, Math.min(320, startH + dy));
         this.$nextTick(() => {
-          try { Plotly.Plots.resize(document.getElementById('h1-gdc-chart')); } catch(err) {}
-          try { Plotly.Plots.resize(document.getElementById('h1-scada-chart')); } catch(err) {}
+          ['h1-spark-psi','h1-spark-amps','h1-spark-temp','h1-spark-vib'].forEach(id => {
+            try { Plotly.Plots.resize(document.getElementById(id)); } catch(err) {}
+          });
+          if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);
         });
       };
       const onUp = () => {
@@ -1464,6 +1496,7 @@ createApp({
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     },
+    initH1NsSplit(e) { this.initH1ChartVerticalDrag(e); }, // backward-compat alias
     _activateEvidenceWall() {
       const delays = [200, 2000, 3800, 5500, 7200];
       delays.forEach((delay, i) => {
