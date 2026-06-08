@@ -423,12 +423,13 @@
           <span class="h1-sb-icon">{{ h1Recovering ? '↩' : h1Resolved ? '✓' : h1Injected ? '⚠' : '✓' }}</span>
           <span class="h1-sb-msg" v-if="!h1Injected">WELL A-1 NOMINAL &nbsp;·&nbsp; 4 sensors within thresholds &nbsp;·&nbsp; no alarm</span>
           <span class="h1-sb-msg" v-if="h1Injected && !h1Recovering && !h1Resolved">
-            GAS LOCK ACTIVE &nbsp;·&nbsp;
+            {{ h1FaultType === 'fluid_drawdown' ? 'FLUID DRAWDOWN ACTIVE' : 'GAS LOCK ACTIVE' }} &nbsp;·&nbsp;
             T+{{ String(Math.floor(h1ElapsedMin)).padStart(2,'0') }}:{{ String(Math.round((h1ElapsedMin%1)*60)).padStart(2,'0') }}
-            &nbsp;·&nbsp; {{ h1ForecastData && h1ForecastData.slopes && h1ForecastData.slopes.dtemp_dt > 0.2 && h1ForecastData.thermal_lead_time_minutes != null && h1ForecastData.thermal_lead_time_minutes > 0 ? Math.round(h1ForecastData.thermal_lead_time_minutes) + ' min to 280°F limit' : '— monitoring temp rise' }}
+            &nbsp;·&nbsp; {{ h1FaultType === 'fluid_drawdown' ? '⚠ VFD trim contraindicated — sand bridge risk' : (h1ForecastData && h1ForecastData.slopes && h1ForecastData.slopes.dtemp_dt > 0.2 && h1ForecastData.thermal_lead_time_minutes != null && h1ForecastData.thermal_lead_time_minutes > 0 ? Math.round(h1ForecastData.thermal_lead_time_minutes) + ' min to 280°F limit' : '— monitoring temp rise') }}
           </span>
           <span class="h1-sb-msg" v-if="h1Recovering">RECOVERING &nbsp;·&nbsp; VFD 44 Hz · PIP rising</span>
-          <span class="h1-sb-msg" v-if="h1Resolved && !h1Recovering">RESOLVED &nbsp;·&nbsp; ~$150,000 workover cost avoided &nbsp;·&nbsp; Direct cost: ~$2,500</span>
+          <span class="h1-sb-msg" v-if="h1Resolved && !h1Recovering && !h1Seized">RESOLVED &nbsp;·&nbsp; Well online · Pump protected</span>
+          <span class="h1-sb-msg" v-if="h1Seized">PUMP SEIZED &nbsp;·&nbsp; Sand bridge confirmed downhole · Engineering assessment required</span>
           <span class="h1-sb-right" v-if="h1Injected && h1TopClass && !h1Recovering && !h1Resolved">
             {{ h1TopClass.replace(/_/g,' ').toUpperCase() }} &nbsp;·&nbsp; {{ h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'%' : '—' }} confidence
           </span>
@@ -597,8 +598,14 @@
                 <span style="font-size:0.5rem;color:var(--muted);font-style:italic">Amps × Intake PSI &nbsp;·&nbsp; live trail</span>
               </div>
               <div id="h1-envelope-chart"></div>
-              <div v-if="h1PumpOffExcluded" class="h1-pumpoff-excluded">
+              <div v-if="h1PumpOffExcluded && h1FaultType !== 'fluid_drawdown'" class="h1-pumpoff-excluded">
                 ✅ Pump-Off Risk EXCLUDED — L3 Context: 06:15 Shift Note (elevated GVF) · Annulus fluid level stable · VFD trim is safe
+              </div>
+              <div v-else-if="h1GasLockExcluded && h1FaultType === 'fluid_drawdown'" class="h1-pumpoff-excluded" style="background:rgba(251,146,60,0.08);border-color:rgba(251,146,60,0.3);color:var(--orange)">
+                ⚠ Gas Lock EXCLUDED — L3 Context: 06:00 Sonic Log (fluid level 150 ft above intake) · GOR stable · Casing flat · VFD trim contraindicated
+              </div>
+              <div v-else-if="h1Injected && h1FaultType === 'fluid_drawdown'" class="h1-pumpoff-pending">
+                ⏳ Retrieving 06:00 sonic log from AlloyDB RAG to determine if drawdown is active…
               </div>
               <div v-else-if="h1Injected" class="h1-pumpoff-pending">
                 ⚠ Ambiguous signal — retrieving shift notes + annulus level to resolve Gas Lock vs Pump-Off…
