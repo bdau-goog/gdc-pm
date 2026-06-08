@@ -110,14 +110,14 @@ createApp({
       h1ChartH: 200,
       h1DegPollTimer: null,
       h1LivePollTimer: null,
-      // H1 Redesign State (Evidence Wall, Copilot, Window of Options)
-      h1EvidenceWall: [
-        { icon: '📊', cat: 'Sensor Telemetry', placeholder: 'Awaiting fault injection…', content: 'PIP −14 PSI/min \u2193 · Amps −2.3 A/min \u2193 · 4-sensor correlated decline at 5-second cadence', active: false },
-        { icon: '📋', cat: 'Operator Shift Notes', placeholder: 'No active fault notes', content: '"Higher than usual GVF this morning — possibly gas migration from upper zone." — 06:15 tour note', active: false },
-        { icon: '🧪', cat: 'Lab / Field Tests', placeholder: 'No lab data loaded', content: 'Separator gas rate 142 Mscf/d \u2191 · GOR 1,310 scf/bbl \u2191 · Casing pressure +18 PSI vs prior tour', active: false },
-        { icon: '⚡', cat: 'VFD / Process Logs', placeholder: 'No VFD events', content: 'Soft unload events × 3 in last 45 min · Power factor 0.71 \u2193 · Underload flag approaching threshold', active: false },
-        { icon: '📖', cat: 'Technical Standards', placeholder: 'No standards cited', content: 'API RP 11S §5.3: VFD speed-down is primary intervention. Class H limit: 180°C (IEEE 117). Baker Hughes: GVF >65% triggers unloading.', active: false },
-      ],
+      // H1 Session J State (Double-Blind Choice Game)
+      h1ConsoleTab: 'scada',        // 'scada' | 'gdc' — which decision console sub-tab is shown
+      h1RagRevealed: false,         // true when GDC's pgvector RAG document has been retrieved
+      h1ShiftNoteModalOpen: false,  // click-through Shift Handover Note modal
+      h1SonicLogModalOpen: false,   // click-through Acoustic Sonic Log modal
+      h1OverrideModalOpen: false,   // GDC override confirmation modal (VFD trim during drawdown)
+      // Legacy evidence wall state — kept as h1EvidenceActive counter drives h1RagRevealed via watcher
+      h1EvidenceWall: [],
       h1EvidenceActive: 0,
       h1AdvisorHtml: '',
       h1AdvisorStreaming: false,
@@ -304,15 +304,14 @@ createApp({
       else if (oldVal === 'MARGINAL' && newVal === 'EXPIRED') this._triggerAdvisoryUpdate('critical', null);
     },
     h1EvidenceActive(val) {
-      if (val >= 2) {
-        if (this.h1FaultType === 'fluid_drawdown' && !this.h1GasLockExcluded) {
-          // Drawdown confirmed by sonic log: Gas Lock zone is excluded
+      // When the second evidence item activates (2s after injection), GDC has retrieved its RAG document
+      if (val >= 2 && !this.h1RagRevealed) {
+        this.h1RagRevealed = true;
+        // Backcompat: set the old exclusion flags (used in status banner logic)
+        if (this.h1FaultType === 'fluid_drawdown') {
           this.h1GasLockExcluded = true;
-          this._renderEnvelopeChart();
-        } else if (this.h1FaultType !== 'fluid_drawdown' && !this.h1PumpOffExcluded) {
-          // Gas Lock confirmed by shift note: Pump-Off risk zone is excluded
+        } else if (this.h1FaultType === 'gas_lock') {
           this.h1PumpOffExcluded = true;
-          this._renderEnvelopeChart();
         }
       }
     },
@@ -1117,11 +1116,22 @@ createApp({
       }
     },
     
-    // ── Horizon 1: Gas Lock or Fluid Drawdown ──
+    // ── Horizon 1: Single-button randomized injection (Double-Blind Choice Game) ──
+    launchHorizon1Unloading() {
+      if (this.h1Injected) return;
+      // Randomly select fault type — audience does not know which was injected
+      const ft = Math.random() < 0.5 ? 'gas_lock' : 'fluid_drawdown';
+      this.launchHorizon1(ft);
+    },
     async launchHorizon1(faultType) {
       if (this.h1Injected) return;
       const ft = faultType || 'gas_lock';
       this.h1FaultType = ft;
+      this.h1ConsoleTab = 'scada';   // always start on SCADA (blind) view
+      this.h1RagRevealed = false;
+      this.h1OverrideModalOpen = false;
+      this.h1ShiftNoteModalOpen = false;
+      this.h1SonicLogModalOpen = false;
       this.h1Injected = true;
       this.h1Resolved = false;
       this.h1Seized = false;
@@ -1145,8 +1155,8 @@ createApp({
         this.h1EvidenceWall[3].content = 'Soft unload events × 3 in last 45 min · Power factor 0.71 \u2193 · Underload flag approaching threshold';
         this.h1EvidenceWall[4].content = 'API RP 11S §5.3: VFD speed-down is primary intervention. Class H limit: 180°C (IEEE 117). Baker Hughes: GVF >65% triggers unloading.';
       }
-      this.h1CopilotHtml = '';
-      this.h1CopilotStreaming = false;
+      this.h1AdvisorHtml = '';
+      this.h1AdvisorStreaming = false;
       this.h1ChatMessages = [];
       this.h1OptA = 'wopt-viable'; this.h1OptALabel = 'VIABLE';
       this.h1OptB = 'wopt-viable'; this.h1OptBLabel = 'VIABLE';
@@ -1240,6 +1250,12 @@ createApp({
       fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
         .then(r=>r.ok?r.json():null).then(d=>{ if(d&&!this.h1Injected) this.h1FeedItems=d.items||[]; });
     },
+    async approveH1VFDForce() {
+      // Called ONLY from the override modal "Override & Trim" button
+      this.h1OverrideModalOpen = false;
+      // Now execute the wrong action — causes pump seizure
+      await this.approveH1VFD();
+    },
     async executeH1Shutdown() {
       // Safe action during Fluid Drawdown: emergency shut-in preserves the pump
       this.h1Resolved = true;
@@ -1252,14 +1268,19 @@ createApp({
       try { await fetch('/api/cancel-degrade/ESP-ALPHA-1', {method:'POST'}); } catch(e) {}
     },
     async approveH1VFD() {
-      // Intercept: if fluid_drawdown is active, VFD trim is the WRONG choice
+      // GDC Advisor view: intercept VFD trim during drawdown — show override modal instead
+      if (this.h1FaultType === 'fluid_drawdown' && !this.h1Resolved && this.h1ConsoleTab === 'gdc') {
+        this.h1OverrideModalOpen = true;
+        return;
+      }
+      // SCADA blind gamble OR force-override path: if fluid_drawdown, this SEIZES the pump
       if (this.h1FaultType === 'fluid_drawdown' && !this.h1Resolved) {
         this.h1Seized = true;
         this.h1Resolved = true;
         this.h1Recovering = false;
         if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
-        this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — velocity dropped below critical lift. Sand settling downhole. Pump unresponsive on restart. Engineering assessment required.</strong>';
-        this.showToast('⚠ Pump unresponsive — VFD trim contraindicated during drawdown', 'var(--red)');
+        this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — velocity dropped below critical lift (4.2 ft/s). Sand settling and bridging downhole string. Motor unresponsive on restart. Engineering assessment required.</strong>';
+        this.showToast('⚠ Pump seized — VFD trim contraindicated during fluid drawdown', 'var(--red)');
         try { await fetch('/api/cancel-degrade/ESP-ALPHA-1', {method:'POST'}); } catch(e) {}
         return;
       }
@@ -1302,49 +1323,63 @@ createApp({
       const rawTemp = d.sensors?.temp?.traces?.[0]?.y?.slice(-1)?.[0] ?? null;
       const rawPsi  = d.sensors?.psi?.traces?.[0]?.y?.slice(-1)?.[0]  ?? null;
       const rawVib  = d.sensors?.vib?.traces?.[0]?.y?.slice(-1)?.[0]  ?? null;
-      // Store for reactive gauge bindings — single source of truth (DB trace from forecast-data)
-      // With AI_NARRATIVE_ENABLED=false and queue=0, these values are always current.
+      // Store for reactive gauge bindings — single source of truth (DB trace)
       if (rawAmps !== null) { this.h1RawAmps = rawAmps; this.h1SensorAmps = rawAmps.toFixed(1) + ' A'; }
       if (rawTemp !== null) { this.h1RawTemp = rawTemp; this.h1SensorTemp = rawTemp.toFixed(0) + '°F'; }
       if (rawPsi  !== null) { this.h1RawPsi  = rawPsi;  this.h1SensorPsi  = rawPsi.toFixed(0)  + ' PSI'; }
       if (rawVib  !== null) { this.h1RawVib  = rawVib;  this.h1SensorVib  = rawVib.toFixed(2)  + ' mm/s'; }
-      this._renderEnvelopeChart();
       // Detect GDC detection moment (first time health_score drops below 0.85)
       if (d.health_score && d.health_score < 0.85 && !this.h1DetectionTime) {
         this.h1DetectionTime = Date.now();
       }
-      // Accumulate phase-plane trail (Amps × Temp operating points)
-      if (this.h1Injected && rawAmps !== null && rawTemp !== null) {
-        if (!this.h1PhasePlaneHistory) this.h1PhasePlaneHistory = [];
-        this.h1PhasePlaneHistory.push({ a: rawAmps, t: rawTemp });
-        if (this.h1PhasePlaneHistory.length > 20) this.h1PhasePlaneHistory = this.h1PhasePlaneHistory.slice(-20);
-      }
-      const el = document.getElementById('h1-phase-chart');
+      // Render the dual-axis PIP/Amps trend chart
+      this._renderH1Charts(d);
+    },
+    _renderH1Charts(d) {
+      const el = document.getElementById('h1-unloading-chart');
       if (!el) return;
-      const trail = this.h1PhasePlaneHistory || [];
-      const trailX = trail.map(p => p.t);
-      const trailY = trail.map(p => p.a);
-      const curAmps = rawAmps ?? 75;
-      const curTemp = rawTemp ?? 198;
-      const ptColor = curAmps < 50 ? '#ef4444' : curAmps < 62 ? '#f97316' : '#22c55e';
+      const pipTrace  = d.sensors?.psi?.traces?.[0];
+      const ampsTrace = d.sensors?.amps?.traces?.[0];
+      if (!pipTrace || !ampsTrace) return;
+      // Trim to historical only (no projection lines — keep only non-null y values)
+      const pipX  = pipTrace.x  || [];
+      const pipY  = pipTrace.y  || [];
+      const ampsX = ampsTrace.x || [];
+      const ampsY = ampsTrace.y || [];
       const traces = [
-        { x: trailX, y: trailY, mode: 'lines+markers', name: 'Trajectory',
-          line: { color: 'rgba(99,102,241,0.55)', width: 2 },
-          marker: { color: 'rgba(99,102,241,0.35)', size: 5 }, type: 'scatter' },
-        { x: [curTemp], y: [curAmps], mode: 'markers', name: 'Current state',
-          marker: { color: ptColor, size: 13, symbol: 'circle',
-                    line: { color: 'rgba(255,255,255,0.8)', width: 2 } },
-          type: 'scatter' },
+        { x: pipX, y: pipY, name: 'PIP (PSI)', type: 'scatter', mode: 'lines',
+          line: { color: '#3b82f6', width: 2 },
+          yaxis: 'y', hovertemplate: '<b>PIP:</b> %{y:.0f} PSI<extra></extra>' },
+        { x: ampsX, y: ampsY, name: 'Motor Amps', type: 'scatter', mode: 'lines',
+          line: { color: '#22c55e', width: 2, dash: 'dot' },
+          yaxis: 'y2', hovertemplate: '<b>Amps:</b> %{y:.1f} A<extra></extra>' },
       ];
-      // Background zone shapes — physically grounded regions
+      const layout = {
+        paper_bgcolor: 'transparent', plot_bgcolor: 'rgba(15,23,42,0.25)',
+        margin: { l: 46, r: 46, t: 6, b: 36 },
+        xaxis: { tickfont: { size: 8, color: '#64748b' }, gridcolor: 'rgba(100,116,139,0.08)', showgrid: true, type: 'date' },
+        yaxis:  { title: { text: 'PSI', font: { size: 9, color: '#3b82f6' } },
+                  tickfont: { size: 8, color: '#3b82f6' }, gridcolor: 'rgba(100,116,139,0.08)', showgrid: true },
+        yaxis2: { title: { text: 'Amps', font: { size: 9, color: '#22c55e' } },
+                  tickfont: { size: 8, color: '#22c55e' }, overlaying: 'y', side: 'right', showgrid: false },
+        showlegend: true,
+        legend: { x: 0.01, y: 0.99, bgcolor: 'rgba(0,0,0,0.4)', bordercolor: 'rgba(255,255,255,0.08)', borderwidth: 1,
+                  font: { size: 8, color: '#94a3b8' }, orientation: 'h' },
+        font: { family: 'monospace' },
+      };
+      Plotly.react('h1-unloading-chart', traces, layout, { responsive: true, displayModeBar: false });
+    },
+    _renderEnvelopeChart() { /* replaced by _renderH1Charts in Session J */ },
+    _legacyEnvelopeShapes() {
+      // Retained as dead stub — kept so old watcher references don't crash on rollback
       const shapes = [
-        // Green safe zone (nominal Amps > 60, Temp < 230)
+        // Green safe zone
         { type: 'rect', x0: 190, x1: 238, y0: 60, y1: 88,
           fillcolor: 'rgba(34,197,94,0.08)', line: { width: 0 }, layer: 'below' },
-        // Amber warning zone (Amps 45–62 OR Temp 220–280)
+        // Amber warning zone
         { type: 'rect', x0: 218, x1: 285, y0: 42, y1: 65,
           fillcolor: 'rgba(249,115,22,0.07)', line: { width: 0 }, layer: 'below' },
-        // Red gas-lock zone (Amps < 55, Temp > 225)
+        // Red gas-lock zone
         { type: 'rect', x0: 225, x1: 308, y0: 20, y1: 58,
           fillcolor: 'rgba(239,68,68,0.10)', line: { width: 0 }, layer: 'below' },
         // SCADA low-amps alarm line (horizontal)
@@ -1377,68 +1412,7 @@ createApp({
       Plotly.react(el, traces, layout, { displayModeBar: false, responsive: true })
         .catch(() => Plotly.newPlot(el, traces, layout, { displayModeBar: false, responsive: true }));
     },
-    _renderH1ScadaChart() { /* replaced by reactive CSS gauge cluster */ },
-    _renderEnvelopeChart() {
-      const el = document.getElementById('h1-envelope-chart');
-      if (!el) return;
-      const psi  = this.h1RawPsi  ?? 1380;
-      const amps = this.h1RawAmps ?? 75;
-      if (this.h1RawPsi && this.h1RawAmps) {
-        this.h1EnvelopeHistory.push({ x: amps, y: psi });
-        if (this.h1EnvelopeHistory.length > 20) this.h1EnvelopeHistory.shift();
-      }
-      const hx = this.h1EnvelopeHistory.map(p => p.x);
-      const hy = this.h1EnvelopeHistory.map(p => p.y);
-      const pumpOffExcluded = this.h1PumpOffExcluded;
-      const gasLockExcluded = this.h1GasLockExcluded;
-      const pumpOffFill = pumpOffExcluded ? 'rgba(100,116,139,0.04)' : 'rgba(239,68,68,0.10)';
-      const pumpOffLine = pumpOffExcluded ? 'rgba(100,116,139,0.12)' : 'rgba(239,68,68,0.2)';
-      const gasLockFill = gasLockExcluded ? 'rgba(100,116,139,0.04)' : 'rgba(251,146,60,0.08)';
-      const gasLockLine = gasLockExcluded ? 'rgba(100,116,139,0.12)' : 'rgba(0,0,0,0)';
-      const shapes = [
-        { type:'rect', x0:55, x1:125, y0:900, y1:1600, fillcolor:'rgba(74,222,128,0.06)', line:{width:0}, layer:'below' },
-        { type:'rect', x0:0,  x1:85,  y0:450, y1:1250, fillcolor:gasLockFill, line:{color:gasLockLine,width:1}, layer:'below' },
-        { type:'rect', x0:0,  x1:75,  y0:0,   y1:700,  fillcolor:pumpOffFill, line:{color:pumpOffLine,width:1}, layer:'below' },
-        { type:'line', x0:0, x1:125, y0:800, y1:800, line:{color:'rgba(239,68,68,0.45)',width:1,dash:'dot'} },
-        { type:'line', x0:50, x1:50, y0:0, y1:1600, line:{color:'rgba(239,68,68,0.45)',width:1,dash:'dot'} },
-      ];
-      const gasLockLabel = gasLockExcluded ? '❌ Gas Lock\nEXCLUDED\n(L3 Fused)' : 'Gas Lock';
-      const gasLockColor = gasLockExcluded ? 'rgba(74,222,128,0.75)' : 'rgba(251,146,60,0.65)';
-      const pumpOffLabel = pumpOffExcluded ? '❌ Pump-Off\nEXCLUDED\n(L3 Fused)' : 'Pump-Off\nRisk';
-      const pumpOffColor = pumpOffExcluded ? 'rgba(74,222,128,0.75)' : 'rgba(239,68,68,0.55)';
-      const annotations = [
-        { x:98, y:1540, text:'Nominal', showarrow:false, font:{size:9,color:'rgba(74,222,128,0.55)'}, xanchor:'center' },
-        { x:30, y:980,  text:gasLockLabel, showarrow:false, font:{size:8, color:gasLockColor}, xanchor:'center', align:'center' },
-        { x:28, y:320,  text:pumpOffLabel, showarrow:false, font:{size:8, color:pumpOffColor}, xanchor:'center', align:'center' },
-        { x:2, y:820,   text:'SCADA PIP: 800', showarrow:false, font:{size:7,color:'rgba(239,68,68,0.45)'}, xanchor:'left' },
-        { x:52, y:120,  text:'SCADA\n50A', showarrow:false, font:{size:7,color:'rgba(239,68,68,0.45)'}, xanchor:'left' },
-      ];
-      const traces = [
-        { x: hx.slice(0,-1), y: hy.slice(0,-1), mode:'lines+markers', type:'scatter',
-          line:{color:'rgba(251,146,60,0.35)',width:1.5},
-          marker:{size:4,color:'rgba(251,146,60,0.35)'},
-          hoverinfo:'none', showlegend:false },
-        { x:[amps], y:[psi], mode:'markers+text', type:'scatter',
-          marker:{size:13,color:'rgb(251,146,60)',line:{color:'white',width:2}},
-          text:['YOU ARE HERE'], textposition:'top right',
-          textfont:{size:8,color:'rgb(251,146,60)'},
-          hovertemplate:'<b>Operating Point</b><br>Amps: %{x:.1f}A<br>PIP: %{y:.0f} PSI<extra></extra>',
-          showlegend:false },
-      ];
-      const layout = {
-        paper_bgcolor:'transparent', plot_bgcolor:'rgba(15,23,42,0.25)',
-        margin:{l:46,r:8,t:8,b:40},
-        xaxis:{ title:{text:'Motor Amps (A)',font:{size:9,color:'#64748b'}}, range:[0,125],
-                tickfont:{size:8,color:'#64748b'}, gridcolor:'rgba(100,116,139,0.08)', showgrid:true,
-                zerolinecolor:'rgba(100,116,139,0.15)' },
-        yaxis:{ title:{text:'Intake PSI',font:{size:9,color:'#64748b'}}, range:[0,1600],
-                tickfont:{size:8,color:'#64748b'}, gridcolor:'rgba(100,116,139,0.08)', showgrid:true,
-                zerolinecolor:'rgba(100,116,139,0.15)' },
-        shapes, annotations, showlegend:false,
-        font:{family:'monospace'},
-      };
-      Plotly.react('h1-envelope-chart', traces, layout, {responsive:true,displayModeBar:false});
-    },
+    _renderH1ScadaChart() { /* replaced by _renderH1Charts in Session J */ },
     setH1Sensor(sensor) {
       this.h1ActiveSensor = sensor;
       if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);

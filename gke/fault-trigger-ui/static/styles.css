@@ -911,3 +911,98 @@
     .wstrip-val{font-family:var(--mono);font-size:0.6rem;font-weight:700}
     .wstrip-bar-wrap{width:100%;height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin:2px 0 3px;overflow:hidden}
     .wstrip-bar{height:100%;border-radius:2px;transition:width 1.5s ease,background 1.5s ease}
+
+    /* ══════════════════════════════════════════════════════════════════════════
+       H1 SESSION J — DOUBLE-BLIND CHOICE GAME STYLES
+    ══════════════════════════════════════════════════════════════════════════ */
+
+    /* ── Layout columns ── */
+    .h1-telemetry-col{flex:0 0 38%;max-width:38%;display:flex;flex-direction:column;gap:0;min-height:0;padding-bottom:4px}
+    .h1-decision-col{flex:1;display:flex;flex-direction:column;min-height:0;border:1px solid var(--border);border-radius:8px;background:var(--surf);overflow:hidden}
+
+    /* ── Pre-injection placeholder ── */
+    .h1-preinjection-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:14px;padding:28px 20px;text-align:center}
+
+    /* ── Sub-tab bar ── */
+    .h1-sub-tab-bar{display:flex;align-items:stretch;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--surf2)}
+    .h1-sub-tab-btn{padding:8px 16px;font-size:0.65rem;font-weight:700;cursor:pointer;color:var(--muted);border:none;border-bottom:2px solid transparent;background:transparent;transition:all 0.15s;letter-spacing:0.03em}
+    .h1-sub-tab-btn:hover{color:var(--text2);background:rgba(255,255,255,0.03)}
+    .h1-sub-tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:rgba(30,144,255,0.04)}
+
+    /* ── SCADA View ── */
+    .h1-scada-view{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+    .h1-scada-alarm-banner{display:flex;align-items:center;gap:12px;padding:10px 14px;background:rgba(251,191,36,0.08);border-bottom:1px solid rgba(251,191,36,0.25);color:var(--yellow);flex-shrink:0}
+    .h1-scada-dilemma{padding:12px 14px;flex:1;overflow-y:auto}
+
+    /* ── GDC Advisor View ── */
+    .h1-gdc-view{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+    .h1-rag-pending{padding:10px 14px;font-size:0.62rem;color:var(--muted);font-style:italic;background:rgba(30,144,255,0.04);border-bottom:1px solid var(--border);flex-shrink:0;letter-spacing:0.02em}
+    .h1-rag-card{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(74,222,128,0.07);border-bottom:1px solid rgba(74,222,128,0.25);cursor:pointer;flex-shrink:0;transition:background 0.15s}
+    .h1-rag-card:hover{background:rgba(74,222,128,0.12)}
+
+    /* ── GDC Content area (wellbore + verdict side by side) ── */
+    .h1-gdc-content{display:flex;gap:12px;padding:10px 12px;flex:1;min-height:0;overflow-y:auto}
+
+    /* ── Wellbore Schematic ── */
+    .h1-wellbore-wrap{flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:4px;width:110px}
+    .h1-wb-label{font-size:0.46rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);text-align:center;line-height:1.4}
+    .h1-wellbore-schematic{width:100%;height:260px;position:relative;background:#07111e;border:2px solid #1e4a7e;border-radius:5px;overflow:hidden;display:flex;flex-direction:column}
+    .h1-wb-fluid-col{flex:1;position:relative;overflow:hidden}
+
+    /* Gas Lock fluid: high, stable, blue column with rising gold bubbles */
+    .h1-wb-fluid-gaslock{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(59,130,246,0.4) 0%,rgba(21,101,192,0.8) 60%,#1565c0 100%);transition:height 1.5s ease;overflow:hidden}
+
+    /* Drawdown fluid: low, declining, brown-tinted depleted column */
+    .h1-wb-fluid-drawdown{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(180deg,rgba(180,83,9,0.3) 0%,rgba(120,53,15,0.7) 100%);transition:height 1.5s ease}
+
+    /* Sand zone (above depleted fluid during drawdown) */
+    .h1-wb-sand-zone{position:absolute;left:0;right:0;top:0;height:60%;overflow:hidden;pointer-events:none}
+
+    /* Rising gold bubbles (Gas Lock) */
+    .h1-wb-bubble{position:absolute;border-radius:50%;background:rgba(251,191,36,0.9);animation:h1-bubble-rise 2.5s ease-in infinite}
+    @keyframes h1-bubble-rise{0%{transform:translateY(0);opacity:0.9}80%{opacity:0.6}100%{transform:translateY(-180px);opacity:0}}
+
+    /* Falling brown sand particles (Drawdown) */
+    .h1-wb-sand{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(146,64,14,0.85);top:-4px;animation:h1-sand-fall 1.8s linear infinite}
+    @keyframes h1-sand-fall{0%{transform:translateY(0);opacity:0.9}100%{transform:translateY(120px);opacity:0.2}}
+
+    /* Equipment blocks */
+    .h1-wb-pump{background:#0d2040;border-top:2px solid #2563eb;border-bottom:1px solid #2563eb;padding:4px 6px;text-align:center;font-size:0.5rem;font-weight:700;letter-spacing:0.08em;color:#60a5fa;flex-shrink:0}
+    .h1-wb-motor{padding:4px 6px;text-align:center;font-size:0.5rem;font-weight:700;letter-spacing:0.06em;border-radius:0 0 3px 3px;border:2px solid;transition:border-color 1.5s,background 1.5s;flex-shrink:0;line-height:1.35}
+    .h1-wb-motor-ok{background:#061a0e;border-color:#22c55e;color:#4ade80}
+    .h1-wb-motor-warn{background:#1a0c00;border-color:#f59e0b;color:#fbbf24;animation:h1-motor-warm 0.9s ease-in-out infinite}
+    @keyframes h1-motor-warm{0%,100%{box-shadow:0 0 6px rgba(245,158,11,0.35)}50%{box-shadow:0 0 14px rgba(245,158,11,0.7)}}
+
+    /* ── Verdict column ── */
+    .h1-verdict-col{flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;min-height:0}
+    .h1-gdc-verdict{background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.3);border-radius:6px;padding:10px 12px;flex-shrink:0}
+
+    /* ── Action buttons ── */
+    .h1-action-btn{width:100%;padding:9px 10px;border-radius:6px;border:1px solid;font-size:0.63rem;font-weight:700;cursor:pointer;text-align:center;letter-spacing:0.02em;line-height:1.4;transition:filter 0.15s}
+    .h1-action-btn:hover{filter:brightness(1.12)}
+    .h1-btn-gamble{background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.35);color:var(--yellow)}
+    .h1-btn-shutdown{background:rgba(100,116,139,0.08);border-color:rgba(100,116,139,0.3);color:var(--muted)}
+    .h1-btn-approve{background:rgba(74,222,128,0.1);border-color:rgba(74,222,128,0.35);color:var(--green)}
+    .h1-btn-wrong{background:rgba(239,68,68,0.06);border-color:rgba(239,68,68,0.3);color:var(--red);font-size:0.58rem;font-weight:600}
+
+    /* ── Outcome states ── */
+    .h1-outcome-seized{margin-top:8px;padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.35);border-radius:6px;font-size:0.62rem;font-weight:700;color:var(--red);line-height:1.6}
+    .h1-outcome-resolved{margin-top:8px;padding:8px 12px;background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.3);border-radius:6px;font-size:0.62rem;font-weight:700;color:var(--green);line-height:1.5}
+
+    /* ── Modal overlay & box ── */
+    .h1-modal-overlay{position:fixed;inset:0;z-index:900;background:rgba(0,0,0,0.82);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+    .h1-modal-box{background:var(--surf);border:1px solid var(--border2);border-radius:10px;max-width:540px;width:94vw;box-shadow:0 20px 60px rgba(0,0,0,0.7);overflow:hidden}
+    .h1-modal-title{display:flex;align-items:center;gap:8px;padding:14px 16px;font-size:0.82rem;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);background:var(--surf2)}
+    .h1-modal-body{padding:14px 16px;font-size:0.62rem;color:var(--text2);line-height:1.65}
+
+    /* ── Field document styling (Shift Note + Sonic Log modals) ── */
+    .h1-field-doc{font-family:'JetBrains Mono',monospace;font-size:0.62rem}
+    .h1-doc-header-table{width:100%;border-collapse:collapse;font-size:0.60rem;margin-bottom:8px}
+    .h1-doc-header-table td{padding:2px 8px 2px 0;color:var(--text2)}
+    .h1-doc-header-table td:nth-child(odd){color:var(--muted);font-weight:700;width:64px;white-space:nowrap}
+    .h1-sonic-table{width:100%;border-collapse:collapse;font-size:0.60rem;margin-bottom:8px}
+    .h1-sonic-table th{padding:4px 8px;background:var(--surf2);color:var(--muted);font-weight:700;text-align:left;border-bottom:1px solid var(--border)}
+    .h1-sonic-table td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text2)}
+    .h1-sonic-table tr:last-child td{border-bottom:none}
+    .h1-sonic-alert{color:var(--red);font-weight:700}
+    .h1-sonic-warn{color:var(--orange);font-weight:700}
