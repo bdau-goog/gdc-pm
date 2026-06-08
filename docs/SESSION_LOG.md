@@ -2,6 +2,23 @@
 
 ---
 
+## Session H (June 8, 2026) — *Total Document Sweep & Narrative Consolidation*
+
+**Code committed:** `feature-trio-clean` (new branch, all cruft purged, authoritative master consolidated)
+
+**What was done:** 
+1. **Executed Clean Break Strategy:** Created new branch `feature-trio-clean` to separate prior commit drift. Purged obsolete documents (`docs/INTEGRITY_AUDIT.md` and `docs/BACKEND_CONFORMANCE_REPORT.md` moved to historical archive; `docs/archive/README.md` added with explicit instructions to block future context pollution). 
+2. **Re-engineered the H1 Value Proposition:** Resolved the weak $500-gap comparison of H1 by moving the core value story from a simplistic dollar-ladder onto the **"Discerning Operator"** paradigm. Documented how GDC uses L3 Context (06:15 Shift Note + Annulus Level) to safely execute early VFD trims (HITL) that SCADA operators cannot risk executing automatically on raw, ambiguous telemetry due to Reservoir Pump-Off/sand-bridging risk (~$150k stuck pump).
+3. **Consolidated authoritative blueprints:** Rewrote `docs/DEMO_MASTER.md` as the absolute single-source-of-truth. Permanently welded the **Claims Ledger** directly inside it as an appendix to eliminate any future document drift. Updated the H1 and H2 design specs to detail the upcoming split SCADA/GDC advisor cards and multi-well surveillance strip. Deleted standalone `CLAIM_LEDGER.md`. 
+4. **Updated Operational state:** Compacted `docs/NEXT_SESSION_PROMPT.md` for clean handoff.
+
+**Key Decisions:** 
+- (a) Consolidated active guidance into exactly **two active files** (`DEMO_MASTER.md` and `NEXT_SESSION_PROMPT.md`), saving up to 150K tokens per session and permanently ending document/narrative drift.
+- (b) Adopted **"Operational-Lead with Benchmark Dollars"** framing for all future visual elements—using physical and risk reality as primary visual text, with representative dollars as supporting order-of-magnitude benchmarks.
+- (c) Verified all background LLM and data operations remain fully backwards compatible.
+
+---
+
 ## Session G (June 8, 2026) — *Phase 3 cost-ladder + sensor bar integrity fixes — deployed and verified*
 
 **Code committed:** `a2eee90` (fix(ui): Phase 3 — cost-ladder ticks, wopt card B cost, sensor bar widths pre-injection)
