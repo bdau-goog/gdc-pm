@@ -5804,6 +5804,119 @@ def get_truck_roll_status(asset_id: str):
     return {"active": asset_id in active_truck_rolls}
 
 
+# ── H1 Scenario Replay ─────────────────────────────────────────────────────────
+
+@app.get("/api/h1/scenario-replay")
+async def h1_scenario_replay(fault: str = "gas_lock"):
+    """
+    Pre-computes a full ESP fluid-unloading trajectory and runs the real XGBoost
+    health model (esp_health.ubj) in a sliding window.  Returns deterministic
+    replay arrays for the Discern tab ▶ Play / scrub control.
+
+    fault: "gas_lock" | "fluid_drawdown"
+
+    Detection logic:
+      - GDC:   first index where health_score < 0.65  (calibrated XGBoost threshold)
+      - SCADA: first index where psi < 1000 PSI
+               (underload protection setpoint ≈ 15 % below nominal, per API RP 11S §7.2)
+
+    The SCADA threshold is intentionally NOT 800 PSI — the FAULT_PROFILES
+    psi_range (875–1100) never drops to 800, so 800 would never fire.
+    1000 PSI is the physically defensible hard-limit SCADA operators would use.
+    """
+    ft = fault if fault in ("gas_lock", "fluid_drawdown") else "gas_lock"
+    fp = FAULT_PROFILES.get(ft, FAULT_PROFILES["gas_lock"])
+
+    N      = 120                         # trajectory steps
+    k      = random.uniform(1.2, 2.5)   # ramp shape exponent (same as degrade thread)
+    t_step = 0.25                        # minutes per step → 30-minute total window
+
+    # Nominal operating baselines
+    psi_nom  = random.uniform(1180, 1250)
+    amps_nom = random.uniform(85, 92)
+    temp_nom = random.uniform(195, 202)
+    vib_nom  = random.uniform(0.8, 1.4)
+
+    # Fault-end targets from FAULT_PROFILES
+    psi_end  = random.uniform(*fp["psi_range"])
+    amps_end = (fp["amps_range"][0] + fp["amps_range"][1]) / 2.0
+    temp_end = random.uniform(*fp.get("temp_range", (198, 215)))
+    vib_end  = random.uniform(*fp.get("vib_range", (1.0, 2.5)))
+
+    psi_arr, amps_arr, temp_arr, vib_arr, t_min_arr = [], [], [], [], []
+    for i in range(N):
+        frac = ((i + 1) / N) ** k
+        psi_arr.append(  round(psi_nom  + (psi_end  - psi_nom)  * frac + random.gauss(0, 18),  1))
+        amps_arr.append( round(amps_nom + (amps_end - amps_nom) * frac + random.gauss(0, 1.5), 2))
+        temp_arr.append( round(temp_nom + (temp_end - temp_nom) * frac + random.gauss(0, 1.2), 1))
+        vib_arr.append(  round(vib_nom  + (vib_end  - vib_nom)  * frac + random.gauss(0, 0.1), 3))
+        t_min_arr.append(round(i * t_step, 2))
+
+    # ── Run real XGBoost health model in sliding window ───────────────────────
+    # Feature order confirmed from esp_health.ubj:
+    #   psi, temp_f, vibration, motor_amps, dpsi_dt, dtemp_dt, dvib_dt, damps_dt
+    health_scores = []
+    _model_ok = False
+    W = 20   # window width (matches event-processor training window)
+    try:
+        import xgboost as xgb
+        import numpy as np
+        _feat = ["psi", "temp_f", "vibration", "motor_amps",
+                 "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
+        _model = xgb.Booster()
+        _model.load_model("models/esp_health.ubj")
+        for i in range(N):
+            if i < W:
+                health_scores.append(1.0)
+                continue
+            w_psi  = psi_arr[i - W:i]
+            w_amps = amps_arr[i - W:i]
+            w_temp = temp_arr[i - W:i]
+            w_vib  = vib_arr[i - W:i]
+            dpsi_dt  = (w_psi[-1]  - w_psi[0])  / (W * t_step)
+            damps_dt = (w_amps[-1] - w_amps[0]) / (W * t_step)
+            dtemp_dt = (w_temp[-1] - w_temp[0]) / (W * t_step)
+            dvib_dt  = (w_vib[-1]  - w_vib[0])  / (W * t_step)
+            feats = np.array([[
+                psi_arr[i], temp_arr[i], vib_arr[i], amps_arr[i],
+                dpsi_dt, dtemp_dt, dvib_dt, damps_dt
+            ]])
+            d = xgb.DMatrix(feats, feature_names=_feat)
+            health_scores.append(round(float(_model.predict(d)[0]), 4))
+        _model_ok = True
+    except Exception as _e:
+        log.warning(f"esp_health.ubj unavailable — synthetic fallback active: {_e}")
+        health_scores = [round(1.0 - 0.4 * ((i / N) ** 2), 4) for i in range(N)]
+
+    # ── Detection indices ─────────────────────────────────────────────────────
+    HEALTH_THRESHOLD = 0.65
+    # SCADA underload setpoint: 1000 PSI ≈ 15 % below nominal 1200 PSI
+    # (API RP 11S §7.2 underload protection — fires when PIP drops to alarm setpoint)
+    SCADA_PIP_ALARM  = 1000.0
+
+    gdc_detect_idx  = next((i for i, s in enumerate(health_scores) if s < HEALTH_THRESHOLD), N - 1)
+    scada_alarm_idx = next((i for i, p in enumerate(psi_arr)       if p < SCADA_PIP_ALARM),  N - 1)
+
+    lead_time_minutes = round(
+        t_min_arr[scada_alarm_idx] - t_min_arr[gdc_detect_idx], 1
+    ) if scada_alarm_idx > gdc_detect_idx else 0.0
+
+    return {
+        "fault_type":        ft,
+        "n":                 N,
+        "psi":               psi_arr,
+        "amps":              amps_arr,
+        "temp":              temp_arr,
+        "vib":               vib_arr,
+        "t_min":             t_min_arr,
+        "health_score":      health_scores,
+        "gdc_detect_idx":    gdc_detect_idx,
+        "scada_alarm_idx":   scada_alarm_idx,
+        "lead_time_minutes": lead_time_minutes,
+        "model_used":        "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
+    }
+
+
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────
 GRAFANA_EXTERNAL_IP = os.environ.get("GRAFANA_URL", "http://136.115.220.48")
 

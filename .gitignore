@@ -27,3 +27,9 @@ gke/inference-api/.model-gcs-path
 # IDE
 .vscode/
 .idea/
+
+# Node / Playwright (dev tooling — not committed)
+node_modules/
+package-lock.json
+smoke_screenshot.png
+smoke_chart_data.json
