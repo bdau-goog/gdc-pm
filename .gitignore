@@ -2,6 +2,13 @@
 .secrets/
 *.key.json
 terraform/terraform.tfvars
+
+# Workspace isolation (machine-local, never commit)
+.env
+.kubeconfig
+.envrc
+.cline_project_verified
+gke_gcloud_auth_plugin_cache
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 *.tfstate
