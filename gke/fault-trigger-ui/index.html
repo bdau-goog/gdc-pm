@@ -423,11 +423,11 @@
           <!-- 4 SPARKLINE TREND CARDS -->
           <div style="display:flex;flex-direction:column;gap:4px;overflow-y:auto;flex:1;min-height:0">
             <div class="h1-spark-card">
-              <div class="h1-spark-label">PIP <span style="color:var(--muted)">· Alarm <800 PSI</span></div>
+              <div class="h1-spark-label">PIP <span style="color:var(--muted)">· Alarm &lt;800 PSI</span></div>
               <div id="h1-spark-psi" :style="{height: h1ChartH+'px'}" style="width:100%"></div>
             </div>
             <div class="h1-spark-card">
-              <div class="h1-spark-label">AMPS <span style="color:var(--muted)">· Alarm <50 A</span></div>
+              <div class="h1-spark-label">AMPS <span style="color:var(--muted)">· Alarm &lt;50 A</span></div>
               <div id="h1-spark-amps" :style="{height: h1ChartH+'px'}" style="width:100%"></div>
             </div>
             <div class="h1-spark-card">
@@ -460,7 +460,7 @@
             <div style="font-size:0.57rem;color:var(--muted);border:1px solid var(--border);border-radius:5px;padding:8px 14px;background:rgba(15,23,42,0.5);line-height:1.7;text-align:left">
               📡 PIP & Amps decline <em>identically</em> for both fault types<br>
               🟡 SCADA faces 3 concurrent alarms — cannot distinguish signal from noise<br>
-              🟢 GDC retrieves correct field document in <2 seconds
+              🟢 GDC retrieves correct field document in &lt;2 seconds
             </div>
           </div>
 
@@ -493,12 +493,12 @@
                 <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
                   <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Pump Intake Pressure</div>
                   <div style="font-size:1.1rem;font-weight:800;color:var(--yellow);font-family:var(--mono)">{{ h1SensorPsi || '—' }}</div>
-                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: <800 PSI (hard trip)</div>
+                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: &lt;800 PSI (hard trip)</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
                   <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Motor Current</div>
                   <div style="font-size:1.1rem;font-weight:800;color:var(--yellow);font-family:var(--mono)">{{ h1SensorAmps || '—' }}</div>
-                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: <50 A (underload trip)</div>
+                  <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: &lt;50 A (underload trip)</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.6);border:1px solid var(--border);border-radius:5px;padding:8px 10px">
                   <div style="font-size:0.52rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-bottom:4px">Winding Temp</div>
@@ -511,23 +511,53 @@
                   <div style="font-size:0.50rem;color:var(--muted);margin-top:2px">SCADA alarm: >8.0 mm/s</div>
                 </div>
               </div>
-              <!-- Action row — no guidance, bare SCADA choice -->
+              <!-- Action row — bare SCADA choice, no document context -->
               <div style="padding:10px 12px;background:var(--surf);border-top:1px solid var(--border);flex-shrink:0">
-                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Operator Action Required</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-                  <button v-if="!h1Resolved && !h1Seized" @click="approveH1VFD()" class="h1-action-btn h1-btn-gamble">
-                    VFD Speed-Down<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">52 → 44 Hz</span>
+                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Select Intervention — No Document Context Available</div>
+                <div v-if="!h1Resolved && !h1Seized" style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                  <!-- Action A: VFD Trim -->
+                  <button @click="approveH1VFD()" class="h1-action-card h1-card-amber">
+                    <div class="h1-card-header">⚡ VFD Speed-Down</div>
+                    <div class="h1-card-sub">52 → 44 Hz · 3,120 → 2,640 RPM</div>
+                    <div class="h1-card-desc">Slows impeller to vent gas pocket up casing annulus. Well stays online.</div>
+                    <div class="h1-card-when"><span style="color:rgba(251,191,36,0.8)">Apply if:</span> Gas lock (casing full, gas in pump stages)</div>
+                    <div class="h1-card-warn">⚠ Risk: If drawdown, velocity drops to 3.1 ft/s → sand bridge → ~$150k seizure</div>
                   </button>
-                  <button v-if="!h1Resolved && !h1Seized" @click="executeH1Shutdown()" class="h1-action-btn h1-btn-shutdown">
-                    🛑 Shut-In Well<br><span style="font-size:0.55rem;font-weight:400;opacity:0.85">Safe · deferred restart</span>
+                  <!-- Action B: Shutdown -->
+                  <button @click="executeH1Shutdown()" class="h1-action-card h1-card-slate">
+                    <div class="h1-card-header">🛑 Emergency Shut-In</div>
+                    <div class="h1-card-sub">Well offline · pump protected</div>
+                    <div class="h1-card-desc">Halts ESP safely. Avoids mechanical damage for either fault type.</div>
+                    <div class="h1-card-when"><span style="color:rgba(148,163,184,0.9)">Apply if:</span> Either fault — conservative fallback</div>
+                    <div class="h1-card-warn">Cost: ~$3k–$8k deferred restart (2–4h purge + labor)</div>
                   </button>
                 </div>
+                <!-- Seized: itemized financial consequence -->
                 <div v-if="h1Seized" class="h1-outcome-seized">
-                  ❌ PUMP SEIZED — VFD trim during fluid drawdown. Velocity below 4.2 ft/s. Sand bridge confirmed. ~$150,000 pull-rig.
+                  <div style="font-weight:700;margin-bottom:6px">❌ PUMP SEIZED — VFD Trim Applied on Fluid Drawdown</div>
+                  <div style="font-size:0.57rem;opacity:0.85;line-height:1.6;margin-bottom:8px">Reducing to 44 Hz dropped transport velocity to 3.1 ft/s — below the 4.2 ft/s critical sand-transport lift boundary (SPE-174536). Suspended solids settled and bridged the completion. Motor unresponsive.</div>
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.56rem;line-height:1.7">
+                    <span style="color:var(--text2)">Pull-rig spot rate (3 days × $14k/day — WTX 2024)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
+                    <span style="color:var(--text2)">Replacement ESP motor (Reda Class H coil)</span><span style="color:var(--red);font-weight:700;text-align:right">$53,000</span>
+                    <span style="color:var(--text2)">HP power cable + downhole gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$15,000</span>
+                    <span style="color:var(--text2)">Deferred production (300 BPD × $76/bbl × 1.75d)</span><span style="color:var(--red);font-weight:700;text-align:right">$39,900</span>
+                    <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;margin-top:2px">Total Unmitigated Loss</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;margin-top:2px;text-align:right">~$149,900</span>
+                  </div>
                 </div>
+                <!-- Resolved: financial outcome -->
                 <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
-                  ✅ <span v-if="h1Recovering">RECOVERING — VFD at 44 Hz</span>
-                  <span v-else>RESOLVED</span>
+                  <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
+                  <template v-else-if="h1FaultType==='fluid_drawdown'">
+                    <div style="font-weight:700;margin-bottom:4px">✅ SAFE SHUT-IN — Pump Integrity Preserved</div>
+                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump and downhole equipment confirmed intact. Fluid level stabilizing.<br>
+                    <span style="color:rgba(74,222,128,0.7)">Avoided ~$150,000 sand-bridge seizure</span><br>
+                    <span style="color:var(--muted)">Net cost: ~$3k–$8k deferred restart · Net savings: ~$142k–$147k</span></div>
+                  </template>
+                  <template v-else>
+                    <div style="font-weight:700;margin-bottom:4px">✅ GAS LOCK CLEARING — Well Staying Online</div>
+                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD at 44 Hz. Gas void venting up flooded annulus.<br>
+                    <span style="color:rgba(74,222,128,0.7)">Total intervention cost: ~$2,500 (MOC + 5h trim labor)</span></div>
+                  </template>
                 </div>
               </div>
               <div v-if="h1RecoveryMsg" style="padding:5px 12px;font-size:0.60rem;color:var(--green);border-top:1px solid var(--border)">{{ h1RecoveryMsg }}</div>
@@ -551,7 +581,7 @@
                   <div style="font-weight:700;font-size:0.65rem" v-else>
                     Retrieved: Operator Shift Handover Note · 06:15 Tour 2 · GVF elevated (78%) at pump intake
                   </div>
-                  <div style="font-size:0.54rem;color:rgba(74,222,128,0.7);margin-top:2px">pgvector similarity search · AlloyDB on-cluster · <2s retrieval &nbsp;·&nbsp; <span style="text-decoration:underline;cursor:pointer">Click to view full document →</span></div>
+                  <div style="font-size:0.54rem;color:rgba(74,222,128,0.7);margin-top:2px">pgvector similarity search · AlloyDB on-cluster · &lt;2s retrieval &nbsp;·&nbsp; <span style="text-decoration:underline;cursor:pointer">Click to view full document →</span></div>
                 </div>
               </div>
 
@@ -612,35 +642,63 @@
                     <div style="font-size:0.58rem;color:var(--text2);margin-top:4px;line-height:1.55">
                       L3 Context Fused: Sonic Log (06:00 Tour 2) + Casing GOR.<br>
                       Dynamic fluid level <strong>150 ft above intake</strong> (critical min: 120 ft).<br>
-                      <strong style="color:var(--red)">VFD trim CONTRAINDICATED.</strong> Speed-down → velocity < 4.2 ft/s → sand bridge → pump seizure.
+                      <strong style="color:var(--red)">VFD trim CONTRAINDICATED.</strong> Speed-down below 48 Hz drops velocity from 4.2 ft/s to 3.1 ft/s at 44 Hz — breaching the critical sand-transport lift boundary (SPE-174536). Sand settles and bridges tubing. Pump seizure.
                     </div>
                   </div>
-                  <!-- Action buttons -->
+                  <!-- Action cards — GDC-informed choices -->
                   <div v-if="!h1Resolved && !h1Seized" style="display:flex;flex-direction:column;gap:6px">
-                    <button v-if="h1FaultType==='gas_lock'" @click="approveH1VFD()" class="h1-action-btn h1-btn-approve">
-                      ✔ Approve Proactive VFD Trim — 52 → 44 Hz
+                    <!-- Gas Lock: VFD trim RECOMMENDED -->
+                    <button v-if="h1FaultType==='gas_lock'" @click="approveH1VFD()" class="h1-action-card h1-card-green">
+                      <div class="h1-card-header">✔ GDC RECOMMENDED: VFD Speed-Down</div>
+                      <div class="h1-card-sub">52 → 44 Hz · 3,120 → 2,640 RPM · Zero downtime</div>
+                      <div class="h1-card-desc">Shift note confirms GVF 78% — casing annulus fully flooded. Slowing impeller allows gas pocket to vent up the submerged annulus. Well stays online. Estimated cost: ~$2,500 (MOC + labor).</div>
                     </button>
-                    <button v-if="h1FaultType==='fluid_drawdown'" @click="executeH1Shutdown()" class="h1-action-btn h1-btn-approve"
-                            style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.4);color:var(--red)">
-                      ⛔ Approve Emergency Shutdown — GDC Recommended
-                    </button>
-                    <button v-if="h1FaultType==='fluid_drawdown'" @click="approveH1VFD()" class="h1-action-btn h1-btn-wrong">
-                      ⚠ VFD Trim 52→44 Hz &nbsp;(GDC: CONTRAINDICATED — sand bridge risk)
-                    </button>
+                    <!-- Gas Lock: Conservative shutdown -->
                     <button v-if="h1FaultType==='gas_lock'" @click="executeH1Shutdown()"
-                            style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.58rem;padding:6px 10px;border-radius:5px;cursor:pointer;text-align:center;width:100%">
-                      🛑 Conservative Shutdown (safe, loses production)
+                            style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.58rem;padding:8px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
+                      🛑 Conservative Shutdown — Safe fallback (loses production · ~$3k–$8k deferred restart)
+                    </button>
+                    <!-- Drawdown: Emergency shutdown RECOMMENDED -->
+                    <button v-if="h1FaultType==='fluid_drawdown'" @click="executeH1Shutdown()" class="h1-action-card h1-card-red">
+                      <div class="h1-card-header">✔ GDC RECOMMENDED: Emergency Shut-In</div>
+                      <div class="h1-card-sub">Well offline · fluid level recovery · pump preserved</div>
+                      <div class="h1-card-desc">Sonic log confirms dynamic fluid level at 150 ft (min: 120 ft). Shutting in preserves pump integrity. Restart once submergence is restored. Net cost: ~$3k–$8k vs ~$150k seizure avoided.</div>
+                    </button>
+                    <!-- Drawdown: VFD trim CONTRAINDICATED (available for override demo) -->
+                    <button v-if="h1FaultType==='fluid_drawdown'" @click="approveH1VFD()" class="h1-action-card h1-card-contraindicated">
+                      <div class="h1-card-header">❌ GDC CONTRAINDICATED: VFD Speed-Down</div>
+                      <div class="h1-card-sub">52 → 44 Hz drops velocity to 3.1 ft/s — below 4.2 ft/s critical lift (SPE-174536)</div>
+                      <div class="h1-card-desc">Sonic log evidence: reservoir is depleting. Speed-down drops fluid velocity below the sand-transport minimum. Suspended solids bridge the tubing. Motor seizure. ~$150k pull-rig.</div>
                     </button>
                   </div>
-                  <!-- Outcomes -->
+                  <!-- Seized: itemized financial consequence -->
                   <div v-if="h1Seized" class="h1-outcome-seized">
-                    ❌ PUMP SEIZED — GDC WARNING BYPASSED<br>
-                    <span style="font-size:0.59rem">Fluid Drawdown confirmed by sonic log. VFD trim dropped velocity below 4.2 ft/s. Sand bridge confirmed. Representative: ~$150,000 pull-rig.</span>
+                    <div style="font-weight:700;margin-bottom:6px">❌ PUMP SEIZED — GDC Warning Overridden</div>
+                    <div style="font-size:0.57rem;opacity:0.85;line-height:1.6;margin-bottom:8px">Fluid drawdown confirmed by sonic log. 44 Hz trim dropped velocity to 3.1 ft/s — below the 4.2 ft/s critical sand-transport boundary (SPE-174536). Sand bridge confirmed downhole. Motor unresponsive on restart.</div>
+                    <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.56rem;line-height:1.7">
+                      <span style="color:var(--text2)">Pull-rig spot rate (3 days × $14k/day — WTX 2024)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
+                      <span style="color:var(--text2)">Replacement ESP motor (Reda Class H coil)</span><span style="color:var(--red);font-weight:700;text-align:right">$53,000</span>
+                      <span style="color:var(--text2)">HP power cable + downhole gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$15,000</span>
+                      <span style="color:var(--text2)">Deferred production (300 BPD × $76/bbl × 1.75d)</span><span style="color:var(--red);font-weight:700;text-align:right">$39,900</span>
+                      <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Total Unmitigated Loss</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$149,900</span>
+                    </div>
                   </div>
+                  <!-- Resolved: financial outcome -->
                   <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
-                    ✅ <span v-if="h1Recovering">RECOVERING — VFD 44 Hz</span>
-                    <span v-else-if="h1FaultType==='fluid_drawdown'">SAFE SHUTDOWN — Pump integrity confirmed.</span>
-                    <span v-else>RESOLVED — Zero downtime · $150k avoided.</span>
+                    <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
+                    <template v-else-if="h1FaultType==='fluid_drawdown'">
+                      <div style="font-weight:700;margin-bottom:4px">✅ SAFE SHUT-IN — GDC Recommendation Executed</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump integrity confirmed. Fluid level recovering above minimum submergence (120 ft).<br>
+                      <span style="color:rgba(74,222,128,0.7)">Avoided ~$150,000 sand-bridge seizure</span><br>
+                      <span style="color:rgba(74,222,128,0.7)">Capital preserved: ~$142,000–$147,000 (net of ~$3k–$8k restart)</span></div>
+                    </template>
+                    <template v-else>
+                      <div style="font-weight:700;margin-bottom:4px">✅ GAS LOCK CLEARED — Zero Downtime</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Gas void venting up flooded annulus. Well online throughout recovery.<br>
+                      <span style="color:rgba(74,222,128,0.7)">Total intervention cost: ~$2,500</span><br>
+                      <span style="color:rgba(74,222,128,0.7)">Avoided equipment loss if misidentified: ~$150,000</span><br>
+                      <span style="color:rgba(74,222,128,0.7)">Capital preserved: ~$147,500</span></div>
+                    </template>
                   </div>
                   <!-- GDC Advisor streaming text -->
                   <div v-if="h1AdvisorHtml" class="h1-advisor" style="margin-top:6px;flex:1;min-height:0;display:flex;flex-direction:column">
@@ -692,8 +750,9 @@
             <ul style="font-size:0.61rem;color:var(--text2);line-height:1.7;padding-left:18px;margin:0 0 8px">
               <li>Measured dynamic fluid level: <strong>150 ft above intake</strong> (critical minimum: 120 ft)</li>
               <li>Casing pressure flat — no free gas migration (this is NOT gas lock)</li>
-              <li>Reducing pump speed drops fluid velocity below <strong>critical lift: 4.2 ft/s</strong></li>
-              <li>Sand and solids settle → bridge downhole string → pump seizure</li>
+              <li>At 52 Hz, fluid transport velocity = 4.2 ft/s (above sand-transport minimum per SPE-174536)</li>
+              <li>Reducing to 44 Hz drops velocity to <strong>3.1 ft/s</strong> — below the 4.2 ft/s critical lift boundary</li>
+              <li>Suspended sand and solids settle out, bridging the completion string → pump seizure</li>
               <li>Representative consequence: ~<strong>$150,000 pull-rig + deferred production</strong></li>
             </ul>
             <p style="font-size:0.59rem;color:var(--muted);margin:0">GDC recommends Emergency Shutdown. Override GDC and trim VFD anyway?</p>
@@ -1001,7 +1060,7 @@
           </div>
           <div class="h3-slider-container">
             <div class="h3-slider-label"><span>Net Cash Flow Model</span><span style="font-family:var(--mono);color:var(--green)">Live</span></div>
-            <div style="font-size:0.68rem;color:var(--text2);padding-top:6px;line-height:1.6">Revenue − Power Costs − ESP Failure CAPEX ($150k if RUL < horizon)</div>
+            <div style="font-size:0.68rem;color:var(--text2);padding-top:6px;line-height:1.6">Revenue − Power Costs − ESP Failure CAPEX ($150k if RUL &lt; horizon)</div>
           </div>
         </div>
         <!-- Value Cards -->
@@ -1469,7 +1528,7 @@
               <ul>
                 <li><strong style="color:var(--blue)">Pump Intake Pressure (PIP)</strong> — Pump inlet pressure. Drop below 180 PSI indicates gas lock or low reservoir pressure (though positive reservoir pressure must be maintained to prevent pump cavitation). Nominal: 220–280 PSI.</li>
                 <li><strong style="color:var(--orange)">Winding Temp °F</strong> — Motor insulation health. Class H limit: 284°F. Gas lock causes heat buildup as the motor runs dry.</li>
-                <li><strong style="color:var(--orange)">Vibration mm/s</strong> — Impeller/bearing wear indicator. Nominal: <0.05 mm/s. Failure threshold: >0.50 mm/s (ISO 10816-3).</li>
+                <li><strong style="color:var(--orange)">Vibration mm/s</strong> — Impeller/bearing wear indicator. Nominal: &lt;0.05 mm/s. Failure threshold: &gt;0.50 mm/s (ISO 10816-3).</li>
                 <li><strong style="color:var(--blue)">Motor Amps</strong> — VFD current draw. Rising trend = increasing mechanical resistance (sand ingress, scale buildup).</li>
               </ul>
               <div class="arch-callout callout-blue">All 4 sensors are correlated simultaneously by the XGBoost model. No single sensor in isolation is sufficient to detect faults early — it's the pattern across all four that matters.</div>
@@ -1699,7 +1758,7 @@
               <ul>
                 <li>All manual sections are pre-embedded using <code style="font-family:var(--mono)">all-MiniLM-L6-v2</code> (384-dim vectors) at ingestion time</li>
                 <li>At query time: fault label + asset class is embedded, then cosine-similarity search retrieves top-3 relevant sections (<code style="font-family:var(--mono)">embedding <-> query_vec</code>)</li>
-                <li>HNSW index on AlloyDB ensures <10ms retrieval as document count scales</li>
+                <li>HNSW index on AlloyDB ensures &lt;10ms retrieval as document count scales</li>
               </ul>
               <div class="arch-callout callout-purple">Keyword search for "gas lock" returns all gas lock entries. pgvector semantic search returns the sections most contextually relevant to the specific sensor profile of this fault instance.</div>
             </div>
@@ -1768,7 +1827,7 @@
                 <div class="arch-chip chip-orange"><span class="arch-chip-label">Table</span><span class="arch-chip-val">telemetry_events</span></div>
                 <div class="arch-chip chip-purple"><span class="arch-chip-label">Table</span><span class="arch-chip-val">industry_corpus (18 rows)</span></div>
                 <div class="arch-chip chip-blue"><span class="arch-chip-label">Table</span><span class="arch-chip-val">ops_reports (100+ rows)</span></div>
-                <div class="arch-chip chip-muted"><span class="arch-chip-label">Index</span><span class="arch-chip-val">HNSW · <10ms retrieval</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Index</span><span class="arch-chip-val">HNSW · &lt;10ms retrieval</span></div>
               </div>
             </div>
 

@@ -1306,7 +1306,7 @@ createApp({
         this.h1Resolved = true;
         this.h1Recovering = false;
         if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
-        this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — velocity dropped below critical lift (4.2 ft/s). Sand settling and bridging downhole string. Motor unresponsive on restart. Engineering assessment required.</strong>';
+        this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — frequency reduced to 44 Hz dropped fluid transport velocity from 4.2 ft/s to 3.1 ft/s, breaching the critical sand-transport lift boundary (SPE-174536). Suspended sand settled and bridged the completion string. Motor unresponsive on restart. Engineering assessment required.</strong>';
         this.showToast('⚠ Pump seized — VFD trim contraindicated during fluid drawdown', 'var(--red)');
         const _seizeWell = this.h1TargetWell || 'ESP-ALPHA-1';
         try { await fetch(`/api/cancel-degrade/${_seizeWell}`, {method:'POST'}); } catch(e) {}
