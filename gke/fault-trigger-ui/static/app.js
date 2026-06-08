@@ -152,10 +152,10 @@ createApp({
       h1RecoveryMsg: '',
       h1RecoveryPollTimer: null,
 
-      // ── H1 Scenario Replay state (Session P) ──────────────────────────────
+      // ── H1 Scenario Replay state (Session Q rebuild) ──────────────────────
       h1ReplayData: null,           // full trajectory from /api/h1/scenario-replay
       h1ReplayLoading: false,       // API fetch in progress
-      h1ReplayWell: 1,              // well number for header display (1–6)
+      h1ScadaRuleFired: '',         // "Rate-of-change…" or "Static underload…" from backend
       h1CursorIdx: 0,               // scrubber position (0..N-1)
       h1Playing: false,             // auto-advance timer running
       h1PlayTimer: null,            // setInterval handle
@@ -349,7 +349,7 @@ createApp({
           this.h1EvidenceActive = 2; // triggers h1EvidenceActive watcher → sets exclusion flags
         }, 1500);
       }
-      // Update Plotly cursor line via relayout (shape index 2)
+      // Update Plotly cursor line via relayout (shape index 2 = cursor in the 4-stack chart)
       this._updateH1ReplayCursor(val);
     },
   },
@@ -1321,18 +1321,21 @@ createApp({
       this.h1Resolved = false;
       this.h1Seized = false;
       this.h1Recovering = false;
+      this.h1ScadaRuleFired = '';
       this.h1EvidenceActive = 0;
       this.h1EvidenceWall.forEach(e => { e.active = false; });
       if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
       this.h1ReplayData = null;
       this.h1ReplayLoading = true;
-      this.h1ReplayWell = Math.floor(Math.random() * 6) + 1;
+      // Anchored to Well A-3 (ESP-ALPHA-3) — no random well ID. Fleet scalability
+      // is communicated via the narrative card, not by randomizing which well number shows.
       const ft = Math.random() < 0.5 ? 'gas_lock' : 'fluid_drawdown';
       try {
         const r = await fetch(`/api/h1/scenario-replay?fault=${ft}`);
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
         this.h1ReplayData = data;
+        this.h1ScadaRuleFired = data.scada_rule_fired || '';
         this.h1ReplayLoading = false;
         this.$nextTick(() => { this._renderH1ReplayChart(); });
       } catch(e) {
@@ -1385,37 +1388,80 @@ createApp({
       const cursorT = d.t_min[this.h1CursorIdx] || 0;
       const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;
       const scadaT  = d.t_min[d.scada_alarm_idx]  || 0;
-      Plotly.newPlot('h1-replay-chart',
-        [
-          { x: d.t_min, y: d.psi,  name: 'PIP (PSI)',      type: 'scatter', mode: 'lines', line: { color: '#60a5fa', width: 2 }, yaxis: 'y'  },
-          { x: d.t_min, y: d.amps, name: 'Motor Amps (A)', type: 'scatter', mode: 'lines', line: { color: '#4ade80', width: 2 }, yaxis: 'y2' },
-        ],
-        {
-          paper_bgcolor: '#0b0c10', plot_bgcolor: '#0f1318',
-          font: { color: '#e0e0e0', family: 'Inter, sans-serif', size: 10 },
-          margin: { l: 52, r: 52, t: 28, b: 36 },
-          legend: { orientation: 'h', y: 1.12, x: 0, font: { size: 10 }, bgcolor: 'rgba(11,12,16,0.7)' },
-          xaxis: { title: 'Time (min)', gridcolor: '#1e2a38', zeroline: false, range: [0, d.t_min[d.n - 1]] },
-          yaxis: {
-            title: 'PIP (PSI)', gridcolor: '#1e2a38', zeroline: false,
-            titlefont: { color: '#60a5fa' }, tickfont: { color: '#60a5fa' },
-          },
-          yaxis2: {
-            title: 'Amps (A)', zeroline: false, overlaying: 'y', side: 'right',
-            titlefont: { color: '#4ade80' }, tickfont: { color: '#4ade80' },
-          },
-          shapes: [
-            { type: 'line', x0: gdcT,    x1: gdcT,    y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'rgba(251,191,36,0.85)', width: 2, dash: 'dash' } },
-            { type: 'line', x0: scadaT,  x1: scadaT,  y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'rgba(239,68,68,0.9)',   width: 2, dash: 'dash' } },
-            { type: 'line', x0: cursorT, x1: cursorT, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'rgba(148,163,184,0.65)', width: 1.5, dash: 'dot' } },
-          ],
-          annotations: [
-            { x: gdcT,   y: 0.97, xref: 'x', yref: 'paper', text: '<b>GDC Detects</b>', showarrow: false, xanchor: 'left', font: { color: 'rgba(251,191,36,0.9)', size: 9 } },
-            { x: scadaT, y: 0.97, xref: 'x', yref: 'paper', text: '<b>SCADA Alarm</b>',  showarrow: false, xanchor: 'left', font: { color: 'rgba(239,68,68,0.9)',   size: 9 } },
-          ],
-        },
-        { displayModeBar: false, responsive: true }
-      );
+      const xMax    = d.t_min[d.n - 1] || 30;
+
+      // ── 4 stacked subplots sharing the same x-axis ───────────────────────
+      // Each sensor gets its own row. Plotly `grid` layout with domain assignment
+      // ensures equal heights. All three vertical lines (GDC, Smart-SCADA, cursor)
+      // span the FULL paper height (yref:'paper', y0:0→y1:1), so they visually
+      // cross all four charts — an honest representation of multivariate detection.
+      const traces = [
+        { x: d.t_min, y: d.psi,  name: 'PIP (PSI)',    type: 'scatter', mode: 'lines',
+          line: {color:'#60a5fa', width:1.8}, xaxis:'x', yaxis:'y',  showlegend:true },
+        { x: d.t_min, y: d.amps, name: 'Amps (A)',     type: 'scatter', mode: 'lines',
+          line: {color:'#4ade80', width:1.8}, xaxis:'x', yaxis:'y2', showlegend:true },
+        { x: d.t_min, y: d.temp, name: 'Temp (°F)',    type: 'scatter', mode: 'lines',
+          line: {color:'#fb923c', width:1.8}, xaxis:'x', yaxis:'y3', showlegend:true },
+        { x: d.t_min, y: d.vib,  name: 'Vib (mm/s)',   type: 'scatter', mode: 'lines',
+          line: {color:'#a78bfa', width:1.8}, xaxis:'x', yaxis:'y4', showlegend:true },
+      ];
+
+      // Both detection lines span the FULL paper height (all 4 subplots)
+      // Cursor line is shape index 2 — updated cheaply via relayout during playback
+      const shapes = [
+        { type:'line', x0:gdcT,    x1:gdcT,    y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(251,191,36,0.88)', width:2, dash:'dash'} },
+        { type:'line', x0:scadaT,  x1:scadaT,  y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(239,68,68,0.88)',   width:2, dash:'dash'} },
+        { type:'line', x0:cursorT, x1:cursorT, y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(148,163,184,0.6)',  width:1.5, dash:'dot'} },
+      ];
+
+      const annotations = [
+        // GDC label — top of paper (above PIP chart)
+        { x:gdcT,   y:1.01, xref:'x', yref:'paper', text:'<b>GDC Detects</b>',
+          showarrow:false, xanchor:'left', yanchor:'bottom',
+          font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
+        // Smart SCADA label — top of paper
+        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>Smart SCADA</b>',
+          showarrow:false, xanchor:'left', yanchor:'bottom',
+          font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
+      ];
+
+      const commonYAxis = {gridcolor:'#1e2a38', zeroline:false, showline:false,
+                           tickfont:{size:8}, nticks:4};
+      const xRange = [0, xMax];
+
+      Plotly.newPlot('h1-replay-chart', traces, {
+        paper_bgcolor:'#0b0c10', plot_bgcolor:'#0f1318',
+        font:{color:'#e0e0e0', family:'Inter,sans-serif', size:9},
+        margin:{l:48, r:12, t:18, b:30},
+        // 4-row grid — Plotly manages subplot spacing automatically
+        grid:{rows:4, columns:1, pattern:'independent', roworder:'top to bottom',
+              ygap:0.06},
+        xaxis:  {gridcolor:'#1e2a38', zeroline:false, range:xRange,
+                 title:{text:'Time (min)', font:{size:8, color:'#5a6a7a'}},
+                 anchor:'y4', showticklabels:true, tickfont:{size:7}},
+        // Each y-axis anchored to xaxis and assigned a domain row
+        yaxis:  {...commonYAxis, title:{text:'PSI', font:{color:'#60a5fa',size:8}},
+                 titlefont:{color:'#60a5fa'}, tickfont:{...commonYAxis.tickfont, color:'#60a5fa'},
+                 anchor:'x', domain:[0.77,1.0]},
+        yaxis2: {...commonYAxis, title:{text:'A',   font:{color:'#4ade80',size:8}},
+                 titlefont:{color:'#4ade80'}, tickfont:{...commonYAxis.tickfont, color:'#4ade80'},
+                 anchor:'x', domain:[0.51,0.74]},
+        yaxis3: {...commonYAxis, title:{text:'°F',  font:{color:'#fb923c',size:8}},
+                 titlefont:{color:'#fb923c'}, tickfont:{...commonYAxis.tickfont, color:'#fb923c'},
+                 anchor:'x', domain:[0.26,0.49]},
+        yaxis4: {...commonYAxis, title:{text:'mm/s',font:{color:'#a78bfa',size:8}},
+                 titlefont:{color:'#a78bfa'}, tickfont:{...commonYAxis.tickfont, color:'#a78bfa'},
+                 anchor:'x', domain:[0.0, 0.23]},
+        shapes, annotations,
+        showlegend:true,
+        legend:{orientation:'h', x:0, y:1.07, xanchor:'left', font:{size:8},
+                bgcolor:'rgba(11,12,16,0.7)'},
+      }, {displayModeBar:false, responsive:true});
     },
     async approveH1VFDForce() {
       // Called ONLY from the override modal "Override & Trim" button

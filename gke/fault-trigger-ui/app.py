@@ -5890,12 +5890,59 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
 
     # ── Detection indices ─────────────────────────────────────────────────────
     HEALTH_THRESHOLD = 0.65
-    # SCADA underload setpoint: 1000 PSI ≈ 15 % below nominal 1200 PSI
-    # (API RP 11S §7.2 underload protection — fires when PIP drops to alarm setpoint)
-    SCADA_PIP_ALARM  = 1000.0
 
-    gdc_detect_idx  = next((i for i, s in enumerate(health_scores) if s < HEALTH_THRESHOLD), N - 1)
-    scada_alarm_idx = next((i for i, p in enumerate(psi_arr)       if p < SCADA_PIP_ALARM),  N - 1)
+    # Smart SCADA — Path A (ISA-18.2 / API RP 11S §7.2):
+    # Modern VSDs use a rolling-window rate-of-change underload trip, not a bare
+    # static floor.  A single noisy sample can cross a static threshold; a sustained
+    # rate alarm is more robust and is the industry-standard alarm rationalisation
+    # approach (ISA-18.2 §5.3 / EEMUA-191).
+    #
+    # Rule A: rolling 10-step dPIP/dt < −35 PSI/min for 3 consecutive windows → rate trip
+    # Rule B: 10-step rolling average PIP < 1020 PSI → static underload floor (API RP 11S §7.2)
+    # Smart SCADA fires at the EARLIER of the two (generous to SCADA — no straw man).
+    SCADA_RATE_WINDOW      = 10    # steps (10 × 0.25 min = 2.5 min rolling window)
+    SCADA_RATE_THRESHOLD   = -35.0 # PSI/min sustained decline
+    SCADA_RATE_CONSEC      = 3     # consecutive windows that must breach threshold
+    SCADA_STATIC_FLOOR     = 1020.0 # PSI rolling-average floor (≈ 15% below 1200 PSI nominal)
+
+    # Compute rolling-average PIP and its rate-of-change
+    roll_psi   = [sum(psi_arr[max(0,i-SCADA_RATE_WINDOW):i+1]) /
+                  len(psi_arr[max(0,i-SCADA_RATE_WINDOW):i+1]) for i in range(N)]
+    rate_arr   = []
+    for i in range(N):
+        if i < SCADA_RATE_WINDOW:
+            rate_arr.append(0.0)
+        else:
+            rate_arr.append((psi_arr[i] - psi_arr[i - SCADA_RATE_WINDOW]) /
+                            (SCADA_RATE_WINDOW * t_step))
+
+    # Rule A: sustained rate trip
+    rate_trip_idx = N - 1
+    consec = 0
+    for i in range(SCADA_RATE_WINDOW, N):
+        if rate_arr[i] < SCADA_RATE_THRESHOLD:
+            consec += 1
+            if consec >= SCADA_RATE_CONSEC:
+                rate_trip_idx = max(SCADA_RATE_WINDOW, i - (SCADA_RATE_CONSEC - 1))
+                break
+        else:
+            consec = 0
+
+    # Rule B: rolling-average static floor
+    static_trip_idx = next(
+        (i for i, rp in enumerate(roll_psi) if i >= SCADA_RATE_WINDOW and rp < SCADA_STATIC_FLOOR),
+        N - 1
+    )
+
+    # Smart SCADA fires at the earlier of the two rules (no straw man)
+    scada_alarm_idx = min(rate_trip_idx, static_trip_idx)
+    scada_rule_fired = (
+        "Rate-of-change: dPIP/dt < −35 PSI/min (rolling 2.5-min window · ISA-18.2 §5.3)"
+        if rate_trip_idx <= static_trip_idx
+        else "Static underload floor: rolling avg PIP < 1,020 PSI (API RP 11S §7.2)"
+    )
+
+    gdc_detect_idx = next((i for i, s in enumerate(health_scores) if s < HEALTH_THRESHOLD), N - 1)
 
     lead_time_minutes = round(
         t_min_arr[scada_alarm_idx] - t_min_arr[gdc_detect_idx], 1
@@ -5912,6 +5959,7 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
         "health_score":      health_scores,
         "gdc_detect_idx":    gdc_detect_idx,
         "scada_alarm_idx":   scada_alarm_idx,
+        "scada_rule_fired":  scada_rule_fired,
         "lead_time_minutes": lead_time_minutes,
         "model_used":        "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
     }
