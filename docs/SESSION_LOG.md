@@ -2,6 +2,17 @@
 
 ---
 
+## Session K (June 8, 2026) — *Tab navigation labels corrected — Discern / Classify — deployed*
+
+**Code committed:** `e8838af` (fix(ui): Session K — header nav tab labels Detect→Discern, Discern→Classify)
+**Image digest:** `sha256:d66b61e6` · pod rolled out 1/1 Running
+
+**What was done:** Single two-line fix: header nav tabs at lines 22–23 of index.html. Tab 1 changed from "Detect" to "Discern" (H1 Unloading tab). Tab 2 changed from "Discern" to "Classify" (H2 Slug Flow tab). These match DEMO_MASTER.md §7 canonical tab names: `How It Works | Discern | Classify | Optimize`. Rebuilt, pushed (`sha256:d66b61e6`), rollout restart, verified with grep (4 matches for "Discern|Classify" in live pod). Integrity items table in NEXT_SESSION_PROMPT cleared.
+
+**Next task (Session L):** (1) Browser smoke-test of full H1 Discern demo flow — user must run in browser since no browser on SSH remote; report visual issues. (2) H2 "Classify" tab upgrade per DEMO_MASTER §5 — two-pane SCADA/GDC layout with surface slug flow narrative and $148,500 avoided false-positive story.
+
+---
+
 ## Session J (June 8, 2026) — *H1 Discern Tab clean-slate rewrite — Double-Blind Choice Game deployed*
 
 **Code committed:** `5d3a9c8` (feat(ui): Session J — H1 Discern tab clean-slate rewrite)
