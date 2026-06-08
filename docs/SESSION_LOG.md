@@ -2,18 +2,18 @@
 
 ---
 
-## Session P (June 8, 2026) — *H1 Scenario Replay backend + Playwright smoke harness*
+## Session P (June 8, 2026) — *H1 Scenario Replay — full stack complete and deployed*
 
-**Code committed:** `d76b252` (feat: add GET /api/h1/scenario-replay + Playwright smoke test harness)
-**Cluster image digest:** `sha256:2c2827d1` (fault-trigger-ui — unchanged, endpoint not yet deployed)
+**Code committed:** `d76b252` (backend + Playwright harness), `fb7b71c` (UI rewrite)
+**Cluster image digest:** `sha256:97033866` (fault-trigger-ui — Session P, current and live)
 
-**What was built:** (1) **Backend endpoint `GET /api/h1/scenario-replay`** added to app.py at line 5809. Precomputes a 120-step ESP fluid-unloading trajectory from `FAULT_PROFILES` ramp formula, runs the real `esp_health.ubj` XGBoost model in a sliding window (W=20) using the confirmed feature names (`psi`, `temp_f`, `vibration`, `motor_amps`, `dpsi_dt`, `dtemp_dt`, `dvib_dt`, `damps_dt`), and returns `gdc_detect_idx` / `scada_alarm_idx` / `lead_time_minutes` / `model_used`. (2) **Playwright smoke harness `scripts/ui_smoke.mjs`** — headless Chromium, captures all console errors + JS exceptions, drives Discern tab, dumps Plotly trace arrays as JSON, numerical physics assertions on `#h1-replay-chart`, FALLBACK_SYNTHETIC badge check, Vue template leak check, PNG screenshot. Ran clean on first try: 7/7 assertions, 0 console errors against live cluster.
+**What was built and deployed:** (1) **`GET /api/h1/scenario-replay`** (app.py line 5809) — precomputes 120-step ESP unloading trajectory from `FAULT_PROFILES`, runs real `esp_health.ubj` XGBoost in W=20 sliding window with confirmed feature names (`psi`, `temp_f`, `vibration`, `motor_amps`, + rates), returns `gdc_detect_idx` / `scada_alarm_idx` / `lead_time_minutes` / `model_used`. (2) **H1 Discern tab full rewrite** (index.html + app.js) — replaces inject-and-wait with Play/scrub model: `↺ New Scenario` button, `[◀◀ Reset] [▶ Play] [▶▶ Fast]` + range scrubber, `#h1-replay-chart` Plotly dual-Y (PIP blue left + Amps green right, amber dashed GDC marker, red dashed SCADA marker, grey moving cursor), 4 sensor tiles at cursor position, SCADA sub-tab gated on `h1CursorIdx >= scada_alarm_idx`, GDC sub-tab gated on `h1FaultTypeRevealed` (watcher on cursor crossing `gdc_detect_idx`) + 1.5s `h1RagRevealTimer` for RAG card reveal. (3) **`scripts/ui_smoke.mjs`** Playwright harness — headless Chromium, console capture, Plotly dump, PNG screenshot.
 
-**Key decisions:** SCADA threshold set to 1000 PSI (NOT 800 PSI as specified in NEXT_SESSION_PROMPT — the FAULT_PROFILES `psi_range` of 875–1100 never crosses 800, making the alarm permanently deaf; 1000 PSI is the defensible API RP 11S §7.2 underload setpoint and IS crossed during the trajectory). Smoke test chart assertion made a warning (not hard failure) when spark chart containers exist but Plotly hasn't rendered yet, which is normal on a clean deploy before telemetry data exists. `node_modules/` and output files added to `.gitignore`.
+**Key decisions:** SCADA threshold = 1000 PSI (NOT 800 PSI — `FAULT_PROFILES` `psi_range` 875–1100 never crosses 800; 1000 PSI = API RP 11S §7.2 underload setpoint). Lead time is computed live by the real model — ran at 5.0 min in verification (honest, varies per run). All existing action card CSS (`.h1-action-card`, `.h1-card-green`, `.h1-card-contraindicated`) kept unchanged. Old inject-and-wait / sparklines / degrade polling entirely removed from index.html.
 
-**What's NOT done:** Step 3 (H1 Discern tab frontend rewrite — app.js + index.html) and Step 4 (docker build/push/deploy). The endpoint is in git but NOT live in the container yet.
+**Verification:** `n:120, gdc:75 < scada:95, lead:5.0min, model:esp_health.ubj` ✅. Smoke test: **12/12 assertions, 0 console errors, 0 JS errors**. `#h1-replay-chart` found, PIP trace 120 pts starting 1217 PSI declining to 883 PSI (physics correct). No Vue template leaks. No FALLBACK_SYNTHETIC.
 
-**Next task:** Implement Step 3 (app.js Vue state + methods + index.html Discern tab rewrite) per DEMO_MASTER §4.3–§4.6 and NEXT_SESSION_PROMPT Step 3 spec. Then Step 4: build, push, deploy, run `node scripts/ui_smoke.mjs`.
+**Next task:** User visual review of the live Discern tab. Then H2 Classify tab Scenario Replay (same architecture: `GET /api/h2/scenario-replay?fault=slug_flow`, vib+temp decorrelation chart, $1,500 vs $150k verdict).
 
 ---
 

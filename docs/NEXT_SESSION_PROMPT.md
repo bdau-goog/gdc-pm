@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Session P — backend done, frontend pending)
-**git head:** `d76b252` (feat: add GET /api/h1/scenario-replay + Playwright smoke test harness)
-**fault-trigger-ui image:** `sha256:2c2827d1` (1/1 Running — Session N+1; **NOT rebuilt yet** — endpoint in git only)
+**Date:** June 8, 2026 (Session P — H1 Scenario Replay COMPLETE and deployed)
+**git head:** `fb7b71c` (feat(ui): Session P Step 3 — H1 Discern tab Scenario Replay rewrite)
+**fault-trigger-ui image:** `sha256:97033866` (1/1 Running — Session P, current)
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -21,6 +21,19 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama_online: True · model: gemma4:latest
 - field_intel: ~2–3 · rag_documents: 18
 
+**Also verify the new endpoint is live:**
+```bash
+curl -s "http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock" | python3 -c \
+  "import sys,json;d=json.load(sys.stdin);print('n:',d['n'],'gdc:',d['gdc_detect_idx'],'scada:',d['scada_alarm_idx'],'lead:',d['lead_time_minutes'],'model:',d['model_used'])"
+# Expected: n: 120, gdc < scada, lead > 0, model: esp_health.ubj
+```
+
+**Run smoke test after any deploy:**
+```bash
+cd ~/gdc-pm && node scripts/ui_smoke.mjs
+# Expected: ✅ SMOKE TEST PASSED (12/12 assertions, 0 console errors)
+```
+
 ---
 
 ## STEP 2: Read DEMO_MASTER.md (MANDATORY)
@@ -29,76 +42,42 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
-Pay special attention to **§4.2–§4.7** (Scenario Replay spec).
-
 ---
 
-## STEP 3: H1 Scenario Replay — Remaining Work
+## STEP 3: Session Q — Next Tasks
 
-### Session P status — verified facts (do NOT re-derive)
+### H1 Scenario Replay is COMPLETE (Session P)
 
-| Step | Status | Notes |
-|------|--------|-------|
-| 1: smoke-test esp_health.ubj | ✅ DONE | health_score: [0.6981253] for zero input |
-| 2: `GET /api/h1/scenario-replay` in app.py | ✅ DONE | Line 5809, committed `d76b252`. **Not deployed.** |
-| 3: Rewrite H1 Discern tab (app.js + index.html) | ⏳ **TODO** | Primary task next session |
-| 4: docker build → push → rollout → verify | ⏳ TODO | After Step 3 |
+The full Scenario Replay architecture is deployed and verified:
+- `GET /api/h1/scenario-replay` — live (real XGBoost model, gdc < scada, lead time computed)
+- Discern tab — `↺ New Scenario` button, Play/Pause/Fast/Reset + scrubber
+- SCADA sub-tab gates on `h1CursorIdx >= scada_alarm_idx`
+- GDC sub-tab gates on `h1FaultTypeRevealed` (cursor crosses gdc_detect_idx) → 1.5s delay → `h1RagRevealed`
+- Smoke test: 12/12 assertions, 0 errors
 
-**The `/api/h1/scenario-replay` endpoint is NOT live until after Step 4 (rebuild).**
+### What to review first
 
-### Confirmed technical facts (locked — do not re-derive)
+Open the UI at http://gdc-pm.bdau.io and click the **Discern** tab. It should:
+1. Auto-load a scenario (loading spinner → chart appears within ~2s)
+2. Show `↺ New Scenario` button in header
+3. Show Play/scrub controls with GDC▲ and SCADA▲ markers on scrubber
+4. Left: dual-Y chart (PIP blue + Amps green) with amber dashed GDC line + red dashed SCADA line
+5. Right: SCADA sub-tab shows "✓ Sensors within limits" (pre-alarm), GDC shows health score
+6. Click Play → cursor advances, sensor tiles update, lead-time banner appears after SCADA alarm
 
-- **Model feature names** (`esp_health.ubj`): `psi`, `temp_f`, `vibration`, `motor_amps`, `dpsi_dt`, `dtemp_dt`, `dvib_dt`, `damps_dt`
-- **SCADA threshold = 1000 PSI** — NOT 800 PSI. `FAULT_PROFILES` `psi_range` is (875–1100); PIP never crosses 800. 1000 PSI = API RP 11S §7.2 underload setpoint. Implemented at app.py:5895.
-- **Smoke test**: `node scripts/ui_smoke.mjs` — run after every deploy. Currently 7/7 pass on live cluster.
+### Potential refinements (user feedback needed)
 
-### Step 3 spec: Rewrite H1 Discern tab
+1. **Lead time magnitude** — the current run showed 5.0 min. If this feels small on screen, the trajectory parameters could be tuned. The value is HONEST (real model + real physics). Do not inflate it.
+2. **SCADA threshold display** — SCADA view shows "&lt;1,000 PSI" as the alarm threshold. This is correct (see NEXT_SESSION_PROMPT Session P notes on why 800 PSI was wrong). If the audience pushes back, the defence is: "1000 PSI ≈ 15% below nominal 1200 PSI — this is the API RP 11S §7.2 underload setpoint."
+3. **GDC hs display** — pre-detect cursor shows raw health score. Consider whether to show it or hide it before the reveal.
+4. **New Scenario button placement** — currently top-right in header. May want to also offer it after SCADA alarm fires.
 
-**New Vue state to add (app.js data section):**
-```js
-h1ReplayData: null,        // full trajectory object from /api/h1/scenario-replay
-h1CursorIdx: 0,            // current scrubber position
-h1Playing: false,          // auto-advance timer running
-h1PlayTimer: null,         // setInterval handle
-h1FaultTypeRevealed: false, // true once cursor crosses gdc_detect_idx
-```
+### Next major feature: H2 Classify tab
 
-**New methods (app.js):**
-- `loadH1Scenario()` — `GET /api/h1/scenario-replay?fault=<random gas_lock|fluid_drawdown>`, stores in `h1ReplayData`, calls `_renderH1ReplayChart()`, resets cursor to 0.
-- `h1Play(fast=false)` — `setInterval` advancing `h1CursorIdx` by 1 every 100ms (fast: 30ms). Stops at N-1.
-- `h1Pause()` — clears timer.
-- `h1Reset()` — cursor=0, `h1FaultTypeRevealed=false`, re-renders.
-- `h1Scrub(idx)` — sets cursor, updates Plotly cursor line via `Plotly.relayout`.
-- `_renderH1ReplayChart()` — Plotly dual-Y chart (`#h1-replay-chart`): PIP (blue, left Y) + Amps (green, right Y), amber dashed at `gdc_detect_idx`, red dashed at `scada_alarm_idx`, grey moving cursor.
-- Watch `h1CursorIdx` → when ≥ `h1ReplayData.gdc_detect_idx` → `h1FaultTypeRevealed = true`.
-
-**index.html Discern tab changes:**
-- REMOVE: `⚡ Ingest Pad Anomalies` button, all `h1Injected`-gated blocks, sparkline divs (`#h1-spark-*`), `h1EvidenceWall` activation sequence, degrade polling
-- ADD: `[↺ New Scenario]` button → `loadH1Scenario()`
-- ADD: `[◀◀ Reset] [▶ Play] [▶▶ Fast]` buttons + `<input type="range">` scrubber bound to `h1CursorIdx`
-- ADD: `#h1-replay-chart` div (full width left column, Plotly dual-Y)
-- ADD: 4 sensor tiles (PIP / Amps / Temp / Vib) showing value at cursor position
-- KEEP: `.h1-action-card`, `.h1-card-green`, `.h1-card-contraindicated` CSS unchanged
-- KEEP: GDC Advisor sub-tab + SCADA sub-tab structure — gate with `h1FaultTypeRevealed` and `h1CursorIdx >= h1ReplayData.scada_alarm_idx`
-
-### Step 4 verify commands
-
-```bash
-cd ~/gdc-pm/gke/fault-trigger-ui
-docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest .
-docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
-kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
-kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
-
-# Backend verify (must pass before touching frontend):
-curl -s "http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock" | python3 -c \
-  "import sys,json;d=json.load(sys.stdin);print('n:',d['n'],'gdc:',d['gdc_detect_idx'],'scada:',d['scada_alarm_idx'],'lead:',d['lead_time_minutes'],'model:',d['model_used'])"
-# Expected: n: 120, gdc < scada, lead > 0, model: esp_health.ubj
-
-# UI smoke test (run after every deploy):
-node scripts/ui_smoke.mjs
-# Expected: ✅ SMOKE TEST PASSED (7/7 assertions, 0 console errors)
-```
+Per DEMO_MASTER §5 — H2 Slug Flow scenario. The current H2 tab still uses the old inject-and-wait model. Same Scenario Replay architecture applies:
+- `GET /api/h2/scenario-replay?fault=slug_flow` — precompute 120-step trajectory, run classifier
+- SCADA sub-tab: Vibration rising, Temp flat — SCADA alarms on vib > 5.0 mm/s
+- GDC sub-tab: vib+temp decorrelation → slug flow verdict → $1,500 truck roll vs $150k well pull
 
 ---
 
@@ -106,11 +85,11 @@ node scripts/ui_smoke.mjs
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 inject-and-wait / sparklines | ⚠ DEPRECATED | Still in frontend until Step 3 ships |
-| H1 action cards / financial CSS | ✅ Keep | Reused unchanged in new model |
-| Vue template crash | ✅ Fixed (Session N) | All `<` escaped |
-| h1EvidenceWall TypeError | ✅ Fixed (Session N+1) | Initialized with 5 objects |
-| `model_used: FALLBACK_SYNTHETIC` | ✅ Integrity guard | UI must surface this if shown — never silently swallow |
+| H1 Scenario Replay | ✅ LIVE | Session P complete. SHA sha256:97033866. |
+| `model_used: FALLBACK_SYNTHETIC` | ✅ Integrity guard | UI shows banner if model fails — never silent |
+| Old inject-and-wait / sparklines | ✅ REMOVED | No longer in index.html |
+| Vue template crash | ✅ Fixed | All `<` escaped; smoke test checks for leaks |
+| H2 inject-and-wait model | ⚠ STILL OLD | H2 tab not yet updated to Scenario Replay |
 
 ---
 
@@ -121,3 +100,4 @@ node scripts/ui_smoke.mjs
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
+- SCADA threshold = 1000 PSI (confirmed correct — 800 PSI never fires with current FAULT_PROFILES)
