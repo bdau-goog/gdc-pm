@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Session L — H1 Comparative Detection Scenario deployed)
-**git head:** `06dffe8` (feat(ui): Session L — Comparative Detection Scenario)
-**fault-trigger-ui image:** `sha256:85803d58` (1/1 Running — Session L)
+**Date:** June 8, 2026 (Session N — Vue crash fix + descriptive action cards + financial breakdowns deployed)
+**git head:** `454ed9f` (fix(ui): Session N — Vue template crash, action cards, SPE-174536 boundaries)
+**fault-trigger-ui image:** `sha256:8c73db2d` (1/1 Running — Session N)
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -31,37 +31,54 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Next Implementation Task — Session M
+## STEP 3: Next Implementation Task — Session O
 
-### What was shipped in Session L (deployed, verified sha256:85803d58)
+### What was shipped in Session N (deployed, verified sha256:8c73db2d)
 
-The H1 "Discern" tab was redesigned from first principles per the Session L spec:
+**Root Cause Fixed:** Vue.js 3 template compiler was crashing on unescaped `<` characters introduced
+in Session M's SCADA sensor tile HTML (`<800 PSI`, `<50 A`). Vue treats these as tag openers and fails
+silently — resulting in the LLM never streaming and Plotly charts never receiving data.
 
-1. **De-Gamification complete:** "Double-Blind Choice Game" → "Comparative Detection Scenario"; "Inject Unloading Anomaly" → "⚡ Ingest Pad Anomalies"; "Blind Gamble" → "Reactive Manual Intervention"; "Ready for Double-Blind Choice Game" → "Pad Alpha Surveillance Active".
-2. **Pad Alpha 6-Well Surveillance Grid:** Interactive well cards (A-1 to A-6) with color-coded status (Alerting/Suppressed/Nominal). `⚡ Ingest Pad Anomalies` randomly picks the target well and flags two adjacent nuisance wells as suppressed.
-3. **4 Stacked Plotly Sparkline Cards:** Replaced ISA-101 horizontal progress bars with `#h1-spark-psi`, `#h1-spark-amps`, `#h1-spark-temp`, `#h1-spark-vib` — each with a red dashed SCADA threshold line and a bold live digital readout annotation.
-4. **Dual Resizable Splitters:** `.h1-splitter` (horizontal, between Left/Right columns, 25–75%) and `.h1-v-splitter` (vertical, chart height control, 80–320px). Both support double-click to reset to defaults.
-5. **Departure Rate Toggle:** Standard (900s) / Accelerated (300s) shown in banner before injection.
-6. **New Vue state:** `h1SelectedWell`, `h1TargetWell`, `h1NuisanceWells`, `h1RampSpeed`, `h1WellData`.
+**All changes in commit `454ed9f`:**
 
-### Session M Tasks
+1. **Vue Template Crash Fixed:** Escaped all unescaped `<` chars to `&lt;` across index.html
+   (sparkline labels, SCADA sensor tiles, RAG latency strings, H3 RUL model formula,
+   Architecture tab Vibration sensor spec, HNSW retrieval latency). LLM + time-series now work.
 
-**Priority 1 — Browser smoke-test of H1 Discern (user must run in browser):**
-- Verify Pad Alpha grid renders correctly (6 cards, A-1 to A-6)
-- Verify "⚡ Ingest Pad Anomalies" selects a random target well (red "Alerting") and two adjacent nuisance wells (amber "Suppressed")
-- Verify nuisance suppression text appears below grid
-- Verify 4 sparkline charts render with threshold lines and live readout annotations after injection
-- Verify horizontal splitter drag and vertical sparkline height drag work
+2. **Large Descriptive Action Cards (SCADA + GDC):** Simple one-line buttons replaced with
+   `.h1-action-card` styled cards (green/red/amber/slate/contraindicated). Each card shows:
+   - SCADA: Physical description, "Apply if:" guidance, velocity risk warning (3.1 ft/s at 44 Hz)
+   - GDC: "GDC RECOMMENDED" / "GDC CONTRAINDICATED" labels, full sonic log context, precise boundaries
+
+3. **Post-Selection Financial Breakdowns:** After operator selection, itemized tables render:
+   - Seizure path: Pull-rig $42k + Motor $53k + Cable $15k + Deferred prod $39.9k = ~$149,900
+   - Correct path (drawdown): Avoided $150k · Net savings $142k–$147k
+   - Correct path (gas lock): $2,500 total · $147,500 capital preserved
+
+4. **SPE-174536 Velocity Boundaries incorporated everywhere:**
+   - GDC drawdown verdict: "Speed-down below 48 Hz drops velocity from 4.2 ft/s to 3.1 ft/s at 44 Hz"
+   - Override modal: explicit at-52Hz (4.2 ft/s) and at-44Hz (3.1 ft/s) bullet points
+   - SCADA card warn: "velocity drops to 3.1 ft/s → sand bridge"
+   - GDC contraindicated card subtitle: full boundary reference
+   - app.js seizure text: "44 Hz dropped fluid transport velocity from 4.2 ft/s to 3.1 ft/s, breaching
+     the critical sand-transport lift boundary (SPE-174536)"
+   - styles.css: `.h1-action-card` + `.h1-card-*` variant classes added
+
+### Session O Tasks
+
+**Priority 1 — Browser smoke-test of H1 (user runs in browser):**
+- Navigate to Discern tab; verify Vue app mounts (no blank screen)
+- Click "⚡ Ingest Pad Anomalies"; confirm Plotly sparklines tick live
+- Verify GDC Advisor LLM streams within 3–5 seconds
+- Verify SCADA action cards are large and readable (two columns, with "Apply if" and warn text)
+- Verify GDC action cards show GREEN "GDC RECOMMENDED" and RED "GDC CONTRAINDICATED"
+- After selection, confirm financial breakdown table appears
 - Report any visual issues
 
-**Priority 2 — app.py: nuisance well suppression backend support (if needed):**
-- The nuisance wells currently show "Suppressed" in the UI based on frontend state only
-- If the demo requires fetching a Daily Well Test log from AlloyDB to justify suppression, a small app.py endpoint `GET /api/nuisance-suppression/{asset_id}` returning a RAG card text can be added
-- This is optional — the current frontend-only approach is defensible for the demo narrative
-
-**Priority 3 — H2 Classify tab upgrade:**
-- Per DEMO_MASTER.md §5: two-pane SCADA/GDC layout, surface slug flow narrative, $148,500 avoided false-positive story
-- Reuse the sparkline card CSS pattern from H1 Left column
+**Priority 2 — H2 "Classify" tab upgrade:**
+- Per DEMO_MASTER.md §5: two-pane SCADA/GDC layout, surface slug flow narrative, $148,500 avoided false-positive
+- Reuse `.h1-action-card` CSS pattern from H1 for action cards
+- The Vibration vs Motor Temp decorrelation chart is the hero visual
 
 ---
 
@@ -69,8 +86,9 @@ The H1 "Discern" tab was redesigned from first principles per the Session L spec
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 nuisance suppression | ⚠ Frontend only | GDC auto-dismiss shown as text; no RAG doc fetched. Acceptable for demo; can add backend if challenged. |
-| H1 sparklines pre-injection | ⚠ Needs baseline data | `_renderH1Charts(d)` renders on first `forecast-data` poll; may show empty charts until first poll completes. |
+| H1 nuisance suppression | ⚠ Frontend only | GDC auto-dismiss shown as text; no RAG doc fetched. Defensible for demo. |
+| H1 sparklines pre-injection | ✅ Working | `_renderH1Charts(d)` polls baseline on tab open; baseline data available from telemetry. |
+| Vue template crash | ✅ Fixed (Session N) | All `<` chars escaped; confirmed 5×SPE-174536 and 5×h1-action-card in deployed container. |
 
 ---
 

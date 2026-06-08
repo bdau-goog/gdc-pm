@@ -2,6 +2,38 @@
 
 ---
 
+## Session N (June 8, 2026) — *Vue template crash fixed · Descriptive action cards · SPE-174536 velocity boundaries · Financial breakdowns — sha256:8c73db2d*
+
+**Code committed:** `454ed9f` (fix(ui): Session N — Vue template crash, action cards, SPE-174536 boundaries, financial breakdowns)
+**Image digest:** `sha256:8c73db2d` · pod `fault-trigger-ui-68dd77fd7f-8lw22` 1/1 Running
+
+**Root cause diagnosed and fixed:** Session M's bare-metal SCADA sensor tile redesign introduced raw `<800 PSI` and `<50 A` text directly inside HTML `<div>` content inside a Vue.js 3 template. Vue 3's template compiler treats `<800` as an opening tag and fails silently, causing the entire Vue app to fail to mount. Result: no LLM streaming, no Plotly charts ticking, no interactive tab switching. The fix was to escape all occurrences of unescaped `<` to `&lt;` across index.html (sparkline labels, SCADA sensor tiles, RAG latency copy, H3 RUL formula, Arch tab Vibration spec, HNSW retrieval latency — 11 locations total).
+
+**New action card design deployed (both SCADA and GDC):** The simple one-line action buttons were replaced with large `.h1-action-card` styled descriptive cards. On the SCADA side, both cards now show: physical mechanism description, "Apply if:" guidance, and explicit velocity risk warning ("velocity drops to 3.1 ft/s → sand bridge → ~$150k seizure"). On the GDC side, the Gas Lock card is styled `h1-card-green` and labeled "✔ GDC RECOMMENDED"; the Drawdown shutdown card is `h1-card-red` with "✔ GDC RECOMMENDED"; the contraindicated VFD trim is `h1-card-contraindicated` with "❌ GDC CONTRAINDICATED" and full boundary reference.
+
+**Post-selection itemized financial tables:** After the operator makes a selection, both SCADA and GDC views render a full itemized line-item breakdown using CSS grid. Seizure path: Pull-rig $42k (WTX spot $14k/day × 3d) + Replacement ESP Motor $53k + HP cable $15k + Deferred production $39.9k (300 BPD × $76/bbl × 1.75d) = ~$149,900. Correct paths show avoided capital vs net cost. All values sourced to OUR-CODE app.py FAULT_PHYSICS + WTX rig rate (🟡 OUR-CODE).
+
+**SPE-174536 velocity boundaries woven into all warning surfaces:** GDC drawdown verdict updated to "Speed-down below 48 Hz drops velocity from 4.2 ft/s to 3.1 ft/s at 44 Hz — breaching the critical sand-transport lift boundary (SPE-174536)." Override modal bullet list now explicitly cites at-52Hz (4.2 ft/s above minimum) and at-44Hz result (3.1 ft/s below minimum). app.js seizure failure log updated with exact velocity numbers and SPE-174536 citation. 5 occurrences of SPE-174536 confirmed in deployed container.
+
+**Key decisions:** (a) The Vue template crash root cause was the SCADA redesign from Session M — bare `<` in HTML text content. All future SCADA-style inline `<` comparisons must use `&lt;`. (b) The `.h1-action-card` CSS pattern (large, text-heavy, colored border, left-aligned) is now canonical for all intervention decisions — reuse for H2 Classify tab in Session O. (c) The financial breakdowns use the CLAIM LEDGER sourced numbers — $42k pull-rig (WTX spot), $53k motor (Reda Class H), $15k cable, $39.9k deferred production — all OUR-CODE, defensible under O&G engineer scrutiny.
+
+**Next task (Session O):** Browser smoke-test of full H1 flow (user must run in browser — no browser on SSH remote). Then H2 "Classify" tab upgrade per DEMO_MASTER §5 — two-pane SCADA/GDC layout, slug flow narrative, $148,500 false-positive prevention story, reusing `.h1-action-card` CSS pattern.
+
+---
+
+## Session M (June 8, 2026) — *Dynamic well routing, EMA smoothing, SCADA de-clutter, GDC scanning state — sha256:add2a56d*
+
+**Code committed:** `90b5185` (fix(ui): Session M — dynamic well routing, EMA smoothing, projection traces, SCADA de-clutter, GDC scanning state)
+**Image digest:** `sha256:add2a56d` · pod `fault-trigger-ui-84778f746b-qplhx` 1/1 Running
+
+**What was built and deployed:** Four targeted fixes across app.js and index.html. (1) **Dynamic well routing:** All hardcoded `ESP-ALPHA-1` endpoints in app.js replaced with dynamic `h1TargetWell` / `h1SelectedWell` references. Every API call — live-telemetry, forecast-data, degrade-status, intelligence-feed, cancel-degrade, hitl-approve, recovery-status, and both agent/chat calls — now targets whichever well the injection randomly selected. (2) **EMA smoothing + projection traces:** `_renderH1Charts()` `_spark()` closure upgraded: EMA alpha=0.18 applied to historical trace; ML forecast dotted trace (traces[1]) and confidence cone fill (traces[2]) rendered when present from the API; vertical "NOW" divider dotted line inserted at the forecast boundary. (3) **SCADA view de-cluttered:** Replaced the "Operator's Dilemma" explanatory card with a bare-metal industrial 2×2 sensor grid (PIP, Amps, Temp, VIB each with large monospace readout and SCADA alarm threshold label). The section header is now "Operator Action Required" with two plain action buttons. (4) **GDC scanning state:** Replaced the blank `v-if="!h1RagRevealed"` pre-reveal panel with a scanning wellbore schematic (greyscale, 0.65 opacity) plus animated `streaming-dot` and "Disambiguating Gas Lock vs Fluid Drawdown…" copy. This ensures the GDC tab shows a live, contextual state rather than a blank/placeholder panel immediately on injection.
+
+**Key decisions:** (a) The "de-cluttered" SCADA view intentionally removed the explanation cards — O&G operators don't need to be told what the signals mean; what they need is live values. The dilemma is implicit: two sensors declining simultaneously, no document context, two possible causes. (b) EMA alpha=0.18 follows ISA-101 process trend display practice — removes tick-level Gaussian noise (σ≈65 PSI on ESP nominal per fault_signatures.py) while preserving trend direction. (c) NOTE: The `<800 PSI` and `<50 A` labels in the SCADA sensor grid were introduced as raw HTML — this caused a Vue 3 template compiler crash that was not detected during this session. Fixed in Session N.
+
+**Next task (Session N):** Fix the Vue template compiler crash introduced in Session M (escaped `<` issue). Then browser smoke-test H1 flow.
+
+---
+
 ## Session L Implementation (June 8, 2026) — *H1 Comparative Detection Scenario fully deployed — sha256:85803d58*
 
 **Code committed:** `06dffe8` (feat(ui): Session L — Comparative Detection Scenario, Pad Alpha triage grid, 4-sparkline cards, resizable splitters)
