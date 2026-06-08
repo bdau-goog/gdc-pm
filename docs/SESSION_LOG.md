@@ -2,6 +2,21 @@
 
 ---
 
+## Session P (June 8, 2026) — *H1 Scenario Replay backend + Playwright smoke harness*
+
+**Code committed:** `d76b252` (feat: add GET /api/h1/scenario-replay + Playwright smoke test harness)
+**Cluster image digest:** `sha256:2c2827d1` (fault-trigger-ui — unchanged, endpoint not yet deployed)
+
+**What was built:** (1) **Backend endpoint `GET /api/h1/scenario-replay`** added to app.py at line 5809. Precomputes a 120-step ESP fluid-unloading trajectory from `FAULT_PROFILES` ramp formula, runs the real `esp_health.ubj` XGBoost model in a sliding window (W=20) using the confirmed feature names (`psi`, `temp_f`, `vibration`, `motor_amps`, `dpsi_dt`, `dtemp_dt`, `dvib_dt`, `damps_dt`), and returns `gdc_detect_idx` / `scada_alarm_idx` / `lead_time_minutes` / `model_used`. (2) **Playwright smoke harness `scripts/ui_smoke.mjs`** — headless Chromium, captures all console errors + JS exceptions, drives Discern tab, dumps Plotly trace arrays as JSON, numerical physics assertions on `#h1-replay-chart`, FALLBACK_SYNTHETIC badge check, Vue template leak check, PNG screenshot. Ran clean on first try: 7/7 assertions, 0 console errors against live cluster.
+
+**Key decisions:** SCADA threshold set to 1000 PSI (NOT 800 PSI as specified in NEXT_SESSION_PROMPT — the FAULT_PROFILES `psi_range` of 875–1100 never crosses 800, making the alarm permanently deaf; 1000 PSI is the defensible API RP 11S §7.2 underload setpoint and IS crossed during the trajectory). Smoke test chart assertion made a warning (not hard failure) when spark chart containers exist but Plotly hasn't rendered yet, which is normal on a clean deploy before telemetry data exists. `node_modules/` and output files added to `.gitignore`.
+
+**What's NOT done:** Step 3 (H1 Discern tab frontend rewrite — app.js + index.html) and Step 4 (docker build/push/deploy). The endpoint is in git but NOT live in the container yet.
+
+**Next task:** Implement Step 3 (app.js Vue state + methods + index.html Discern tab rewrite) per DEMO_MASTER §4.3–§4.6 and NEXT_SESSION_PROMPT Step 3 spec. Then Step 4: build, push, deploy, run `node scripts/ui_smoke.mjs`.
+
+---
+
 ## Session N (June 8, 2026) — *Vue template crash fixed · Descriptive action cards · SPE-174536 velocity boundaries · Financial breakdowns — sha256:8c73db2d*
 
 **Code committed:** `454ed9f` (fix(ui): Session N — Vue template crash, action cards, SPE-174536 boundaries, financial breakdowns)
