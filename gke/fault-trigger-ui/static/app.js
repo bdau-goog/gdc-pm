@@ -122,7 +122,13 @@ createApp({
       h1SonicLogModalOpen: false,   // click-through Acoustic Sonic Log modal
       h1OverrideModalOpen: false,   // GDC override confirmation modal (VFD trim during drawdown)
       // Legacy evidence wall state — kept as h1EvidenceActive counter drives h1RagRevealed via watcher
-      h1EvidenceWall: [],
+      h1EvidenceWall: [
+        {active: false, content: '', cat: 'Telemetry',    icon: '📡'},
+        {active: false, content: '', cat: 'Field Note',   icon: '📋'},
+        {active: false, content: '', cat: 'Lab Report',   icon: '🧪'},
+        {active: false, content: '', cat: 'Acoustic Log', icon: '📊'},
+        {active: false, content: '', cat: 'Guidelines',   icon: '📖'},
+      ],
       h1EvidenceActive: 0,
       h1AdvisorHtml: '',
       h1AdvisorStreaming: false,
