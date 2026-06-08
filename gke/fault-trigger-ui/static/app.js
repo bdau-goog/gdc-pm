@@ -151,7 +151,17 @@ createApp({
       h1OptBLabel: 'VIABLE',
       h1RecoveryMsg: '',
       h1RecoveryPollTimer: null,
-      
+
+      // ── H1 Scenario Replay state (Session P) ──────────────────────────────
+      h1ReplayData: null,           // full trajectory from /api/h1/scenario-replay
+      h1ReplayLoading: false,       // API fetch in progress
+      h1ReplayWell: 1,              // well number for header display (1–6)
+      h1CursorIdx: 0,               // scrubber position (0..N-1)
+      h1Playing: false,             // auto-advance timer running
+      h1PlayTimer: null,            // setInterval handle
+      h1FaultTypeRevealed: false,   // true once cursor >= gdc_detect_idx
+      h1RagRevealTimer: null,       // setTimeout for 1.5s RAG reveal after GDC detect
+
       // Horizon 2 State
       h2Injected: false,
       h2Resolved: false,
@@ -325,6 +335,22 @@ createApp({
           this.h1PumpOffExcluded = true;
         }
       }
+    },
+    // ── Scenario Replay: advance state when cursor crosses detection thresholds ──
+    h1CursorIdx(val) {
+      if (!this.h1ReplayData) return;
+      // Cross GDC detect threshold → reveal fault type + schedule RAG reveal (1.5s)
+      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
+        this.h1FaultTypeRevealed = true;
+        this.h1FaultType = this.h1ReplayData.fault_type;
+        if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
+        this.h1RagRevealTimer = setTimeout(() => {
+          this.h1RagRevealed = true;
+          this.h1EvidenceActive = 2; // triggers h1EvidenceActive watcher → sets exclusion flags
+        }, 1500);
+      }
+      // Update Plotly cursor line via relayout (shape index 2)
+      this._updateH1ReplayCursor(val);
     },
   },
 
@@ -1068,6 +1094,10 @@ createApp({
       if (this.h1ElapsedTimer)   { clearInterval(this.h1ElapsedTimer);   this.h1ElapsedTimer   = null; }
       if (this.h2DegPollTimer)   { clearInterval(this.h2DegPollTimer);   this.h2DegPollTimer   = null; }
       if (tab === 'horizon1') {
+        // Auto-load Scenario Replay on tab open if none loaded yet (Session P)
+        if (!this.h1ReplayData && !this.h1ReplayLoading) {
+          this.$nextTick(() => this.loadH1Scenario());
+        }
         // Always poll live telemetry for SCADA card (ticking even before fault injection)
         const _pollLive1 = async () => {
           if (this.h1Injected) return; // fault degrade thread owns sensor values when injected
@@ -1280,6 +1310,112 @@ createApp({
       this.h1LivePollTimer = setInterval(_pollLive1, 5000);
       fetch('/api/intelligence-feed/ESP-ALPHA-1?fault_type=normal')
         .then(r=>r.ok?r.json():null).then(d=>{ if(d&&!this.h1Injected) this.h1FeedItems=d.items||[]; });
+    },
+    // ── H1 Scenario Replay methods (Session P) ───────────────────────────────
+    async loadH1Scenario() {
+      this.h1Pause();
+      this.h1CursorIdx = 0;
+      this.h1FaultTypeRevealed = false;
+      this.h1RagRevealed = false;
+      this.h1FaultType = '';
+      this.h1Resolved = false;
+      this.h1Seized = false;
+      this.h1Recovering = false;
+      this.h1EvidenceActive = 0;
+      this.h1EvidenceWall.forEach(e => { e.active = false; });
+      if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
+      this.h1ReplayData = null;
+      this.h1ReplayLoading = true;
+      this.h1ReplayWell = Math.floor(Math.random() * 6) + 1;
+      const ft = Math.random() < 0.5 ? 'gas_lock' : 'fluid_drawdown';
+      try {
+        const r = await fetch(`/api/h1/scenario-replay?fault=${ft}`);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        this.h1ReplayData = data;
+        this.h1ReplayLoading = false;
+        this.$nextTick(() => { this._renderH1ReplayChart(); });
+      } catch(e) {
+        this.h1ReplayLoading = false;
+        this.showToast(`Scenario load failed: ${e.message}`, 'var(--red)');
+      }
+    },
+    h1Play(fast = false) {
+      if (!this.h1ReplayData) return;
+      this.h1Pause();
+      this.h1Playing = true;
+      const ms = fast ? 30 : 100;
+      this.h1PlayTimer = setInterval(() => {
+        if (this.h1CursorIdx >= this.h1ReplayData.n - 1) { this.h1Pause(); return; }
+        this.h1CursorIdx++;
+      }, ms);
+    },
+    h1Pause() {
+      this.h1Playing = false;
+      if (this.h1PlayTimer) { clearInterval(this.h1PlayTimer); this.h1PlayTimer = null; }
+    },
+    h1Reset() {
+      this.h1Pause();
+      this.h1CursorIdx = 0;
+      this.h1FaultTypeRevealed = false;
+      this.h1RagRevealed = false;
+      this.h1FaultType = '';
+      this.h1Resolved = false;
+      this.h1Seized = false;
+      this.h1Recovering = false;
+      this.h1EvidenceActive = 0;
+      this.h1EvidenceWall.forEach(e => { e.active = false; });
+      if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
+      this._updateH1ReplayCursor(0);
+    },
+    h1Scrub(idx) {
+      if (!this.h1ReplayData) return;
+      this.h1CursorIdx = Math.max(0, Math.min(idx, this.h1ReplayData.n - 1));
+    },
+    _updateH1ReplayCursor(idx) {
+      if (!this.h1ReplayData) return;
+      try {
+        const t = this.h1ReplayData.t_min[idx] || 0;
+        Plotly.relayout('h1-replay-chart', { 'shapes[2].x0': t, 'shapes[2].x1': t });
+      } catch(e) {}
+    },
+    _renderH1ReplayChart() {
+      const d = this.h1ReplayData;
+      if (!d || !d.psi || !d.amps) return;
+      const cursorT = d.t_min[this.h1CursorIdx] || 0;
+      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;
+      const scadaT  = d.t_min[d.scada_alarm_idx]  || 0;
+      Plotly.newPlot('h1-replay-chart',
+        [
+          { x: d.t_min, y: d.psi,  name: 'PIP (PSI)',      type: 'scatter', mode: 'lines', line: { color: '#60a5fa', width: 2 }, yaxis: 'y'  },
+          { x: d.t_min, y: d.amps, name: 'Motor Amps (A)', type: 'scatter', mode: 'lines', line: { color: '#4ade80', width: 2 }, yaxis: 'y2' },
+        ],
+        {
+          paper_bgcolor: '#0b0c10', plot_bgcolor: '#0f1318',
+          font: { color: '#e0e0e0', family: 'Inter, sans-serif', size: 10 },
+          margin: { l: 52, r: 52, t: 28, b: 36 },
+          legend: { orientation: 'h', y: 1.12, x: 0, font: { size: 10 }, bgcolor: 'rgba(11,12,16,0.7)' },
+          xaxis: { title: 'Time (min)', gridcolor: '#1e2a38', zeroline: false, range: [0, d.t_min[d.n - 1]] },
+          yaxis: {
+            title: 'PIP (PSI)', gridcolor: '#1e2a38', zeroline: false,
+            titlefont: { color: '#60a5fa' }, tickfont: { color: '#60a5fa' },
+          },
+          yaxis2: {
+            title: 'Amps (A)', zeroline: false, overlaying: 'y', side: 'right',
+            titlefont: { color: '#4ade80' }, tickfont: { color: '#4ade80' },
+          },
+          shapes: [
+            { type: 'line', x0: gdcT,    x1: gdcT,    y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'rgba(251,191,36,0.85)', width: 2, dash: 'dash' } },
+            { type: 'line', x0: scadaT,  x1: scadaT,  y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'rgba(239,68,68,0.9)',   width: 2, dash: 'dash' } },
+            { type: 'line', x0: cursorT, x1: cursorT, y0: 0, y1: 1, xref: 'x', yref: 'paper', line: { color: 'rgba(148,163,184,0.65)', width: 1.5, dash: 'dot' } },
+          ],
+          annotations: [
+            { x: gdcT,   y: 0.97, xref: 'x', yref: 'paper', text: '<b>GDC Detects</b>', showarrow: false, xanchor: 'left', font: { color: 'rgba(251,191,36,0.9)', size: 9 } },
+            { x: scadaT, y: 0.97, xref: 'x', yref: 'paper', text: '<b>SCADA Alarm</b>',  showarrow: false, xanchor: 'left', font: { color: 'rgba(239,68,68,0.9)',   size: 9 } },
+          ],
+        },
+        { displayModeBar: false, responsive: true }
+      );
     },
     async approveH1VFDForce() {
       // Called ONLY from the override modal "Override & Trim" button
