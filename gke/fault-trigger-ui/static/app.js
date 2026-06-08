@@ -1045,9 +1045,9 @@ createApp({
           if (this.h1Injected) return; // fault degrade thread owns sensor values when injected
           const r = await fetch('/api/live-telemetry/ESP-ALPHA-1');
           if (r.ok) { const d = await r.json();
-            if (d.psi)        this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';
-            if (d.temp_f)     this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';
-            if (d.motor_amps) this.h1SensorAmps = d.motor_amps.toFixed(1) + ' A';
+            if (d.psi)        { this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';        this.h1RawPsi  = d.psi; }
+            if (d.temp_f)     { this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';       this.h1RawTemp = d.temp_f; }
+            if (d.motor_amps) { this.h1SensorAmps = d.motor_amps.toFixed(1) + ' A';   this.h1RawAmps = d.motor_amps; }
           }
         };
         _pollLive1();
@@ -1190,9 +1190,9 @@ createApp({
         if (this.h1Injected) return;
         const r = await fetch('/api/live-telemetry/ESP-ALPHA-1');
         if (r.ok) { const d = await r.json();
-          if (d.psi)        this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';
-          if (d.temp_f)     this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';
-          if (d.motor_amps) this.h1SensorAmps = d.motor_amps.toFixed(1) + ' A';
+          if (d.psi)        { this.h1SensorPsi  = d.psi.toFixed(0) + ' PSI';        this.h1RawPsi  = d.psi; }
+          if (d.temp_f)     { this.h1SensorTemp = d.temp_f.toFixed(0) + '°F';       this.h1RawTemp = d.temp_f; }
+          if (d.motor_amps) { this.h1SensorAmps = d.motor_amps.toFixed(1) + ' A';   this.h1RawAmps = d.motor_amps; }
         }
       };
       _pollLive1();

@@ -440,11 +440,11 @@
                   <!-- Threshold tick marks -->
                   <div class="h1-tl-tick" style="left:72%">
                     <div class="h1-tl-tick-line"></div>
-                    <div class="h1-tl-tick-lbl"><span style="color:var(--yellow)">$0→$2k<br>72% of window</span></div>
+                    <div class="h1-tl-tick-lbl"><span style="color:var(--yellow)">SCADA reactive<br>~$3k–$8k</span></div>
                   </div>
                   <div class="h1-tl-tick" style="left:92%">
                     <div class="h1-tl-tick-line" style="background:var(--red)"></div>
-                    <div class="h1-tl-tick-lbl" style="color:var(--red)">PNR<br>92% of window</div>
+                    <div class="h1-tl-tick-lbl" style="color:var(--red)">PNR · ~$150k only</div>
                   </div>
                 </div>
                 <span class="h1-tl-fail">FAIL</span>
@@ -565,8 +565,9 @@
                 <div class="wopt-card" :class="h1OptB">
                   <div class="wopt-badge" :class="h1OptB">{{ h1OptBLabel }}</div>
                   <div class="wopt-action">Emergency shutdown + restart</div>
-                  <div class="wopt-cost">~$2,000 workover cost</div>
+                  <div class="wopt-cost">~$3,000–$8,000 (shut-in + restart)</div>
                   <div class="wopt-window">Viable now → 92% of window</div>
+                  <div style="font-size:0.56rem;color:var(--muted);line-height:1.4;margin-top:4px">2–4h production loss + restart labor + motor thermal cycling. 300 BPD @ $76/bbl net-back. Varies by well.</div>
                 </div>
                 <div class="wopt-card wopt-last-resort">
                   <div class="wopt-badge wopt-postpnr">POST-PNR ONLY</div>
