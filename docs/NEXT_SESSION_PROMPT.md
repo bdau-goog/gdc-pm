@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Session N — Vue crash fix + descriptive action cards + financial breakdowns deployed)
-**git head:** `f261ac0` (fix(ui): Session N+1 — initialize h1EvidenceWall with 5 objects)
-**fault-trigger-ui image:** `sha256:2c2827d1` (1/1 Running — Session N+1)
+**Date:** June 8, 2026 (Session O — Scenario Replay design locked into DEMO_MASTER.md §4)
+**git head:** `860260f` (docs: Session N+1 handoff)
+**fault-trigger-ui image:** `sha256:2c2827d1` (1/1 Running — Session N+1, still current)
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -19,7 +19,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 **Expected when healthy:**
 - All 8 pods 1/1 Running · ollama replicas: 1
 - ollama_online: True · model: gemma4:latest
-- field_intel: ~2 · rag_documents: 18
+- field_intel: ~2–3 · rag_documents: 18
 
 ---
 
@@ -29,64 +29,173 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
+Pay special attention to **§4.2–§4.7** (the new Scenario Replay spec, rewritten Session O).
+
 ---
 
-## STEP 3: Next Implementation Task — Session O
+## STEP 3: Session P Implementation — H1 Scenario Replay
 
-### What was shipped in Session N (deployed, verified sha256:8c73db2d)
+### What changed in Session O (docs only, no code)
 
-**Critical Bug Fixed (Session N+1):** `h1EvidenceWall: []` was initialized as an empty array in `data()`.
-`launchHorizon1()` tried to set `this.h1EvidenceWall[0].content = '...'` on `undefined` — throwing a
-TypeError BEFORE the `try` block containing the API injection call, elapsed timer, and degrade poll timer.
-Result: banner changed (h1Injected=true before the throw), but `/api/inject/degrade` was never called,
-`h1ElapsedTimer` never started (T always showed 00:00), `h1DegPollTimer` never started (charts never updated),
-and `h1RagRevealed` was never set true (GDC stuck in scanning state forever). Fix: one line — initialize
-with 5 pre-populated objects. Confirmed 5×"active: false, content: ''" in deployed container.
+Session O redesigned the H1 interaction model from "inject-and-wait" to **Scenario Replay**:
+- A new `GET /api/h1/scenario-replay` endpoint precomputes the full fault trajectory server-side
+- The **real `esp_health.ubj` XGBoost model** runs over the trajectory in a sliding window to produce `gdc_detect_idx`
+- The **SCADA hard threshold** (PIP < 800) on the same data produces `scada_alarm_idx`
+- The frontend renders a **▶ Play / scrub control** over the full pre-computed arrays
+- No live degrade thread, no RabbitMQ polling, no race conditions
 
-**Root Cause Also Fixed (Session N):** Vue.js 3 template compiler was crashing on unescaped `<` characters introduced
-in Session M's SCADA sensor tile HTML (`<800 PSI`, `<50 A`). Vue treats these as tag openers and fails
-silently — resulting in the LLM never streaming and Plotly charts never receiving data.
+### Implementation Order (execute strictly in sequence, verify before next step)
 
-**All changes in commit `454ed9f`:**
+**Step 1 — Verify esp_health.ubj is loadable and produces valid output (5 min)**
+```bash
+kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "
+import xgboost as xgb, numpy as np
+m = xgb.Booster(); m.load_model('/app/models/esp_health.ubj')
+# Feed it one row of 8 features (all zeros as a smoke test)
+d = xgb.DMatrix(np.zeros((1,8)))
+print('health_score:', m.predict(d))
+"
+```
+Expected: a float between 0 and 1 (likely ~0.9 for zero-feature input). If this fails (model not found, wrong feature count), diagnose before writing any code.
 
-1. **Vue Template Crash Fixed:** Escaped all unescaped `<` chars to `&lt;` across index.html
-   (sparkline labels, SCADA sensor tiles, RAG latency strings, H3 RUL model formula,
-   Architecture tab Vibration sensor spec, HNSW retrieval latency). LLM + time-series now work.
+**Step 2 — Add `GET /api/h1/scenario-replay` to app.py (single batched replace_in_file)**
 
-2. **Large Descriptive Action Cards (SCADA + GDC):** Simple one-line buttons replaced with
-   `.h1-action-card` styled cards (green/red/amber/slate/contraindicated). Each card shows:
-   - SCADA: Physical description, "Apply if:" guidance, velocity risk warning (3.1 ft/s at 44 Hz)
-   - GDC: "GDC RECOMMENDED" / "GDC CONTRAINDICATED" labels, full sonic log context, precise boundaries
+Add this endpoint near the other `/api/h1/` endpoints (grep for `h1` in app.py to find the right location):
 
-3. **Post-Selection Financial Breakdowns:** After operator selection, itemized tables render:
-   - Seizure path: Pull-rig $42k + Motor $53k + Cable $15k + Deferred prod $39.9k = ~$149,900
-   - Correct path (drawdown): Avoided $150k · Net savings $142k–$147k
-   - Correct path (gas lock): $2,500 total · $147,500 capital preserved
+```python
+@app.get("/api/h1/scenario-replay")
+async def h1_scenario_replay(fault: str = "gas_lock"):
+    """
+    Returns a pre-computed fault trajectory + real XGBoost health model outputs.
+    The frontend replays this deterministically (no degrade thread, no RabbitMQ).
+    fault: "gas_lock" or "fluid_drawdown"
+    """
+    import random, math
+    ft = fault if fault in ("gas_lock", "fluid_drawdown") else "gas_lock"
+    fp = FAULT_PROFILES.get(ft, FAULT_PROFILES["gas_lock"])
 
-4. **SPE-174536 Velocity Boundaries incorporated everywhere:**
-   - GDC drawdown verdict: "Speed-down below 48 Hz drops velocity from 4.2 ft/s to 3.1 ft/s at 44 Hz"
-   - Override modal: explicit at-52Hz (4.2 ft/s) and at-44Hz (3.1 ft/s) bullet points
-   - SCADA card warn: "velocity drops to 3.1 ft/s → sand bridge"
-   - GDC contraindicated card subtitle: full boundary reference
-   - app.js seizure text: "44 Hz dropped fluid transport velocity from 4.2 ft/s to 3.1 ft/s, breaching
-     the critical sand-transport lift boundary (SPE-174536)"
-   - styles.css: `.h1-action-card` + `.h1-card-*` variant classes added
+    N = 120  # trajectory steps
+    k = random.uniform(1.2, 2.5)  # ramp shape exponent (same as degrade thread)
+    
+    # Nominal baselines (from FAULT_PROFILES nominal ranges)
+    psi_nom = random.uniform(1180, 1250)
+    amps_nom = random.uniform(85, 92)
+    temp_nom = random.uniform(195, 202)
+    vib_nom = random.uniform(0.8, 1.4)
 
-### Session O Tasks
+    psi_end = random.uniform(*fp["psi_range"])
+    amps_end = (fp["amps_range"][0] + fp["amps_range"][1]) / 2.0
+    temp_end = random.uniform(*fp.get("temp_range", (198, 215)))
+    vib_end = random.uniform(*fp.get("vib_range", (1.0, 2.5)))
 
-**Priority 1 — Browser smoke-test of H1 (user runs in browser):**
-- Navigate to Discern tab; verify Vue app mounts (no blank screen)
-- Click "⚡ Ingest Pad Anomalies"; confirm Plotly sparklines tick live
-- Verify GDC Advisor LLM streams within 3–5 seconds
-- Verify SCADA action cards are large and readable (two columns, with "Apply if" and warn text)
-- Verify GDC action cards show GREEN "GDC RECOMMENDED" and RED "GDC CONTRAINDICATED"
-- After selection, confirm financial breakdown table appears
-- Report any visual issues
+    t_step = 0.25  # minutes per step → 30 min total trajectory
+    psi, amps, temp, vib, t_min = [], [], [], [], []
+    for i in range(N):
+        frac = ((i + 1) / N) ** k
+        noise = lambda s: random.gauss(0, s)
+        psi.append(round(psi_nom + (psi_end - psi_nom) * frac + noise(18), 1))
+        amps.append(round(amps_nom + (amps_end - amps_nom) * frac + noise(1.5), 2))
+        temp.append(round(temp_nom + (temp_end - temp_nom) * frac + noise(1.2), 1))
+        vib.append(round(vib_nom + (vib_end - vib_nom) * frac + noise(0.1), 3))
+        t_min.append(round(i * t_step, 2))
 
-**Priority 2 — H2 "Classify" tab upgrade:**
-- Per DEMO_MASTER.md §5: two-pane SCADA/GDC layout, surface slug flow narrative, $148,500 avoided false-positive
-- Reuse `.h1-action-card` CSS pattern from H1 for action cards
-- The Vibration vs Motor Temp decorrelation chart is the hero visual
+    # Run real XGBoost health model in sliding window
+    health_scores = []
+    W = 20  # window width (same as event-processor)
+    try:
+        import xgboost as xgb, numpy as np
+        model = xgb.Booster()
+        model.load_model("models/esp_health.ubj")
+        for i in range(N):
+            if i < W:
+                health_scores.append(1.0)
+                continue
+            window_psi = psi[i-W:i]
+            window_amps = amps[i-W:i]
+            window_temp = temp[i-W:i]
+            window_vib = vib[i-W:i]
+            dt = t_step  # minutes
+            dpsi_dt = (window_psi[-1] - window_psi[0]) / (W * dt)
+            damps_dt = (window_amps[-1] - window_amps[0]) / (W * dt)
+            dtemp_dt = (window_temp[-1] - window_temp[0]) / (W * dt)
+            dvib_dt = (window_vib[-1] - window_vib[0]) / (W * dt)
+            feats = np.array([[
+                psi[-1], amps[-1], temp[-1], vib[-1],
+                dpsi_dt, damps_dt, dtemp_dt, dvib_dt
+            ]])
+            d = xgb.DMatrix(feats)
+            score = float(model.predict(d)[0])
+            health_scores.append(round(score, 4))
+    except Exception as e:
+        # Fallback: synthetic health decline if model unavailable
+        health_scores = [round(1.0 - 0.4 * ((i/N)**2), 4) for i in range(N)]
+
+    # Detection indices
+    HEALTH_THRESHOLD = 0.65
+    SCADA_PIP_ALARM = 800.0
+    gdc_detect_idx = next((i for i, s in enumerate(health_scores) if s < HEALTH_THRESHOLD), N - 1)
+    scada_alarm_idx = next((i for i, p in enumerate(psi) if p < SCADA_PIP_ALARM), N - 1)
+
+    lead_time_minutes = round(t_min[scada_alarm_idx] - t_min[gdc_detect_idx], 1) if scada_alarm_idx > gdc_detect_idx else 0.0
+
+    return {
+        "fault_type": ft,
+        "n": N,
+        "psi": psi,
+        "amps": amps,
+        "temp": temp,
+        "vib": vib,
+        "t_min": t_min,
+        "health_score": health_scores,
+        "gdc_detect_idx": gdc_detect_idx,
+        "scada_alarm_idx": scada_alarm_idx,
+        "lead_time_minutes": lead_time_minutes,
+        "model_used": "esp_health.ubj" if health_scores[gdc_detect_idx] != round(1.0 - 0.4 * ((gdc_detect_idx/N)**2), 4) else "FALLBACK_SYNTHETIC"
+    }
+```
+
+Verify with: `curl -s http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock | python3 -c "import sys,json;d=json.load(sys.stdin);print('gdc_idx:',d['gdc_detect_idx'],'scada_idx:',d['scada_alarm_idx'],'lead_min:',d['lead_time_minutes'],'model:',d['model_used'])"`
+
+Expected: `gdc_idx` < `scada_idx`, `lead_time_minutes` > 0, `model: esp_health.ubj`.
+
+**Step 3 — Rewrite H1 Discern tab frontend (app.js + index.html, one batched call each)**
+
+The full UI rewrite replaces the inject-and-wait model with the play/scrub model. Key changes:
+
+*app.js Vue state additions:*
+- `h1ReplayData: null` — full trajectory from API
+- `h1CursorIdx: 0` — current scrubber position
+- `h1Playing: false` — auto-advance timer running
+- `h1PlayTimer: null` — setInterval reference
+- `h1FaultTypeRevealed: false` — true once cursor crosses gdc_detect_idx
+
+*app.js methods:*
+- `loadH1Scenario()` — calls `/api/h1/scenario-replay?fault=<random>`, stores in `h1ReplayData`, renders chart, resets cursor to 0.
+- `h1Play(fast=false)` — starts `setInterval` advancing `h1CursorIdx` by 1 every 100ms (fast: 30ms). Stops at N-1.
+- `h1Pause()` — clears interval.
+- `h1Reset()` — cursor to 0, clears `h1FaultTypeRevealed`, re-renders.
+- `h1Scrub(idx)` — sets `h1CursorIdx`, triggers reactive updates, updates Plotly cursor line via `Plotly.relayout`.
+- Watcher on `h1CursorIdx`: when crosses `gdc_detect_idx` → set `h1FaultTypeRevealed = true`.
+
+*index.html Discern tab:*
+- Remove all `⚡ Ingest Pad Anomalies` button, `h1Injected`, `h1EvidenceWall`, inject-triggered polling
+- Add `[↺ New Scenario]` button → `loadH1Scenario()`
+- Add Play/Reset/Fast buttons + HTML range `<input type="range">` scrubber bound to `h1CursorIdx`
+- Replace sparkline cards with single `#h1-replay-chart` (Plotly, dual Y-axis PIP+Amps) + 4 cursor-position sensor tiles below
+- GDC Advisor sub-tab: show `h1FaultTypeRevealed`-gated content (baseline text before, RAG card + wellbore twin after)
+- SCADA sub-tab: show `h1CursorIdx >= scada_alarm_idx`-gated alarm state
+- Reuse ALL existing `.h1-action-card`, `.h1-card-green`, `.h1-card-contraindicated` CSS from Session N
+
+**Step 4 — Build, push, deploy, verify**
+```bash
+cd ~/gdc-pm/gke/fault-trigger-ui
+docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest .
+docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
+kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
+# Verify:
+curl -s http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock | python3 -c "import sys,json;d=json.load(sys.stdin);print('n:',d['n'],'lead:',d['lead_time_minutes'],'model:',d['model_used'])"
+```
 
 ---
 
@@ -94,10 +203,12 @@ silently — resulting in the LLM never streaming and Plotly charts never receiv
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 nuisance suppression | ⚠ Frontend only | GDC auto-dismiss shown as text; no RAG doc fetched. Defensible for demo. |
-| H1 sparklines pre-injection | ✅ Working | `_renderH1Charts(d)` polls baseline on tab open; baseline data available from telemetry. |
-| Vue template crash | ✅ Fixed (Session N) | All `<` chars escaped; confirmed 5×SPE-174536 and 5×h1-action-card in deployed container. |
-| h1EvidenceWall TypeError crash | ✅ Fixed (Session N+1) | Initialized with 5 objects; injection now calls API, timers run, charts update. |
+| H1 inject-and-wait model | ⚠ DEPRECATED | Replaced by Scenario Replay per DEMO_MASTER §4.2. Frontend still uses old model until Step 3 is implemented. |
+| H1 sparklines / degrade thread | ⚠ DEPRECATED | To be replaced by `#h1-replay-chart` + scrubber in Step 3. |
+| H1 action cards / financial breakdowns | ✅ Keep (Session N) | CSS + outcome logic reused unchanged in new model. |
+| Vue template crash | ✅ Fixed (Session N) | All `<` chars escaped. |
+| h1EvidenceWall TypeError | ✅ Fixed (Session N+1) | Initialized with 5 objects. |
+| `model_used` field | ✅ Integrity guard | Endpoint returns `"FALLBACK_SYNTHETIC"` if model load fails — UI must display this if shown. |
 
 ---
 
@@ -108,3 +219,4 @@ silently — resulting in the LLM never streaming and Plotly charts never receiv
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
+- The `model_used` field in the replay response is an integrity guard: if it reads `FALLBACK_SYNTHETIC`, that must be surfaced somewhere in the UI (even a small badge), never silently swallowed

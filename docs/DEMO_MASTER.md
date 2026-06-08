@@ -57,113 +57,120 @@ When an ESP's **Pump Intake Pressure (PIP)** and **Motor Current (Amps)** both d
 
 ---
 
-### 4.2 The Comparative Detection Scenario: Screen Architecture
+### 4.2 Interaction Model: Scenario Replay (replaces "Inject & Wait")
 
-The H1 "Discern" tab is structured as an interactive **Pad Alpha well surveillance grid** (A-1 to A-6), a **persistent telemetry column** with live sparkline trend cards, and a **switchable Decision Console** with SCADA View and GDC Advisor sub-tabs. All panels are horizontally and vertically resizable via drag handles.
+**Design rationale:** The previous "inject and wait" model — trigger a live degrade thread, then poll every few seconds hoping sensors update — introduced race conditions, timing bugs, and a fundamental honesty problem: the XGBoost model was never actually running over the telemetry in front of the audience. The Scenario Replay model fixes all of this in one architectural move.
+
+**How it works:**
+
+On entering the Discern tab:
+1. A call to `GET /api/h1/scenario-replay?fault=<randomly chosen gas_lock or fluid_drawdown>` returns a **complete pre-computed trajectory** — the full physics history of a well degrading from nominal to the unloading state.
+2. The trajectory arrays are precomputed **server-side from `FAULT_PROFILES`** using the same ramp formula as the legacy degrade thread (`((i+1)/N)^k`), so the physics are identical to what the model was trained on.
+3. The **real XGBoost health model** is run in a sliding window over those trajectory arrays to find the exact index where the health score crosses the detection threshold — this becomes `h1GdcDetectIdx`, and it is a real model output.
+4. The **SCADA hard threshold** (PIP &lt; 800 PSI) is evaluated against the same trajectory to find `h1ScadaAlarmIdx`.
+5. The **fault type** (`gas_lock` or `fluid_drawdown`) is chosen randomly (50/50) and returned — but is hidden from the UI until the GDC Advisor reveals it via L3 document fusion.
+
+The frontend stores the full trajectory arrays and renders them via a **▶ Play / scrub control**. No live degrade thread, no RabbitMQ, no polling — the chart is a deterministic function of one dataset.
+
+---
+
+### 4.3 Screen Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│  DISCERN — ESP FLUID UNLOADING   [⚡ Ingest Pad Anomalies] [Std|Accel] [↺]  │
-├─────────────────── Pad Alpha ─────────────────────────────────────────────  │
-│  [ A-1: ⚠ Alerting ] [ A-2: ✓ ] [ A-3: ⚠ Suppressed ] [ A-4: ✓ ] ...     │
-├──────────────────────────────────────┬──────────────────────────────────────┤
-│  📡 SHARED TELEMETRY (resizable L)   │  ⚖ DECISION CONSOLE (resizable R)    │
-│                                      │   ┌────────────────┬───────────────┐  │
-│  PIP:  [ 📈 Sparkline · 1,180 PSI ] │   │ 🟡 SCADA VIEW   │ 🟢 GDC ADVISOR│  │
-│  AMPS: [ 📈 Sparkline · 62A      ] │   └────────────────┴───────────────┘  │
-│  TEMP: [ 📈 Sparkline · 198°F    ] │                                        │
-│  VIB:  [ 📈 Sparkline · 1.3mm/s  ] │   SCADA: Manual intervention warning   │
-│  ↕ Drag handle (chart height)        │   GDC: RAG card + wellbore twin       │
-│                                      │       + informed action buttons       │
-└──────────────────────────────────────┴──────────────────────────────────────┘
-                 ↔ Drag splitter (column width)
+│  DISCERN — ESP FLUID UNLOADING   Well: A-[N] · [↺ New Scenario]            │
+├──────────────────────────────────────────────────────────────────────────── │
+│  [◀◀ Reset] [▶ Play] [▶▶ Fast]  ●━━━━━━━━━━━━━━━━━━━━━○━━━━━━━━━━━━━○━━━  │
+│                    time scrubber    GDC detect ▲         SCADA alarm ▲      │
+├──────────────────────────────────┬─────────────────────────────────────────┤
+│  📡 SHARED SENSOR HISTORY (L)    │  ⚖ DECISION CONSOLE (R)                 │
+│                                  │   ┌─────────────────┬─────────────────┐  │
+│  ── Single Plotly chart ──       │   │ 🟡 SCADA VIEW    │ 🟢 GDC ADVISOR  │  │
+│  PIP (blue) + Amps (green)       │   └─────────────────┴─────────────────┘  │
+│  on dual Y-axes.                 │                                           │
+│  Vertical markers:               │   Pre-cursor: both tabs show baseline    │
+│  • Dashed amber: GDC detect      │   Post-GDC-cursor: GDC Advisor activates │
+│  • Dashed red:   SCADA alarm     │   Post-SCADA-cursor: SCADA alarm fires   │
+│  • Moving cursor: time position  │                                           │
+└──────────────────────────────────┴─────────────────────────────────────────┘
 ```
 
-Clicking `⚡ Ingest Pad Anomalies`:
-1. **Randomly selects a target well** from A-1 to A-6 to receive the unloading anomaly.
-2. **Randomly selects** Gas Lock or Fluid Drawdown (50/50, fault type hidden until GDC reveals it).
-3. **Sets departure rate** based on `h1RampSpeed`: Standard (900s) or Accelerated (300s).
-4. **Initiates benign transient disturbances** (gas venting) on two adjacent wells, triggering SCADA nuisance alarms which GDC suppresses via retrieved Daily Well Test logs.
-
-Clicking any well in the surveillance grid dynamically loads that well's telemetry and GDC assessment.
+**Scrubber states:**
+- **Before `h1GdcDetectIdx`**: Both SCADA and GDC tabs show nominal state ("Sensors within limits").
+- **At `h1GdcDetectIdx`** (GDC amber dashed line): GDC Advisor activates — health score displayed, scanning state begins, L3 RAG retrieve fires. SCADA tab: *"No alarm. Both sensors still within hard limits."*
+- **At `h1ScadaAlarmIdx`** (SCADA red dashed line): SCADA alarm fires. Both tabs show alert. GDC has already completed L3 fusion and shows verdict + action cards. The gap between the two markers is the lead-time — shown, not asserted.
+- **After `h1ScadaAlarmIdx`**: Both systems see the event. GDC has the informed action path. SCADA has the dilemma.
 
 ---
 
-### 4.3 Component A: Shared Telemetry Column (Left 40%, resizable)
+### 4.4 Backend Endpoint: `GET /api/h1/scenario-replay`
 
-**Always visible.** Proves that SCADA and GDC are reading the **same physical sensors**.
+**Request:** `GET /api/h1/scenario-replay?fault=gas_lock` (or `fluid_drawdown`)
 
-- **Pad Alpha 6-Well Surveillance Grid**: Interactive well cards at the top of the column. Each card displays the well label, a pulsing status dot (✓ nominal / ⚠ alerting / ⚠ suppressed), and real-time health. Clicking a card loads that well's telemetry into the sparkline cards below.
-- **Four Stacked Plotly Sparkline Cards** (replaces horizontal progress bars):
-  - `#h1-spark-psi`: Pump Intake Pressure (PSI) — declining trend for target well
-  - `#h1-spark-amps`: Motor Current (Amps) — declining trend for target well
-  - `#h1-spark-temp`: Winding Temperature (°F) — stable for both fault types
-  - `#h1-spark-vib`: Motor Vibration (mm/s) — slightly elevated for gas lock
-  - Each card renders a live Plotly trend line with a **large bold live digital readout** via annotation in the top-right corner.
-  - Each card includes a **subtle horizontal dashed red line** at the SCADA alarm threshold.
-- **Drag Handles**:
-  - `.h1-splitter`: vertical drag handle (between Left and Right columns) controlling `h1SplitPercent` (25%–75%). Double-click resets to 38%.
-  - `.h1-v-splitter`: horizontal drag handle (inside Left column, below sparklines) controlling `h1ChartH` (80px–320px). Double-click resets to 140px.
+**Server-side logic (app.py):**
+1. Draw trajectory arrays (`psi[]`, `amps[]`, `temp[]`, `vib[]`, `t_min[]`) using `FAULT_PROFILES` ramp formula — N=120 steps, same `k` distribution as degrade thread.
+2. Load `esp_health.ubj` (the real trained XGBoost health model). For each sliding window of width W=20 in the trajectory, construct the 8 features the model expects (slopes `dpsi_dt`, `dtemp_dt`, etc.) and call `model.predict()`. Record `health_score[]`.
+3. `h1GdcDetectIdx` = first index where `health_score < 0.65` (the detection threshold).
+4. `h1ScadaAlarmIdx` = first index where `psi < 800`.
+5. Return JSON: `{fault_type, psi, amps, temp, vib, t_min, health_score, gdc_detect_idx, scada_alarm_idx}`.
+
+**No `fault_type` in the response until the GDC L3 card activates** — the field `fault_type` is omitted from the initial response payload; it arrives only when `GET /api/h1/rag-context?asset=...` is called (see §4.5).
 
 ---
 
-### 4.4 Component B: Sub-Tab 1 — 🟡 Traditional SCADA View (Reactive Manual Intervention)
+### 4.5 Component A: Shared Sensor History Chart (Left column, resizable)
 
-**The Operator's Dilemma Without Document Context.**
+**Single Plotly dual-axis chart** (`#h1-replay-chart`). Renders the full trajectory from the replay response. X-axis: time (minutes). Left Y-axis: PIP (PSI, blue). Right Y-axis: Motor Amps (A, green). Both sensors visible simultaneously — proves they are declining *together* (the correlated signature SCADA sees as ambiguous).
 
-- **SCADA Alarm State**: `⚠ AMBIGUOUS STATE — Fluid Unloading Detected`
-- **The Dilemma Text**: *"PIP and Amps declining simultaneously. Physical telemetry signature is identical for Gas Lock (VFD trim is safe) and Reservoir Fluid Drawdown (VFD trim seizes pump). SCADA has no document access. Misdiagnosis risk: representative $150k stuck-pump cost. Conservative path: wait for underload trip (well shuts in; ~$3k–$8k restart estimate)."*
-- **Action Buttons (Reactive Manual Intervention)**:
-  - **`[Execute VFD Speed-Down: 52 → 44 Hz]` (Standard Response)**:
-    - *If Gas Lock (hidden)*: Well stabilizes. GDC log: *"SCADA operator intervened manually — successful on Gas Lock. Without GDC, this had ~50% downside risk."*
-    - *If Drawdown (hidden)*: Pump seizes. `h1Seized = true`. Screen: `❌ PUMP SEIZED — Sand bridged downhole. Motor unresponsive on restart.` Plus representative Capex breakdown (~$150k).
-  - **`[Execute Conservative Shutdown]` (Safe Inaction)**:
-    - Well shuts in. Avoids damage. `h1Resolved = true`. Log: *"SCADA conservative shutdown. Well offline. Representative deferred oil restart: ~$3k–$8k."*
+**Three vertical marker lines** drawn as Plotly shapes:
+- Amber dashed: at `t_min[h1GdcDetectIdx]` — labelled `GDC Detects (T−Nm)`
+- Red dashed: at `t_min[h1ScadaAlarmIdx]` — labelled `SCADA Alarm (T+0)`
+- Grey solid (moving): the scrubber cursor position
 
----
+**Lead-time callout banner** above chart (appears once cursor passes SCADA alarm):
+> `⚡ GDC detected {N} minutes before SCADA alarm — on identical sensor data`
 
-### 4.5 Component C: Sub-Tab 2 — 🟢 GDC Edge AI Advisor View (Informed Clarity)
+This is computed from `t_min[h1ScadaAlarmIdx] - t_min[h1GdcDetectIdx]`. If the model only wins by 2–4 minutes on a given run, that is displayed honestly. The lead-time varies per run because `FAULT_PROFILES` ramp parameters are sampled with variance — this is correct and defensible.
 
-**The GDC Digital Twin — Unlocked by Document Context Fusion.**
-
-- **pgvector RAG Card** (prominent, clickable):
-  - *If Gas Lock*: `📄 Retrieved: Operator Shift Handover Note · 06:15 Tour 2 · GVF elevated (78%) at pump intake`
-  - *If Drawdown*: `📄 Retrieved: Dynamic Acoustic Sonic Log · 06:00 · Dynamic fluid level 150 ft above intake`
-  - **Click-Through Modal**: Clicking the card opens a professional, form-styled pop-up that displays the full field record (Baker Hughes Acoustic Survey form or central-battery shift handover template), making the source document real and verifiable.
-
-- **GDC-Only Downhole Wellbore Digital Twin** (CSS/HTML schematic, never visible on SCADA tab):
-  - Renders the casing cross-section, pump, and dynamic fluid column.
-  - *Gas Lock State*: Casing fluid level HIGH and stable (blue column full). Animated **gold gas bubbles** rising past the perforations and entering the pump stages. Label: `Pump unloading on gas — fluid column stable. Safe to trim.`
-  - *Drawdown State*: Casing fluid level **depletes downward** on screen (blue column falls, exposing pump intake). **Brown sand particles** settle down the tubing string. Label: `Dynamic fluid level at 150 ft (critical minimum: 120 ft). Velocity will drop below 4.2 ft/s on trim. Sand bridge risk. Shutdown.`
-
-- **GDC Verdict** (high-confidence):
-  - *Gas Lock*: `✅ GAS LOCK CONFIRMED (92%) — L3 Context Fused: Shift Note + GOR trend. Safe to VFD trim.`
-  - *Drawdown*: `⚠ FLUID DRAWDOWN CONFIRMED (94%) — L3 Context Fused: Sonic Log + Casing GOR. VFD trim CONTRAINDICATED.`
-
-- **Action Buttons (Informed)**:
-  - **`[✔ Approve Proactive VFD Trim — 52 → 44 Hz]`**:
-    - *Gas Lock*: Correct action. Well stabilizes and stays online with $0 downtime.
-    - *Drawdown (Override Prompt)*: GDC blocks with a warning modal:
-      - *"⚠ CRITICAL GDC WARNING: Dynamic fluid level confirmed critically low (Sonic Log: 150 ft above intake). Reducing pump speed drops fluid velocity below critical lift (4.2 ft/s), causing sand bridging and pump seizure. Override GDC and trim anyway?"*
-      - Buttons: `[Override & Trim (Bypass GDC Warning)]` and `[Cancel Action]`.
-      - If overridden: Pump seizes (`h1Seized = true`). Consequence shown.
-  - **`[⛔ Approve Emergency Shutdown]`** (correct for Drawdown):
-    - Well safely shut-in. Sand bridge prevented. `h1Resolved = true`. GDC log: *"Emergency shutdown executed per GDC sonic log evidence. Dynamic fluid level preserved above intake. Pump integrity confirmed."*
+**Below the chart:** four small read-only sensor tiles (PIP / Amps / Temp / Vib) showing the value at the current cursor position.
 
 ---
 
-### 4.6 Injection & Workload Scaling Mechanics
+### 4.6 Component B: Decision Console (Right column, two sub-tabs)
 
-- **Single Trigger**: `⚡ Ingest Pad Anomalies` button. Randomly selects a target well (A-1 to A-6) and fault type (gas_lock or fluid_drawdown, 50/50). The fault type is hidden until GDC reveals it.
-- **Departure Rate**: `h1RampSpeed` toggle in banner — `Standard` (900s duration, 15–30 min window) or `Accelerated` (300s duration, 5–10 min window).
-- **Nuisance Well Suppression**: Two adjacent wells receive benign transient disturbances triggering SCADA nuisance alarms. GDC suppresses them via Daily Well Test RAG retrieval. SCADA floods the operator with 3 concurrent alerts; GDC filters to 1 critical alert.
-- **VFD Trim vs. Shutdown**: Both actions available on BOTH SCADA and GDC sides. Difference is informed vs. uninformed, not gated vs. ungated.
-- **Outcome Mapping**:
-  - Gas Lock + VFD Trim → Recovery (correct)
-  - Gas Lock + Emergency Shutdown → Safe shut-in (conservative but acceptable)
-  - Drawdown + VFD Trim → `h1Seized` (catastrophic — shows the $150k consequence)
-  - Drawdown + Emergency Shutdown → Safe shut-in (correct)
-  - Suppressed nuisance well viewed → GDC shows nominal wellbore twin + Daily Well Test RAG card
+**The fault type is hidden until the GDC cursor is crossed.** Before `h1GdcDetectIdx`, both sub-tabs show nominal baseline. After, they diverge.
+
+#### 🟡 SCADA View (Sub-Tab 1)
+
+- **Before SCADA alarm idx**: `Sensors within hard limits. No alarm condition.`
+- **After SCADA alarm idx**: `⚠ AMBIGUOUS — Fluid Unloading Detected. PIP &lt; 800 PSI, Amps declining. Cannot distinguish Gas Lock from Reservoir Drawdown on available data.`
+- **Action Cards** (using `.h1-action-card` pattern): identical to existing Session N implementation — VFD Speed-Down and Conservative Shutdown, with full descriptive text, "Apply if:" guidance, and velocity risk warning.
+- **Outcome mapping** unchanged from Session N (seizure path, safe shutdown, itemized financial breakdown).
+
+#### 🟢 GDC Advisor View (Sub-Tab 2)
+
+- **Before GDC detect idx**: `Baseline monitoring. Health score: nominal.`
+- **After GDC detect idx (before SCADA)**: `⚡ Anomaly detected — health score declining. Retrieving field context…` (scanning wellbore schematic, animated).
+- **L3 RAG Context Card** (revealed after brief scan animation):
+  - *Gas Lock*: `📄 Operator Shift Handover Note · 06:15 · GVF elevated (78%)` — click to open full shift note modal.
+  - *Drawdown*: `📄 Dynamic Acoustic Sonic Log · 06:00 · Fluid level 150 ft above intake` — click to open full survey form modal.
+- **GDC-Only Wellbore Digital Twin**: Same CSS/HTML schematic as Session N — gas bubbles for Gas Lock, depleting fluid column + settling sand for Drawdown.
+- **GDC Verdict + Action Cards**: Same as Session N — GDC RECOMMENDED / GDC CONTRAINDICATED labels, velocity boundary reference (SPE-174536), override modal for Drawdown + VFD trim attempt.
+
+---
+
+### 4.7 The Honest Comparison: Hard Threshold vs. Correlated Pre-Threshold Scoring
+
+The claim the Scenario Replay design makes is narrow and defensible:
+
+> *"SCADA as-deployed monitors individual tags against hard thresholds set conservatively to suppress nuisance trips. XGBoost scores the joint multivariate drift — PIP and Amps declining together in a correlated pattern — and crosses a calibrated probability threshold when that signature emerges, which is before either tag hits its hard limit. Both systems see the same data. The model triggers first."*
+
+**What we concede:** A skilled SCADA engineer *can* configure rate-of-change alarms or multivariate threshold rules on a specific well. We do not claim SCADA is blind.
+
+**What we prove:** The real trained model, running over the real trajectory, crosses its detection threshold before the real SCADA hard threshold is crossed. The gap is shown on the chart, computed live, and varies per run. This is categorically not a straw man.
+
+**The categorical L3 moat** (which no SCADA product can architecturally replicate): After early detection, GDC fuses unstructured field documents to resolve the gas_lock vs. fluid_drawdown ambiguity and prescribe the correct action. This remains H1's primary claim regardless of the lead-time magnitude.
+
 
 ---
 
