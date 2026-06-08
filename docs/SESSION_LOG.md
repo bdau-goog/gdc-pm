@@ -2,6 +2,19 @@
 
 ---
 
+## Session J (June 8, 2026) — *H1 Discern Tab clean-slate rewrite — Double-Blind Choice Game deployed*
+
+**Code committed:** `5d3a9c8` (feat(ui): Session J — H1 Discern tab clean-slate rewrite)
+**Image digest:** `sha256:2fe914a6` · pod `fault-trigger-ui-77664876d7-f46qk` 1/1 Running
+
+**What was done:** Implemented the complete H1 "Discern" tab as specified in DEMO_MASTER.md §4 and the Session I+1 NEXT_SESSION_PROMPT.md 10-step runbook. The old three-column layout (operating envelope scatter chart, 14-well pad strip, evidence wall, dual inject buttons) was entirely replaced with the **ESP Unloading Double-Blind Choice Game**. Key deliverables: (1) **Single randomized inject button** — `launchHorizon1Unloading()` randomly selects Gas Lock or Fluid Drawdown (50/50) and starts the injection without revealing the fault type. (2) **Left 40% Shared Telemetry Column** — four ISA-101 sensor bars (PIP, Amps, Temp, Vib) plus a Plotly dual-axis PIP (blue, left y-axis) / Amps (green, right y-axis) trend chart rendered into `#h1-unloading-chart`. Both sensors decline identically for both fault types — the visual proof of the physical ambiguity. (3) **Right 60% Decision Console** — two sub-tabs: 🟡 SCADA View (shows ambiguous state alarm, dilemma text explaining Gas Lock vs Drawdown physical identity, two blind-gamble action buttons) and 🟢 GDC Advisor (shows pgvector RAG card which is clickable to open a professional field log modal, CSS Dynamic Wellbore Digital Twin with gold rising gas bubbles for Gas Lock or brown falling sand for Drawdown, high-confidence GDC verdict, informed action buttons). (4) **Override modal** — when the operator attempts VFD trim during a confirmed Drawdown from the GDC tab, `h1OverrideModalOpen = true` fires a critical warning overlay listing the physical sand-bridging consequences; requires explicit "Override & Trim" button to proceed (2-click bypass). (5) **Baker Hughes Acoustic Sonic Log modal** and **Operator Shift Handover Note modal** — authentic field record pop-ups styled with header tables, measurement data, and engineer notes. (6) **Double-blind integrity** — `h1RagRevealed` starts `false` at injection; status banner reads "UNLOADING ANOMALY ACTIVE — FAULT TYPE UNKNOWN" until the second evidence item activates at T+2s, at which point the banner updates to "GAS LOCK CONFIRMED" or "FLUID DRAWDOWN CONFIRMED". All CSS animations (bubble rise, sand fall, motor glow, sub-tab active states, modal overlays, field doc tables) appended to styles.css.
+
+**Key decisions:** (a) `h1FaultType` is set internally at inject time but `h1RagRevealed` gates all UI disclosure — the watcher sets `h1RagRevealed = true` at `h1EvidenceActive >= 2`. (b) The wrong action (VFD trim during drawdown) remains available on both SCADA and GDC sides — gated by the override modal on GDC side only. (c) `_renderH1Charts(d)` replaces the old `_renderEnvelopeChart()` — the scatter chart is removed entirely. (d) Two minor integrity items noted for Session K: header nav tab still reads "Detect" (should be "Discern") and H2 tab reads "Discern" (should be "Classify") — quick batched fix.
+
+**Next task (Session K):** (1) Fix tab navigation labels ("Detect" → "Discern", H2 "Discern" → "Classify") — batched single replace_in_file. (2) Smoke-test the full demo flow in browser. (3) H2 Classify tab layout upgrade per DEMO_MASTER.md §5.
+
+---
+
 ## Session I+1 (June 8, 2026) — *Doc-only: Clean-Slate H1 Discern Tab spec locked; no code changes*
 
 **Code committed:** docs only (DEMO_MASTER.md, NEXT_SESSION_PROMPT.md)
