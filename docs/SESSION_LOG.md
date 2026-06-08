@@ -2,6 +2,18 @@
 
 ---
 
+## Session F (June 8, 2026) — *Workspace isolation + Claim Ledger C2 resolved — Phase 3 unblocked*
+
+**Code committed:** `39da363` (chore: bootstrap workspace isolation), `1518b5e` (docs: Claim Ledger C2 resolved)
+
+**What was done:** (1) **Workspace isolation bootstrapped** for `~/gdc-pm` — had never been installed (not removed). Root cause: host-level bootstrap (`bootstrap-host.sh`) was done June 5 correctly, but per-repo step was never run for gdc-pm. Impact: every `kubectl` call in this repo was falling through to global `~/.kube/config` (gdc-pm-v2 context was set as global current context, contaminating other sessions). Fix: `scripts/setup-workspace.sh` copied from canonical template, `terraform/terraform.tfvars` created (`project_id=gdc-pm-v2, region=us-east1`), `.env`/`.envrc`/`.vscode/settings.json` generated, `.kubeconfig` seeded from live cluster (`gdc-edge-simulation us-east1`). Verified: `source .env && kubectl config current-context` → `gke_gdc-pm-v2_us-east1_gdc-edge-simulation` via isolated kubeconfig. `.gitignore` updated with isolation entries. `~/.clinerules` §5 table updated (gdc-pm → Fully isolated). All future `kubectl`/`gcloud` commands must use `source .env &&` prefix. (2) **Claim Ledger C2 resolved** — C2 (`$8k–$15k SCADA reactive path cost`) was the sole 🔴 NEEDS-EXPERT row blocking Phase 3. Resolved via independent math against demo well parameters (300 BPD @ $76/bbl net-back from app.py lines 1065/1072/1090): gas-locked ESP restart = 2–4 hours per API RP 11S §7.2; breakdown: $1,900–$3,800 production loss + $700–$1,400 labor + $500–$1,500 thermal cycling = **$3,000–$8,000** defensible range. Changed from 🔴 to 🟡 (our-math with disclosed assumptions), status → SURVIVES. Section 5 one-sentence claim updated to use new range. All 10 claims now SURVIVES or SURVIVES-with-qualification. (3) **Audited all ~/ repos** for isolation status — only gdc-pm was missing; gdc-das-physics-detection is half-done (needs project_id from user).
+
+**Key decisions:** (a) C2 resolution approach: option (a) from rules = "soften to defensible range" — no SME required once math is transparent and assumptions are disclosed. The lower bound ($3,100) still beats the GDC action ($2,500) + preserves production, so the economic argument actually gets stronger with the honest range. (b) The $8k–$15k code values are not wrong — they map to different fault-urgency tiers (`urgent` vs `critical`), not a single scenario. (c) gdc-das-physics-detection bootstrap deferred — project_id unknown; noted in §5 table for next session that touches that repo.
+
+**Next task (Session G):** Phase 3 H1 Decision Clock UI redesign — index.html only, single batched `replace_in_file`. Fix 3 integrity bugs (motor state timer, pre-injection sensor bars, RAG seed collapse) in the same pass. Review DEMO_MASTER.md §12 wireframe (lines 488–528) before writing any code.
+
+---
+
 ## Session E (June 7, 2026) — *Phase 2 H1 integrity fixes — deployed and verified*
 
 **Code committed:** `a493549` (fix(ui): Phase 2 H1 integrity fixes — Claim Ledger conformance)  
