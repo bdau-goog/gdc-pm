@@ -41,31 +41,107 @@ The core argument is framed as a **three-tier capability stack** (L1, L2, L3) th
 
 ## 4. H1 SPECIFICATION — ESP GAS LOCK (THE DISCERNING OPERATOR)
 
-### The Core Story
-- **SCADA's Dilemma:** PIP and Amps are declining. This symptom is highly ambiguous—it could be **Gas Lock** (where slowing the pump is the safe, correct recovery) or **Reservoir Pump-Off** (where slowing the pump risks critical lift failure, sand-bridging, and a stuck downhole pump costing ~$150k to pull). Because raw SCADA is blind to context, the operator *cannot* risk an automatic frequency reduction. SCADA must trip the pump offline to protect it. The well goes black.
-- **The GDC Solution:** GDC's RAG pipeline instantly fuses live telemetry with the **06:15 Operator Shift Note** (documenting elevated Pad GVF) and **Annulus fluid level logs** (proving the wellbore fluid is high, ruling out reservoir drawdown/pump-off). 
-- **The Decision:** With GDC's **92% GVF-confirmed confidence**, the operator has the safety permit to execute a **Zero-Downtime VFD Trim (HITL)**. The well stays online at a lower frequency (44 Hz) for 4–6 hours until the gas void clears.
+### The Core Story (The Competing Views Dilemma)
+When an ESP's PIP and Motor Amps decline, the raw telemetry signature is **physically ambiguous**. It is identical for two completely different root causes:
+1. **Gas Lock (GVF rising):** Slowing the pump by trimming VFD frequency safely clears the gas void. The well stays online. **(Correct: trim the Hz)**
+2. **Reservoir Pump-Off (Drawdown):** Slowing the pump during low fluid-level conditions drops the fluid velocity below critical lift, causing sand/debris to settle on top of the pump — bridging it. Result: $150k stuck pump. **(Catastrophic: do NOT trim)**
 
-### Visual & Narrative Drama (H1 Detect Tab)
+**SCADA's Dilemma:** SCADA sees the declining PSI and Amps but is **structurally blind to context** (no unstructured document access). The penalty for misdiagnosis (acting on a pump-off as if it's gas lock) is a destroyed $150k downhole pump. The penalty for conservative inaction (letting SCADA trip a true gas lock) is $3k–$8k. Under these asymmetric risks, the operator's **only rational choice is to wait for the protective trip**. The well shuts in.
 
-#### R1 — Active/Inactive State is Immediately Obvious (The Status Banner)
-- **Pre-inject:** Large green header: `[ ✓ ESP-ALPHA-1: NOMINAL — 4 sensors monitoring · no alarms ]`
-- **Post-inject:** Pulsing amber header: `[ ⚠ GAS LOCK ACTIVE · T+02:14 · Zero-Downtime Trim Window Closing ]`
+**The GDC Resolution:** GDC's RAG pipeline retrieves the **06:15 Operator Shift Note** (High GVF documented on Pad Alpha) and verifies stable **Annulus fluid level** (ruling out Pump-Off). With Pump-Off **excluded by document evidence**, the only remaining hypothesis is Gas Lock. GDC provides the safety permit to act. The operator approves the VFD trim. **The well never shuts in.**
 
-#### R2 — The Decision Timeline (YOU ARE HERE)
-A horizontal visual strip showing the progression of time and the closing of choices.
-- Marks elapsed time with a sliding `YOU ARE HERE` marker.
-- Explicitly aligns option cards spatially below the timeline:
-  - **Rung 1 (GDC):** `Zero-Downtime VFD Trim` (Preserves production; Soft Cost: ~$2.5k) — *MARGINAL after 18 min, EXPIRED at 25 min.*
-  - **Rung 2 (SCADA):** `Reactive Trip & Shut-In` (2–4h zero production; Restart Cost: ~$3k–$8k) — *EXPIRED at 25 min.*
-  - **Rung 3 (PNR Cliff):** `Winding Burnout / Motor Melt` (Emergency Pump Pull; Representative Cost: ~$150k) — *Available ONLY after 25 min.*
+---
 
-#### R3 — The Split SCADA vs. GDC Advisor Card
-A clear visual split below the timeline exposing the exact contrast in capability:
-- **LEFT Box (SCADA):** Displays `STATUS: 🟡 Low Current / Low Pressure`. Flags `AMBIGUITY: 50% Gas Lock / 50% Pump-Off`. Shows `ACTION: Wait for underload trip (shut-in)`.
-- **RIGHT Box (GDC Advisor):** Displays `STATUS: 🟢 Gas Lock Confirmed (92% Prob)`. Lists `EVIDENCE: 📄 06:15 Shift Note (High GVF) | 📊 Annulus Level (Stable)`. Highlights `ACTION: [APPROVE VFD TRIM]` (Human-in-the-Loop button).
+### H1 UI Layout: The Three-Act Screen (Detailed Implementation Spec)
 
-#### R4 — Directional Sensor Bars
+#### ACT 1: The Pad Alpha Map (Entry Point & Scale Story)
+When the "Detect" tab is opened, the viewer sees a **dark-mode well-field overview map**, not a single well dashboard. This is the scale entry point.
+
+- **Layout:** Dark HP-HMI style map showing 14 wellheads (labeled A-1 through A-14) connected to a central pad manifold (simple geometric layout, no geographic projection required).
+- **Nominal State:** All well-pads are calm gray dots/icons with no alarm annotation.
+- **On Fault Injection:** `ESP-ALPHA-1` pulses amber. A sliding GDC Advisor Alert banner appears: *"⚠ GDC ADVISOR: Anomaly detected on A-1 · SCADA: All Limits Green · GDC Confidence: 87% Gas Lock"*.
+- **Scale Story:** With 14 wells visible and only 1 highlighted, the audience immediately understands the triage value. GDC silently monitors all wells, and surfaces the one that needs attention.
+- **Drill-Down Interaction:** Clicking the flashing `ESP-ALPHA-1` icon on the map transitions (collapses) to reveal the **Single-Well Diagnostic Screen** (Acts 2 + 3).
+
+**Implementation note:** The well map is a Vue-driven HTML/CSS component (not an SVG library). Each well is a simple div/circle styled with CSS. This avoids rendering complexity while being fully on-brand for an operator console.
+
+---
+
+#### ACT 2: The Single-Well Diagnostic Screen (3-Column Layout)
+After drill-down, the screen shows the full well diagnostic context.
+
+```
+╔═══════════════════════════════════════════════════════════════════════════╗
+║ STATUS BANNER (full width):                                                ║
+║  Pre-inject: [✓ A-1: NOMINAL — GDC monitoring · SCADA green]              ║
+║  Post-inject: [⚠ GAS LOCK ACTIVE · T+02:14 · Decision window closing]     ║
+╠════════════════════════════╦══════════════════════════════╦════════════════╣
+║ COL 1 — Sensors (~25%)      ║ COL 2 — Operating Envelope   ║ COL 3 Advisor  ║
+║                             ║   (~40%)                     ║   (~35%)       ║
+║ ISA-101 Sensor Bars:        ║ [OPERATING ENVELOPE CHART]   ║ GDC Advisor    ║
+║ PIP  ███████░░ 1,180 PSI    ║                              ║ Streaming text ║
+║  ↓ Worse · Alarm <800       ║ Y-axis: Intake Pressure      ║ with superscript ║
+║  ✓ SCADA Green              ║ X-axis: Motor Current        ║ doc citations  ║
+║                             ║                              ║ [¹][²][³]      ║
+║ AMPS ████░░░░ 62A           ║ ZONES (shaded background):   ║                ║
+║  ↓ Worse · Alarm <50A       ║ [Green] Nominal              ║ INTEL FEED     ║
+║  ✓ SCADA Green              ║ [Blue]  Gas Lock             ║                ║
+║                             ║ [Red]   Pump-Off Risk        ║ File-styled    ║
+║ TEMP ████░░░░ 199°F         ║                              ║ document cards ║
+║  ↑ Worse · Alarm >280°F     ║ ●  YOU ARE HERE dot          ║ pulse glow as  ║
+║  ✓ SCADA Green              ║ (migrates live as fault      ║ new AI docs    ║
+║                             ║  progresses toward risk)     ║ are generated  ║
+║ VIB  ██░░░░░ 2.1 mm/s       ║                              ║                ║
+║  ↑ Worse · Alarm >8.0       ║ ON RAG RETRIEVAL:            ║                ║
+║  ✓ SCADA Green              ║ Pump-Off zone turns to       ║                ║
+║                             ║ dark gray + strikethrough:   ║                ║
+╠════════════════════════════╬══════════════════════════════╬════════════════╣
+║ ACT 3 — THE DECISION SPLIT CARD (full width below 3 columns)               ║
+║                                                                             ║
+║  ┌─────────────────────────────────────┬────────────────────────────────┐  ║
+║  │ 🟡 SCADA VIEW (Conservative Path)   │ 🟢 GDC ADVISOR (Safe Path)      │  ║
+║  │                                     │                                │  ║
+║  │ "PIP & Amps declining.              │ "Gas Lock Confirmed (92%).     │  ║
+║  │  Could be Gas Lock OR Pump-Off.     │  Pump-Off EXCLUDED (L3 fused): │  ║
+║  │  Risk of misdiagnosis: ~$150k       │   📄 06:15 Shift Note          │  ║
+║  │  stuck pump.                        │   📊 Annulus Level (stable)    │  ║
+║  │                                     │                                │  ║
+║  │  ACTION: Must wait for trip.        │  ACTION: [APPROVE VFD TRIM ✓] │  ║
+║  │  (Well goes offline)"               │  (Well stays online)"          │  ║
+║  └─────────────────────────────────────┴────────────────────────────────┘  ║
+╚═════════════════════════════════════════════════════════════════════════════╝
+```
+
+---
+
+#### ACT 3: The Operating Envelope — The Decision-Supporting Visual
+
+This is the physical explanation of **why the operating point migration matters.** It is the most engineeringly credible visual in the entire demo.
+
+**The Chart (Plotly scatter chart, Plotly.js via CDN):**
+- **Y-Axis:** Intake Pressure (PSI), 0–1,600 PSI
+- **X-Axis:** Motor Current (Amps), 0–120A
+- **Background Zones (colored rectangles rendered as Plotly shape objects):**
+  - `Nominal Zone` — green, upper right quadrant
+  - `Gas Lock Zone` — amber, mid-left (low amps, moderate pressure)
+  - `Pump-Off Risk Zone` — red, lower left (low amps, low pressure)
+- **SCADA Alarm Lines:**
+  - Horizontal dashed line at 800 PSI (PIP underload limit)
+  - Vertical dashed line at 50A (current underload limit)
+- **The Live Dot:** A bright orange dot (`YOU ARE HERE`) trails a history of the last 20 operating points. As gas lock develops, the trail migrates from the green Nominal zone into the amber Gas Lock region, approaching the SCADA alarm lines—but crucially **not crossing them** yet.
+- **The L3 Exclusion Transition:** When the RAG pipeline retrieves the 06:15 shift note, the `Pump-Off Risk Zone` background **visually fades to dark gray**, and a label appears: *"❌ EXCLUDED: L3 Context — Annulus fluid level confirmed high (Pump-Off ruled out)"*. This happens live, as a dynamic visual update.
+- **The SCADA Label:** A text annotation near the alarm lines reads: *"SCADA alarms not triggered (A: >800 PSI · B: >50A)"*. This makes it explicit and visual that SCADA is currently silent.
+
+**What this proves:**
+1. The operating point is in danger—visible to anyone watching.
+2. SCADA's red lines haven't been crossed—also visible.
+3. The ambiguity (Gas Lock vs Pump-Off) is visible as two competing zones.
+4. GDC's L3 context physically removes one of those zones from the chart.
+5. The safe path becomes literally the only remaining visible path.
+
+---
+
+#### R4 — ISA-101 Directional Sensor Bars
 Every sensor bar includes its threshold and direct physical direction context:
 - `PIP: 1,340 PSI` — `↓ Lower = worse · SCADA underload alarm: <800 PSI`
 - `AMPS: 69.6 A` — `↓ Lower = worse · SCADA underload alarm: <50A`
