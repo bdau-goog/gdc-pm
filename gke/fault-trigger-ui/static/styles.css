@@ -778,12 +778,30 @@
     .h1-banner-active .h1-sb-msg,.h1-banner-critical .h1-sb-msg{color:var(--orange)}
     .h1-banner-recovering .h1-sb-msg,.h1-banner-resolved .h1-sb-msg{color:var(--green)}
     .h1-sb-right{font-size:0.68rem;font-weight:700;color:var(--orange);white-space:nowrap;flex-shrink:0;padding:2px 8px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.3)}
-    /* ── H1 V2: Two-column body ── */
-    .h1-v2-body{display:flex;gap:12px;flex:1;min-height:0;overflow:hidden}
-    .h1-v2-left{flex:0 0 50%;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+    /* ── Pad Alpha Overview Strip ── */
+    .pad-overview-strip{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:7px 12px;flex-shrink:0;margin-bottom:6px}
+    .pad-overview-title{font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:5px;display:flex;justify-content:space-between}
+    .pad-wells-grid{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+    .pad-well{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;padding:3px 5px;border-radius:4px;border:1px solid transparent;transition:border-color 0.2s,background 0.2s}
+    .pad-well:hover{border-color:var(--border);background:rgba(255,255,255,0.03)}
+    .pad-well-dot{width:10px;height:10px;border-radius:50%;background:rgba(100,116,139,0.4);transition:background 0.3s,box-shadow 0.3s}
+    .pad-well-name{font-size:0.48rem;color:var(--muted);font-weight:600;font-family:var(--mono)}
+    .pad-well.nominal>.pad-well-dot{background:rgba(74,222,128,0.55)}
+    .pad-well.active-fault>.pad-well-dot{background:rgb(251,146,60);animation:pad-pulse 1.2s ease-in-out infinite}
+    @keyframes pad-pulse{0%,100%{box-shadow:0 0 0 0 rgba(251,146,60,0.6)}50%{box-shadow:0 0 0 5px rgba(251,146,60,0)}}
+    /* ── H1 V2: Three-column body ── */
+    .h1-v2-body{display:flex;gap:10px;flex:1;min-height:0;overflow:hidden}
+    .h1-v2-left{flex:0 0 23%;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto}
+    .h1-v2-center{flex:0 0 40%;display:flex;flex-direction:column;gap:8px;min-height:0}
     .h1-v2-right{flex:1;display:flex;flex-direction:column;gap:8px;min-height:0}
     .h1-v2-right>.h1-advisor{flex:1;min-height:0;display:flex;flex-direction:column}
     .h1-v2-right>.h1-advisor>.h1-advisor-body{flex:1;max-height:none!important;min-height:0}
+    /* ── H1: Operating Envelope chart ── */
+    .h1-envelope-wrap{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 12px;flex:1;min-height:0;display:flex;flex-direction:column}
+    .h1-envelope-title{font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+    #h1-envelope-chart{flex:1;min-height:200px}
+    .h1-pumpoff-excluded{font-size:0.57rem;font-weight:600;color:var(--green);background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.22);border-radius:4px;padding:4px 8px;margin-top:5px;flex-shrink:0;line-height:1.4}
+    .h1-pumpoff-pending{font-size:0.56rem;color:var(--yellow);margin-top:4px;flex-shrink:0;line-height:1.4}
     /* ── H1 V2: Decision Timeline ── */
     .h1-timeline-wrap{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 12px;flex-shrink:0}
     .h1-tl-label{font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px}
@@ -810,8 +828,23 @@
     .h1-sbar-meta{display:flex;justify-content:space-between;align-items:center;padding:0 0 0 46px}
     .h1-sbar-dir{font-size:0.55rem;color:var(--muted)}
     .h1-sbar-status{font-size:0.56rem;font-weight:700;transition:color 0.5s}
-    /* ── H1 V2: SCADA vs GDC summary ── */
-    .h1-scada-vs-gdc{background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px 12px;display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+    /* ── H1: Decision Split Card ── */
+    .h1-split-card{background:var(--surf);border:1px solid var(--border);border-radius:7px;overflow:hidden;flex-shrink:0}
+    .h1-split-row{display:grid;grid-template-columns:1fr 1fr}
+    .h1-split-hdr{font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;padding:5px 10px}
+    .h1-split-hdr.scada-hdr{background:rgba(251,191,36,0.07);border-bottom:1px solid rgba(251,191,36,0.18);color:var(--yellow)}
+    .h1-split-hdr.gdc-hdr{background:rgba(74,222,128,0.07);border-bottom:1px solid rgba(74,222,128,0.18);color:var(--green);border-left:1px solid var(--border)}
+    .h1-split-body{padding:7px 10px;font-size:0.60rem;line-height:1.55;color:var(--text2);display:flex;flex-direction:column;gap:5px}
+    .h1-split-body.gdc-body{border-left:1px solid var(--border)}
+    .h1-split-tag{font-size:0.56rem;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-flex;align-items:center;gap:4px;align-self:flex-start}
+    .h1-split-tag.ambiguous{background:rgba(251,191,36,0.09);color:var(--yellow)}
+    .h1-split-tag.confirmed{background:rgba(74,222,128,0.09);color:var(--green)}
+    .h1-split-evidence{font-size:0.57rem;color:var(--muted);line-height:1.55}
+    .h1-split-approve{width:100%;padding:5px 8px;background:rgba(74,222,128,0.10);border:1px solid rgba(74,222,128,0.28);border-radius:4px;color:var(--green);font-size:0.60rem;font-weight:700;cursor:pointer;text-align:center;letter-spacing:0.03em;transition:background 0.2s}
+    .h1-split-approve:hover:not(:disabled){background:rgba(74,222,128,0.20)}
+    .h1-split-approve:disabled{opacity:0.35;cursor:not-allowed}
+    /* ── H1 V2: SCADA vs GDC summary (legacy - kept for compatibility) ── */
+    .h1-scada-vs-gdc{display:none}
     .h1-svg-row{display:flex;align-items:baseline;gap:8px;font-size:0.66rem;line-height:1.4}
     .h1-svg-src{font-weight:700;color:var(--text2);white-space:nowrap;flex-shrink:0;min-width:56px}
     .h1-svg-verdict{flex:1;line-height:1.4}

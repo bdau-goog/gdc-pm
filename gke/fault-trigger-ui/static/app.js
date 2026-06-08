@@ -92,6 +92,8 @@ createApp({
       h1RawAmps: null,
       h1RawTemp: null,
       h1RawVib: null,
+      h1EnvelopeHistory: [],
+      h1PumpOffExcluded: false,
       h1SensorVib: null,
       h1PhasePlaneHistory: [],
       h1DetectionTime: null,
@@ -297,6 +299,13 @@ createApp({
       if (!this.h1Injected || this.h1Resolved) return;
       if (oldVal === 'VIABLE' && newVal === 'MARGINAL') this._triggerAdvisoryUpdate('urgency', null);
       else if (oldVal === 'MARGINAL' && newVal === 'EXPIRED') this._triggerAdvisoryUpdate('critical', null);
+    },
+    h1EvidenceActive(val) {
+      // When 2nd evidence source (06:15 Shift Note) is retrieved, exclude Pump-Off risk on envelope
+      if (val >= 2 && !this.h1PumpOffExcluded) {
+        this.h1PumpOffExcluded = true;
+        this._renderEnvelopeChart();
+      }
     },
   },
 
@@ -1185,6 +1194,8 @@ createApp({
       this.h1RecoveryMsg='';
       this.h1EvidenceWall.forEach(e => { e.active = false; });
       try { Plotly.purge('h1-phase-chart'); } catch{}
+      this.h1EnvelopeHistory = []; this.h1PumpOffExcluded = false;
+      try { Plotly.purge('h1-envelope-chart'); } catch{}
       this.showToast('↺ Horizon 1 reset','var(--green)');
       const _pollLive1 = async () => {
         if (this.h1Injected) return;
@@ -1246,6 +1257,7 @@ createApp({
       if (rawTemp !== null) { this.h1RawTemp = rawTemp; this.h1SensorTemp = rawTemp.toFixed(0) + '°F'; }
       if (rawPsi  !== null) { this.h1RawPsi  = rawPsi;  this.h1SensorPsi  = rawPsi.toFixed(0)  + ' PSI'; }
       if (rawVib  !== null) { this.h1RawVib  = rawVib;  this.h1SensorVib  = rawVib.toFixed(2)  + ' mm/s'; }
+      this._renderEnvelopeChart();
       // Detect GDC detection moment (first time health_score drops below 0.85)
       if (d.health_score && d.health_score < 0.85 && !this.h1DetectionTime) {
         this.h1DetectionTime = Date.now();
@@ -1315,6 +1327,62 @@ createApp({
         .catch(() => Plotly.newPlot(el, traces, layout, { displayModeBar: false, responsive: true }));
     },
     _renderH1ScadaChart() { /* replaced by reactive CSS gauge cluster */ },
+    _renderEnvelopeChart() {
+      const el = document.getElementById('h1-envelope-chart');
+      if (!el) return;
+      const psi  = this.h1RawPsi  ?? 1380;
+      const amps = this.h1RawAmps ?? 75;
+      if (this.h1RawPsi && this.h1RawAmps) {
+        this.h1EnvelopeHistory.push({ x: amps, y: psi });
+        if (this.h1EnvelopeHistory.length > 20) this.h1EnvelopeHistory.shift();
+      }
+      const hx = this.h1EnvelopeHistory.map(p => p.x);
+      const hy = this.h1EnvelopeHistory.map(p => p.y);
+      const excluded = this.h1PumpOffExcluded;
+      const pumpOffFill = excluded ? 'rgba(100,116,139,0.06)' : 'rgba(239,68,68,0.10)';
+      const pumpOffLine = excluded ? 'rgba(100,116,139,0.15)' : 'rgba(239,68,68,0.2)';
+      const shapes = [
+        { type:'rect', x0:55, x1:125, y0:900, y1:1600, fillcolor:'rgba(74,222,128,0.06)', line:{width:0}, layer:'below' },
+        { type:'rect', x0:0,  x1:85,  y0:450, y1:1250, fillcolor:'rgba(251,146,60,0.08)', line:{width:0}, layer:'below' },
+        { type:'rect', x0:0,  x1:75,  y0:0,   y1:700,  fillcolor:pumpOffFill, line:{color:pumpOffLine,width:1}, layer:'below' },
+        { type:'line', x0:0, x1:125, y0:800, y1:800, line:{color:'rgba(239,68,68,0.45)',width:1,dash:'dot'} },
+        { type:'line', x0:50, x1:50, y0:0, y1:1600, line:{color:'rgba(239,68,68,0.45)',width:1,dash:'dot'} },
+      ];
+      const annotations = [
+        { x:98, y:1540, text:'Nominal',      showarrow:false, font:{size:9,color:'rgba(74,222,128,0.55)'},  xanchor:'center' },
+        { x:30, y:980,  text:'Gas Lock',     showarrow:false, font:{size:9,color:'rgba(251,146,60,0.65)'},  xanchor:'center' },
+        { x:28, y:320,  text: excluded ? '❌ Pump-Off\nEXCLUDED\n(L3 Fused)' : 'Pump-Off\nRisk',
+          showarrow:false, font:{size:8, color: excluded ? 'rgba(74,222,128,0.75)' : 'rgba(239,68,68,0.55)'},
+          xanchor:'center', align:'center' },
+        { x:2, y:820,   text:'SCADA PIP: 800', showarrow:false, font:{size:7,color:'rgba(239,68,68,0.45)'}, xanchor:'left' },
+        { x:52, y:120,  text:'SCADA\n50A', showarrow:false, font:{size:7,color:'rgba(239,68,68,0.45)'}, xanchor:'left' },
+      ];
+      const traces = [
+        { x: hx.slice(0,-1), y: hy.slice(0,-1), mode:'lines+markers', type:'scatter',
+          line:{color:'rgba(251,146,60,0.35)',width:1.5},
+          marker:{size:4,color:'rgba(251,146,60,0.35)'},
+          hoverinfo:'none', showlegend:false },
+        { x:[amps], y:[psi], mode:'markers+text', type:'scatter',
+          marker:{size:13,color:'rgb(251,146,60)',line:{color:'white',width:2}},
+          text:['YOU ARE HERE'], textposition:'top right',
+          textfont:{size:8,color:'rgb(251,146,60)'},
+          hovertemplate:'<b>Operating Point</b><br>Amps: %{x:.1f}A<br>PIP: %{y:.0f} PSI<extra></extra>',
+          showlegend:false },
+      ];
+      const layout = {
+        paper_bgcolor:'transparent', plot_bgcolor:'rgba(15,23,42,0.25)',
+        margin:{l:46,r:8,t:8,b:40},
+        xaxis:{ title:{text:'Motor Amps (A)',font:{size:9,color:'#64748b'}}, range:[0,125],
+                tickfont:{size:8,color:'#64748b'}, gridcolor:'rgba(100,116,139,0.08)', showgrid:true,
+                zerolinecolor:'rgba(100,116,139,0.15)' },
+        yaxis:{ title:{text:'Intake PSI',font:{size:9,color:'#64748b'}}, range:[0,1600],
+                tickfont:{size:8,color:'#64748b'}, gridcolor:'rgba(100,116,139,0.08)', showgrid:true,
+                zerolinecolor:'rgba(100,116,139,0.15)' },
+        shapes, annotations, showlegend:false,
+        font:{family:'monospace'},
+      };
+      Plotly.react('h1-envelope-chart', traces, layout, {responsive:true,displayModeBar:false});
+    },
     setH1Sensor(sensor) {
       this.h1ActiveSensor = sensor;
       if (this.h1ForecastData) this._renderH1Charts(this.h1ForecastData);

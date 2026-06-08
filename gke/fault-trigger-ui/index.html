@@ -397,6 +397,23 @@
           </div>
         </div>
       </div>
+      <!-- ── PAD ALPHA OVERVIEW STRIP (Scale story — always visible) ── -->
+      <div class="pad-overview-strip">
+        <div class="pad-overview-title">
+          <span>⛽ Pad Alpha — 14 Wells Under GDC Surveillance</span>
+          <span :style="{color: h1Injected ? 'var(--orange)' : 'var(--green)'}">{{ h1Injected ? '⚠ 1 Active Anomaly · SCADA: All Green' : '✓ All Nominal · SCADA: No Alarms' }}</span>
+        </div>
+        <div class="pad-wells-grid">
+          <div v-for="n in 14" :key="n"
+               class="pad-well"
+               :class="n === 1 && h1Injected ? 'active-fault' : 'nominal'">
+            <div class="pad-well-dot"></div>
+            <span class="pad-well-name">A-{{ n }}</span>
+          </div>
+          <span style="font-size:0.5rem;color:var(--muted);margin-left:auto;align-self:center;padding-left:8px">GDC monitors all &nbsp;·&nbsp; SCADA reactive alarms: 0</span>
+        </div>
+      </div>
+
       <div class="h3-dashboard" style="padding:10px 12px;overflow:hidden;display:flex;flex-direction:column">
 
         <!-- ── H1 V2: FULL-WIDTH STATUS BANNER ── -->
@@ -535,21 +552,8 @@
               </div>
             </div>
 
-            <!-- SCADA vs GDC PLAIN-TEXT SUMMARY -->
-            <div class="h1-scada-vs-gdc">
-              <div class="h1-svg-row">
-                <span class="h1-svg-src">📡 SCADA:</span>
-                <span class="h1-svg-verdict" style="color:var(--green)">4 sensors — all above individual alarm limits. No alarm fired.</span>
-              </div>
-              <div class="h1-svg-row">
-                <span class="h1-svg-src">🤖 GDC:</span>
-                <span class="h1-svg-verdict" :style="{color: h1Injected ? 'var(--orange)' : 'var(--muted)'}">
-                  <span v-if="!h1Injected">Monitoring. All nominal. Ready to detect anomalies.</span>
-                  <span v-if="h1Injected && !h1Recovering">PIP + Amps declining together<span v-if="h1EvidenceActive >= 2"> · Shift note: GVF elevated</span><span v-if="h1EvidenceActive >= 3"> · Lab GOR rising</span><span v-if="h1EvidenceActive >= 4" style="font-weight:700"> → Gas lock. {{ h1TopClassProb ? (h1TopClassProb*100).toFixed(0)+'%' : '—' }} confidence.</span></span>
-                  <span v-if="h1Recovering" style="color:var(--green)">VFD at 44 Hz. Recovery confirmed. $150,000 preserved.</span>
-                </span>
-              </div>
-            </div>
+            <!-- SCADA vs GDC PLAIN-TEXT SUMMARY (hidden via CSS — context now in split card) -->
+            <div class="h1-scada-vs-gdc" style="display:none"></div>
 
             <!-- WINDOW OF OPTIONS CARDS (post-inject) -->
             <div v-if="h1Injected" class="wopt-container" style="margin-top:8px">
@@ -581,6 +585,61 @@
             <div v-if="h1RecoveryMsg" style="margin-top:6px;padding:6px 10px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.2);border-radius:5px;font-size:0.64rem;color:var(--green)">{{ h1RecoveryMsg }}</div>
 
           </div><!-- /h1-v2-left -->
+
+          <!-- CENTER: Operating Envelope + Decision Split Card -->
+          <div class="h1-v2-center">
+
+            <!-- OPERATING ENVELOPE CHART -->
+            <div class="h1-envelope-wrap">
+              <div class="h1-envelope-title">
+                <span>⚙ ESP Operating Envelope</span>
+                <span style="font-size:0.5rem;color:var(--muted);font-style:italic">Amps × Intake PSI &nbsp;·&nbsp; live trail</span>
+              </div>
+              <div id="h1-envelope-chart"></div>
+              <div v-if="h1PumpOffExcluded" class="h1-pumpoff-excluded">
+                ✅ Pump-Off Risk EXCLUDED — L3 Context: 06:15 Shift Note (elevated GVF) · Annulus fluid level stable · VFD trim is safe
+              </div>
+              <div v-else-if="h1Injected" class="h1-pumpoff-pending">
+                ⚠ Ambiguous signal — retrieving shift notes + annulus level to resolve Gas Lock vs Pump-Off…
+              </div>
+              <div v-else style="font-size:0.54rem;color:var(--muted);margin-top:4px;line-height:1.4">
+                Monitoring nominal operating range. Inject fault to see diagnostic envelope.
+              </div>
+            </div>
+
+            <!-- DECISION SPLIT CARD (shown when fault is active) -->
+            <div v-if="h1Injected" class="h1-split-card">
+              <div class="h1-split-row">
+                <div class="h1-split-hdr scada-hdr">🟡 SCADA View — L1 Only</div>
+                <div class="h1-split-hdr gdc-hdr">🟢 GDC Advisor — L3 Context</div>
+              </div>
+              <div class="h1-split-row">
+                <div class="h1-split-body">
+                  <div class="h1-split-tag ambiguous">⚠ Ambiguous Symptom</div>
+                  <div style="font-size:0.59rem">PIP & Amps declining. Raw telemetry cannot distinguish <strong>Gas Lock</strong> from <strong>Reservoir Pump-Off</strong>.</div>
+                  <div class="h1-split-evidence">Misdiagnose as Gas Lock → execute speed-down on a pump-off → sand bridges pump → <strong>~$150k stuck pump</strong>.</div>
+                  <div style="color:var(--yellow);font-size:0.58rem;font-weight:600;margin-top:2px">Safest action: wait for underload trip (well goes offline, $3k–$8k restart)</div>
+                </div>
+                <div class="h1-split-body gdc-body">
+                  <div class="h1-split-tag confirmed" v-if="h1PumpOffExcluded">✅ Gas Lock Confirmed — L3 Fused</div>
+                  <div class="h1-split-tag ambiguous" v-else>⏳ Retrieving L3 context…</div>
+                  <div v-if="h1PumpOffExcluded" style="font-size:0.59rem">
+                    <div class="h1-split-evidence">📄 06:15 Shift Note: GVF elevated at pump intake<br>📊 Annulus fluid level: stable (Pump-Off excluded)</div>
+                    Safe to trim. Well stays online at 44 Hz while gas void clears.
+                  </div>
+                  <div v-else style="color:var(--muted);font-style:italic;font-size:0.57rem">Awaiting shift note retrieval from AlloyDB RAG…</div>
+                  <button v-if="h1PumpOffExcluded && !h1Resolved && !h1Recovering"
+                          @click="approveH1VFD"
+                          class="h1-split-approve">
+                    ✔ APPROVE VFD TRIM &nbsp;·&nbsp; 52→44 Hz
+                  </button>
+                  <div v-if="h1Recovering" style="color:var(--green);font-size:0.58rem;font-weight:600">↩ VFD at 44 Hz · Monitoring recovery…</div>
+                  <div v-if="h1Resolved && !h1Recovering" style="color:var(--green);font-size:0.58rem;font-weight:600">✅ Resolved · ~$150k workover avoided</div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /h1-v2-center -->
 
           <!-- RIGHT: GDC Advisor + Intel Feed -->
           <div class="h1-v2-right">
