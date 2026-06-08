@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** June 8, 2026 (Session N — Vue crash fix + descriptive action cards + financial breakdowns deployed)
-**git head:** `454ed9f` (fix(ui): Session N — Vue template crash, action cards, SPE-174536 boundaries)
-**fault-trigger-ui image:** `sha256:8c73db2d` (1/1 Running — Session N)
+**git head:** `f261ac0` (fix(ui): Session N+1 — initialize h1EvidenceWall with 5 objects)
+**fault-trigger-ui image:** `sha256:2c2827d1` (1/1 Running — Session N+1)
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -35,7 +35,15 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ### What was shipped in Session N (deployed, verified sha256:8c73db2d)
 
-**Root Cause Fixed:** Vue.js 3 template compiler was crashing on unescaped `<` characters introduced
+**Critical Bug Fixed (Session N+1):** `h1EvidenceWall: []` was initialized as an empty array in `data()`.
+`launchHorizon1()` tried to set `this.h1EvidenceWall[0].content = '...'` on `undefined` — throwing a
+TypeError BEFORE the `try` block containing the API injection call, elapsed timer, and degrade poll timer.
+Result: banner changed (h1Injected=true before the throw), but `/api/inject/degrade` was never called,
+`h1ElapsedTimer` never started (T always showed 00:00), `h1DegPollTimer` never started (charts never updated),
+and `h1RagRevealed` was never set true (GDC stuck in scanning state forever). Fix: one line — initialize
+with 5 pre-populated objects. Confirmed 5×"active: false, content: ''" in deployed container.
+
+**Root Cause Also Fixed (Session N):** Vue.js 3 template compiler was crashing on unescaped `<` characters introduced
 in Session M's SCADA sensor tile HTML (`<800 PSI`, `<50 A`). Vue treats these as tag openers and fails
 silently — resulting in the LLM never streaming and Plotly charts never receiving data.
 
@@ -89,6 +97,7 @@ silently — resulting in the LLM never streaming and Plotly charts never receiv
 | H1 nuisance suppression | ⚠ Frontend only | GDC auto-dismiss shown as text; no RAG doc fetched. Defensible for demo. |
 | H1 sparklines pre-injection | ✅ Working | `_renderH1Charts(d)` polls baseline on tab open; baseline data available from telemetry. |
 | Vue template crash | ✅ Fixed (Session N) | All `<` chars escaped; confirmed 5×SPE-174536 and 5×h1-action-card in deployed container. |
+| h1EvidenceWall TypeError crash | ✅ Fixed (Session N+1) | Initialized with 5 objects; injection now calls API, timers run, charts update. |
 
 ---
 
