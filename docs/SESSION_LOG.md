@@ -2,6 +2,16 @@
 
 ---
 
+## Session Q (June 8, 2026) — *H1 Discern tab rebuild — 4-sensor chart, SVG wellbore, smart SCADA, fleet scalability card*
+
+**Code committed:** `1fe60f4` (feat(ui): Session Q — 4-sensor chart, SVG wellbore, smart SCADA, A-3 anchor)
+**Cluster image digest:** `sha256:a751a83e` (fault-trigger-ui — Session Q, current and live)
+**Smoke test:** 12/12 assertions, 0 console errors ✅
+
+Complete rebuild of the H1 Discern tab in response to five user feedback items. Key changes: (1) replaced dual-Y chart with 4-stack Plotly subplots (PIP/Amps/Temp/Vib sharing x-axis, single `relayout` cursor for smooth scrubbing); (2) moved transport controls (◀◀/▶/▶▶) to header far right, removed separate controls row; (3) slider padded l:48/r:12 to align exactly with Plotly plot area so GDC▲/SCADA▲ tick marks land on true data positions; (4) replaced CSS div-bar wellbore with an inline SVG wellbore (vector, reactive fluid column driven by PIP, animated gas bubbles / sand particles after RAG reveal, PUMP/MOTOR/PERFS labels, motor overtemp colour); (5) greyed/disabled mitigation cards pre-alarm; (6) fleet scalability card at base of Decision Console (6 ESPs, one model, ISA-18.2/EEMUA-191 cited). Backend: added intelligent Smart SCADA rate-of-change trip (ISA-18.2 §5.3 rolling 2.5-min window, -35 PSI/min threshold + static 1020 PSI floor per API RP 11S §7.2) replacing naive static threshold; returns `scada_rule_fired` field shown in SCADA alarm banner. Anchored Discern tab to Well A-3 (removed random well ID). Created `docs/CLAIM_LEDGER.md` with 8 H1 claim rows all SURVIVES. Live run: gdc_detect_idx=34, scada_alarm_idx=119, lead_time=21.2 min, model=esp_health.ubj (real XGBoost). Decision rejected: inflating lead time or straw-manning SCADA — both PRIME DIRECTIVE violations; disambiguation (unstructured context fusion) is the headline win, not the numeric head start.
+
+---
+
 ## Session P (June 8, 2026) — *H1 Scenario Replay — full stack complete and deployed*
 
 **Code committed:** `d76b252` (backend + Playwright harness), `fb7b71c` (UI rewrite)
