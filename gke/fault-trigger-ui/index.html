@@ -726,30 +726,23 @@
                 <button @click="executeH1Shutdown()" class="h1-action-card h1-card-slate">
                   <div class="h1-card-header">🛑 Emergency Shut-In</div>
                   <div class="h1-card-sub">Conservative Protective Response</div>
-                  <div class="h1-card-desc">Safe for both fault types · ~$3k–$8k deferred restart</div>
+                  <div class="h1-card-desc">Safe for both fault types · Deferred production + restart costs apply (see ⓘ)</div>
                 </button>
               </div>
               <!-- Outcomes -->
               <div v-if="h1Seized" class="h1-outcome-seized" style="margin:0 10px 8px">
                 <div style="font-weight:700;margin-bottom:6px">❌ PUMP SEIZED — VFD Trim Applied on Fluid Drawdown</div>
-                <div style="font-size:0.57rem;opacity:0.85;line-height:1.6;margin-bottom:8px">Reducing to 44 Hz dropped transport velocity to 3.1 ft/s — below the 4.2 ft/s critical sand-transport lift boundary (SPE-174536). Suspended solids settled and bridged the completion. Motor unresponsive.</div>
-                <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.55rem;line-height:1.7">
-                  <span style="color:var(--text2)">Pull-rig spot rate (3 days × $14k/day)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
-                  <span style="color:var(--text2)">Replacement ESP motor (Reda Class H)</span><span style="color:var(--red);font-weight:700;text-align:right">$53,000</span>
-                  <span style="color:var(--text2)">HP power cable + downhole gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$15,000</span>
-                  <span style="color:var(--text2)">Deferred production (300 BPD × $76/bbl × 1.75d)</span><span style="color:var(--red);font-weight:700;text-align:right">$39,900</span>
-                  <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Total Unmitigated Loss</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$149,900</span>
-                </div>
+                <div style="font-size:0.57rem;opacity:0.85;line-height:1.6">Reducing to 44 Hz dropped transport velocity to 3.1 ft/s — below the 4.2 ft/s critical sand-transport lift boundary (SPE-174536). Suspended solids settled and bridged the completion string. Engineering assessment required.<br><span style="font-size:0.48rem;color:var(--muted)">Workover cost basis — see ⓘ Physics &amp; Logic panel</span></div>
               </div>
               <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved" style="margin:0 10px 8px">
                 <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
                 <template v-else-if="h1FaultType==='fluid_drawdown'">
-                  <div style="font-weight:700;margin-bottom:4px">✅ SAFE SHUT-IN — Pump Integrity Preserved</div>
-                  <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump integrity confirmed. Fluid level recovering.<br><span style="color:rgba(74,222,128,0.7)">Avoided ~$150,000 sand-bridge seizure</span></div>
+                  <div style="font-weight:700;margin-bottom:4px">✅ SHUT-IN COMMAND ISSUED</div>
+                  <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Well offline · fluid recovery initiated · awaiting field confirmation<br><span style="color:rgba(74,222,128,0.7)">Pump condition assessed on controlled restart</span></div>
                 </template>
                 <template v-else>
-                  <div style="font-weight:700;margin-bottom:4px">✅ GAS LOCK CLEARING — Well Online</div>
-                  <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD at 44 Hz. Gas void venting up flooded annulus.<br><span style="color:rgba(74,222,128,0.7)">Intervention cost: ~$2,500 · Capital preserved: ~$147,500</span></div>
+                  <div style="font-weight:700;margin-bottom:4px">✅ VFD COMMAND SENT — 52→44 Hz</div>
+                  <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD at 44 Hz · gas void venting up flooded annulus · monitoring wellbore response</div>
                 </template>
               </div>
             </div>
@@ -776,13 +769,13 @@
               </div>
               <!-- After RAG: GDC gas_lock verdict -->
               <div v-if="h1RagRevealed && h1FaultType==='gas_lock'" style="background:rgba(16,36,22,0.55);border:1px solid rgba(74,222,128,0.28);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;line-height:1.7">
-                <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS LOCK CONFIRMED<span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '—' }} · 92% confidence</span></div>
+                <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS LOCK CONFIRMED<span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '—' }} · L3 context fused</span></div>
                 <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">L3 Context Fused: Shift Note (06:15 Tour 2) + GOR trend · Casing annulus fully submerged. Gas pocket in pump stages.</div>
                 <div style="color:var(--green);font-size:0.50rem">VFD trim (52→44 Hz) is safe. Motor cooling intact.</div>
               </div>
               <!-- After RAG: GDC fluid_drawdown verdict -->
               <div v-if="h1RagRevealed && h1FaultType==='fluid_drawdown'" style="background:rgba(40,20,5,0.55);border:1px solid rgba(251,146,60,0.3);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;line-height:1.7">
-                <div style="color:var(--orange);font-weight:700;font-size:0.60rem">⚠  FLUID DRAWDOWN CONFIRMED<span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '—' }} · 94% confidence</span></div>
+                <div style="color:var(--orange);font-weight:700;font-size:0.60rem">⚠  FLUID DRAWDOWN CONFIRMED<span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '—' }} · L3 context fused</span></div>
                 <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">L3 Context Fused: Sonic Log (06:00) + Casing GOR · Dynamic fluid level 150 ft above intake (min: 120 ft).</div>
                 <div style="color:var(--red);font-size:0.50rem">VFD trim CONTRAINDICATED — drops velocity to 3.1 ft/s < 4.2 ft/s critical lift (SPE-174536).</div>
               </div>
@@ -812,45 +805,38 @@
                     <button @click="approveH1VFD()" class="h1-action-card h1-card-green">
                       <div class="h1-card-header">✔ GDC RECOMMENDED: VFD Speed-Down</div>
                       <div class="h1-card-sub">52 → 44 Hz · 3,120 → 2,640 RPM · Zero downtime</div>
-                      <div class="h1-card-desc">GVF 78% confirmed — casing annulus fully flooded. Gas void vents up submerged annulus. Cost: ~$2,500.</div>
+                      <div class="h1-card-desc">GVF 78% confirmed — casing annulus fully flooded. Gas void vents up submerged annulus. VFD trim safe.</div>
                     </button>
                     <button @click="executeH1Shutdown()"
                             style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.56rem;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
-                      ○ Conservative Fallback — Emergency Shut-In (~$3k–$8k deferred restart)
+                      ○ Conservative Fallback — Emergency Shut-In (deferred production + restart costs apply)
                     </button>
                   </div>
                   <div v-if="!h1Resolved && !h1Seized && h1FaultType==='fluid_drawdown'" style="display:flex;flex-direction:column;gap:5px">
                     <button @click="executeH1Shutdown()" class="h1-action-card h1-card-green">
                       <div class="h1-card-header">✔ GDC RECOMMENDED: Emergency Shut-In</div>
                       <div class="h1-card-sub">Well offline · fluid recovery · pump preserved</div>
-                      <div class="h1-card-desc">Sonic log: fluid level 150 ft (min 120 ft). Net cost ~$3k–$8k vs ~$150k seizure avoided.</div>
+                      <div class="h1-card-desc">Sonic log: fluid level 150 ft (min 120 ft). Conservative protective response — prevents sand bridge risk.</div>
                     </button>
                     <button @click="approveH1VFD()" class="h1-action-card h1-card-contraindicated">
                       <div class="h1-card-header">❌ GDC CONTRAINDICATED: VFD Speed-Down</div>
                       <div class="h1-card-sub">Drops velocity to 3.1 ft/s — below 4.2 ft/s critical lift (SPE-174536)</div>
-                      <div class="h1-card-desc">Reservoir depleting. Speed-down bridges sand, seizes motor. ~$150k pull-rig.</div>
+                      <div class="h1-card-desc">Reservoir depleting. Speed-down drops velocity to 3.1 ft/s — below 4.2 ft/s critical lift (SPE-174536). Sand bridge risk.</div>
                     </button>
                   </div>
                   <div v-if="h1Seized" class="h1-outcome-seized">
                     <div style="font-weight:700;margin-bottom:6px">❌ PUMP SEIZED — GDC Warning Overridden</div>
-                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6;margin-bottom:8px">44 Hz trim dropped velocity to 3.1 ft/s (below 4.2 ft/s). Sand bridge confirmed downhole.</div>
-                    <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.54rem;line-height:1.7">
-                      <span style="color:var(--text2)">Pull-rig (3 days × $14k/day)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
-                      <span style="color:var(--text2)">ESP motor replacement</span><span style="color:var(--red);font-weight:700;text-align:right">$53,000</span>
-                      <span style="color:var(--text2)">Cable + gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$15,000</span>
-                      <span style="color:var(--text2)">Deferred production</span><span style="color:var(--red);font-weight:700;text-align:right">$39,900</span>
-                      <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Total Unmitigated Loss</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$149,900</span>
-                    </div>
+                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">44 Hz trim dropped velocity to 3.1 ft/s — below 4.2 ft/s critical lift (SPE-174536). Sand bridge downhole. Engineering assessment required.<br><span style="font-size:0.48rem;color:var(--muted)">Workover cost basis — see ⓘ Physics &amp; Logic panel</span></div>
                   </div>
                   <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
                     <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
                     <template v-else-if="h1FaultType==='fluid_drawdown'">
-                      <div style="font-weight:700;margin-bottom:4px">✅ SAFE SHUT-IN — GDC Recommendation Executed</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump integrity confirmed.<br><span style="color:rgba(74,222,128,0.7)">Avoided ~$150,000 sand-bridge seizure</span></div>
+                      <div style="font-weight:700;margin-bottom:4px">✅ SHUT-IN COMMAND ISSUED — GDC Recommendation</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Well offline · fluid recovery initiated · awaiting field confirmation<br><span style="color:rgba(74,222,128,0.7)">Pump condition assessed on controlled restart</span></div>
                     </template>
                     <template v-else>
-                      <div style="font-weight:700;margin-bottom:4px">✅ GAS LOCK CLEARED — Zero Downtime</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Gas void venting up flooded annulus. Well online.<br><span style="color:rgba(74,222,128,0.7)">Total cost: ~$2,500 · Capital preserved: ~$147,500</span></div>
+                      <div style="font-weight:700;margin-bottom:4px">✅ VFD COMMAND SENT — GDC Recommendation</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Gas void venting up flooded annulus · monitoring wellbore response</div>
                     </template>
                   </div>
                 </template>
@@ -1287,17 +1273,12 @@
                 <!-- False-positive outcome (chose pump pull) -->
                 <div v-if="h2PullOutcome==='false_positive'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
                   <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">❌ PREMATURE PUMP PULL — ESP WAS MECHANICALLY HEALTHY</div>
-                  <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.50rem;line-height:1.7">
-                    <span style="color:var(--text2)">Pull-rig (3d × $14k/day · WTX spot rate)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
-                    <span style="color:var(--text2)">ESP motor + cable + gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$68,000</span>
-                    <span style="color:var(--text2)">Deferred production (5d)</span><span style="color:var(--red);font-weight:700;text-align:right">$40,000</span>
-                    <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Unnecessary Capex Waste</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$150,000</span>
-                  </div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Workover mobilized for a mechanically healthy pump. Surface backpressure regime was the root cause — addressable with a surface truck roll.<br><span style="font-size:0.44rem;color:var(--muted)">Workover cost basis — see ⓘ Physics &amp; Logic panel</span></div>
                 </div>
                 <!-- Truck roll outcome (chose surface tech) -->
                 <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:6px">
                   <div style="font-size:0.58rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ SURFACE TECH DISPATCHED — CHOKE VALVE ADJUSTMENT</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Technician en-route to adjust surface choke backpressure. Motor temperature remained flat throughout — pump downhole confirmed healthy. $148,500 workover avoided.</div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Technician en-route to adjust surface choke backpressure. Motor temperature remained flat throughout — in-string slug loading mechanism confirmed at surface.</div>
                 </div>
               </div>
             </div><!-- /scada-view -->
@@ -1353,29 +1334,24 @@
                     <div v-if="!h2Resolved && !h2PullOutcome" style="display:flex;flex-direction:column;gap:5px">
                       <button @click="h2Resolved=true" class="h1-action-card h1-card-green">
                         <div class="h1-card-header">✔ GDC RECOMMENDED: Dispatch Surface Truck Roll</div>
-                        <div class="h1-card-sub">Surface tech to adjust choke valve · $1,500</div>
+                        <div class="h1-card-sub">Surface tech to adjust choke valve · backpressure calibration</div>
                         <div class="h1-card-desc">In-string slug loading confirmed — pump healthy. VIB cyclic, TEMP flat. Surface choke backpressure adjustment resolves. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">[WTX lease op. labor · mileage · choke cal.]</span></div>
                       </button>
                       <button @click="h2PullOutcome='false_positive'" class="h1-action-card h1-card-contraindicated">
                         <div class="h1-card-header">❌ GDC CONTRAINDICATED: Request Pump Pull</div>
                         <div class="h1-card-sub">Pump is mechanically healthy — workover not justified</div>
-                        <div class="h1-card-desc">~$150k: 3d rig × $14k/day + motor + cable + deferred prod. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">[WTX spot rig $14k/day × 3d · OEM motor]</span></div>
+                        <div class="h1-card-desc">Pump is mechanically healthy — workover not warranted. See ⓘ for workover cost basis.</div>
                       </button>
                     </div>
                     <!-- Truck roll resolved -->
                     <div v-if="h2Resolved && !h2PullOutcome" class="h1-outcome-resolved">
-                      <div style="font-weight:700;margin-bottom:4px">✅ CHOKE VALVE ADJUSTED — SLUG FLOW SUPPRESSED</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Surface backpressure stabilized. Vibration returning to nominal. Motor temperature flat throughout — pump confirmed healthy.<br><span style="color:rgba(74,222,128,0.7)">$148,500 unnecessary workover avoided · in-string slug flow resolved at surface</span></div>
+                      <div style="font-weight:700;margin-bottom:4px">✅ SURFACE TECH DISPATCHED — CHOKE ADJUSTMENT IN PROGRESS</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Backpressure adjustment initiated · vibration expected to return to nominal as slug loading subsides · motor temperature flat throughout — downhole pump mechanically healthy per classifier</div>
                     </div>
                     <!-- False-positive (pulled healthy pump) -->
                     <div v-if="h2PullOutcome==='false_positive'" class="h1-outcome-seized">
                       <div style="font-weight:700;margin-bottom:6px">❌ FALSE-POSITIVE PUMP PULL — GDC WARNING IGNORED</div>
-                      <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.54rem;line-height:1.7">
-                        <span style="color:var(--text2)">Pull-rig (3d × $14k/day)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
-                        <span style="color:var(--text2)">ESP motor + cable + gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$68,000</span>
-                        <span style="color:var(--text2)">Deferred production (5d)</span><span style="color:var(--red);font-weight:700;text-align:right">$40,000</span>
-                        <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Capex Waste (pump was healthy)</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$150,000</span>
-                      </div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Workover mobilized for a mechanically healthy pump. Surface backpressure regime was the root cause.<br><span style="font-size:0.48rem;color:var(--muted)">Workover cost basis — see ⓘ Physics &amp; Logic panel</span></div>
                     </div>
                   </template>
                 </div>

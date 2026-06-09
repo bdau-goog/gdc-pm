@@ -33,6 +33,20 @@ Status = **SURVIVES** means it passed all five PRIME DIRECTIVE gates.
 
 ---
 
+---
+
+## H1 — Confidence & Discrimination (Session W additions)
+
+| Claim | Tag | Source | Challenge | Rebuttal | Status |
+|---|---|---|---|---|---|
+| **REMOVED: `92% confidence` gas_lock literal** | — | index.html line 779 — was a hardcoded HTML string, no producer | "That's a fabricated number" | ❌ **INTEGRITY VIOLATION** — removed Session W Batch A. Replaced by Bayesian posterior. | **REMOVED** |
+| **REMOVED: `94% confidence` fluid_drawdown literal** | — | index.html line 785 — was a hardcoded HTML string, no producer | "That's a fabricated number" | ❌ **INTEGRITY VIOLATION** — removed Session W Batch A. Replaced by Bayesian posterior. | **REMOVED** |
+| GDC discrimination confidence = Bayesian posterior (naive-Bayes log-odds fusion over retrieved documents) | 🟢 method / 🔴 LR weights | Method: I. J. Good, *Probability and the Weighing of Evidence* (1950); T. J. Fagan, *NEJM* 293(5):257 (1975); Hastie/Tibshirani/Friedman *ESL* (2009) §6.6.3. LR values: conservative transparent weights grounded in API RP 11S §7.2 physics — labeled on-screen as weights, not calibrated parameters. Full methodology: docs/H1_METHODOLOGY.md | "The probability is made up — you can't compute diagnostic confidence from telemetry alone" | Correct — and by design. Prior = 50/50 (telemetry is ambiguous). Posterior moves to high-90s via document LRs (free gas absent, casing flat, fluid declining, GOR nominal). The math attributes 100% of discriminating power to the retrieved documents — exactly the L3 moat claim. Evidence table shown on-screen for full audit. | **SURVIVES** |
+| H1 XGBoost detection: `esp_health.ubj` runs live `model.predict()` over the replay trajectory in a W=20 sliding window, producing real health scores | 🟡 OUR-CODE | app.py ~line 5870 — verified Session S (RMSE=0.00179). `model_used` field returned in API response. | "Your model is pre-recorded / hardcoded" | Trajectory freshly sampled each call (k∈[1.2,2.5], new baselines). `model.predict()` called 100× per run. Two runs are never identical. `model_used: esp_health.ubj` shown in response. | **SURVIVES** |
+| H1 detection lead-time = `t_min[scada_alarm_idx] − t_min[gdc_detect_idx]` — live, not inflated | 🟡 OUR-CODE | app.py `h1_scenario_replay` — arithmetic on real array indices from XGBoost output vs ISA-18.2/API RP 11S SCADA rules. | "You inflated the lead time" | The value is the honest output; ~4–8 min typical; may be small on some runs; we do not floor it. The discrimination verdict (L3 moat) is the headline win, not the lead-time magnitude. | **SURVIVES** |
+
+---
+
 ## Confidence Tag Reference
 - 🟢 TEXTBOOK — grounded in a citeable standard (API RP, SPE, IEEE, OEM manual)
 - 🟡 OUR-CODE — number comes from FAULT_PROFILES / RESOLUTION_OPTIONS / FAULT_PHYSICS; grep-verifiable

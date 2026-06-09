@@ -1525,8 +1525,8 @@ createApp({
       if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
       const _shutWell = this.h1TargetWell || 'ESP-ALPHA-1';
       const _shutLabel = _shutWell.replace('ESP-ALPHA-','A-');
-      this.h1AdvisorHtml += `<br><br><strong style="color:var(--green)">✅ Emergency shutdown executed. Well ${_shutLabel} shut in. Pump integrity confirmed. Fluid level recovery underway — well can restart once submergence is restored.</strong>`;
-      this.showToast('✅ Safe shut-in executed — pump preserved', 'var(--green)');
+      this.h1AdvisorHtml += `<br><br><strong style="color:var(--green)">✅ Emergency shut-in command issued. Well ${_shutLabel} offline. Awaiting field confirmation — pump condition assessed on controlled restart.</strong>`;
+      this.showToast('✅ Shut-in command issued — awaiting field confirmation', 'var(--green)');
       try { await fetch(`/api/cancel-degrade/${_shutWell}`, {method:'POST'}); } catch(e) {}
     },
     async approveH1VFD() {
@@ -1553,7 +1553,7 @@ createApp({
       this.h1OptB = 'wopt-expired'; this.h1OptBLabel = 'EXPIRED';
       if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
       this.h1AdvisorHtml += '<br><br><strong style="color:var(--green)">↗ VFD speed-down command sent (52 → 44 Hz / 3,120 → 2,640 RPM). Recovery initiated. Monitoring wellbore response…</strong>';
-      this.showToast('↗ VFD command sent — monitoring wellbore recovery. $150k pump replacement avoided.','var(--green)');
+      this.showToast('↗ VFD command sent — monitoring wellbore recovery','var(--green)');
       try {
         const _vfdWell = this.h1TargetWell || 'ESP-ALPHA-1';
         await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -1568,7 +1568,7 @@ createApp({
             if (d.msg) { this.h1RecoveryMsg = d.msg; }
             if (d.state === 'complete') {
               this.h1Recovering = false;
-              this.h1AdvisorHtml += `<br><strong style="color:var(--green)">✅ Recovery complete. ${_vfdWell2} nominal. $150,000 pump replacement avoided.</strong>`;
+              this.h1AdvisorHtml += `<br><strong style="color:var(--green)">✅ Recovery complete. ${_vfdWell2} nominal. Well responding.</strong>`;
               clearInterval(this.h1RecoveryPollTimer); this.h1RecoveryPollTimer = null;
               if (this.h1DegPollTimer) { clearInterval(this.h1DegPollTimer); this.h1DegPollTimer = null; }
             }
@@ -2113,7 +2113,7 @@ createApp({
           this.h2Resolved = true;
           if(this.h2DegPollTimer){clearInterval(this.h2DegPollTimer);this.h2DegPollTimer=null;}
           fetch('/api/cancel-degrade/ESP-ALPHA-3',{method:'POST'}).catch(()=>{});
-          this.showToast('✅ Choke valve adjusted — Slug flow suppressed. $148,500 saved.','var(--green)');
+          this.showToast('✅ Choke adjustment dispatched — slug flow expected to subside','var(--green)');
         }
       }, 1000);
       this.showToast('🚛 Technician dispatched to ESP-ALPHA-3 wellsite','var(--yellow)');

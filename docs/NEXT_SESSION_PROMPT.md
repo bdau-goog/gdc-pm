@@ -84,6 +84,12 @@ Per DEMO_MASTER.md §6: H3 tab already has the Vizier Pareto chart working. Next
 | esp_classifier.bst (4-class) | ✅ NOTED Session V | Local .bst has no slug_flow class; H2 uses inference-api esp_classifier.ubj (5-class) via async httpx |
 | RED_TEAM_LEDGER.md | ✅ NEW Session V | Trigger: "red team" → re-runs hostile-engineer audit |
 | H2 live baseline feed | ⏳ DEFERRED | Charts are static on first visit; live-scroll not yet implemented |
+| `92%/94% confidence` literals in H1 verdict | ⏳ FIXING Session W Batch A | Fabricated HTML literals — no producer; replaced by Bayesian posterior in Batch B |
+| `hs = 1.0000` fallback shown on confirmed-fault verdict | ⏳ FIXING Session W Batch B | Cursor past array bound hits '1.0000' fallback — contradicts confirmed-fault state |
+| Well A-1 in sonic log modal vs A-3 everywhere else | ⏳ FIXING Session W Batch B | Display identity mismatch |
+| Action-card outcome text: "pump integrity confirmed" | ⏳ FIXING Session W Batch A | We cannot assert this before a controlled restart test — RT-2; removing per HITL reframe |
+| Shut-in framed as zero/no-cost option | ⏳ FIXING Session W Batch A | Deferred production + restart cost are real; framing was misleading |
+| $ figures on operational cards (not behind ⓘ) | ⏳ FIXING Session W Batch A | ISA-101 operational consoles don't show dollar signs; move to info popups |
 
 ---
 
