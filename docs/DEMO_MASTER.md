@@ -281,16 +281,26 @@ The claim the Scenario Replay design makes is narrow and defensible:
 
 ## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP SLUG FLOW DISCRIMINATION)
 
-### The Core Story
-- **The Problem:** Surface flowline slugging (gas/fluid waves) causes pressure and vibration spikes downhole. On raw telemetry, slug flow looks *identical* to acute ESP downhole wear.
-- **The SCADA Danger:** SCADA sees vibration spiking and Temp flat. It has no document reader to check surface configurations. Fearing mechanical destruction, the operator initiates an emergency well pull — only to find the pump downhole is perfectly healthy. This is a **$150,000 false-positive Capex waste.**
-- **The GDC Solution:** GDC's RAG reads the **06:15 Shift Note**, the **Separator Test Report** (14-min periodicity slugs), and the **Surface Choke Adjustment Log**.
-- **The Verdict:** GDC proves the downhole pump is green (healthy) and the vibration is a surface flowline issue.
-- **The Action:** Dispatch a surface tech to adjust backpressure (**$1,500 surface truck roll**), saving **$148,500** in unnecessary Capex.
+**Status: COMPLETE AND DEPLOYED (Session V)**
 
-### Visual & Narrative Drama (H2 Classify Tab)
-- A dual-line discriminator chart showing **Vibration (rising)** and **Motor Temp (completely flat, blue)**.
-- Interactive evidence board: RAG documents lighting up as GDC retrieves them.
+### The Core Story (Session V corrected physics)
+- **The Problem:** In high-GOR ESP wells, intermittent gas/liquid slugs travel up the production tubing string. When alternating gas slugs and liquid slugs arrive at the pump intake, they cause cyclic cavitation and hydraulic imbalance at the impeller — measured directly at the downhole PDG gauge. On raw telemetry, slug flow looks alarming but is NOT a downhole failure.
+- **The Correct Mechanism:** In-string multiphase slug loading at the pump intake. Gas slugs dip PIP and amps; liquid slugs re-load them. The gauge measures this cyclic pattern at source — no long-distance mechanical transmission is involved. **Motor winding temperature stays FLAT** — no additional friction, cooling flow nominally maintained.
+- **The Discriminator:** Bearing wear (real pull justified): vibration rises AND temperature rises. Slug flow (do NOT pull): vibration rises cyclically AND temperature FLAT. Temperature is the categorical discriminator.
+- **The SCADA Danger:** SCADA's ISA-18.2 HI alarm fires at 4.0 mm/s (vibration rising). The HH auto-trip at 5.0 mm/s has NOT fired — vib peaks at ~4.5 mm/s. Operator must decide. SCADA has no architecture to co-read the flat temperature as exonerating evidence or to retrieve the Surface Choke Valve Log, Separator Test Report, or Shift Note.
+- **The GDC Solution:** GDC's RAG reads the **Surface Choke Valve Log** (3 adjustments this tour — operator compensating for backpressure), the **Separator Test Report** (1.8 bbl slug volumes, GOR rising), and the **Night Shift Note** ("pumping rough but temp is normal").
+- **The Verdict:** GDC classifies slug_flow at ≥90% confidence via `esp_classifier.ubj` (inference-api, 5-class). Downhole pump confirmed healthy.
+- **The Action:** Dispatch a surface tech to adjust backpressure (**$1,500 surface truck roll**), saving **$148,500** in unnecessary Capex.
+- **Red Team Ledger:** See `docs/RED_TEAM_LEDGER.md` H2 section for all challenge/rebuttal pairs.
+
+### Visual & Narrative Drama (H2 Classify Tab) — IMPLEMENTED
+- Dual-sensor Plotly chart: **Vibration (rising cyclically, purple)** + **Motor Temp (completely flat, blue)** — the visual discriminator.
+- Transport controls: ◀◀ ▶ ▶▶ + scrubber with GDC▲ / SCADA HI▲ markers.
+- ISA-101 SCADA View: quiet pre-alarm slate → amber ISA-18.2 HI banner → 2×2 monospace tag grid → 2 equal-size action cards (no guidance text, operator decides).
+- GDC Advisor View: 3-zone layout (Zone 1 headline, Zone 2 action+doc stack, Zone 2 right sequential doc reveals).
+- Shared SVG wellbore strip visible on BOTH sub-tabs: surface slug animation (amber pulses in flowline) + healthy green PUMP ✓ and MOTOR ✓ at depth.
+- Sequential doc reveals: Choke Log (fires with RAG) → Separator Test (+2s) → Shift Note (+3.5s).
+- False-positive pump pull outcome: shows $150k itemized breakdown [WTX spot rig + motor + cable + deferred prod].
 
 ---
 

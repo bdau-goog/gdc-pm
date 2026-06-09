@@ -2,6 +2,16 @@
 
 ---
 
+## Session V (June 9, 2026) — *H2 Slug Flow Scenario Replay + Red Team Audit — deployed and verified*
+
+**Code committed:** `eb0936e` (feat(h2): Session V — H2 Slug Flow Scenario Replay + Red Team Audit)
+**fault-trigger-ui image:** `sha256:a8cac759`
+**Smoke test:** 12/12 assertions, 0 console errors ✅
+
+This session had two parallel tracks. **Track A (Truth & Integrity):** User-driven red-teaming surfaced three blocking integrity violations before any code was written. (1) CLAIM_LEDGER.md H1 sensor ranges were factually wrong — the ledger said psi 875-1100 / vib 2.0-3.5 mm/s while the actual FAULT_PROFILES say psi 400-600 / vib 4.5-6.5 — reconciled. (2) The H2 physics narrative claimed "surface slugs transmit mechanical shocks down the tubing string" — this fails a basic mechanical engineering challenge (2 miles of damped, clamped tubing). Cut and replaced with the correct mechanism: in-string multiphase slug loading at the pump intake where the gauge actually sits; cyclic gas/liquid slugs arriving at the impeller cause cyclic vib+amps+PIP with flat temp — all measured at source, no long-distance transmission. (3) simulator.py slug_flow vibration was 2.7 mm/s while FAULT_PROFILES and the classifier training data expect 4.0-6.5 mm/s — reconciled. Created `docs/RED_TEAM_LEDGER.md` — a permanent artifact of all hostile-engineer attacks ranked by "do we have an honest answer?"; trigger phrase "red team" re-runs the audit. Discovered that the local `esp_classifier.bst` is a 4-class model (normal/gas_lock/sand_ingress/motor_overheat) with no slug_flow class — H2 correctly uses the inference-api's 5-class `esp_classifier.ubj` via async parallel httpx calls. Health model (esp_health.ubj) verified to dip to 0.52 on slug trajectory — acknowledged honestly in the UI ("Health model reacts to rising vib rate — use classifier for fault type"). **Track B (H2 Implementation):** Built the complete H2 Scenario Replay architecture: backend `/api/h2/scenario-replay` endpoint (120-step trajectory, cyclic vib 1.2→4.5 mm/s, temp FLAT 198°F, ISA-18.2 HI at 4.0 mm/s fires, HH at 5.0 mm/s never fires, 15+ min GDC lead time); replaced static H2 Classify tab with the full interactive layout (dual-sensor Plotly chart, scrubber with GDC▲/HI▲ markers, ISA-101 sub-tab SCADA View with 2-equal-action cards and no hand-holding text, GDC Advisor 3-zone layout with sequential doc reveals, shared SVG wellbore visible on both sub-tabs showing surface slug animation + healthy green pump/motor). **Key rejections:** Echometer fluid level "streaming automatically" rejected — narrative corrected to ad-hoc survey ordered by lease operator, uploaded 15 min prior. SCADA hand-holding text removed per user request — SCADA view now shows raw ISA-18.2 HI alarm and two equal-size option cards; ambiguity explanation tucked behind Physics & Logic panel. **Next task (Session W):** H2 UX polish (live baseline feed, SVG annotations) + RED_TEAM_LEDGER P-2/P-3 resolution + H3 Vizier verification.
+
+---
+
 ## Session U (June 9, 2026) — *H1 ISA-101 3-zone Decision Console (steps 3c + 3d) — deployed and verified*
 
 **Code committed:** `c06aaf9` (feat(ui): Session U — ISA-101 3-zone Decision Console (3c+3d): new SCADA view, GDC 3-zone, cursor-reactive SVG wellbore, removed fleet card)

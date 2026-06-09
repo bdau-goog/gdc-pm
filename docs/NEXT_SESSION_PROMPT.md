@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session U — ISA-101 3-zone Decision Console complete)
-**git head:** `c06aaf9` (1 commit this session)
-**fault-trigger-ui image:** `sha256:a33a0833` (Session U — 3c+3d Decision Console, cursor-reactive SVG wellbore)
+**Date:** June 9, 2026 (Session V — H2 Slug Flow Scenario Replay complete)
+**git head:** `eb0936e` (1 commit this session)
+**fault-trigger-ui image:** `sha256:a8cac759` (Session V — H2 Scenario Replay + Red Team Audit)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -36,30 +36,37 @@ kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "import urllib.
 cat ~/gdc-pm/docs/DEMO_MASTER.md
 ```
 
+Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs the hostile-engineer audit at any checkpoint.
+
 ---
 
-## STEP 3: Session V — Next Implementation Tasks
+## STEP 3: Session W — Next Implementation Tasks
 
-### ALL H1 STEPS NOW COMPLETE ✅
-Steps 3a, 3b, 3c, 3d, and 3e are **DONE and deployed** (Sessions T + U).
+### ALL H1 AND H2 STEPS NOW COMPLETE ✅
+H1 Decision Console (Sessions T + U) — done.
+H2 Slug Flow Scenario Replay (Session V) — done and deployed.
 
-### PRIORITY 1: H2 Slug Flow Scenario Replay
-Per DEMO_MASTER.md §5: Build the Classify tab H2 scenario replay following the same architecture as H1.
+### PRIORITY 1: H2 UX Polish (address remaining user feedback)
+The following items were raised but deferred while physics and integrity issues were fixed first:
 
-- Backend: `GET /api/h2/scenario-replay?fault=slug_flow` — precompute vibration + temperature trajectory (120 steps), confirm slug flow decorrelation (vib rises, temp FLAT), return discriminator data
-- Frontend: Replace the current static H2 Classify tab content with a proper Scenario Replay layout (▶ Play / scrub, dual-sensor chart: vib rising + temp flat, SCADA vs GDC verdict)
-- Verdict cards: GDC confirms downhole pump is green (healthy), recommends $1,500 surface truck roll; SCADA path leads to $150k false-positive pump pull
+1. **Live-animating baseline feed:** On first page load, left-column charts should scroll in real-time with steady-state telemetry before any scenario is loaded. Currently both H1 and H2 charts are static on first visit. See SESSION V for details of what was planned.
 
-### PRIORITY 2: Deploy and Verify H2
-```bash
-docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest gke/fault-trigger-ui/
-docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
-kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+2. **Decision console scrub-binding:** Verify that scrubbing backward on H2 correctly returns the SCADA view to the pre-alarm quiet slate. The watcher on `h2CursorIdx` should handle this since the SCADA view checks `h2CursorIdx < h2ReplayData.scada_hi_idx`.
 
-# Smoke test
-cd ~/gdc-pm && node scripts/ui_smoke.mjs
-# Expected: ✅ SMOKE TEST PASSED (12/12 assertions, 0 console errors)
-```
+3. **Cost explanation labels:** Embed concise source citations directly next to monetary values (e.g., `[WTX spot rig $14k/day × 3d · OEM motor]` appears on GDC cards but SCADA view outcome card needs the same treatment).
+
+4. **SVG wellbore annotations:** Add explicit text labels inside the SVG for Pump Intake, API RP 11S submergence limit (H1 only), and reservoir perforations so the schematic is self-explanatory without verbal explanation.
+
+### PRIORITY 2: RED_TEAM_LEDGER.md pending items
+Three items remain in the Pending section of RED_TEAM_LEDGER.md:
+- P-1: Verify `esp_health.ubj` slug_flow output (DONE — dips to 0.52, acknowledged honestly in UI)
+- P-2: Source a citeable SPE reference for in-string slug loading pump vibration (candidate: SPE-174536 §3.4)
+- P-3: Confirm ISA-18.2 H/HH alarm naming matches the standard exactly (ISA-18.2 Table 5.2: Warning → H → HH)
+
+### PRIORITY 3: H3 Vizier Optimize Tab (if H2 polish is complete)
+Per DEMO_MASTER.md §6: H3 tab already has the Vizier Pareto chart working. Next steps:
+- Verify the Vizier API call from the new pod works (OPC/Vertex AI credentials)
+- Add cost explanation cards matching the Claim Ledger
 
 ---
 
@@ -67,20 +74,16 @@ cd ~/gdc-pm && node scripts/ui_smoke.mjs
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 Scenario Replay physics | ✅ FIXED Session S | psi_final 483–529 PSI, temp 254°F, vib 6.1–6.4, lead 7.0 min |
+| H1 Scenario Replay physics | ✅ FIXED Session S | psi_final 400–600 PSI, temp 245–265°F, vib 4.5–6.5, lead ~5–15 min |
 | Smart SCADA alarm logic | ✅ FIXED Session S | 3-rule ISA-18.2/API RP 11S — fires step 79/120 (~T=20min) |
 | `esp_health.ubj` / `esp_classifier.ubj` | ✅ FIXED Session S | RMSE=0.00179, gas_lock P=0.995, all gates pass |
-| Surveillance tab | ✅ NEW Session S | First tab, static content, opens by default |
-| Scrubber inside Left Column | ✅ FIXED Session T | padding-left:48px aligns with Plotly margin.l:48 |
-| ⓘ Physics & Logic button/panel | ✅ NEW Session T | Uses existing `.physics-panel` CSS; 4-section content |
-| Rolling 30-min x-axis | ✅ NEW Session T | `xMax > 30 ? [xMax-30, xMax] : [0, max(30, xMax)]` |
-| Doc reveal timers | ✅ NEW Session T | h1RagDoc2Shown (+2s), h1RagDoc3Shown (+3.5s) wired in app.js |
-| ISA-101 SCADA view redesign | ✅ NEW Session U | Quiet slate pre-alarm, 2×2 tag grid post-alarm, slate cards |
-| GDC 3-zone layout (3c) | ✅ NEW Session U | Zone 1 headline, Zone 2 action cards + doc stack, Zone 3 SVG |
-| Cursor-reactive SVG wellbore (3d) | ✅ NEW Session U | Bubbles/sand opacity = (cursorIdx - gdc_detect_idx) / (n-1-gdc_detect_idx) |
-| Fleet Scale Card | ✅ REMOVED Session U | Surveillance tab handles fleet scale context |
-| Document stack (Zone 2 right) | ✅ NEW Session U | 3 doc cards revealed sequentially via h1RagRevealed / h1RagDoc2Shown / h1RagDoc3Shown |
-| H2 Classify tab | ⏳ NEXT Session V | Still shows old static content — needs Scenario Replay architecture |
+| CLAIM_LEDGER.md H1 ranges | ✅ FIXED Session V | Was wrong (875-1100 PSI) — reconciled to actual FAULT_PROFILES (400-600 PSI) |
+| H2 physics mechanism | ✅ FIXED Session V | Cut 'surface shock transmission'; corrected to in-string multiphase slug loading at pump intake |
+| simulator.py slug_flow vib | ✅ FIXED Session V | Now 4.0–6.5 mm/s (was 2.7) — matches FAULT_PROFILES and training data |
+| H2 Classify tab | ✅ NEW Session V | Full Scenario Replay layout: dual chart, scrubber, ISA-101 SCADA, GDC 3-zone, shared SVG wellbore |
+| esp_classifier.bst (4-class) | ✅ NOTED Session V | Local .bst has no slug_flow class; H2 uses inference-api esp_classifier.ubj (5-class) via async httpx |
+| RED_TEAM_LEDGER.md | ✅ NEW Session V | Trigger: "red team" → re-runs hostile-engineer audit |
+| H2 live baseline feed | ⏳ DEFERRED | Charts are static on first visit; live-scroll not yet implemented |
 
 ---
 
@@ -93,4 +96,5 @@ cd ~/gdc-pm && node scripts/ui_smoke.mjs
 - `feature-trio-clean` branch — do NOT merge to main
 - Gas Lock and Fluid Drawdown have IDENTICAL sensor trajectories — this is the H1 premise
 - Physics panel `<` chars in text content: safe only as `< ` (space after) — never `<digit`
-- `app.py` ~5,996 lines, `index.html` ~2,389 lines — always grep for line numbers first
+- `app.py` ~6,180 lines, `index.html` ~2,545 lines, `app.js` ~2,180 lines — always grep for line numbers first
+- H2 uses inference-api (not local esp_classifier.bst) — local .bst is 4-class without slug_flow
