@@ -106,7 +106,7 @@ createApp({
       h1ActiveSensor: 'psi',
       h1Recovering: false,
       h1Dragging: false,
-      h1SplitPercent: 38,
+      h1SplitPercent: 56,
       h1ChartH: 140,
       h1DegPollTimer: null,
       h1LivePollTimer: null,
@@ -118,6 +118,10 @@ createApp({
       h1WellData: {},                // per-well telemetry cache
       h1ConsoleTab: 'scada',        // 'scada' | 'gdc' — which decision console sub-tab is shown
       h1RagRevealed: false,         // true when GDC's pgvector RAG document has been retrieved
+      h1RagDoc2Shown: false,        // GOR Lab Test card (revealed ~2s after RAG)
+      h1RagDoc3Shown: false,        // OEM Guide card (revealed ~3.5s after RAG)
+      h1RagDoc2Timer: null,         // setTimeout handle for doc 2
+      h1RagDoc3Timer: null,         // setTimeout handle for doc 3
       h1ShiftNoteModalOpen: false,  // click-through Shift Handover Note modal
       h1SonicLogModalOpen: false,   // click-through Acoustic Sonic Log modal
       h1OverrideModalOpen: false,   // GDC override confirmation modal (VFD trim during drawdown)
@@ -340,13 +344,18 @@ createApp({
     h1CursorIdx(val) {
       if (!this.h1ReplayData) return;
       // Cross GDC detect threshold → reveal fault type + schedule RAG reveal (1.5s)
-      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
+        if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
         this.h1FaultTypeRevealed = true;
         this.h1FaultType = this.h1ReplayData.fault_type;
         if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
         this.h1RagRevealTimer = setTimeout(() => {
           this.h1RagRevealed = true;
           this.h1EvidenceActive = 2; // triggers h1EvidenceActive watcher → sets exclusion flags
+          // Sequential doc reveals: GOR Lab Test at +2s, OEM Guide at +3.5s
+          if (this.h1RagDoc2Timer) clearTimeout(this.h1RagDoc2Timer);
+          if (this.h1RagDoc3Timer) clearTimeout(this.h1RagDoc3Timer);
+          this.h1RagDoc2Timer = setTimeout(() => { this.h1RagDoc2Shown = true; }, 2000);
+          this.h1RagDoc3Timer = setTimeout(() => { this.h1RagDoc3Shown = true; }, 3500);
         }, 1500);
       }
       // Update Plotly cursor line via relayout (shape index 2 = cursor in the 4-stack chart)
@@ -1362,6 +1371,8 @@ createApp({
       this.h1CursorIdx = 0;
       this.h1FaultTypeRevealed = false;
       this.h1RagRevealed = false;
+      this.h1RagDoc2Shown = false;
+      this.h1RagDoc3Shown = false;
       this.h1FaultType = '';
       this.h1Resolved = false;
       this.h1Seized = false;
@@ -1369,6 +1380,8 @@ createApp({
       this.h1EvidenceActive = 0;
       this.h1EvidenceWall.forEach(e => { e.active = false; });
       if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
+      if (this.h1RagDoc2Timer) { clearTimeout(this.h1RagDoc2Timer); this.h1RagDoc2Timer = null; }
+      if (this.h1RagDoc3Timer) { clearTimeout(this.h1RagDoc3Timer); this.h1RagDoc3Timer = null; }
       this._updateH1ReplayCursor(0);
     },
     h1Scrub(idx) {
@@ -1432,7 +1445,8 @@ createApp({
 
       const commonYAxis = {gridcolor:'#1e2a38', zeroline:false, showline:false,
                            tickfont:{size:8}, nticks:4};
-      const xRange = [0, xMax];
+      // Rolling 30-min window: after 120-step replay, x-axis slides to show last 30 min
+      const xRange = xMax > 30 ? [xMax - 30, xMax] : [0, Math.max(30, xMax)];
 
       Plotly.newPlot('h1-replay-chart', traces, {
         paper_bgcolor:'#0b0c10', plot_bgcolor:'#0f1318',
@@ -1696,9 +1710,7 @@ createApp({
         const dPct = (dx / bodyW) * 100;
         this.h1SplitPercent = Math.max(25, Math.min(75, startPct + dPct));
         this.$nextTick(() => {
-          ['h1-spark-psi','h1-spark-amps','h1-spark-temp','h1-spark-vib'].forEach(id => {
-            try { Plotly.Plots.resize(document.getElementById(id)); } catch(err) {}
-          });
+          try { Plotly.Plots.resize(document.getElementById('h1-replay-chart')); } catch(err) {}
         });
       };
       const onUp = () => {

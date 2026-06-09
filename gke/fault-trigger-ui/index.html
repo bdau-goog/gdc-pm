@@ -531,11 +531,42 @@
                   title="Fast-forward">▶▶</button>
         </div>
         <div class="hb-actions" style="gap:8px;align-items:center">
+          <button class="hb-btn btn-info" :class="{active: showH1Info}" @click="showH1Info=!showH1Info">ⓘ Physics & Logic</button>
           <button class="hb-btn btn-inject" @click="loadH1Scenario()"
                   :disabled="h1ReplayLoading"
                   style="background:linear-gradient(135deg,#1d4ed8,#1e3a8a)">
             {{ h1ReplayLoading ? '⏳ Loading…' : '↺ New Scenario' }}
           </button>
+        </div>
+      </div>
+
+      <!-- H1 Physics & Logic Info Panel -->
+      <div v-if="showH1Info" class="physics-panel">
+        <div class="pp-cols">
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">⚙ ESP Unloading Physics — Why Sensors Are Identical</div>
+              <p class="pp-text">Both Gas Lock and Fluid Drawdown produce identical PIP and Amps decline trajectories. Gas Lock: gas void fraction rises in pump stages — reducing hydraulic head. Drawdown: fluid level drops below pump intake — starving the impeller. <span class="pp-warn">No sensor can distinguish these — only external document context can.</span></p>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">🔔 Smart SCADA — 3-Rule ISA-18.2 Trip Logic</div>
+              <ul class="pp-list">
+                <li><strong>Rule A (Rate):</strong> dPIP/dt < −35 PSI/min over rolling 2.5-min window (ISA-18.2 §5.3)</li>
+                <li><strong>Rule B (Pressure Floor):</strong> rolling-avg PIP < 1,020 PSI (API RP 11S §7.2 underload setpoint)</li>
+                <li><strong>Rule C (Undercurrent):</strong> rolling-avg Amps < 50 A (API RP 11S §7.2 motor underload protection)</li>
+              </ul>
+            </div>
+          </div>
+          <div>
+            <div class="pp-section">
+              <div class="pp-section-title">🤖 XGBoost Pre-Threshold Detection</div>
+              <p class="pp-text">The edge-deployed XGBoost health model scores all 4 sensors in a W=20 sliding window, computing rate-of-change features (dpsi_dt, dtemp_dt, dvib_dt, damps_dt). It detects correlated multivariate degradation <em>before</em> any SCADA threshold is breached — computing hs ∈ [0,1]. Detection fires at hs < 0.65.</p>
+            </div>
+            <div class="pp-section">
+              <div class="pp-section-title">📄 L3 Context Fusion — The Categorical Moat</div>
+              <p class="pp-text">Once GDC detects the anomaly, it queries AlloyDB pgvector across 8,412 field documents. Shift notes, acoustic sonic logs, and GOR lab reports are retrieved in under 2 seconds. <strong>SCADA has no architecture for this.</strong> Fusion of unstructured context with structured telemetry is GDC's categorical advantage over threshold rules alone.</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -556,25 +587,6 @@
         <span v-if="h1ReplayData.model_used==='FALLBACK_SYNTHETIC'" style="color:var(--yellow);font-weight:400">[⚠ FALLBACK_SYNTHETIC]</span>
       </div>
 
-      <!-- SCRUBBER — padded l:48/r:12 to align exactly with Plotly plot area margins -->
-      <div v-if="h1ReplayData" style="padding:0 12px 4px;display:flex;align-items:center;gap:4px">
-        <div style="flex:1;position:relative;padding-left:48px;padding-right:12px;padding-bottom:14px">
-          <input type="range" :min="0" :max="h1ReplayData.n-1" :value="h1CursorIdx"
-                 @input="h1Scrub(parseInt($event.target.value))"
-                 style="width:100%;accent-color:#3b82f6;cursor:pointer;display:block">
-          <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
-            <span style="position:absolute;left:0">T+0</span>
-            <span style="color:rgba(251,191,36,0.88);position:absolute"
-                  :style="{left: (h1ReplayData.gdc_detect_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC▲</span>
-            <span style="color:var(--red);position:absolute"
-                  :style="{left: (h1ReplayData.scada_alarm_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">SCADA▲</span>
-            <span style="position:absolute;right:0">T+{{ h1ReplayData.t_min[h1ReplayData.n-1] }} min</span>
-          </div>
-        </div>
-        <span style="font-size:0.56rem;color:var(--muted);font-family:var(--mono);min-width:54px;text-align:right;flex-shrink:0;padding-right:12px">
-          T+{{ h1ReplayData.t_min[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.t_min[h1CursorIdx]).toFixed(2) : '0.00' }} min
-        </span>
-      </div>
 
       <!-- LOADING / NO DATA placeholder -->
       <div v-if="!h1ReplayData"
@@ -596,20 +608,34 @@
       <!-- MAIN BODY: 4-stack Chart (left 56%) + Decision Console (right 44%) -->
       <div v-if="h1ReplayData" style="display:flex;gap:0;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden">
 
-        <!-- LEFT: 4-sensor stacked chart (no sensor tiles — data shown in charts) -->
-        <div style="flex:0 0 56%;max-width:56%;display:flex;flex-direction:column;gap:4px;min-height:0">
+        <!-- LEFT: 4-sensor stacked chart + scrubber (auto-resizes with left column) -->
+        <div :style="{'flex': '0 0 ' + h1SplitPercent + '%', 'maxWidth': h1SplitPercent + '%'}" style="display:flex;flex-direction:column;gap:2px;min-height:0">
           <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px;flex-shrink:0">
             📡 SHARED SENSOR HISTORY — identical on both views
           </div>
+          <!-- SCRUBBER — inside Left Column, padding-left:48px aligns with Plotly margin.l:48 -->
+          <div style="padding-left:48px;padding-right:12px;padding-bottom:2px;flex-shrink:0;position:relative">
+            <input type="range" :min="0" :max="h1ReplayData.n-1" :value="h1CursorIdx"
+                   @input="h1Scrub(parseInt($event.target.value))"
+                   style="width:100%;accent-color:#3b82f6;cursor:pointer;display:block">
+            <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
+              <span style="position:absolute;left:0">T+0</span>
+              <span style="color:rgba(251,191,36,0.88);position:absolute"
+                    :style="{left: (h1ReplayData.gdc_detect_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC▲</span>
+              <span style="color:var(--red);position:absolute"
+                    :style="{left: (h1ReplayData.scada_alarm_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">SCADA▲</span>
+              <span style="position:absolute;right:0">T+{{ h1ReplayData.t_min[h1ReplayData.n-1] }} min</span>
+            </div>
+          </div>
           <!-- 4-stack Plotly chart fills all available height -->
-          <div id="h1-replay-chart" style="width:100%;flex:1;min-height:300px"></div>
+          <div id="h1-replay-chart" style="width:100%;flex:1;min-height:280px"></div>
         </div>
 
-        <!-- Spacer -->
-        <div style="width:8px;flex-shrink:0"></div>
+        <!-- Drag handle — resize left/right columns; dblclick resets to 56% -->
+        <div class="h1-splitter" @mousedown="initH1SplitterDrag" @dblclick="h1SplitPercent=56" style="margin:0 2px"></div>
 
-        <!-- RIGHT: Decision Console (SVG wellbore + sub-tabs + greyed mitigation + fleet card) -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;overflow-y:auto;min-height:0">
+        <!-- RIGHT: Decision Console — ISA-101 / HP-HMI Design -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-height:0">
           <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px 3px;flex-shrink:0">
             ⚖ DECISION CONSOLE
           </div>
