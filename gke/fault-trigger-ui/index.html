@@ -518,15 +518,20 @@
           </span>
         </div>
         <!-- Transport controls: far right, before New Scenario button -->
-        <div v-if="h1ReplayData" style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <!-- Locked (pointer-events:none + opacity) after remediation so scrubber can't rewind past decision -->
+        <div v-if="h1ReplayData" style="display:flex;align-items:center;gap:4px;flex-shrink:0"
+             :style="{opacity: (h1Resolved || h1Seized) ? '0.4' : '1', pointerEvents: (h1Resolved || h1Seized) ? 'none' : 'auto'}">
           <button @click="h1Reset()"
+                  :disabled="h1Resolved || h1Seized"
                   style="padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--text2);font-size:0.55rem;cursor:pointer"
                   title="Reset to T+0">◀◀</button>
           <button @click="h1Playing ? h1Pause() : h1Play(false)"
+                  :disabled="h1Resolved || h1Seized"
                   style="padding:3px 12px;border-radius:4px;border:1px solid rgba(59,130,246,0.5);background:rgba(59,130,246,0.15);color:#93c5fd;font-size:0.58rem;font-weight:700;cursor:pointer;min-width:54px">
             {{ h1Playing ? '⏸' : '▶' }}
           </button>
           <button @click="h1Play(true)"
+                  :disabled="h1Resolved || h1Seized"
                   style="padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--text2);font-size:0.55rem;cursor:pointer"
                   title="Fast-forward">▶▶</button>
         </div>
@@ -617,7 +622,9 @@
           <div style="padding-left:48px;padding-right:12px;padding-bottom:2px;flex-shrink:0;position:relative">
             <input type="range" :min="0" :max="h1ReplayData.n-1" :value="h1CursorIdx"
                    @input="h1Scrub(parseInt($event.target.value))"
-                   style="width:100%;accent-color:#3b82f6;cursor:pointer;display:block">
+                   :disabled="h1Resolved || h1Seized"
+                   :style="{opacity: (h1Resolved || h1Seized) ? '0.35' : '1', cursor: (h1Resolved || h1Seized) ? 'not-allowed' : 'pointer'}"
+                   style="width:100%;accent-color:#3b82f6;display:block">
             <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
               <span style="position:absolute;left:0">T+0</span>
               <span style="color:rgba(251,191,36,0.88);position:absolute"
@@ -1124,15 +1131,20 @@
           </span>
         </div>
         <!-- Transport controls: far right, before New Scenario button -->
-        <div v-if="h2ReplayData" style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+        <!-- Locked after remediation decision — prevent rewinding past the decision moment -->
+        <div v-if="h2ReplayData" style="display:flex;align-items:center;gap:4px;flex-shrink:0"
+             :style="{opacity: (h2Resolved || h2PullOutcome) ? '0.4' : '1', pointerEvents: (h2Resolved || h2PullOutcome) ? 'none' : 'auto'}">
           <button @click="h2Reset()"
+                  :disabled="h2Resolved || h2PullOutcome"
                   style="padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--text2);font-size:0.55rem;cursor:pointer"
                   title="Reset to T+0">◀◀</button>
           <button @click="h2Playing ? h2Pause() : h2Play(false)"
+                  :disabled="h2Resolved || h2PullOutcome"
                   style="padding:3px 12px;border-radius:4px;border:1px solid rgba(59,130,246,0.5);background:rgba(59,130,246,0.15);color:#93c5fd;font-size:0.58rem;font-weight:700;cursor:pointer;min-width:54px">
             {{ h2Playing ? '⏸' : '▶' }}
           </button>
           <button @click="h2Play(true)"
+                  :disabled="h2Resolved || h2PullOutcome"
                   style="padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--text2);font-size:0.55rem;cursor:pointer"
                   title="Fast-forward">▶▶</button>
         </div>
@@ -1247,7 +1259,9 @@
           <div style="padding-left:48px;padding-right:12px;padding-bottom:2px;flex-shrink:0;position:relative">
             <input type="range" :min="0" :max="h2ReplayData.n-1" :value="h2CursorIdx"
                    @input="h2Scrub(parseInt($event.target.value))"
-                   style="width:100%;accent-color:#3b82f6;cursor:pointer;display:block">
+                   :disabled="h2Resolved || h2PullOutcome"
+                   :style="{opacity: (h2Resolved || h2PullOutcome) ? '0.35' : '1', cursor: (h2Resolved || h2PullOutcome) ? 'not-allowed' : 'pointer'}"
+                   style="width:100%;accent-color:#3b82f6;display:block">
             <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
               <span style="position:absolute;left:0">T+0</span>
               <span style="color:rgba(251,191,36,0.88);position:absolute"
@@ -1326,7 +1340,7 @@
                 </div>
                 <!-- Two equal-size slate action cards — operator decides, no hand-holding -->
                 <div v-if="!h2Resolved && !h2PullOutcome" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-                  <button @click="h2PullOutcome='false_positive'" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
+                  <button @click="h2Pause(); h2PullOutcome='false_positive'" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
                     <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">🔧 Request Pump Pull</div>
                     <div style="font-size:0.44rem;color:var(--muted)">Mobilize workover rig</div>
                     <div style="font-size:0.44rem;color:var(--muted)">Inspect ESP downhole</div>

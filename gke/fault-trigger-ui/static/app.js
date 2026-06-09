@@ -361,8 +361,24 @@ createApp({
     // ── Scenario Replay: advance state when cursor crosses detection thresholds ──
     h1CursorIdx(val) {
       if (!this.h1ReplayData) return;
+      // ── Scrub BACK past GDC detect → undo all revealed state ──────────────────
+      if (val < this.h1ReplayData.gdc_detect_idx && this.h1FaultTypeRevealed) {
+        if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
+        if (this.h1RagDoc2Timer)   { clearTimeout(this.h1RagDoc2Timer);   this.h1RagDoc2Timer   = null; }
+        if (this.h1RagDoc3Timer)   { clearTimeout(this.h1RagDoc3Timer);   this.h1RagDoc3Timer   = null; }
+        this.h1FaultTypeRevealed  = false;
+        this.h1RagRevealed        = false;
+        this.h1RagDoc2Shown       = false;
+        this.h1RagDoc3Shown       = false;
+        this.h1EvidenceActive     = 0;
+        this.h1ShowEvidenceTable  = false;
+        this.h1PumpOffExcluded    = false;
+        this.h1GasLockExcluded    = false;
+        // Note: h1FaultType intentionally kept (already drawn from replay data);
+        // resetting it would cause the SVG wellbore to flicker during scrub.
+      }
       // Cross GDC detect threshold → reveal fault type + schedule RAG reveal (1.5s)
-        if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
+      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
         this.h1FaultTypeRevealed = true;
         this.h1FaultType = this.h1ReplayData.fault_type;
         if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
@@ -1413,6 +1429,9 @@ createApp({
       this.h1Seized = false;
       this.h1Recovering = false;
       this.h1EvidenceActive = 0;
+      this.h1ShowEvidenceTable = false;
+      this.h1PumpOffExcluded = false;
+      this.h1GasLockExcluded = false;
       this.h1EvidenceWall.forEach(e => { e.active = false; });
       if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
       if (this.h1RagDoc2Timer) { clearTimeout(this.h1RagDoc2Timer); this.h1RagDoc2Timer = null; }
@@ -1520,6 +1539,7 @@ createApp({
     },
     async executeH1Shutdown() {
       // Safe action during Fluid Drawdown: emergency shut-in preserves the pump
+      this.h1Pause(); // lock transport on remediation
       this.h1Resolved = true;
       this.h1Recovering = false;
       this.h1OptA = 'wopt-expired'; this.h1OptALabel = 'EXECUTED';
@@ -1532,6 +1552,7 @@ createApp({
       try { await fetch(`/api/cancel-degrade/${_shutWell}`, {method:'POST'}); } catch(e) {}
     },
     async approveH1VFD() {
+      this.h1Pause(); // lock transport on remediation
       // GDC Advisor view: intercept VFD trim during drawdown — show override modal instead
       if (this.h1FaultType === 'fluid_drawdown' && !this.h1Resolved && this.h1ConsoleTab === 'gdc') {
         this.h1OverrideModalOpen = true;
@@ -2084,6 +2105,7 @@ createApp({
     },
     async dispatchTruckRoll() {
       if(this.h2TruckRollDispatched) return;
+      this.h2Pause(); // lock transport on remediation
       this.h2TruckRollDispatched = true;
       this.h2TruckRollCountdown = 5;
       // Find the most recent unacknowledged slug_flow event for ESP-ALPHA-3
