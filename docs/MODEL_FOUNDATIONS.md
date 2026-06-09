@@ -110,7 +110,7 @@ These classes are not demo-critical for H1/H2/H3. They exist for infrastructure 
 |---|---|---|---|
 | `esp_classifier.ubj` trained on invented ranges, not live FAULT_PROFILES | `gke/inference-api/models/` | ✅ FIXED Session S (June 9) — gas_lock P=0.995, all 5 gates pass | commit in Session S |
 | `esp_health.ubj` endpoint values (psi_end 750, vib 6.5) disagree with live injection | `scripts/retrain_edge_models.py` | ✅ FIXED Session S (June 9) — RMSE=0.00179; SCADA alarm zone at hs≈0.30 | commit in Session S |
-| `vizier_optimize()` uses hardcoded polynomial, not XGBoost model | `gke/fault-trigger-ui/app.py` | ❌ OPEN — `esp_thermal.ubj` not yet built or wired | Next model session |
+| `vizier_optimize()` uses hardcoded polynomial, not XGBoost model | `gke/fault-trigger-ui/app.py` | ✅ FIXED Session AB — `esp_thermal.ubj` trained (max delta ±0.33°F), loaded in HEALTH_MODELS, wired into `evaluate_hz()` with polynomial fallback | commit `b4013a4` |
 | `FAULT_PROFILES["slug_flow"]["vib_range"]` = (2.2, 3.2) — insufficient separation from normal | `gke/fault-trigger-ui/app.py` | ✅ FIXED Session U (June 9) — widened to (4.0, 6.5) | commit in Session U |
 | ESP nominal state ~15% classified as `sand_ingress` (training amps 42–72, simulator amps gauss(75,6)) | `gke/inference-api/models/` | ✅ FIXED Session S (June 9) — training amps reconciled to gauss(75,6) distribution | commit in Session S |
 
@@ -274,8 +274,8 @@ kubectl set image deployment/inference-api inference-api=${DIGEST} -n gdc-pm
 | esp_classifier.ubj v2 — gas_lock P=0.995, all gates pass | ✅ Deployed June 9 Session S | `327d85d` |
 | esp_health.ubj v2 — RMSE=0.00179, SCADA alarm zone at hs≈0.30 | ✅ Deployed June 9 Session S | `327d85d` |
 | esp_health replay verification (external injection_events) | ⚠ Partial — internal holdout passed; full non-circular replay pending | — |
-| esp_thermal model | ❌ Not yet built | — |
-| vizier_optimize() wired to esp_thermal | ❌ Not yet wired | — |
+| esp_thermal model | ✅ Trained Session AB — XGBoost regressor, 50k rows, max delta ±0.33°F | `b4013a4` |
+| vizier_optimize() wired to esp_thermal | ✅ FIXED Session AB — HEALTH_MODELS["esp_thermal"].predict() replaces polynomial; fallback preserved | `b4013a4` |
 | Non-circular confusion matrix (§6) | ⚠ Internal holdout complete (see §6); external replay pending injection_events accumulation | — |
 
 ---

@@ -2,6 +2,16 @@
 
 ---
 
+## Session AB (June 9, 2026) — *esp_thermal.ubj trained + vizier_optimize() hardcoded polynomial replaced — deployed and verified*
+
+**Code committed:** `b4013a4` (feat(h3): Session AB — esp_thermal.ubj regressor + vizier_optimize() wired)
+**fault-trigger-ui image:** `sha256:fa0d96b9`
+**Verified live:** `api/model/status` → `models_loaded: ['esp', 'gas_lift', 'mud_pump', 'top_drive', 'esp_thermal']` · startup log confirms `✅ Loaded thermal constraint model: esp_thermal (164 KB)` ✅
+
+This session resolved the only remaining model integrity violation from `MODEL_FOUNDATIONS.md` §4: `vizier_optimize()` in `app.py` was using a hardcoded polynomial (`temp = 180 + 1.5(hz−45) + 0.15·max(0,hz−58)³`) instead of a real XGBoost model, making the claim "local XGBoost evaluates thermal safety" false. **Fix in two parts:** (1) **Trained `esp_thermal.ubj`:** XGBoost single-feature regressor (input: `vfd_hz`, output: `motor_temp_f`) trained on 50,200 rows generated from the canonical physics polynomial with σ=3°F Gaussian noise, exactly as specified in `MODEL_FOUNDATIONS.md §5C`. Verification gate passed: max prediction delta vs polynomial is ±0.33°F across all test points (45–70 Hz) — well inside the ±3°F spec. (2) **Wired into `app.py`:** `load_health_models()` extended with a new block that loads `esp_thermal.ubj` into `HEALTH_MODELS["esp_thermal"]` at startup (with warning-only fallback if file not found). `evaluate_hz()` inside `vizier_optimize()` now calls `HEALTH_MODELS.get("esp_thermal")` and uses `model.predict(xgb.DMatrix([[hz]], feature_names=["vfd_hz"]))` in place of the inline polynomial — with an honest polynomial fallback if the model is somehow missing. Rebuilt container, pushed `sha256:fa0d96b9`, deployed with explicit digest, confirmed live. **All five MODEL_FOUNDATIONS §4 integrity violations now ✅ CLOSED.** The only remaining gap is the full non-circular external replay through `injection_events` (a verification gap, not a model quality gap). **Next task:** Vizier end-to-end smoke-test (Vertex AI call was still in flight at session wrap) + H3 UI tab review to verify thermal model label.
+
+---
+
 ## Session AA (June 9, 2026) — *Model Foundations precision conflict resolved — docs only, no code changes*
 
 **Code committed:** `58190e2` (docs: Session AA — reconcile MODEL_FOUNDATIONS precision conflict)

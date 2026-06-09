@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session AA — MODEL_FOUNDATIONS precision conflict resolved)
-**git head:** `58190e2` (docs: Session AA — reconcile MODEL_FOUNDATIONS precision conflict)
-**fault-trigger-ui image:** `sha256:5b608508` (Session Z Batch E — no code changes this session)
+**Date:** June 9, 2026 (Session AB — esp_thermal.ubj + vizier_optimize() integrity fix deployed)
+**git head:** `b4013a4` (feat(h3): Session AB — esp_thermal.ubj regressor + vizier_optimize() wired)
+**fault-trigger-ui image:** `sha256:fa0d96b9` (Session AB — esp_thermal model deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -52,9 +52,18 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 - **Taller wellbore SVG (Zone 3):** Container 12%→15%. viewBox 0 0 40 210 → 0 0 44 250. Added surface Christmas tree (X-MAS block at top), 4 perforation pairs, formation/reservoir block at bottom (~9,800 ft MD). Depth tick marks at 3k/6k ft.
 - **SVG document icons:** Replaced plain 📄 emoji with distinct inline SVG badges: waveform acoustic trace (sonic log/shift note), bar chart GOR trend (separator lab report), open book (OEM guide). Each has distinct color (green/blue/purple) + label text.
 
-### NEXT TASKS (Session AA — confirm with user)
-1. **MODEL_FOUNDATIONS precision conflict** — ✅ RESOLVED this session. `MODEL_FOUNDATIONS.md` updated to document June 9 Session S retrain results (gas_lock P=0.995, slug_flow P=0.993, RMSE=0.00179). The 0.815 figure in §9 is now correctly labeled as v1 historical failure. Integrity item closed.
-2. **H3 Optimize tab review:** Check if Vertex AI Vizier endpoint is still live and returning real trials. Smoke-test the full H3 flow. `vizier_optimize()` integrity violation still open (`esp_thermal.ubj` not built — hardcoded polynomial still running).
+### Session AA COMPLETE ✅
+- `MODEL_FOUNDATIONS.md` precision conflict resolved — 0.815 is correct v1 historical record; v2 P=0.995 documented.
+
+### Session AB COMPLETE ✅
+- `esp_thermal.ubj` trained (50,200 rows, single feature `vfd_hz`, max delta ±0.33°F from physics polynomial)
+- `load_health_models()` extended to load `esp_thermal.ubj` at startup — confirmed live in `HEALTH_MODELS` registry
+- `evaluate_hz()` in `vizier_optimize()` now calls `HEALTH_MODELS["esp_thermal"].predict()` with honest polynomial fallback
+- Deployed `sha256:fa0d96b9`, rollout successful, `api/model/status` confirms `esp_thermal` in models_loaded
+
+### NEXT TASKS (no active plan — confirm with user)
+1. **Vizier live trial result:** The background Vizier API call was still running at wrap time — check if Vertex AI Vizier returned trial results or fell back to deterministic sequence. Smoke-test `GET /api/vizier/optimize` end-to-end.
+2. **H3 UI tab review:** Verify the H3 Optimize tab frontend correctly reflects that `motor_temp_f` now comes from a real model (not a hardcoded polynomial). May need a UI label update from "physics model" to "XGBoost thermal model".
 3. **Any presenter walkthrough gaps** — user to identify.
 
 ---
@@ -79,6 +88,7 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 | Wellbore SVG taller + X-MAS tree + formation | ✅ NEW Session Z Batch E | Zone 3: 15% wide, viewBox 250 tall, surface tree, depth ticks, formation block |
 | SVG document icons | ✅ NEW Session Z Batch E | Distinct inline SVG badges (sonic waveform, GOR bar chart, OEM book) replace 📄 emoji |
 | MODEL_FOUNDATIONS vs SESSION_LOG precision conflict | ✅ FIXED Session AA | MODEL_FOUNDATIONS.md updated — v2 results (P=0.995, all gates pass) documented in §6/§8/§9 addendum. 0.815 retained in §9 as correct v1 historical record. |
+| `vizier_optimize()` hardcoded polynomial (H3 integrity) | ✅ FIXED Session AB | `esp_thermal.ubj` trained + deployed; `evaluate_hz()` now calls `HEALTH_MODELS["esp_thermal"].predict()`. Confirmed in HEALTH_MODELS registry. |
 
 ---
 
