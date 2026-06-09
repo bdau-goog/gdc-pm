@@ -2,6 +2,16 @@
 
 ---
 
+## Session Z — Addendum (June 9, 2026) — *Batch E: SCADA pre-alarm sensor tiles, taller wellbore SVG, SVG doc icons — deployed and verified*
+
+**Code committed:** `4083b2a` (feat(ui): Batch E — SCADA pre-alarm sensor tiles, taller wellbore SVG, SVG doc icons)
+**fault-trigger-ui image:** `sha256:5b608508`
+**Verified live:** `curl` grep count = 28 (SONIC, GOR↑, OEM, X-MAS, FORMATION, NOMINAL all confirmed in deployed HTML) ✅
+
+Three UI polish changes in one batched `replace_in_file` call to `index.html`. **SCADA pre-alarm sensor tiles:** The SCADA tab pre-alarm state now shows a live 2×2 sensor tile grid (PIP/Amps/Temp/Vib) in green nominal styling, reading from the same `h1ReplayData[h1CursorIdx]` arrays as the GDC tab. Before this fix, the SCADA pre-alarm state showed only a single monospace "SURVEILLANCE ACTIVE" line — the GDC tab showed live data but SCADA showed nothing, creating an asymmetric presentation an engineer would immediately notice. Now both tabs show the same live telemetry, with SCADA post-alarm showing amber tiles (alarm state) and GDC tab always green until alarm then amber. **Taller wellbore SVG (Zone 3):** Container width 12%→15%. SVG viewBox changed from `0 0 40 210` to `0 0 44 250`. Added a surface Christmas tree (X-MAS label, 3-tier rectangular header, standard wellhead equipment above the casing strings), depth tick marks on the casing at 3k ft and 6k ft with distance labels, 4 perforation pair lines (vs prior 2 pairs), and a formation/reservoir block at the bottom (~9,800 ft MD label). Fluid column y-axis scaled to new viewBox proportions. Gas bubble and sand particle animations y-values updated to match new geometry. **SVG document icons:** The three `h1-rag-doc-card` cards now display distinct inline SVG icons instead of the plain `📄` emoji. Doc 1 (shift note): a clipboard icon with ruled lines (green); Doc 1 (sonic log): a waveform trace on a dark background (green); Doc 2 (separator lab report): a rising 3-bar chart with `GOR↑` label (blue/amber); Doc 3 (OEM guide): an open book with ruled lines and spine (purple). Each SVG is 26×26px, self-contained, and thematically matches the document type. **Next task:** Confirm with user whether any additional Batch F tasks are needed or if session should wrap.
+
+---
+
 ## Session Z (June 9, 2026) — *Batch D: Remediation writes to field_intel — HITL audit loop deployed and verified*
 
 **Code committed:** `58fc8ac` (feat(integrity): Batch D — remediation writes to field_intel via /api/h1/remediation-record)
