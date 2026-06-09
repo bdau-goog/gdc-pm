@@ -2,6 +2,16 @@
 
 ---
 
+## Session X (June 9, 2026) — *Batch B: Bayesian posterior wired, sonic log de-smoking-gunned, GOR modal, Document Realism Gate RT-1…RT-10 — deployed and verified*
+
+**Code committed:** `5767ccf` (feat(integrity): Session X Batch B)
+**fault-trigger-ui image:** `sha256:18155185`
+**Smoke test:** 12/12 assertions, 0 console errors ✅ · API verified: `bayes_pct: 99.6`, `model: esp_health.ubj`
+
+This was a pure integrity and document-realism session, completing all outstanding Batch B RT items. **Bayesian posterior wired:** Implemented `_bayes_discriminate(fault_type)` in `app.py` using naive-Bayes odds-form (Good 1950 / Fagan 1975) with four findings grounded in API RP 11S §7.2 physics (F1 no free gas LR=8, F2 flat casing pressure LR=5, F3 declining fluid column LR=3, F4 nominal GOR LR=2). Prior = 50/50 (honest encoding of telemetry ambiguity). The posterior is computed live on every API call — verified `bayes_pct: 99.6` with `bayes_findings_count: 4` on the live endpoint. This is the final answer to "the confidence is fabricated" (RT-1): the math is on-screen, checkable, and the LRs are labeled as conservative transparent weights (not calibrated). **Document Realism Gate applied (RT-3, RT-4, RT-5, RT-7, RT-9):** Sonic log modal completely redesigned — document body now shows measurements-only: dynamic fluid level 240 ft (within limits at 06:00 — NOT the alarming 150 ft), flat casing pressure, no free gas. All diagnosis, VFD shutdown orders, and "emergency shutdown is the correct action" language removed from document body; moved to GDC verdict layer only (G2/G3 gate). GOR provenance fixed by adding a dedicated `Separator Lab Report` modal (Permian Fluid Analytics) — GOR was never measured by an acoustic survey. `Baker Hughes SONiK™` replaced with `Permian Acoustic Services (SONiX-2)` (G1 gate). `Baker Hughes ESP` in OEM doc card → `Permian ESP Operational Manual`. All `Well A-1` references in modals → `A-3`. **Health fallback fixed (RT-2):** Zone 1 health score now uses safe clamped index — no more `1.0000` on confirmed-fault state. **Expandable evidence table:** Added `▼ Evidence Table` toggle button in GDC Advisor Zone 1, revealing F1–F4 Bayesian update chain with LR, prior_p, post_p columns. Also added `h1GorModalOpen` and `h1ShowEvidenceTable` state variables to `app.js`. **Global clinerules updated:** Section 8 "Internal Reasoning Discipline — Thinking Block Token Economy" added to `~/.clinerules` governing concise, non-verbose internal reasoning to protect token budget. **RED_TEAM_LEDGER.md updated:** RT-1 through RT-10 logged with fix status. **Next task (Batch C):** Scrub-reactive GDC verdict reset + transport lock after remediation + H2 live slug_flow_prob verification.
+
+---
+
 ## Session W (June 9, 2026) — *Integrity Audit + Batch A Fixes: HITL reframe, strip $, remove fake confidence, H1_METHODOLOGY.md — deployed and verified*
 
 **Code committed:** `1e12ad7` (feat(integrity): Session W Batch A)
