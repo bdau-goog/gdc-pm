@@ -37,6 +37,68 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 
 ---
 
+## 3.5 SURVEILLANCE TAB — THE DEMO OPENING HOOK (SCOPE OF OPERATIONS)
+
+### Purpose: Pre-Empt the "Why Can't the Operator Just Read the PDF?" Challenge
+
+The single strongest hostile question in the H1 demo: *"Why can't the SCADA operator just look at the 06:00 dynamic sonic log himself?"*
+
+The answer is not technical — it is operational. A Permian Basin production operator does not manage Well A-3 in isolation. They are responsible for a massive, noisy **Scope of Operations**: hundreds of wells across multiple pads, an alarm flood of active SCADA alerts, and thousands of unstructured field documents arriving every day. There is no time to manually retrieve and cross-reference PDFs during a process upset. GDC does it automatically at fleet scale.
+
+The **Surveillance Tab** makes this argument visually, before anyone asks the question.
+
+### Surveillance Tab Screen Architecture
+
+**Tab label:** `Surveillance` (first tab, left-most in the nav bar)
+
+**Hero Scope Panel (top):**
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  📡 FLEET OPERATIONAL SCOPE — Pad Alpha Production District             │
+│  Monitored Production Pads: 6    Active ESPs: 156    Alarm State: 14   │
+│  Unstructured Document Corpus (AlloyDB pgvector): 8,412 documents      │
+│  GDC AI: ✅ Active · Fleet-scanning every 5 seconds                    │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+**Pad/Field Triage Grid (middle):**
+- 6 field cards (Pad Alpha through Pad Foxtrot), each showing:
+  - Number of ESPs on pad (e.g., Pad Alpha: 26 ESPs)
+  - Current status: 🟢 Nominal / 🟡 Anomaly Active / ⚫ Idle
+  - Active SCADA alarm count per pad
+- **Pad Alpha card is flashing amber:** `⚠ Well A-3 — Unloading Anomaly Active`
+
+**Active Alarm Noise Panel (right side, ~30% width):**
+A scrollable list showing the alarm deluge the operator is handling simultaneously:
+```
+⚠ GLIFT-BRAVO-1   High Vibration (6.2 mm/s)       03:14 ago
+⚠ MUD-RIG42-2     Fluid End Temp High (138°F)       07:22 ago
+⚠ ESP-ALPHA-3     Pump Intake Pressure Declining     00:45 ago  ← THIS ONE
+⚠ TOPDRIVE-RIG42  Gearbox Temp Elevated (198°F)     11:07 ago
+⚠ GLIFT-BRAVO-3   Discharge Pressure Low             19:44 ago
+... 9 more alarms active
+```
+Labels these clearly as: **"14 alarms active in this moment. GDC is reading 8,412 documents for context on all 156 wells simultaneously."**
+
+**Call-to-Action Button:**
+```
+[ 🔍 Deep-Dive — Well A-3 Unloading Anomaly ]
+```
+Clicking this button navigates to the Discern (H1) tab, pre-loaded with Well A-3's scenario. This creates a natural, narratively tight demo flow.
+
+### Implementation Notes
+- **The 6-pad fleet, 156 ESPs, 14 alarms, 8,412 documents** are all static display values for demo purposes. They do not need live polling — these are defensible fleet-representative numbers.
+- **The alarm noise list** is a static list of plausible SCADA alarm text across the 4 asset classes (ESP, gas lift, mud pump, top drive). They should look exactly like real industrial alarm feeds: asset ID + tag description + elapsed time.
+- **The pad triage grid** can show 4–6 pads. Pad Alpha is hardcoded to "Anomaly Active." Others are "Nominal" (green).
+- **No interactive drill-down** on the other pads — the deep-dive CTA for A-3 is the only interactive element. Keeps the presenter in control of the story.
+
+### The Narrative Flow This Creates
+1. **Open on Surveillance tab** → audience sees the scale of the operation (156 ESPs, 14 alarms, 8,412 documents). This is not a toy. This is a real production environment.
+2. **Click `Deep-Dive — Well A-3`** → transition seamlessly to the H1 Discern tab. Pre-selected fault, pre-loaded charts.
+3. The audience has already been shown *why* the operator cannot manually read the 06:00 sonic log: they have 13 other alarms demanding attention.
+
+---
+
 ## 4. H1 SPECIFICATION — THE DISCERN TAB (ESP UNLOADING COMPARATIVE DETECTION SCENARIO)
 
 ### 4.1 The Core Problem: Physically Identical Unloading Telemetry
@@ -65,10 +127,18 @@ When an ESP's **Pump Intake Pressure (PIP)** and **Motor Current (Amps)** both d
 
 On entering the Discern tab:
 1. A call to `GET /api/h1/scenario-replay?fault=<randomly chosen gas_lock or fluid_drawdown>` returns a **complete pre-computed trajectory** — the full physics history of a well degrading from nominal to the unloading state.
-2. The trajectory arrays are precomputed **server-side from `FAULT_PROFILES`** using the same ramp formula as the legacy degrade thread (`((i+1)/N)^k`), so the physics are identical to what the model was trained on.
+2. The trajectory arrays are precomputed **server-side from `FAULT_PROFILES`** using the same ramp formula as the legacy degrade thread (`((i+1)/N)^k`). **Every run is randomized** — the backend samples a new ramp exponent `k ∈ [1.2, 2.5]`, a new starting PIP baseline `∈ [1180–1250 PSI]`, and new fault endpoint targets from the fault profile ranges. No two demo runs are identical. This proves to technical audiences that a live, stochastic model is running — not a prerecorded replay.
 3. The **real XGBoost health model** is run in a sliding window over those trajectory arrays to find the exact index where the health score crosses the detection threshold — this becomes `h1GdcDetectIdx`, and it is a real model output.
-4. The **SCADA hard threshold** (PIP &lt; 800 PSI) is evaluated against the same trajectory to find `h1ScadaAlarmIdx`.
+4. The **SCADA underload alarm rules** (evaluated at every step, fire at the earliest crossing):
+   - **Rule A (Rate):** dPIP/dt < −35 PSI/min sustained over rolling 2.5-min window (ISA-18.2 §5.3)
+   - **Rule B (Pressure floor):** rolling-avg PIP < 1020 PSI (API RP 11S §7.2 underload setpoint) — fires at ~T=10 min under corrected physics
+   - **Rule C (Undercurrent trip):** Motor Amps < 50 A (API RP 11S §7.2 motor underload protection) — fires at ~T=18 min under corrected physics
+   This gives SCADA a fully competent, non-straw-manned alarm that fires at ~T=10 min, with GDC detecting at ~T=6 min via pre-threshold multivariate correlation.
 5. The **fault type** (`gas_lock` or `fluid_drawdown`) is chosen randomly (50/50) and returned — but is hidden from the UI until the GDC Advisor reveals it via L3 document fusion.
+
+**Real-World Failure Timelines (API RP 11S §4.2, OEM guidelines):**
+- **Gas Lock → Thermal Burnout:** An ESP motor running gas-locked, with zero cooling fluid flow, enters thermal runaway. IEEE 117 / API RP 11S limits Class H insulation at 356°F / 180°C. The motor reaches this winding temperature limit in **15–30 minutes** of gas-locked operation. Our 30-minute simulation window precisely matches this real-world failure timeline.
+- **Drawdown → Sand Bridging:** Running a dry ESP drops transport velocity below the critical sand-lift threshold (4.2 ft/s at 52 Hz for typical WTX conditions). Sand and solids settle and bridge the tubing string within **minutes** if VFD trim is incorrectly applied. Spontaneous mechanical failure from dry-running alone occurs in **15–45 minutes** (SPE-174536).
 
 The frontend stores the full trajectory arrays and renders them via a **▶ Play / scrub control**. No live degrade thread, no RabbitMQ, no polling — the chart is a deterministic function of one dataset.
 
@@ -111,8 +181,8 @@ The frontend stores the full trajectory arrays and renders them via a **▶ Play
 1. Draw trajectory arrays (`psi[]`, `amps[]`, `temp[]`, `vib[]`, `t_min[]`) using `FAULT_PROFILES` ramp formula — N=120 steps, same `k` distribution as degrade thread.
 2. Load `esp_health.ubj` (the real trained XGBoost health model). For each sliding window of width W=20 in the trajectory, construct the 8 features the model expects (slopes `dpsi_dt`, `dtemp_dt`, etc.) and call `model.predict()`. Record `health_score[]`.
 3. `h1GdcDetectIdx` = first index where `health_score < 0.65` (the detection threshold).
-4. `h1ScadaAlarmIdx` = first index where `psi < 800`.
-5. Return JSON: `{fault_type, psi, amps, temp, vib, t_min, health_score, gdc_detect_idx, scada_alarm_idx}`.
+4. `h1ScadaAlarmIdx` = earliest index satisfying any of: rate alarm (Rule A dPIP/dt), PIP floor (Rule B: rolling-avg PIP < 1020 PSI), or undercurrent (Rule C: Amps < 50 A). See §4.2 for rule definitions.
+5. Return JSON: `{fault_type, psi, amps, temp, vib, t_min, health_score, gdc_detect_idx, scada_alarm_idx, scada_rule_fired, lead_time_minutes, model_used}`.
 
 **No `fault_type` in the response until the GDC L3 card activates** — the field `fault_type` is omitted from the initial response payload; it arrives only when `GET /api/h1/rag-context?asset=...` is called (see §4.5).
 
@@ -143,7 +213,7 @@ This is computed from `t_min[h1ScadaAlarmIdx] - t_min[h1GdcDetectIdx]`. If the m
 #### 🟡 SCADA View (Sub-Tab 1)
 
 - **Before SCADA alarm idx**: `Sensors within hard limits. No alarm condition.`
-- **After SCADA alarm idx**: `⚠ AMBIGUOUS — Fluid Unloading Detected. PIP &lt; 800 PSI, Amps declining. Cannot distinguish Gas Lock from Reservoir Drawdown on available data.`
+- **After SCADA alarm idx**: `⚠ AMBIGUOUS — Underload alarm fired (PIP rate-of-change or PIP &lt; 1020 PSI). Amps declining. Cannot distinguish Gas Lock from Reservoir Drawdown on available sensor data.`
 - **Action Cards** (using `.h1-action-card` pattern): identical to existing Session N implementation — VFD Speed-Down and Conservative Shutdown, with full descriptive text, "Apply if:" guidance, and velocity risk warning.
 - **Outcome mapping** unchanged from Session N (seizure path, safe shutdown, itemized financial breakdown).
 

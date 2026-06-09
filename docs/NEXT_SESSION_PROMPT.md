@@ -76,7 +76,38 @@ python scripts/verify_classifier_offline.py
 
 ---
 
-### PRIORITY 2: Backend Scenario Replay Physics Update (`app.py`)
+### PRIORITY 2: Build Surveillance Tab (New Opening Hook)
+
+Add a new `Surveillance` tab as the **first tab** in the header nav (before "Discern"). This is a static, no-polling tab — all values are defensible fleet-representative numbers requiring zero backend changes.
+
+**Tab label in HTML:** `Surveillance` (add before the existing "Discern" tab `hdr-tab` div)
+
+**Content (all static — no API calls):**
+1. **Hero Scope Panel** — dark banner with 4 stat metrics:
+   - `Monitored Production Pads: 6`
+   - `Active ESPs: 156`
+   - `Active SCADA Alarms: 14`
+   - `Unstructured Document Corpus: 8,412 documents (AlloyDB pgvector)`
+2. **Pad/Field Triage Grid** — 6 compact field cards (Pad Alpha → Foxtrot):
+   - Each shows: pad name, ESP count, current status dot (green = Nominal, amber = Alert)
+   - Pad Alpha card: amber dot, `⚠ Well A-3 — Unloading Anomaly Active`
+3. **Active Alarm Noise Panel** (right 30%) — static alarm list replicating a real DCS feed:
+   ```
+   ⚠ GLIFT-BRAVO-1   High Vibration (6.2 mm/s)    03:14 ago
+   ⚠ MUD-RIG42-2     Fluid End Temp High (138°F)   07:22 ago
+   ⚠ ESP-ALPHA-3     PIP Declining                  00:45 ago ← THIS ONE
+   ⚠ TOPDRIVE-RIG42  Gearbox Temp Elevated          11:07 ago
+   ⚠ GLIFT-BRAVO-3   Discharge Pressure Low         19:44 ago
+   ... 9 more alarms active
+   ```
+   Caption: `"14 alarms active — GDC scanning 8,412 documents on all 156 ESPs simultaneously"`
+4. **Deep-Dive CTA Button** — `[ 🔍 Deep-Dive — Well A-3 Unloading Anomaly ]` that calls `setMainTab('horizon1')` and triggers `loadH1Scenario()` when clicked.
+
+**Vue state needed:** `mainTab` already exists. The CTA button just calls the existing H1 tab navigation methods. No new backend endpoints required.
+
+---
+
+### PRIORITY 3: Backend Scenario Replay Physics Update (`app.py`)
 
 Update `/api/h1/scenario-replay` (lines 5827–5965):
 1. **`psi_nom`** ramp: start `random.uniform(1180, 1250)`, end `random.uniform(400, 600)` (not 875–1100)
@@ -94,7 +125,7 @@ Update `/api/h1/scenario-replay` (lines 5827–5965):
 
 ---
 
-### PRIORITY 3: H1 Frontend Layout Redesign (`index.html` + `app.js`)
+### PRIORITY 4: H1 Frontend Layout Redesign (`index.html` + `app.js`)
 
 **3a. Move timeline scrubber directly above the 4-stack charts (Left Column only):**
 - Remove the scrubber from its current position (below the banner, spanning full width).
@@ -121,7 +152,7 @@ Update `/api/h1/scenario-replay` (lines 5827–5965):
 
 ---
 
-### PRIORITY 4: Deploy and Verify
+### PRIORITY 5: Deploy and Verify
 
 ```bash
 # Rebuild fault-trigger-ui
