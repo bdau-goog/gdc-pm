@@ -192,14 +192,22 @@ def motor_overheat_reading(asset_id: str) -> dict:
 
 
 def slug_flow_reading(asset_id: str) -> dict:
-    """Slug Flow: multiphase fluid slugging in flowline causes downhole tubing vibration drift.
-    Downhole motor temperature remains flat/nominal. motor_amps is nominal (70–80 A)."""
+    """Slug Flow: in-string multiphase slug loading at the pump intake.
+    Alternating gas/liquid slugs arrive at the intake → cyclic vib, cyclic amps dip, PIP cycles.
+    Motor temperature stays FLAT (no added friction; cooling flow nominally maintained).
+    FAULT_PROFILES vib_range (4.0,6.5) — reconciled Session V.
+    Reference: Baker Hughes Centrilift Gas Handling Guide; SPE-174536-MS §3.4; API RP 11S §4.2."""
+    # Cyclic slug loading: vibration oscillates ± noise around a mean near fault-end range.
+    # Amps swing ±5 A around nominal 75 as gas/liquid slugs alternate at the impeller.
+    # PIP shows mild oscillation (stable wellbore, surface slugging).
+    slug_vib_mean = random.uniform(4.0, 5.5)  # within FAULT_PROFILES vib_range (4.0,6.5)
+    slug_amp_swing = random.gauss(0, 3.0)     # cyclic amps swing (±)
     return {
         "asset_id": asset_id, "asset_type": "esp",
-        "psi":        round(random.gauss(1400, 65), 1),
-        "temp_f":     round(random.gauss(198, 8), 1),
-        "vibration":  round(max(0.5, random.gauss(2.7, 0.25)), 3),
-        "motor_amps": round(max(40.0, random.gauss(75.0, 6.0)), 1),
+        "psi":        round(random.gauss(1400, 55), 1),        # PIP nominally stable, mild oscillation
+        "temp_f":     round(random.gauss(198, 4), 1),           # FLAT — key discriminator vs bearing wear
+        "vibration":  round(max(3.5, random.gauss(slug_vib_mean, 0.35)), 3),  # 4.0–6.5 range
+        "motor_amps": round(max(40.0, random.gauss(75.0, 0) + slug_amp_swing), 1),  # cyclic swing
         "failure_type": "slug_flow", "source": "simulator",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }

@@ -1060,22 +1060,36 @@
 
     </div><!-- tab-horizon1 -->
 
-    <!-- ══ TAB: HORIZON 2 — Flowline Slug Flow & Truck Roll ══ -->
+    <!-- ══ TAB: HORIZON 2 — Classify — ESP Slug Flow Discrimination ══ -->
     <div class="main-tab-content" :class="{active: mainTab==='horizon2'}">
-      <div class="horizon-banner">
-        <div>
-          <h2 class="hb-title">🟡 Horizon 2 — Mid-Term: Flowline Slug Flow & Choke Adjustment</h2>
-          <p class="hb-desc">
-            <strong>Asset:</strong> ESP-ALPHA-3 &nbsp;·&nbsp;
-            <strong>Physics:</strong> Flowline slug flow causes hydraulic tubing vibration (1.1→2.4 mm/s). Motor temp nominal. AI Confidence: initially low, building to ≥90% as slug pattern confirms. &nbsp;·&nbsp;
-            <strong>SCADA trip limit:</strong> 5.0 mm/s — not triggered &nbsp;·&nbsp;
-            <strong>Correct action:</strong> Surface choke adjustment, NOT a $150k well pull
-          </p>
+      <!-- HEADER BAR: title + transport controls + New Scenario -->
+      <div class="horizon-banner" style="padding:8px 20px;gap:10px">
+        <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Classify — ESP Slug Flow Discrimination</h2>
+          <span style="font-size:0.65rem;color:var(--muted)" v-if="h2ReplayData">
+            &nbsp;·&nbsp; Well A-3 &nbsp;·&nbsp; Pad Alpha &nbsp;·&nbsp; ⏺ Scenario Replay
+          </span>
         </div>
-        <div class="hb-actions">
-          <button class="hb-btn btn-inject" @click="launchHorizon2">⚡ Inject Slug Flow Fault</button>
-          <button class="hb-btn btn-reset" @click="resetHorizon2" v-if="h2Injected">↺ Reset</button>
-          <button class="hb-btn btn-info" :class="{active: showH2Info}" @click="showH2Info=!showH2Info">ⓘ Physics &amp; Logic</button>
+        <!-- Transport controls: far right, before New Scenario button -->
+        <div v-if="h2ReplayData" style="display:flex;align-items:center;gap:4px;flex-shrink:0">
+          <button @click="h2Reset()"
+                  style="padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--text2);font-size:0.55rem;cursor:pointer"
+                  title="Reset to T+0">◀◀</button>
+          <button @click="h2Playing ? h2Pause() : h2Play(false)"
+                  style="padding:3px 12px;border-radius:4px;border:1px solid rgba(59,130,246,0.5);background:rgba(59,130,246,0.15);color:#93c5fd;font-size:0.58rem;font-weight:700;cursor:pointer;min-width:54px">
+            {{ h2Playing ? '⏸' : '▶' }}
+          </button>
+          <button @click="h2Play(true)"
+                  style="padding:3px 9px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--text2);font-size:0.55rem;cursor:pointer"
+                  title="Fast-forward">▶▶</button>
+        </div>
+        <div class="hb-actions" style="gap:8px;align-items:center">
+          <button class="hb-btn btn-info" :class="{active: showH2Info}" @click="showH2Info=!showH2Info">ⓘ Physics & Logic</button>
+          <button class="hb-btn btn-inject" @click="loadH2Scenario()"
+                  :disabled="h2ReplayLoading"
+                  style="background:linear-gradient(135deg,#1d4ed8,#1e3a8a)">
+            {{ h2ReplayLoading ? '⏳ Loading…' : '↺ New Scenario' }}
+          </button>
         </div>
       </div>
       <!-- H2 Physics & Logic Info Panel -->
@@ -1134,84 +1148,337 @@
           </div>
         </div>
       </div>
-      <div class="h3-dashboard">
-        <div class="h3-card-grid">
-          <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
-            <div class="h3-card-title">📊 SCADA Telemetry</div>
-            <div class="h3-card-row"><span>Vibration:</span><span class="h3-card-val" style="color:var(--yellow)">{{ h2SensorVib || '2.4 mm/s ↑' }}</span></div>
-            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val" style="color:var(--green)">{{ h2SensorTemp || '198°F — Nominal' }}</span></div>
-            <div class="h3-card-row"><span>SCADA Trip:</span><span class="h3-card-val" style="color:var(--green)">5.0 mm/s — Not Triggered</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em">SCADA Assessment</span>
-              <span class="h3-card-cash" style="color:var(--green)">NOMINAL</span>
-              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">Below 5.0 mm/s trip limit.</span>
-            </div>
-          </div>
-          <div class="h3-card" :class="h2Injected ? 'active-opt' : ''">
-            <div class="h3-card-title">⚡ GDC AI Analysis</div>
-            <div class="h3-card-row"><span>Vibration Drift:</span><span class="h3-card-val" style="color:var(--yellow)">1.1 → 2.4 mm/s</span></div>
-            <div class="h3-card-row"><span>Motor Temp Correlation:</span><span class="h3-card-val" style="color:var(--green)">✓ Flat — No Motor Damage</span></div>
-            <div class="h3-card-row"><span>AI Confidence:</span><span class="h3-card-val" style="color:var(--muted)">— <span style="font-size:0.6rem;font-weight:600;color:var(--muted);text-transform:uppercase">PREVIEW — not yet live</span></span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--yellow);text-transform:uppercase;letter-spacing:0.07em">⚠ Inconclusive</span>
-              <span class="h3-card-cash" style="color:var(--yellow)">SURFACE ISSUE</span>
-              <span style="font-size:0.6rem;color:var(--muted);margin-top:2px">Do NOT pull well — dispatch technician</span>
-            </div>
-          </div>
-          <div class="h3-card" style="border-color:rgba(0,230,118,0.3)">
-            <div class="h3-card-title">💰 Decision Value</div>
-            <div class="h3-card-row"><span>Premature well pull:</span><span class="h3-card-val" style="color:var(--red)">$150,000</span></div>
-            <div class="h3-card-row"><span>Truck roll dispatch:</span><span class="h3-card-val" style="color:var(--green)">$1,500</span></div>
-            <div class="h3-card-row"><span>Choke adjustment:</span><span class="h3-card-val" style="color:var(--green)">$0</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;font-weight:700;color:var(--g-green);text-transform:uppercase;letter-spacing:0.07em">Net Savings</span>
-              <span class="h3-card-cash" style="color:var(--g-green)">$148,500</span>
-            </div>
-          </div>
+
+      <!-- ISA-18.2 HI alarm banner — SCADA has fired, cause still ambiguous -->
+      <div v-if="h2ReplayData && h2CursorIdx >= h2ReplayData.scada_hi_idx && !h2SlugFlowRevealed"
+           style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.28);font-size:0.58rem;color:#fca5a5;font-weight:700">
+        ⚠ ISA-18.2 VIBRATION HIGH ALARM — ESP-ALPHA-3 · vib {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '—' }} mm/s · Cause indeterminate from telemetry alone
+      </div>
+
+      <!-- GDC discriminator banner — after slug_flow probability confirmed -->
+      <div v-if="h2ReplayData && h2SlugFlowRevealed"
+           style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(59,130,246,0.10);border:1px solid rgba(59,130,246,0.28);font-size:0.58rem;color:#93c5fd;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span>⚡ GDC classifies in-string slug flow — pump mechanically healthy — do NOT pull</span>
+        <span v-if="h2ReplayData.lead_time_minutes > 0" style="font-weight:400;color:var(--muted);white-space:nowrap">
+          · {{ h2ReplayData.lead_time_minutes }} min ahead of ISA-18.2 HI alarm
+        </span>
+        <span v-if="!h2ReplayData.classifier_ok" style="color:var(--yellow);font-weight:400">[⚠ FALLBACK_SYNTHETIC]</span>
+      </div>
+
+      <!-- LOADING / NO DATA placeholder -->
+      <div v-if="!h2ReplayData"
+           style="display:flex;flex:1;align-items:center;justify-content:center;flex-direction:column;gap:12px;padding:40px">
+        <div v-if="h2ReplayLoading" style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span class="streaming-dot" style="width:10px;height:10px"></span>
+          <span style="font-size:0.65rem;color:var(--muted)">Computing 120-step trajectory · running XGBoost classifier via inference-api…</span>
         </div>
-        <div class="h3-main-body">
-          <div class="h3-chart-pane">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ GDC AI Forecast — ESP-ALPHA-3 Vibration (Low Confidence)</div>
-            <div id="h2-gdc-chart" style="height:260px"></div>
-            <div style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px">
-              <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:6px">📊 SCADA Chart — Vibration Below Trip Limit</div>
-              <div id="h2-scada-chart" style="height:180px"></div>
-            </div>
-            <!-- Dispatch Button -->
-            <div v-if="h2Injected && !h2TruckRollDispatched && !h2Resolved" style="margin-top:16px;padding:14px;background:rgba(255,179,0,0.06);border:2px solid rgba(255,179,0,0.4);border-radius:8px">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--yellow);margin-bottom:6px">⚠ Recommended Action: Dispatch Truck Roll</div>
-              <div style="font-size:0.7rem;color:var(--text2);margin-bottom:10px">RAG Troubleshooting Guide: <em>"Vibration drift without motor temperature elevation indicates surface flowline slugging. Adjust surface choke valve to stabilize backpressure. Do not pull well."</em></div>
-              <button @click="dispatchTruckRoll" style="padding:9px 20px;border-radius:6px;border:none;background:linear-gradient(135deg,#e65100,#bf360c);color:#fff;font-size:0.78rem;font-weight:700;cursor:pointer">🚛 Dispatch Truck Roll — Adjust Choke Valve</button>
-            </div>
-            <div v-if="h2TruckRollDispatched && !h2Resolved" style="margin-top:16px;padding:14px;background:rgba(255,179,0,0.06);border:1px solid rgba(255,179,0,0.3);border-radius:8px">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--yellow);margin-bottom:4px">🚛 Technician En-Route ({{ h2TruckRollCountdown }}s)…</div>
-              <div style="font-size:0.7rem;color:var(--text2)">Lease operator heading to wellhead to adjust surface choke valve. Vibration should drop to 1.1 mm/s once backpressure is stabilized.</div>
-            </div>
-            <div v-if="h2Resolved" style="margin-top:16px;padding:14px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:8px">
-              <div style="font-size:0.8rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ Choke Valve Adjusted — Slug Flow Suppressed</div>
-              <div style="font-size:0.7rem;color:var(--text2)">Surface choke adjusted. Flow regime stabilized. Downhole vibration dropped to 1.1 mm/s. Mechanically sound ESP confirmed. $148,500 avoided well pull cost.</div>
+        <template v-else>
+          <div style="font-size:1.5rem">⚡</div>
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text2)">Click ↺ New Scenario to begin</div>
+          <div style="font-size:0.60rem;color:var(--muted);max-width:400px;text-align:center;line-height:1.6">
+            GDC precomputes the slug flow trajectory and runs the real XGBoost classifier.
+            Vibration rises cyclically while motor temperature stays flat — the discriminating signal.
+          </div>
+        </template>
+      </div>
+
+      <!-- MAIN BODY: 2-sensor chart (left 56%) + Decision Console + SVG (right 44%) -->
+      <div v-if="h2ReplayData" style="display:flex;gap:0;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden">
+
+        <!-- LEFT: Dual-sensor chart (vib rising + temp flat) + scrubber -->
+        <div :style="{'flex': '0 0 ' + h2SplitPercent + '%', 'maxWidth': h2SplitPercent + '%'}" style="display:flex;flex-direction:column;gap:2px;min-height:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px;flex-shrink:0">
+            📡 DISCRIMINATING SENSORS — VIB rising · TEMP FLAT (key discriminator)
+          </div>
+          <!-- SCRUBBER inside Left Column, padding-left:48px aligns with Plotly margin.l:48 -->
+          <div style="padding-left:48px;padding-right:12px;padding-bottom:2px;flex-shrink:0;position:relative">
+            <input type="range" :min="0" :max="h2ReplayData.n-1" :value="h2CursorIdx"
+                   @input="h2Scrub(parseInt($event.target.value))"
+                   style="width:100%;accent-color:#3b82f6;cursor:pointer;display:block">
+            <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
+              <span style="position:absolute;left:0">T+0</span>
+              <span style="color:rgba(251,191,36,0.88);position:absolute"
+                    :style="{left: (h2ReplayData.gdc_detect_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC▲</span>
+              <span style="color:var(--red);position:absolute"
+                    :style="{left: (h2ReplayData.scada_hi_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">HI▲</span>
+              <span style="position:absolute;right:0">T+{{ h2ReplayData.t_min[h2ReplayData.n-1] }} min</span>
             </div>
           </div>
-          <div class="h3-trials-pane" style="overflow-y:auto">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:10px">📄 RAG Context & Troubleshooting Evidence</div>
-            <div v-for="item in h2FeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
-              <div class="fi-top">
-                <span class="fi-icon">{{ item.icon }}</span>
-                <div style="flex:1">
-                  <div class="fi-headline">{{ item.headline }}</div>
-                  <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
-                    <span class="fi-source">{{ item.source }}</span>
-                    <span class="fi-ts">{{ item.ts_label }}</span>
+          <!-- 2-sensor Plotly chart fills all available height -->
+          <div id="h2-replay-chart" style="width:100%;flex:1;min-height:280px"></div>
+        </div>
+
+        <!-- Drag handle — resize left/right columns; dblclick resets to 56% -->
+        <div class="h1-splitter" @mousedown="initH2SplitterDrag" @dblclick="h2SplitPercent=56" style="margin:0 2px"></div>
+
+        <!-- RIGHT: Decision Console + shared SVG wellbore strip -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-height:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px 3px;flex-shrink:0">
+            ⚖ DECISION CONSOLE
+          </div>
+
+          <!-- SUB-TAB BAR -->
+          <div class="h1-sub-tab-bar" style="flex-shrink:0">
+            <button class="h1-sub-tab-btn" :class="{active: h2ConsoleTab==='scada'}" @click="h2ConsoleTab='scada'">
+              🟡 SCADA View
+            </button>
+            <button class="h1-sub-tab-btn" :class="{active: h2ConsoleTab==='gdc'}" @click="h2ConsoleTab='gdc'">
+              🟢 GDC Advisor
+            </button>
+          </div>
+
+          <!-- Inner row: console area + SVG wellbore strip (shared, always visible) -->
+          <div style="flex:1;display:flex;min-height:0;overflow:hidden">
+
+            <!-- ── SCADA VIEW ── -->
+            <div v-show="h2ConsoleTab==='scada'" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;padding:8px 8px;gap:6px">
+              <!-- Pre-HI alarm: quiet ISA-101 slate -->
+              <div v-if="h2CursorIdx < h2ReplayData.scada_hi_idx"
+                   style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:20px">
+                <div style="font-family:var(--mono);font-size:0.56rem;color:rgba(100,116,139,0.5);letter-spacing:0.10em;text-align:center;line-height:2.2">
+                  WELL A-3 — SURVEILLANCE ACTIVE<br>
+                  ALL SENSORS WITHIN CONFIGURED LIMITS<br>
+                  VIB {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '—' }} mm/s &nbsp;|&nbsp; TEMP {{ h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '—' }}°F
+                </div>
+              </div>
+              <!-- Post-HI alarm: ISA-18.2 industrial layout -->
+              <div v-if="h2CursorIdx >= h2ReplayData.scada_hi_idx">
+                <!-- ISA-18.2 amber alarm banner -->
+                <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.35);border-radius:4px;padding:6px 12px;margin-bottom:8px">
+                  <div style="font-family:var(--mono);font-size:0.58rem;color:rgba(251,191,36,0.9);font-weight:700;letter-spacing:0.06em">⚠ VIBRATION HIGH — ESP-ALPHA-3</div>
+                  <div style="font-family:var(--mono);font-size:0.44rem;color:rgba(251,191,36,0.5);margin-top:2px">ISA-18.2 H ALARM · INVESTIGATION REQUIRED</div>
+                </div>
+                <!-- 2×2 monospace tag grid -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
+                  <div style="background:var(--surf);border:1px solid rgba(251,191,36,0.4);border-radius:4px;padding:6px 8px">
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">VIB (mm/s) · H ALARM</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.9)">{{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '—' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">H:4.0 · HH:5.0</div>
+                  </div>
+                  <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">TEMP (°F) · NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(74,222,128,0.8)">{{ h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '—' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">HL:260 · NOMINAL</div>
+                  </div>
+                  <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">PIP (PSI) · NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(148,163,184,0.8)">{{ h2ReplayData.psi[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.psi[h2CursorIdx]).toFixed(0) : '—' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">LL:800 · NOMINAL</div>
+                  </div>
+                  <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">AMPS (A) · NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(148,163,184,0.8)">{{ h2ReplayData.amps[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.amps[h2CursorIdx]).toFixed(1) : '—' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">LL:40 · NOMINAL</div>
+                  </div>
+                </div>
+                <!-- Two equal-size slate action cards — operator decides, no hand-holding -->
+                <div v-if="!h2Resolved && !h2PullOutcome" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
+                  <button @click="h2PullOutcome='false_positive'" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
+                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">🔧 Request Pump Pull</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Mobilize workover rig</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Inspect ESP downhole</div>
+                  </button>
+                  <button @click="h2Resolved=true" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
+                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">🚛 Dispatch Surface Tech</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Truck roll to wellsite</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Check flowline & choke</div>
+                  </button>
+                </div>
+                <!-- False-positive outcome (chose pump pull) -->
+                <div v-if="h2PullOutcome==='false_positive'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
+                  <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">❌ PREMATURE PUMP PULL — ESP WAS MECHANICALLY HEALTHY</div>
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.50rem;line-height:1.7">
+                    <span style="color:var(--text2)">Pull-rig (3d × $14k/day · WTX spot rate)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
+                    <span style="color:var(--text2)">ESP motor + cable + gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$68,000</span>
+                    <span style="color:var(--text2)">Deferred production (5d)</span><span style="color:var(--red);font-weight:700;text-align:right">$40,000</span>
+                    <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Unnecessary Capex Waste</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$150,000</span>
+                  </div>
+                </div>
+                <!-- Truck roll outcome (chose surface tech) -->
+                <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:6px">
+                  <div style="font-size:0.58rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ SURFACE TECH DISPATCHED — CHOKE VALVE ADJUSTMENT</div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Technician en-route to adjust surface choke backpressure. Motor temperature remained flat throughout — pump downhole confirmed healthy. $148,500 workover avoided.</div>
+                </div>
+              </div>
+            </div><!-- /scada-view -->
+
+            <!-- ── GDC ADVISOR VIEW ── -->
+            <div v-show="h2ConsoleTab==='gdc'" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden;min-height:0">
+
+              <!-- ZONE 1: Full-width assessment headline -->
+              <div style="flex-shrink:0;padding:5px 8px 4px;border-bottom:1px solid var(--border)">
+                <!-- Quiet baseline: before GDC detect -->
+                <div v-if="h2CursorIdx < h2ReplayData.gdc_detect_idx"
+                     style="font-family:var(--mono);font-size:0.44rem;color:rgba(100,116,139,0.45);letter-spacing:0.08em;line-height:1.6">
+                  WELL A-3 — GDC SCANNING · VIBRATION TREND OBSERVED · TEMPERATURE NOMINAL
+                </div>
+                <!-- Scanning: at gdc_detect_idx, before slug reveal -->
+                <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2SlugFlowRevealed"
+                     style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.44rem;color:#93c5fd;letter-spacing:0.06em">
+                  <span class="streaming-dot"></span>
+                  SLUG FLOW {{ h2ReplayData.slug_flow_prob[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.slug_flow_prob[h2CursorIdx])*100).toFixed(0) : '—' }}% · RETRIEVING FIELD CONTEXT VIA PGVECTOR RAG…
+                </div>
+                <!-- GDC verdict: after slug_flow revealed -->
+                <div v-if="h2SlugFlowRevealed"
+                     style="background:rgba(21,50,80,0.4);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px">
+                  <div style="font-family:var(--mono);font-size:0.50rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">⚡ IN-STRING SLUG FLOW CONFIRMED · PUMP HEALTHY</div>
+                  <div style="font-size:0.44rem;color:var(--text2);margin-top:2px;line-height:1.5">
+                    VIB rising + TEMP FLAT = cyclic hydraulic loading at pump intake · no motor friction · cooling intact
+                    <span style="color:rgba(74,222,128,0.7);margin-left:8px">slug_flow {{ h2ReplayData.slug_flow_prob[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.slug_flow_prob[h2CursorIdx])*100).toFixed(0) : '—' }}% confidence</span>
                   </div>
                 </div>
               </div>
-              <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
-            </div>
-            <div v-if="h2GemmaFinding" class="gemma-finding" style="margin-top:8px">{{ h2GemmaFinding }}</div>
-            <div v-if="!h2Injected" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:12px 0">Click "Inject Slug Flow Fault" above to run this scenario.</div>
-          </div>
-        </div>
-      </div>
+
+              <!-- ZONES 2+3 in a flex row -->
+              <div style="flex:1;display:flex;min-height:0;overflow:hidden">
+
+                <!-- ZONE 2 LEFT (58%): Action cards + outcomes -->
+                <div style="flex:0 0 58%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 6px 7px 10px;gap:5px;border-right:1px solid var(--border)">
+                  <!-- Pre-detect: locked -->
+                  <div v-if="h2CursorIdx < h2ReplayData.gdc_detect_idx" style="opacity:0.3;pointer-events:none">
+                    <div style="border:1px solid var(--border);border-radius:6px;padding:9px;background:var(--surf)">
+                      <div style="font-size:0.56rem;font-weight:700;color:var(--green)">✔ Context-aware recommendation</div>
+                      <div style="font-size:0.48rem;color:var(--muted);margin-top:3px">Available after GDC classifies slug_flow ≥ 70%</div>
+                    </div>
+                    <div style="font-size:0.44rem;color:rgba(100,116,139,0.4);text-align:center;margin-top:5px">🔒 GDC slug_flow probability building…</div>
+                  </div>
+                  <!-- Post-detect, pre-RAG: scanning -->
+                  <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2SlugFlowRevealed" class="h1-rag-pending">
+                    <span class="streaming-dot"></span>
+                    &nbsp;Retrieving field context via pgvector RAG…
+                  </div>
+                  <!-- Post-RAG: action cards + outcomes -->
+                  <template v-if="h2SlugFlowRevealed">
+                    <!-- Active choices -->
+                    <div v-if="!h2Resolved && !h2PullOutcome" style="display:flex;flex-direction:column;gap:5px">
+                      <button @click="h2Resolved=true" class="h1-action-card h1-card-green">
+                        <div class="h1-card-header">✔ GDC RECOMMENDED: Dispatch Surface Truck Roll</div>
+                        <div class="h1-card-sub">Surface tech to adjust choke valve · $1,500</div>
+                        <div class="h1-card-desc">In-string slug loading confirmed — pump healthy. VIB cyclic, TEMP flat. Surface choke backpressure adjustment resolves. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">[WTX lease op. labor · mileage · choke cal.]</span></div>
+                      </button>
+                      <button @click="h2PullOutcome='false_positive'" class="h1-action-card h1-card-contraindicated">
+                        <div class="h1-card-header">❌ GDC CONTRAINDICATED: Request Pump Pull</div>
+                        <div class="h1-card-sub">Pump is mechanically healthy — workover not justified</div>
+                        <div class="h1-card-desc">~$150k: 3d rig × $14k/day + motor + cable + deferred prod. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">[WTX spot rig $14k/day × 3d · OEM motor]</span></div>
+                      </button>
+                    </div>
+                    <!-- Truck roll resolved -->
+                    <div v-if="h2Resolved && !h2PullOutcome" class="h1-outcome-resolved">
+                      <div style="font-weight:700;margin-bottom:4px">✅ CHOKE VALVE ADJUSTED — SLUG FLOW SUPPRESSED</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Surface backpressure stabilized. Vibration returning to nominal. Motor temperature flat throughout — pump confirmed healthy.<br><span style="color:rgba(74,222,128,0.7)">$148,500 unnecessary workover avoided · in-string slug flow resolved at surface</span></div>
+                    </div>
+                    <!-- False-positive (pulled healthy pump) -->
+                    <div v-if="h2PullOutcome==='false_positive'" class="h1-outcome-seized">
+                      <div style="font-weight:700;margin-bottom:6px">❌ FALSE-POSITIVE PUMP PULL — GDC WARNING IGNORED</div>
+                      <div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:0.54rem;line-height:1.7">
+                        <span style="color:var(--text2)">Pull-rig (3d × $14k/day)</span><span style="color:var(--red);font-weight:700;text-align:right">$42,000</span>
+                        <span style="color:var(--text2)">ESP motor + cable + gauges</span><span style="color:var(--red);font-weight:700;text-align:right">$68,000</span>
+                        <span style="color:var(--text2)">Deferred production (5d)</span><span style="color:var(--red);font-weight:700;text-align:right">$40,000</span>
+                        <span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px">Capex Waste (pump was healthy)</span><span style="color:var(--red);font-weight:700;border-top:1px solid rgba(239,68,68,0.3);padding-top:3px;text-align:right">~$150,000</span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- ZONE 2 RIGHT (30%): Vertical Document Stack -->
+                <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
+                  <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)</div>
+                  <!-- Doc 1: Surface Choke Log (fires with RAG) -->
+                  <div v-if="h2SlugFlowRevealed" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">🔧</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Surface Choke Valve Log<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">3 adjustments this tour · backpressure unstable</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.93</div>
+                    </div>
+                  </div>
+                  <!-- Doc 2: Separator Test (revealed ~2s after RAG) -->
+                  <div v-if="h2RagDoc2Shown" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">🧪</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Separator Test Report<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">1.8 bbl/cycle · 14-min period · GOR rising</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.88</div>
+                    </div>
+                  </div>
+                  <!-- Doc 3: Shift Note (revealed ~3.5s after RAG) -->
+                  <div v-if="h2RagDoc3Shown" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">📋</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Night Shift Note<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">"Pumping rough but temp is normal"</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.81</div>
+                    </div>
+                  </div>
+                  <!-- Placeholder skeletons before RAG fires -->
+                  <div v-if="!h2SlugFlowRevealed" style="flex:1;display:flex;flex-direction:column;gap:5px;opacity:0.25">
+                    <div v-for="n in 3" :key="n" style="height:40px;border:1px dashed rgba(100,116,139,0.2);border-radius:4px"></div>
+                  </div>
+                </div>
+
+              </div><!-- /zones-2-3 -->
+            </div><!-- /gdc-view -->
+
+            <!-- ── SHARED SVG WELLBORE STRIP (visible on BOTH tabs) ── -->
+            <div style="flex:0 0 80px;display:flex;flex-direction:column;padding:3px 3px;border-left:1px solid rgba(100,116,139,0.12);min-height:0">
+              <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">WELLBORE</div>
+              <!-- SVG wellbore — H2: surface slug animation, healthy green downhole pump -->
+              <svg viewBox="0 0 50 220" style="width:100%;flex:1;overflow:visible">
+                <!-- Surface flowline (horizontal at top) -->
+                <rect x="2" y="8" width="46" height="5" rx="2" fill="rgba(100,116,139,0.2)" stroke="rgba(100,116,139,0.3)" stroke-width="0.8"/>
+                <text x="25" y="12.5" text-anchor="middle" fill="#64748b" font-size="3.5" font-family="Inter,sans-serif">FLOWLINE</text>
+                <!-- Surface slug animation: oscillating pulses, opacity grows with cursor -->
+                <g :style="{opacity: h2ReplayData ? Math.min(1, h2CursorIdx / Math.max(1, h2ReplayData.n-1)) : 0}">
+                  <ellipse cx="12" cy="10.5" rx="4" ry="2"
+                           :fill="'rgba(255,179,0,' + Math.min(0.7, 0.1 + 0.6*(h2CursorIdx/Math.max(1,h2ReplayData.n-1))) + ')'">
+                    <animate attributeName="cx" values="2;48;2" dur="3.5s" repeatCount="indefinite"/>
+                  </ellipse>
+                  <ellipse cx="32" cy="10.5" rx="3" ry="1.5"
+                           :fill="'rgba(255,179,0,' + Math.min(0.5, 0.05 + 0.45*(h2CursorIdx/Math.max(1,h2ReplayData.n-1))) + ')'">
+                    <animate attributeName="cx" values="48;2;48" dur="4.8s" repeatCount="indefinite"/>
+                  </ellipse>
+                </g>
+                <!-- Wellhead -->
+                <rect x="16" y="14" width="18" height="6" rx="1.5" fill="rgba(100,116,139,0.45)"/>
+                <text x="25" y="18.5" text-anchor="middle" fill="#64748b" font-size="4" font-family="Inter,sans-serif">WH</text>
+                <!-- Tubing string (vertical) -->
+                <line x1="18" y1="20" x2="18" y2="162" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
+                <line x1="32" y1="20" x2="32" y2="162" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
+                <!-- Fluid column (slug_flow: PIP stays nominally stable) -->
+                <rect x="19"
+                      :y="162 - Math.max(3, Math.min(45, h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 45 : 38))"
+                      width="12"
+                      :height="Math.max(3, Math.min(45, h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 45 : 38))"
+                      fill="rgba(59,130,246,0.28)"
+                      stroke="rgba(59,130,246,0.3)" stroke-width="0.5"/>
+                <!-- Intake label -->
+                <line x1="10" y1="152" x2="18" y2="152" stroke="rgba(100,116,139,0.25)" stroke-width="0.6" stroke-dasharray="1.5,1.5"/>
+                <text x="8" y="152" text-anchor="end" fill="rgba(100,116,139,0.35)" font-size="3" font-family="Inter,sans-serif">INTAKE</text>
+                <!-- Pump — GREEN (healthy, not the problem) -->
+                <rect x="15" y="153" width="20" height="8" rx="1.5" fill="rgba(16,185,129,0.35)" stroke="rgba(74,222,128,0.5)" stroke-width="0.8"/>
+                <text x="25" y="159" text-anchor="middle" fill="rgba(74,222,128,0.9)" font-size="3.5" font-family="Inter,sans-serif" font-weight="600">PUMP ✓</text>
+                <!-- Motor — GREEN (temp flat = no thermal stress) -->
+                <rect x="15" y="163" width="20" height="13" rx="1.5" fill="rgba(16,185,129,0.25)" stroke="rgba(74,222,128,0.4)" stroke-width="0.8"/>
+                <text x="25" y="169" text-anchor="middle" fill="rgba(74,222,128,0.8)" font-size="3.5" font-family="Inter,sans-serif" font-weight="600">MOTOR ✓</text>
+                <text x="25" y="174" text-anchor="middle" fill="rgba(148,163,184,0.65)" font-size="3" font-family="Inter,sans-serif">
+                  {{ h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) + '°F' : '—' }}
+                </text>
+                <!-- Perforation marks -->
+                <line x1="15" y1="183" x2="10" y2="183" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="35" y1="183" x2="40" y2="183" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="15" y1="187" x2="10" y2="187" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="35" y1="187" x2="40" y2="187" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <text x="25" y="196" text-anchor="middle" fill="rgba(100,116,139,0.45)" font-size="3.5" font-family="Inter,sans-serif">PERFS</text>
+                <!-- Legend labels -->
+                <text x="25" y="205" text-anchor="middle" fill="rgba(255,179,0,0.55)" font-size="3" font-family="Inter,sans-serif">▲ surface</text>
+                <text x="25" y="210" text-anchor="middle" fill="rgba(255,179,0,0.55)" font-size="3" font-family="Inter,sans-serif">slugging</text>
+              </svg>
+              <!-- Slug flow probability display -->
+              <div style="text-align:center;font-size:0.30rem;font-family:var(--mono);color:rgba(100,116,139,0.4);flex-shrink:0;padding-top:1px;line-height:1.4">
+                slug={{ h2ReplayData.slug_flow_prob && h2ReplayData.slug_flow_prob[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.slug_flow_prob[h2CursorIdx])*100).toFixed(0)+'%' : '—' }}
+              </div>
+            </div><!-- /shared SVG wellbore strip -->
+
+          </div><!-- /inner row -->
+        </div><!-- /decision-col -->
+      </div><!-- /main body -->
     </div><!-- tab-horizon2 -->
 
     <!-- ══ TAB: HORIZON 3 — Bayesian Optimization Game ══ -->

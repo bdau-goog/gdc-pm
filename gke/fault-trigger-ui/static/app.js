@@ -178,6 +178,22 @@ createApp({
       h2TruckRollInterval: null,
       h2DegPollTimer: null,
 
+      // ── H2 Scenario Replay state (Session V) ─────────────────────────────
+      h2ReplayData: null,          // full trajectory from /api/h2/scenario-replay
+      h2ReplayLoading: false,      // API fetch in progress
+      h2CursorIdx: 0,              // scrubber position (0..N-1)
+      h2Playing: false,            // auto-advance timer running
+      h2PlayTimer: null,           // setInterval handle
+      h2SlugFlowRevealed: false,   // true once cursor >= gdc_detect_idx (+1.5s)
+      h2RagDoc2Shown: false,       // Separator Test card (+2s after slug revealed)
+      h2RagDoc3Shown: false,       // Shift Note card (+3.5s after slug revealed)
+      h2RagRevealTimer: null,      // setTimeout for 1.5s delay after GDC detect
+      h2RagDoc2Timer: null,
+      h2RagDoc3Timer: null,
+      h2ConsoleTab: 'scada',       // 'scada' | 'gdc'
+      h2SplitPercent: 56,          // left column width %
+      h2PullOutcome: null,         // 'false_positive' if SCADA path chose pump pull
+
       // Physics & Logic Info Panel state (Fix 10)
       showH1Info: false,
       showH2Info: false,
@@ -360,6 +376,27 @@ createApp({
       }
       // Update Plotly cursor line via relayout (shape index 2 = cursor in the 4-stack chart)
       this._updateH1ReplayCursor(val);
+    },
+
+    // H2 Scenario Replay: advance state when cursor crosses detection thresholds
+    h2CursorIdx(val) {
+      if (!this.h2ReplayData) return;
+      // Cross GDC detect threshold → reveal slug_flow + schedule sequential doc reveals
+      if (!this.h2SlugFlowRevealed && val >= this.h2ReplayData.gdc_detect_idx) {
+        if (this.h2RagRevealTimer) clearTimeout(this.h2RagRevealTimer);
+        this.h2RagRevealTimer = setTimeout(() => {
+          this.h2SlugFlowRevealed = true;
+          if (this.h2RagDoc2Timer) clearTimeout(this.h2RagDoc2Timer);
+          if (this.h2RagDoc3Timer) clearTimeout(this.h2RagDoc3Timer);
+          this.h2RagDoc2Timer = setTimeout(() => { this.h2RagDoc2Shown = true; }, 2000);
+          this.h2RagDoc3Timer = setTimeout(() => { this.h2RagDoc3Shown = true; }, 3500);
+        }, 1500);
+      }
+      // Update Plotly cursor line (shape index 2 in h2-replay-chart)
+      if (this.h2ReplayData) {
+        const t = this.h2ReplayData.t_min[val] || 0;
+        try { Plotly.relayout('h2-replay-chart', { 'shapes[2].x0': t, 'shapes[2].x1': t }); } catch {}
+      }
     },
   },
 
@@ -1157,13 +1194,9 @@ createApp({
           }, 5000);
         }
       }
-      if (tab === 'horizon2' && this.h2Injected && !this.h2Resolved) {
-        this.h2DegPollTimer = setInterval(async()=>{
-          const r=await fetch('/api/degrade-status/ESP-ALPHA-3');
-          if(r.ok){const d=await r.json();if(d.is_active){const cs=this.activeDegradesMap['ESP-ALPHA-3']?.current_sensors||{};if(cs.vib)this.h2SensorVib=cs.vib.toFixed(2)+' mm/s ↑';}}
-          const rfd=await fetch('/api/plot/forecast-data/ESP-ALPHA-3');
-          if(rfd.ok){const d=await rfd.json();if(d.sensors)this._renderH2Charts(d);}
-        }, 5000);
+      // Auto-load H2 Scenario Replay on tab open if none loaded yet
+      if (tab === 'horizon2' && !this.h2ReplayData && !this.h2ReplayLoading) {
+        this.$nextTick(() => this.loadH2Scenario());
       }
       if (tab === 'horizon3' && this.optTrials.length === 0) {
         this.$nextTick(() => this.runVizierOptimize());
@@ -1898,6 +1931,154 @@ createApp({
       this.h2SensorVib=null; this.h2SensorTemp=null; this.h2FeedItems=[]; this.h2GemmaFinding='';
       try { Plotly.purge('h2-gdc-chart'); Plotly.purge('h2-scada-chart'); } catch{}
       this.showToast('↺ Horizon 2 reset','var(--green)');
+    },
+
+    // ── H2 Scenario Replay methods (Session V) ────────────────────────────
+    async loadH2Scenario() {
+      this.h2Pause();
+      this.h2CursorIdx = 0;
+      this.h2SlugFlowRevealed = false;
+      this.h2RagDoc2Shown = false;
+      this.h2RagDoc3Shown = false;
+      this.h2Resolved = false;
+      this.h2PullOutcome = null;
+      this.h2ConsoleTab = 'scada';
+      if (this.h2RagRevealTimer) { clearTimeout(this.h2RagRevealTimer); this.h2RagRevealTimer = null; }
+      if (this.h2RagDoc2Timer)   { clearTimeout(this.h2RagDoc2Timer);   this.h2RagDoc2Timer   = null; }
+      if (this.h2RagDoc3Timer)   { clearTimeout(this.h2RagDoc3Timer);   this.h2RagDoc3Timer   = null; }
+      this.h2ReplayData = null;
+      this.h2ReplayLoading = true;
+      try {
+        const r = await fetch('/api/h2/scenario-replay');
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        this.h2ReplayData = data;
+        this.h2ReplayLoading = false;
+        this.$nextTick(() => { this._renderH2ReplayChart(); });
+      } catch(e) {
+        this.h2ReplayLoading = false;
+        this.showToast(`H2 scenario load failed: ${e.message}`, 'var(--red)');
+      }
+    },
+    h2Play(fast = false) {
+      if (!this.h2ReplayData) return;
+      this.h2Pause();
+      this.h2Playing = true;
+      const ms = fast ? 30 : 100;
+      this.h2PlayTimer = setInterval(() => {
+        if (this.h2CursorIdx >= this.h2ReplayData.n - 1) { this.h2Pause(); return; }
+        this.h2CursorIdx++;
+      }, ms);
+    },
+    h2Pause() {
+      this.h2Playing = false;
+      if (this.h2PlayTimer) { clearInterval(this.h2PlayTimer); this.h2PlayTimer = null; }
+    },
+    h2Reset() {
+      this.h2Pause();
+      this.h2CursorIdx = 0;
+      this.h2SlugFlowRevealed = false;
+      this.h2RagDoc2Shown = false;
+      this.h2RagDoc3Shown = false;
+      this.h2Resolved = false;
+      this.h2PullOutcome = null;
+      if (this.h2RagRevealTimer) { clearTimeout(this.h2RagRevealTimer); this.h2RagRevealTimer = null; }
+      if (this.h2RagDoc2Timer)   { clearTimeout(this.h2RagDoc2Timer);   this.h2RagDoc2Timer   = null; }
+      if (this.h2RagDoc3Timer)   { clearTimeout(this.h2RagDoc3Timer);   this.h2RagDoc3Timer   = null; }
+    },
+    h2Scrub(idx) {
+      if (!this.h2ReplayData) return;
+      this.h2CursorIdx = Math.max(0, Math.min(idx, this.h2ReplayData.n - 1));
+    },
+    initH2SplitterDrag(e) {
+      e.preventDefault();
+      const startX   = e.clientX;
+      const startPct = this.h2SplitPercent;
+      const bodyW    = (e.target.parentElement || document.body).offsetWidth;
+      e.target.classList.add('dragging');
+      const onMove = (ev) => {
+        const dx   = ev.clientX - startX;
+        const dPct = (dx / bodyW) * 100;
+        this.h2SplitPercent = Math.max(25, Math.min(75, startPct + dPct));
+        this.$nextTick(() => {
+          try { Plotly.Plots.resize(document.getElementById('h2-replay-chart')); } catch(err) {}
+        });
+      };
+      const onUp = () => {
+        e.target.classList.remove('dragging');
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    _renderH2ReplayChart() {
+      const d = this.h2ReplayData;
+      if (!d || !d.vib || !d.temp) return;
+      const cursorT = d.t_min[this.h2CursorIdx] || 0;
+      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;
+      const scadaT  = d.t_min[d.scada_hi_idx]    || 0;
+      const xMax    = d.t_min[d.n - 1] || 30;
+
+      // Two stacked subplots: Vibration (rising) + Temperature (flat) — the discriminating pair
+      const traces = [
+        { x: d.t_min, y: d.vib,  name: 'Vib (mm/s)',  type: 'scatter', mode: 'lines',
+          line: {color:'#a78bfa', width:1.8}, xaxis:'x', yaxis:'y',  showlegend:true },
+        // ISA-18.2 HI alarm threshold line on vib chart
+        { x: [0, xMax], y: [d.scada_hi_threshold, d.scada_hi_threshold],
+          name: 'ISA HI (4.0)', type: 'scatter', mode: 'lines',
+          line: {color:'rgba(239,68,68,0.6)', width:1.2, dash:'dash'},
+          xaxis:'x', yaxis:'y', showlegend:true, hoverinfo:'skip' },
+        { x: d.t_min, y: d.temp, name: 'Temp (°F)',   type: 'scatter', mode: 'lines',
+          line: {color:'#60a5fa', width:1.8}, xaxis:'x', yaxis:'y2', showlegend:true },
+      ];
+
+      const shapes = [
+        // GDC detection (amber dash)
+        { type:'line', x0:gdcT,    x1:gdcT,    y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(251,191,36,0.88)', width:2, dash:'dash'} },
+        // SCADA HI (red dash)
+        { type:'line', x0:scadaT,  x1:scadaT,  y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(239,68,68,0.88)',   width:2, dash:'dash'} },
+        // Cursor (gray dot) — shape index 2, updated cheaply via relayout
+        { type:'line', x0:cursorT, x1:cursorT, y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(148,163,184,0.6)',  width:1.5, dash:'dot'} },
+      ];
+
+      const annotations = [
+        { x:gdcT,   y:1.01, xref:'x', yref:'paper', text:'<b>GDC ▲</b>',
+          showarrow:false, xanchor:'left', yanchor:'bottom',
+          font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
+        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>SCADA HI ▲</b>',
+          showarrow:false, xanchor:'left', yanchor:'bottom',
+          font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
+      ];
+
+      const commonYAxis = {gridcolor:'#1e2a38', zeroline:false, showline:false,
+                           tickfont:{size:8}, nticks:4};
+      const xRange = xMax > 30 ? [xMax - 30, xMax] : [0, Math.max(30, xMax)];
+
+      Plotly.newPlot('h2-replay-chart', traces, {
+        paper_bgcolor:'#0b0c10', plot_bgcolor:'#0f1318',
+        font:{color:'#e0e0e0', family:'Inter,sans-serif', size:9},
+        margin:{l:48, r:12, t:18, b:30},
+        grid:{rows:2, columns:1, pattern:'independent', roworder:'top to bottom', ygap:0.08},
+        xaxis:  {gridcolor:'#1e2a38', zeroline:false, range:xRange,
+                 title:{text:'Time (min)', font:{size:8, color:'#5a6a7a'}},
+                 anchor:'y2', showticklabels:true, tickfont:{size:7}},
+        yaxis:  {...commonYAxis, title:{text:'mm/s', font:{color:'#a78bfa',size:8}},
+                 titlefont:{color:'#a78bfa'}, tickfont:{...commonYAxis.tickfont, color:'#a78bfa'},
+                 anchor:'x', domain:[0.52,1.0]},
+        yaxis2: {...commonYAxis, title:{text:'°F',  font:{color:'#60a5fa',size:8}},
+                 titlefont:{color:'#60a5fa'}, tickfont:{...commonYAxis.tickfont, color:'#60a5fa'},
+                 anchor:'x', domain:[0.0, 0.46]},
+        shapes, annotations,
+        showlegend:true,
+        legend:{orientation:'h', x:0, y:1.07, xanchor:'left', font:{size:8},
+                bgcolor:'rgba(11,12,16,0.7)'},
+      }, {displayModeBar:false, responsive:true});
     },
     async dispatchTruckRoll() {
       if(this.h2TruckRollDispatched) return;

@@ -12,8 +12,10 @@ Provides:
   5. Dispatch acknowledgement workflow
 """
 
+import asyncio
 import json
 import logging
+import math
 import os
 import random
 import threading
@@ -5977,6 +5979,212 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
         "scada_rule_fired":  scada_rule_fired,
         "lead_time_minutes": lead_time_minutes,
         "model_used":        "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
+    }
+
+
+# ── H2 Scenario Replay ─────────────────────────────────────────────────────────
+
+_INFERENCE_API_URL = os.environ.get(
+    "INFERENCE_API_URL",
+    "http://inference-api.gdc-pm.svc.cluster.local:8080/predict"
+)
+
+@app.get("/api/h2/scenario-replay")
+async def h2_scenario_replay():
+    """
+    Pre-computes a 120-step ESP slug-flow discrimination trajectory and runs:
+      - esp_health.ubj (local, sliding window) → health_score per step
+      - inference-api esp_classifier.ubj → slug_flow probability per step (async parallel)
+
+    Physics: in-string multiphase slug loading at the pump intake (Session V corrected).
+    Gas/liquid slugs arrive alternately at the pump intake, causing cyclic cavitation and
+    hydraulic imbalance at the impeller. Motor temp stays FLAT — no added friction.
+    References: Baker Hughes Centrilift Gas Handling Guide; SPE-174536-MS §3.4;
+                API RP 11S §4.2 (pump vibration from unsteady inflow).
+
+    Detection logic:
+      - GDC:      inference-api esp_classifier slug_flow prob >= 0.70
+      - SCADA HI: ISA-18.2 High alarm — rolling-avg vib >= 4.0 mm/s (demands decision)
+      - SCADA HH: ISA-18.2 High-High trip — rolling-avg vib >= 5.0 mm/s (auto shutdown)
+
+    Discriminating signal: vibration rises cyclically + motor temp FLAT = surface flow regime.
+    Bearing wear (real pull justified): vibration rises + motor temp ALSO rises.
+    """
+    N      = 120
+    W      = 20          # sliding window width
+    t_step = 0.25        # minutes per step → 30-minute total
+
+    # Slug periodicity: ~14-min cycle at the surface flowline
+    # Converted to steps: 14 min / 0.25 min = 56 steps per cycle
+    SLUG_PERIOD_STEPS = 56
+
+    # Nominal operating point
+    psi_nom  = random.uniform(1360, 1440)
+    amps_nom = random.uniform(72, 78)
+    temp_nom = random.uniform(196, 200)
+    vib_nom  = random.uniform(1.0, 1.4)
+    # Vibration ramps toward 4.2–4.8 mm/s peak (ISA-18.2 HI at 4.0; FAULT_PROFILES 4.0–6.5)
+    vib_end  = random.uniform(4.2, 4.8)
+
+    psi_arr, amps_arr, temp_arr, vib_arr, t_min_arr = [], [], [], [], []
+
+    for i in range(N):
+        frac        = (i + 1) / N
+        cycle_phase = 2 * math.pi * i / SLUG_PERIOD_STEPS
+
+        # Vibration: monotone rise (slug flow intensifying) + growing cyclic overlay
+        # The cyclic overlay amplitude grows with frac — slugging worsens over time.
+        vib_cycle_amp = 0.30 * frac
+        vib_val = (vib_nom + (vib_end - vib_nom) * frac
+                   + vib_cycle_amp * math.sin(cycle_phase)
+                   + random.gauss(0, 0.06))
+        vib_arr.append(round(max(0.5, vib_val), 3))
+
+        # Temperature: FLAT — the categorical discriminator vs. bearing wear
+        temp_arr.append(round(temp_nom + random.gauss(0, 1.2), 1))
+
+        # PIP: nominally stable with mild cyclic dip as gas slugs reduce hydraulic head
+        psi_cycle = 20.0 * frac * math.sin(cycle_phase)
+        psi_arr.append(round(psi_nom + psi_cycle + random.gauss(0, 14), 1))
+
+        # Amps: small cyclic swing as gas/liquid slugs alternate load at impeller
+        amps_cycle = 3.5 * frac * math.sin(cycle_phase)
+        amps_arr.append(round(amps_nom + amps_cycle + random.gauss(0, 0.8), 2))
+
+        t_min_arr.append(round(i * t_step, 2))
+
+    # ── Health score from esp_health.ubj (sliding window) ────────────────────
+    # NOTE: health score WILL dip on this trajectory due to rising dvib_dt.
+    # The pump is hydraulically healthy (nominal PSI, nominal amps, flat temp),
+    # but the health model is sensitive to vibration rate-of-change.
+    # DISPLAY NOTE: Show health score with explanatory label:
+    # "Health model reacts to rising vib rate — use classifier for fault type."
+    health_scores  = [1.0] * N
+    health_ok      = False
+    try:
+        import xgboost as xgb
+        import numpy as np
+        _feat  = ["psi", "temp_f", "vibration", "motor_amps",
+                  "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
+        _hm = xgb.Booster()
+        _hm.load_model("models/esp_health.ubj")
+        for i in range(W, N):
+            wp = psi_arr[i-W:i]; wa = amps_arr[i-W:i]
+            wt = temp_arr[i-W:i]; wv = vib_arr[i-W:i]
+            f = np.array([[
+                psi_arr[i],  temp_arr[i],  vib_arr[i],  amps_arr[i],
+                (wp[-1]-wp[0])/(W*t_step), (wt[-1]-wt[0])/(W*t_step),
+                (wv[-1]-wv[0])/(W*t_step), (wa[-1]-wa[0])/(W*t_step),
+            ]])
+            health_scores[i] = round(float(_hm.predict(xgb.DMatrix(f, feature_names=_feat))[0]), 4)
+        health_ok = True
+    except Exception as _e:
+        log.warning(f"esp_health.ubj unavailable in H2 replay: {_e}")
+
+    # ── Classifier probability from inference-api (async parallel) ──────────
+    # esp_classifier.ubj (5-class) on inference-api correctly classifies slug_flow.
+    # The local esp_classifier.bst is a 4-class model without slug_flow — do NOT use it.
+    slug_probs    = [0.0] * N
+    classifier_ok = False
+    SLUG_DETECT_THRESHOLD = 0.70
+
+    async def _get_slug_prob(client: "httpx.AsyncClient", idx: int, features: list) -> tuple:
+        try:
+            payload = {
+                "asset_id":   "ESP-ALPHA-3",
+                "asset_type": "esp",
+                "psi":        features[0],  "temp_f":    features[1],
+                "vibration":  features[2],  "motor_amps": features[3],
+                "dpsi_dt":    features[4],  "dtemp_dt":  features[5],
+                "dvib_dt":    features[6],  "damps_dt":  features[7],
+            }
+            r = await client.post(_INFERENCE_API_URL, json=payload, timeout=5.0)
+            if r.status_code == 200:
+                probs = r.json().get("probabilities", {})
+                return idx, float(probs.get("slug_flow", 0.0))
+        except Exception:
+            pass
+        return idx, 0.0
+
+    try:
+        import httpx
+        import numpy as np
+        tasks = []
+        for i in range(W, N):
+            wp = psi_arr[i-W:i]; wa = amps_arr[i-W:i]
+            wt = temp_arr[i-W:i]; wv = vib_arr[i-W:i]
+            feats = [
+                float(psi_arr[i]),  float(temp_arr[i]),  float(vib_arr[i]),  float(amps_arr[i]),
+                round((wp[-1]-wp[0])/(W*t_step), 4),
+                round((wt[-1]-wt[0])/(W*t_step), 4),
+                round((wv[-1]-wv[0])/(W*t_step), 4),
+                round((wa[-1]-wa[0])/(W*t_step), 4),
+            ]
+            tasks.append((i, feats))
+
+        async with httpx.AsyncClient() as _client:
+            results = await asyncio.gather(*[_get_slug_prob(_client, i, f) for i, f in tasks])
+
+        for idx, prob in results:
+            slug_probs[idx] = round(prob, 4)
+        classifier_ok = True
+
+    except Exception as _ce:
+        log.warning(f"inference-api classifier unavailable in H2 replay: {_ce}")
+        # Synthetic fallback: sigmoid ramp starting at W, reaching ~0.88 at N-1
+        for i in range(W, N):
+            x = (i - W) / max(1, N - W - 1)
+            slug_probs[i] = round(0.05 + 0.83 / (1.0 + math.exp(-10.0 * (x - 0.5))), 4)
+
+    # ── Detection indices ─────────────────────────────────────────────────────
+    # GDC detects when slug_flow probability reaches SLUG_DETECT_THRESHOLD
+    gdc_detect_idx = next(
+        (i for i, p in enumerate(slug_probs) if p >= SLUG_DETECT_THRESHOLD),
+        N - 1
+    )
+
+    # SCADA ISA-18.2 alarm levels — rolling-average vibration
+    SCADA_WINDOW       = 10    # steps (10 × 0.25 min = 2.5-min rolling window)
+    SCADA_HI_THRESHOLD = 4.0   # mm/s — ISA-18.2 High: demands operator attention
+    SCADA_HH_THRESHOLD = 5.0   # mm/s — ISA-18.2 High-High: automatic shutdown trip
+
+    roll_vib = [
+        sum(vib_arr[max(0, i - SCADA_WINDOW):i + 1]) /
+        len(vib_arr[max(0, i - SCADA_WINDOW):i + 1])
+        for i in range(N)
+    ]
+    scada_hi_idx = next(
+        (i for i, rv in enumerate(roll_vib) if i >= SCADA_WINDOW and rv >= SCADA_HI_THRESHOLD),
+        N - 1
+    )
+    scada_hh_idx = next(
+        (i for i, rv in enumerate(roll_vib) if i >= SCADA_WINDOW and rv >= SCADA_HH_THRESHOLD),
+        None   # None = HH trip never fires in this scenario (vib peaks at ~4.5 mm/s < 5.0)
+    )
+
+    lead_time_minutes = round(
+        t_min_arr[scada_hi_idx] - t_min_arr[gdc_detect_idx], 1
+    ) if gdc_detect_idx < scada_hi_idx else 0.0
+
+    return {
+        "fault_type":            "slug_flow",
+        "n":                     N,
+        "psi":                   psi_arr,
+        "amps":                  amps_arr,
+        "temp":                  temp_arr,
+        "vib":                   vib_arr,
+        "t_min":                 t_min_arr,
+        "health_score":          health_scores,
+        "slug_flow_prob":        slug_probs,
+        "gdc_detect_idx":        gdc_detect_idx,
+        "scada_hi_idx":          scada_hi_idx,
+        "scada_hh_idx":          scada_hh_idx,
+        "scada_hi_threshold":    SCADA_HI_THRESHOLD,
+        "scada_hh_threshold":    SCADA_HH_THRESHOLD,
+        "lead_time_minutes":     lead_time_minutes,
+        "health_ok":             health_ok,
+        "classifier_ok":         classifier_ok,
+        "model_used":            "esp_health.ubj (health) + inference-api:esp_classifier.ubj (fault type)",
     }
 
 
