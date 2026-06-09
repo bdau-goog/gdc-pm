@@ -1550,6 +1550,20 @@ createApp({
       this.h1AdvisorHtml += `<br><br><strong style="color:var(--green)">✅ Emergency shut-in command issued. Well ${_shutLabel} offline. Awaiting field confirmation — pump condition assessed on controlled restart.</strong>`;
       this.showToast('✅ Shut-in command issued — awaiting field confirmation', 'var(--green)');
       try { await fetch(`/api/cancel-degrade/${_shutWell}`, {method:'POST'}); } catch(e) {}
+      // Batch D (RT-7): write remediation record to field_intel
+      try {
+        await fetch('/api/h1/remediation-record', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            asset_id: _shutWell,
+            fault_type: this.h1FaultType || 'fluid_drawdown',
+            action_label: 'emergency_shutin',
+            headline: `Emergency Shut-In — Well ${_shutLabel} — operator confirmed`,
+            detail: `Operator issued emergency shut-in command at T+${Math.round((this.h1CursorIdx||0)*0.25)}min. Well ${_shutLabel} taken offline. Pump condition to be assessed on controlled restart. GDC diagnostic: ${this.h1FaultType||'fluid_drawdown'} confirmed via L3 context fusion.`
+          })
+        });
+      } catch(e) {}
     },
     async approveH1VFD() {
       this.h1Pause(); // lock transport on remediation
@@ -1562,6 +1576,21 @@ createApp({
       if (this.h1FaultType === 'fluid_drawdown' && !this.h1Resolved) {
         this.h1Seized = true;
         this.h1Resolved = true;
+        // Write remediation record for seize path (wrong action on drawdown)
+        const _seizeWell2 = this.h1TargetWell || 'ESP-ALPHA-1';
+        try {
+          await fetch('/api/h1/remediation-record', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+              asset_id: _seizeWell2,
+              fault_type: 'fluid_drawdown',
+              action_label: 'vfd_trim_contraindicated',
+              headline: `VFD Trim Executed on Fluid Drawdown — Pump Seized — ${_seizeWell2}`,
+              detail: `Operator executed VFD trim (52→44 Hz) during confirmed fluid drawdown. Transport velocity dropped below critical lift threshold (4.2 ft/s → 3.1 ft/s, SPE-174536). Sand bridge formed. Pump seized. Engineering assessment required. GDC contraindication was not followed.`
+            })
+          });
+        } catch(e) {}
         this.h1Recovering = false;
         if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
         this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — frequency reduced to 44 Hz dropped fluid transport velocity from 4.2 ft/s to 3.1 ft/s, breaching the critical sand-transport lift boundary (SPE-174536). Suspended sand settled and bridged the completion string. Motor unresponsive on restart. Engineering assessment required.</strong>';

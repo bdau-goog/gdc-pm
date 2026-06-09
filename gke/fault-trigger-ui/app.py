@@ -4845,6 +4845,7 @@ def get_rag_context_and_adjusted_rul(asset_id: str, fault_type: str, base_rul: f
             cur.execute("""
                 SELECT headline, detail, doc_type FROM field_intel
                 WHERE asset_id = %s AND fault_context = %s
+                  AND lbl_type != 'hitl_action'
                 ORDER BY created_at DESC LIMIT 5
             """, (asset_id, fault_type))
             rows = cur.fetchall()
@@ -5019,6 +5020,14 @@ class HitlApproveRequest(BaseModel):
     cost_incurred: Optional[float] = 0
 
 
+class RemediationRecordRequest(BaseModel):
+    asset_id: str
+    fault_type: str
+    action_label: str   # e.g. "vfd_trim" or "emergency_shutin"
+    headline: str
+    detail: str
+
+
 def _run_recovery_thread(asset_id: str) -> None:
     """Post 36 climbing PIP/Amps readings over 3 real minutes, simulating wellbore
     gas void clearance after VFD speed-down. Chart shows live green recovery trend."""
@@ -5190,6 +5199,46 @@ def hitl_approve(req: HitlApproveRequest):
 def get_recovery_status(asset_id: str):
     """Return current post-approval recovery monitoring message for the H1 copilot."""
     return RECOVERY_STATUS.get(asset_id, {"msg": "", "state": "pending"})
+
+
+# ── Remediation Record Endpoint ─────────────────────────────────────────────
+@app.post("/api/h1/remediation-record")
+def h1_remediation_record(req: RemediationRecordRequest):
+    """
+    Batch D (RT-7): Writes the operator's H1 remediation action to field_intel as
+    doc_type='remediation_record', lbl_type='hitl_action'.
+    This row is excluded from discrimination RAG (get_rag_context_and_adjusted_rul
+    filters lbl_type != 'hitl_action') but is visible in the intelligence feed and
+    persists as an auditable HITL record across sessions.
+    """
+    try:
+        conn = get_db()
+        asset_class = ASSET_REGISTRY.get(req.asset_id, {}).get("asset_class", "esp")
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO field_intel
+                  (asset_id, asset_class, fault_context, doc_type,
+                   headline, detail, ai_relevance, icon, lbl, lbl_type)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """, (
+                req.asset_id,
+                asset_class,
+                req.fault_type,
+                "remediation_record",
+                req.headline,
+                req.detail,
+                f"HITL action recorded: {req.action_label}",
+                "✅",
+                "HITL",
+                "hitl_action",
+            ))
+        conn.commit()
+        conn.close()
+        log.info(f"✅ Remediation record written: {req.asset_id} {req.action_label} ({req.fault_type})")
+        return {"status": "ok", "asset_id": req.asset_id, "action": req.action_label}
+    except Exception as e:
+        log.warning(f"Remediation record write failed (non-fatal): {e}")
+        return {"status": "error", "detail": str(e)}
 
 
 # ── Agent Chat Endpoint ───────────────────────────────────────────────────────
