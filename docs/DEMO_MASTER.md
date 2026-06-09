@@ -1,5 +1,5 @@
 # GDC Predictive Maintenance — Master Demo Specification & Blueprint
-**Version:** Session I+1 (June 8, 2026) — H1 Discern Tab Clean-Slate Spec
+**Version:** Session AC (June 9, 2026) — L3-Centered Narrative Reframe; Surveillance Removed
 **Status:** Authoritative Single Source of Truth  
 **Enforcement:** This document contains the complete visual specs, narrative blueprints, and the **Claims Ledger**. No claims may go on screen unless they have a `SURVIVES` row in the Ledger (Appendix).
 
@@ -27,75 +27,74 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 
 ## 3. CORE VALUE PROPOSITION — THE DEFENSIBLE SCADA vs GDC ARGUMENT
 
-### The Three-Tier Capability Stack
+### Session AC Reframe — One Categorical Moat, Honestly Presented
 
-| Tier | What it represents | Can Modern SCADA do it? | GDC Edge Advantage |
+**The PRIME DIRECTIVE for this section:** Do not overclaim L1 or L2 wins. Concede them cleanly, then win on L3 — the one place nobody can follow.
+
+#### The Physics-Impossibility Premise (place this early in H1, before anything else)
+
+> *Gas lock and fluid drawdown produce physically identical PIP/Amps/Temp/Vibration signatures — with opposite correct actions (safe VFD trim vs. catastrophic sand-bridge risk). This is not a limitation of any sensor model; it is a physical measurement constraint. No sensor-based system — now or future — can disambiguate them. The answer exists only in the field documents.*
+
+This is the foundation. Everything else is decoration. Say it explicitly.
+
+#### The Three-Tier Stack — Honest and Concessive (no overclaiming)
+
+| Tier | Architecture | What each tier reads | The honest GDC position |
 |---|---|---|---|
-| **L1 — Raw Telemetry** | Threshold & simple rate alarms on individual tags. | **Yes.** (Fully conceded). SCADA successfully trips the pump offline to protect it. | None. Do not overclaim. SCADA successfully prevents pump burnout. |
-| **L2 — Multivariate Probability** | Correlated drift signatures evaluated pre-threshold. | **In principle yes, but practically no.** Requires high engineering labor per well. | Calibrated probability. Normalizes physics-matched features. Self-calibrates. Scales automatically. |
-| **L3 — Context Fusion** | Fusing **unstructured documents** (shift notes, sonic logs, choke logs) into the real-time telemetry assessment. | **❌ No. Architecturally impossible.** SCADA platforms cannot read text into alarm logic. | **Categorical Moat.** Fuses unstructured text via pgvector RAG to rule out competing causes and confirm the safe action path. |
+| **L1 — Threshold alarms** | SCADA control layer — hard setpoints, rate rules | **Tags** (individual sensor values) | **Fully conceded.** SCADA trips the pump to protect it. GDC wins nothing here. Never imply SCADA lets the pump die. |
+| **L2 — Learned detection** | Threshold-based SCADA: hand-authored rules. Advanced predictive platforms (GE SmartSignal, AVEVA PRiSM, Aspen Mtell): adaptive ML, retraining workflows. | **Tag patterns** (multivariate sensor correlations) | **Contested ground — concede gracefully.** Threshold SCADA hand-authors rules per well; advanced APM platforms do adaptive ML. GDC's modest L2 edge (calibrated probability, learned-not-hand-set, decoupled from control layer) is supporting context, **not the headline**. Against best-of-breed APM, detection converges — L3 is still the moat. |
+| **L3 — Context fusion** | No SCADA product, control-layer or APM, reads text into real-time fault diagnosis | **Documents** (shift notes, acoustic sonic logs, GOR reports, work orders) | **Categorical Moat.** GDC fuses unstructured field documents via pgvector RAG and chains them into the live diagnosis. The operator has the same documents — GDC's advantage is reading and correlating the entire corpus in seconds during a live process upset. Architecturally impossible for any current SCADA/APM product. |
+
+#### "Tags vs. Tag-Patterns vs. Documents" (centerpiece for How It Works)
+
+The sharpest one-breath version of the comparison:
+- **Threshold SCADA:** monitors tags against fixed setpoints → alarms when crossed.
+- **Advanced predictive ML (APM):** monitors tag *patterns* across sensors → scores risk against calibrated models.
+- **GDC:** monitors tags *and* patterns *and* **reads the documents** — the only tier that can resolve a fault where the sensor signature is physically ambiguous.
+
+Neither tier below L3 can distinguish gas-lock from fluid-drawdown. The disambiguation exists only in a field document.
+
+#### Rejected L2 claims — do not ship these (Session AC decision)
+
+The following claims were rejected after pressure-testing. They fail the NO-STRAW-MAN gate against advanced APM buyers, and are no longer to appear on screen:
+
+- ❌ "SCADA can't retrain its models" — GE SmartSignal, AVEVA PRiSM, and Aspen Mtell do adaptive model retraining. False claim.
+- ❌ "SCADA can't do multivariate detection" — Advanced SCADA/APM does rate-of-change alarms and multivariate correlation. False claim.
+- ❌ Any market-share percentage ("95% of SCADA is threshold-only") — not citeable; 🔴 NEEDS-EXPERT. Fabrication risk.
+
+**Instead:** Concede L2 to both tiers, win on L3. The concession makes L3 more credible, not less.
 
 ---
 
-## 3.5 SURVEILLANCE TAB — THE DEMO OPENING HOOK (SCOPE OF OPERATIONS)
+## 3.5 SURVEILLANCE TAB — ❌ REMOVED (Session AC decision)
 
-### Purpose: Pre-Empt the "Why Can't the Operator Just Read the PDF?" Challenge
+### Why the Surveillance tab was cut
 
-The single strongest hostile question in the H1 demo: *"Why can't the SCADA operator just look at the 06:00 dynamic sonic log himself?"*
+The Surveillance tab argued *scale and workload* ("156 ESPs, 14 alarms, 8,412 documents") to pre-empt the "why can't the operator just read the PDF?" question. It was cut in Session AC for the following reasons — **do not restore without addressing all of them:**
 
-The answer is not technical — it is operational. A Permian Basin production operator does not manage Well A-3 in isolation. They are responsible for a massive, noisy **Scope of Operations**: hundreds of wells across multiple pads, an alarm flood of active SCADA alerts, and thousands of unstructured field documents arriving every day. There is no time to manually retrieve and cross-reference PDFs during a process upset. GDC does it automatically at fleet scale.
+1. **Fabricated precision (integrity violation):** "8,412 documents" and "14 alarms" and "156 ESPs" were hardcoded display values not backed by real data. The PRIME DIRECTIVE NO-SILENT-LIE gate blocks them.
+2. **Implicit straw man:** 14 SCADA alarms listed as simultaneously active implies operator negligence — "someone isn't doing their job." That violates the NO-STRAW-MAN rule.
+3. **Self-contradicting H1:** Listing Well A-3 *inside* the active SCADA alarm feed directly undercuts the H1 claim that GDC detects it *before* SCADA alarms.
+4. **Wrong argument for the wrong audience:** The "operator can't read the PDF because they're swamped" frame is workload-based, not capability-based. It's straw-man-adjacent (implies SCADA/operators are negligent rather than architecturally limited).
 
-The **Surveillance Tab** makes this argument visually, before anyone asks the question.
+### What replaced it
 
-### Surveillance Tab Screen Architecture
+The real answer to "why can't the operator just read the PDF?" is **cognitive + architectural, not workload:**
 
-**Tab label:** `Surveillance` (first tab, left-most in the nav bar)
+> *The operator has access to the same documents. GDC's advantage is not exclusive access — it is reading and correlating the entire corpus in seconds, against the live telemetry signature, in the middle of a process upset. No human can do this completely or fast enough, regardless of how busy they are.*
 
-**Hero Scope Panel (top):**
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  📡 FLEET OPERATIONAL SCOPE — Pad Alpha Production District             │
-│  Monitored Production Pads: 6    Active ESPs: 156    Alarm State: 14   │
-│  Unstructured Document Corpus (AlloyDB pgvector): 8,412 documents      │
-│  GDC AI: ✅ Active · Fleet-scanning every 5 seconds                    │
-└─────────────────────────────────────────────────────────────────────────┘
-```
+This argument lives in two places in the revised demo:
 
-**Pad/Field Triage Grid (middle):**
-- 6 field cards (Pad Alpha through Pad Foxtrot), each showing:
-  - Number of ESPs on pad (e.g., Pad Alpha: 26 ESPs)
-  - Current status: 🟢 Nominal / 🟡 Anomaly Active / ⚫ Idle
-  - Active SCADA alarm count per pad
-- **Pad Alpha card is flashing amber:** `⚠ Well A-3 — Unloading Anomaly Active`
+- **How It Works** (Pane 4 — Context Fusion, and the "tags vs. tag-patterns vs. documents" comparison): explains the architectural argument before the scenarios.
+- **H1 Discern — GDC Advisor document-reveal beat (Zone 2 Right):** the L3 synthesis payload is shown *live* at the moment the documents appear and the fault is resolved. The synthesis framing at that beat makes the argument *demonstrated*, not *asserted*.
 
-**Active Alarm Noise Panel (right side, ~30% width):**
-A scrollable list showing the alarm deluge the operator is handling simultaneously:
-```
-⚠ GLIFT-BRAVO-1   High Vibration (6.2 mm/s)       03:14 ago
-⚠ MUD-RIG42-2     Fluid End Temp High (138°F)       07:22 ago
-⚠ ESP-ALPHA-3     Pump Intake Pressure Declining     00:45 ago  ← THIS ONE
-⚠ TOPDRIVE-RIG42  Gearbox Temp Elevated (198°F)     11:07 ago
-⚠ GLIFT-BRAVO-3   Discharge Pressure Low             19:44 ago
-... 9 more alarms active
-```
-Labels these clearly as: **"14 alarms active in this moment. GDC is reading 8,412 documents for context on all 156 wells simultaneously."**
+### Default opening tab (replaces Surveillance)
 
-**Call-to-Action Button:**
-```
-[ 🔍 Deep-Dive — Well A-3 Unloading Anomaly ]
-```
-Clicking this button navigates to the Discern (H1) tab, pre-loaded with Well A-3's scenario. This creates a natural, narratively tight demo flow.
+**`How It Works`** is now the default landing tab. The narrative flow becomes:
 
-### Implementation Notes
-- **The 6-pad fleet, 156 ESPs, 14 alarms, 8,412 documents** are all static display values for demo purposes. They do not need live polling — these are defensible fleet-representative numbers.
-- **The alarm noise list** is a static list of plausible SCADA alarm text across the 4 asset classes (ESP, gas lift, mud pump, top drive). They should look exactly like real industrial alarm feeds: asset ID + tag description + elapsed time.
-- **The pad triage grid** can show 4–6 pads. Pad Alpha is hardcoded to "Anomaly Active." Others are "Nominal" (green).
-- **No interactive drill-down** on the other pads — the deep-dive CTA for A-3 is the only interactive element. Keeps the presenter in control of the story.
-
-### The Narrative Flow This Creates
-1. **Open on Surveillance tab** → audience sees the scale of the operation (156 ESPs, 14 alarms, 8,412 documents). This is not a toy. This is a real production environment.
-2. **Click `Deep-Dive — Well A-3`** → transition seamlessly to the H1 Discern tab. Pre-selected fault, pre-loaded charts.
-3. The audience has already been shown *why* the operator cannot manually read the 06:00 sonic log: they have 13 other alarms demanding attention.
+1. **Open on How It Works** → conceptual framing: tags vs. tag-patterns vs. documents; the physics-impossibility premise; what L3 fusion is.
+2. **Navigate to Discern (H1)** → live proof: documents are retrieved, fault is resolved in real time. The concept is demonstrated, not just explained.
+3. **Classify (H2) → Optimize (H3)** → full progression.
 
 ---
 
@@ -260,7 +259,7 @@ The GDC Advisor view is structured as three vertical zones using ISA-101 Level-2
 - Completely hidden (collapsed to zero width) on SCADA View tab — visually reinforcing that SCADA has no downhole visibility.
 - Scrubber-reactive: fluid column drains with PIP, gas bubbles or sand particles bind to `h1CursorIdx` past `gdc_detect_idx`.
 
-**Fleet Scale Card:** **REMOVED.** The Surveillance tab already establishes fleet-scale context (156 ESPs, 14 active alarms, 8,412 documents). No redundant card needed in the Discern tab.
+**Fleet Scale Card:** **REMOVED.** The Surveillance tab was removed in Session AC. No fleet-scale card in the Discern tab.
 
 ---
 
@@ -316,7 +315,7 @@ The claim the Scenario Replay design makes is narrow and defensible:
 ## 7. SHARED UI CONVENTIONS
 
 - **GDC Advisor:** No "Copilot" branding is used. The AI is a streaming, operator-assist Advisor.
-- **Tabs (L→R):** `Surveillance` (fleet scope) · `How It Works` · `Discern` (H1 Unloading) · `Classify` (H2 Slug Flow) · `Optimize` (H3 VFD).
+- **Tabs (L→R):** `How It Works` · `Discern` (H1 Unloading) · `Classify` (H2 Slug Flow) · `Optimize` (H3 VFD). **Surveillance tab removed (Session AC).**
 - **No Operating Envelope scatter charts**: These require too much explanation. Use the dual-axis trend chart and the dynamic wellbore schematic instead.
 - **No 14-well pad strip**: This is a visual bloat. The scale story is made through text (e.g. "14 wells under continuous surveillance") rather than a decorative map.
 - **Engineering Diagram wellbore:** Drawn in dark-mode CSS HTML to scale. Horizontal slugging animations rendered *only at surface*, gas lock animations *only at depth*.

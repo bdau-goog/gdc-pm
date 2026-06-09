@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session AB — esp_thermal.ubj + vizier_optimize() integrity fix deployed)
-**git head:** `b4013a4` (feat(h3): Session AB — esp_thermal.ubj regressor + vizier_optimize() wired)
-**fault-trigger-ui image:** `sha256:fa0d96b9` (Session AB — esp_thermal model deployed)
+**Date:** June 9, 2026 (Session AC — L3-centered narrative locked, Surveillance removed, DEMO_MASTER §3/§3.5 rewritten)
+**git head:** (pending final commit — docs only)
+**fault-trigger-ui image:** `sha256:fa0d96b9` (Session AB — no code changes in Sessions AA or AC)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -61,10 +61,30 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 - `evaluate_hz()` in `vizier_optimize()` now calls `HEALTH_MODELS["esp_thermal"].predict()` with honest polynomial fallback
 - Deployed `sha256:fa0d96b9`, rollout successful, `api/model/status` confirms `esp_thermal` in models_loaded
 
-### NEXT TASKS (no active plan — confirm with user)
-1. **Vizier live trial result:** The background Vizier API call was still running at wrap time — check if Vertex AI Vizier returned trial results or fell back to deterministic sequence. Smoke-test `GET /api/vizier/optimize` end-to-end.
-2. **H3 UI tab review:** Verify the H3 Optimize tab frontend correctly reflects that `motor_temp_f` now comes from a real model (not a hardcoded polynomial). May need a UI label update from "physics model" to "XGBoost thermal model".
-3. **Any presenter walkthrough gaps** — user to identify.
+### Session AC COMPLETE ✅ (docs only — narrative strategy locked)
+- DEMO_MASTER.md §3/§3.5 rewritten: L3 = sole categorical moat; L1+L2 conceded; Surveillance removed with full rationale. Rejected L2 claims documented (cannot be re-introduced without SME source).
+- SESSION_LOG + NEXT_SESSION_PROMPT updated with all decisions + H1/H2/H3 UI impact.
+
+### NEXT TASKS — Session AD: UI Implementation
+
+**1. index.html — Surveillance removal + How It Works + H1 re-emphasis (single batched call):**
+- Remove Surveillance tab HTML block (lines ~345–508)
+- Remove Surveillance nav `<div>` (line ~21)
+- How It Works: reorder GDC column bullets — L3 ("Reads field documents") first; ML detection moves to one honest line conceding both tiers
+- How It Works System Overview or Context Fusion: add "tags vs. tag-patterns vs. documents" 3-line comparison
+- How It Works Pane 3 (ML Detection): replace "Multivariate ML detection" with: *"Learned risk scoring — not fixed thresholds. Against best-of-breed predictive platforms, detection converges; document fusion is GDC's categorical edge."*
+- H1 banner or Physics & Logic panel: add physics-impossibility premise — *"Gas lock and fluid drawdown produce identical PIP/Amps/Temp/Vib. No sensor model can distinguish them. The answer exists only in field documents."*
+- H1 GDC Advisor Zone 2 Right doc-reveal label: add synthesis payload — *"The answer was never in the sensors. GDC read these documents, cross-referenced them against live telemetry, and resolved the fault in under 2s."*
+- H1 lead-time callout: demote from headline to compact annotation
+- INTEGRITY: line ~572 "8,412 field documents" → "field-document corpus (shift notes, sonic logs, GOR reports)"
+
+**2. app.js — Default tab (1 line):**
+- `mainTab: 'surveillance'` → `mainTab: 'architecture'`
+
+**3. app.py — Integrity fix (1 line):**
+- Line ~4975: `"model_drift_detected": False` → remove the field or relabel as `"model_drift_detection": "not_implemented"`. Do NOT imply an active detector.
+
+**After:** docker build → push → `kubectl set image` with explicit digest → verify grep (no "surveillance" nav, no "8,412", model_drift relabeled, mainTab default = 'architecture').
 
 ---
 
@@ -89,6 +109,10 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 | SVG document icons | ✅ NEW Session Z Batch E | Distinct inline SVG badges (sonic waveform, GOR bar chart, OEM book) replace 📄 emoji |
 | MODEL_FOUNDATIONS vs SESSION_LOG precision conflict | ✅ FIXED Session AA | MODEL_FOUNDATIONS.md updated — v2 results (P=0.995, all gates pass) documented in §6/§8/§9 addendum. 0.815 retained in §9 as correct v1 historical record. |
 | `vizier_optimize()` hardcoded polynomial (H3 integrity) | ✅ FIXED Session AB | `esp_thermal.ubj` trained + deployed; `evaluate_hz()` now calls `HEALTH_MODELS["esp_thermal"].predict()`. Confirmed in HEALTH_MODELS registry. |
+| Surveillance tab fabrications (8,412/14/156) | ✅ SPEC REMOVED Session AC | DEMO_MASTER §3.5 documents all 4 reasons. UI removal = Session AD. |
+| DEMO_MASTER §3 L2 overclaims | ✅ FIXED Session AC | Rejected L2 claims table in DEMO_MASTER §3 — cannot be reintroduced. |
+| `model_drift_detected: False` stub (app.py ~4975) | ⏳ OPEN Session AD | Remove or relabel — implies an active detector that always returns OK. |
+| "8,412 field documents" (index.html ~572) | ⏳ OPEN Session AD | Remove count; rephrase as "field-document corpus." |
 
 ---
 
