@@ -953,6 +953,9 @@
     .h1-rag-pending{padding:10px 14px;font-size:0.62rem;color:var(--muted);font-style:italic;background:rgba(30,144,255,0.04);border-bottom:1px solid var(--border);flex-shrink:0;letter-spacing:0.02em}
     .h1-rag-card{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;background:rgba(74,222,128,0.07);border-bottom:1px solid rgba(74,222,128,0.25);cursor:pointer;flex-shrink:0;transition:background 0.15s}
     .h1-rag-card:hover{background:rgba(74,222,128,0.12)}
+    /* Zone 2 right: compact document evidence cards */
+    .h1-rag-doc-card{display:flex;align-items:flex-start;gap:7px;padding:7px 8px;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.18);border-radius:5px;cursor:pointer;transition:background 0.15s;flex-shrink:0}
+    .h1-rag-doc-card:hover{background:rgba(74,222,128,0.10)}
 
     /* ── GDC Content area (wellbore + verdict side by side) ── */
     .h1-gdc-content{display:flex;gap:12px;padding:10px 12px;flex:1;min-height:0;overflow-y:auto}
