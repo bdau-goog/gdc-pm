@@ -123,11 +123,16 @@ FAULT_PROFILES = {
         # ── Gas Lock ──────────────────────────────────────────────────────────
         # Gas void fraction >80% → pump cavitates → intake pressure collapses
         # Timeline: 45 minutes total  (FAULT_PHYSICS total_hours = 0.75)
+        # Updated Session S (June 9, 2026): corrected to API RP 11S §4.2 / §7.2 + SPE-174536-MS
+        # psi_end  = midpoint(400,600)   API RP 11S §7.2: casing annulus depleted, gas voids
+        # temp_end = midpoint(245,265)   API RP 11S §4.2: thermal runaway, cooling flow collapses
+        # vib_end  = midpoint(4.5,6.5)  SPE-174536-MS: intense cavitation during stage unloading
+        # amps_end = midpoint(20,45)     API RP 11S §7.2: motor underload
         "gas_lock": {
-            "psi_end":  750,   # PSI at impeller stall (critical: 800 PSI)
-            "temp_end": 200,   # Motor winding temp rises slightly as pump unloads
-            "vib_end":  6.5,   # Cavitation vibration signature
-            "amps_end": 28.0,  # Motor current collapses as pump unloads (crit: 40 A)
+            "psi_end":  500,   # API RP 11S §7.2: midpoint(400,600) — casing annulus depleted
+            "temp_end": 255,   # API RP 11S §4.2: midpoint(245,265) — thermal runaway
+            "vib_end":  5.5,   # SPE-174536-MS:   midpoint(4.5,6.5) — intense cavitation
+            "amps_end": 32.5,  # API RP 11S §7.2: midpoint(20,45)   — motor underload
         },
         # ── Sand Ingress ──────────────────────────────────────────────────────
         # Formation sand slowly erodes impeller stages over 14 days

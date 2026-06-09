@@ -98,15 +98,19 @@ ESP_NORMAL_RANGES = {
 ESP_FAULT_SIGNATURES = {
     # ── Class 1: Gas Lock ────────────────────────────────────────────────────
     # Impeller stages fill with gas (GVF > 65%) → pump unloads.
-    # PIP crashes, amps drop, temp rises as motor loses cooling flow.
+    # PIP crashes to 400–600 PSI (casing annulus depleted / gas voids in stages).
+    # Amps drop to 20–45 A (motor underload as impellers fill with gas/vapor).
+    # Winding temp rises to 245–265°F (thermal runaway — cooling fluid flow collapses).
+    # Vibration rises to 4.5–6.5 mm/s (intense downhole cavitation during stage unloading).
     # PRIMARY DISCRIMINATORS: dpsi_dt strongly negative + damps_dt negative TOGETHER.
     # amps_end = midpoint(20,45) = 32.5 A (matches app.py degrade thread).
-    # Reference: API RP 11S §5; live DB avg 971 PSI over 71,794 gas_lock rows.
+    # Sources: API RP 11S §4.2 / §7.2; SPE-174536-MS. Updated Session S (June 9, 2026).
+    # NOTE: fluid_drawdown has IDENTICAL sensor trajectory — only RAG context distinguishes them.
     "gas_lock": {
-        "psi":      (875,  1100),   # live injection range, NOT catastrophic stall endpoint
-        "temp":     (195,  210),    # early thermal rise as cooling flow collapses
-        "vib":      (2.0,  3.5),    # cavitation onset
-        "amps":     (20,   45),     # motor unloads; amps_end_for_training = 32.5 (midpoint)
+        "psi":      (400,  600),    # API RP 11S §7.2: casing annulus depleted, gas voids in stages
+        "temp":     (245,  265),    # API RP 11S §4.2: thermal runaway, motor cooling flow collapses
+        "vib":      (4.5,  6.5),    # SPE-174536-MS: intense downhole cavitation during stage unloading
+        "amps":     (20,   45),     # API RP 11S §7.2: motor underload; amps_end_for_training = 32.5 (midpoint)
         "dpsi_dt":  (-60.0, -8.0),  # rapidly declining PSI — the primary flag
         "dtemp_dt": (0.5,  6.0),    # rising: 3–8°F/min per API RP 11S motor thermal model
         "dvib_dt":  (0.2,  2.5),    # increasing cavitation vibration

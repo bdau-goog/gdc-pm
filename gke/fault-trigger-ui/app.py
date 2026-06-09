@@ -819,14 +819,17 @@ FAULT_PROFILES = {
         "label": "Gas Lock", "asset_class": "esp",
         "description": "Gas entrainment rising — pump efficiency degrading, intake pressure declining toward lock-up",
         "color": "#f44336",
-        "psi_range": (875, 1100), "temp_range": (195, 210), "vib_range": (2.0, 3.5),
+        # API RP 11S §4.2 / §7.2; SPE-174536-MS — updated Session S (June 9, 2026)
+        "psi_range": (400, 600), "temp_range": (245, 265), "vib_range": (4.5, 6.5),
         "amps_range": (20, 45),
     },
     "fluid_drawdown": {
         "label": "Fluid Drawdown", "asset_class": "esp",
         "description": "Fluid level depletion — pump efficiency degrading, intake pressure declining toward critical drawdown",
         "color": "#ff6d00",
-        "psi_range": (875, 1100), "temp_range": (195, 210), "vib_range": (2.0, 3.5),
+        # IDENTICAL sensor trajectory to gas_lock — only RAG context distinguishes them (H1 premise)
+        # API RP 11S §4.2 / §7.2; SPE-174536-MS — updated Session S (June 9, 2026)
+        "psi_range": (400, 600), "temp_range": (245, 265), "vib_range": (4.5, 6.5),
         "amps_range": (20, 45),
     },
     "sand_ingress": {
@@ -5817,12 +5820,11 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
 
     Detection logic:
       - GDC:   first index where health_score < 0.65  (calibrated XGBoost threshold)
-      - SCADA: first index where psi < 1000 PSI
-               (underload protection setpoint ≈ 15 % below nominal, per API RP 11S §7.2)
-
-    The SCADA threshold is intentionally NOT 800 PSI — the FAULT_PROFILES
-    psi_range (875–1100) never drops to 800, so 800 would never fire.
-    1000 PSI is the physically defensible hard-limit SCADA operators would use.
+      - SCADA: three-rule Smart-SCADA logic (fires at earliest crossing):
+               Rule A: dPIP/dt < −35 PSI/min  rolling 2.5-min rate alarm  (ISA-18.2 §5.3)
+               Rule B: rolling-avg PIP < 1,020 PSI  pressure underload floor  (API RP 11S §7.2)
+               Rule C: rolling-avg Amps < 50 A  motor undercurrent trip  (API RP 11S §7.2)
+               Expected: SCADA ~T=10 min, GDC ~T=6 min, lead-time ~4 min.
     """
     ft = fault if fault in ("gas_lock", "fluid_drawdown") else "gas_lock"
     fp = FAULT_PROFILES.get(ft, FAULT_PROFILES["gas_lock"])
@@ -5928,19 +5930,32 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
         else:
             consec = 0
 
-    # Rule B: rolling-average static floor
+    # Rule B: rolling-average PIP static floor (API RP 11S §7.2)
     static_trip_idx = next(
         (i for i, rp in enumerate(roll_psi) if i >= SCADA_RATE_WINDOW and rp < SCADA_STATIC_FLOOR),
         N - 1
     )
 
-    # Smart SCADA fires at the earlier of the two rules (no straw man)
-    scada_alarm_idx = min(rate_trip_idx, static_trip_idx)
-    scada_rule_fired = (
-        "Rate-of-change: dPIP/dt < −35 PSI/min (rolling 2.5-min window · ISA-18.2 §5.3)"
-        if rate_trip_idx <= static_trip_idx
-        else "Static underload floor: rolling avg PIP < 1,020 PSI (API RP 11S §7.2)"
+    # Rule C: rolling-average motor undercurrent trip (API RP 11S §7.2)
+    # Amps drop to 20–45 A at fault end; 50 A is the underload protection setpoint.
+    SCADA_AMPS_FLOOR = 50.0   # A
+    roll_amps = [sum(amps_arr[max(0, i - SCADA_RATE_WINDOW):i + 1]) /
+                 len(amps_arr[max(0, i - SCADA_RATE_WINDOW):i + 1]) for i in range(N)]
+    undercurrent_idx = next(
+        (i for i, ra in enumerate(roll_amps)
+         if i >= SCADA_RATE_WINDOW and ra < SCADA_AMPS_FLOOR),
+        N - 1
     )
+
+    # Smart SCADA fires at the earliest of all three rules (no straw man)
+    scada_alarm_idx = min(rate_trip_idx, static_trip_idx, undercurrent_idx)
+    _earliest = scada_alarm_idx
+    if _earliest == rate_trip_idx:
+        scada_rule_fired = "Rate-of-change: dPIP/dt < −35 PSI/min (rolling 2.5-min window · ISA-18.2 §5.3)"
+    elif _earliest == static_trip_idx:
+        scada_rule_fired = "Static underload floor: rolling avg PIP < 1,020 PSI (API RP 11S §7.2)"
+    else:
+        scada_rule_fired = "Undercurrent trip: rolling avg Amps < 50 A (API RP 11S §7.2)"
 
     gdc_detect_idx = next((i for i, s in enumerate(health_scores) if s < HEALTH_THRESHOLD), N - 1)
 
