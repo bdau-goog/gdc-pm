@@ -2,6 +2,16 @@
 
 ---
 
+## Session Z (June 9, 2026) — *Batch D: Remediation writes to field_intel — HITL audit loop deployed and verified*
+
+**Code committed:** `58fc8ac` (feat(integrity): Batch D — remediation writes to field_intel via /api/h1/remediation-record)
+**fault-trigger-ui image:** `sha256:bacd3718`
+**Verified live:** `curl → {"status":"ok","asset_id":"ESP-ALPHA-3","action":"vfd_trim"}` · AlloyDB row `id=73411, doc_type=remediation_record, lbl_type=hitl_action` confirmed ✅
+
+This was a single-fix session implementing RT-7: the HITL audit loop that closes the human-operator remediation action into the persistent AlloyDB `field_intel` table. **New endpoint `/api/h1/remediation-record`:** POST endpoint accepts `RemediationRecordRequest` (asset_id, fault_type, action_label, headline, detail) and inserts a row with `doc_type='remediation_record'`, `lbl_type='hitl_action'`, `icon='✅'`, `lbl='HITL'`. The row persists in AlloyDB across sessions — every operator action becomes part of the auditable field intelligence context. **RAG exclusion:** `get_rag_context_and_adjusted_rul()` dynamic query extended with `AND lbl_type != 'hitl_action'` — operator action records are written to the audit trail but explicitly excluded from the pre-diagnosis Bayesian discrimination RAG context to prevent circular reasoning (the remediation action cannot become evidence for its own correctness). **Frontend wired in `app.js`:** `executeH1Shutdown()` calls the endpoint with `action_label='emergency_shutin'` and includes elapsed T+Xmin cursor position in the detail. `approveH1VFD()` seize path (VFD trim contraindicated on drawdown) calls with `action_label='vfd_trim_contraindicated'`, documenting the adverse outcome. The happy path (gas_lock VFD trim) continues to use the existing `/api/agent/hitl-approve` endpoint. **Key design decision:** `hitl_action` rows appear in the intelligence feed (visible to operators reviewing context) but are excluded from the RAG LR computation — this preserves the integrity of the Bayesian discriminator while still creating a complete audit trail. **Next task (Batch E):** Taller wellbore SVG + telemetry tiles visible on both SCADA and GDC sub-tabs + SVG document artifact sketches.
+
+---
+
 ## Session Y (June 9, 2026) — *Batch C: Scrub-reactive GDC reset + transport lockout post-remediation + H2 classifier verified — deployed and verified*
 
 **Code committed:** `1ac4c7e` (feat(integrity): Batch C — scrub-reactive GDC reset + transport lockout post-remediation)

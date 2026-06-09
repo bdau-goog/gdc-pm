@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session Y — Batch C integrity fixes deployed)
-**git head:** `1ac4c7e` (feat(integrity): Batch C — scrub-reactive GDC reset + transport lockout post-remediation)
-**fault-trigger-ui image:** `sha256:bb285184` (Session Y Batch C — scrub-reactive reset + transport lockout)
+**Date:** June 9, 2026 (Session Z — Batch D remediation audit loop deployed)
+**git head:** `58fc8ac` (feat(integrity): Batch D — remediation writes to field_intel via /api/h1/remediation-record)
+**fault-trigger-ui image:** `sha256:bacd3718` (Session Z Batch D — HITL audit loop)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -25,7 +25,7 @@ kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "import urllib.
 - Workspace: `PROJECT=gdc-pm-v2` · `KUBECONFIG=/home/brian/gdc-pm/.kubeconfig`
 - All 8 pods 1/1 Running · ollama replicas: 1
 - ollama_online: True · model: gemma4:latest
-- field_intel: ~2–5 · rag_documents: 18 · telemetry_events: > 1,000,000
+- field_intel: ≥1 (hitl_action rows from Batch D) · rag_documents: 18 · telemetry_events: > 1,000,000
 - inference-api models: `['esp_classifier', 'gas_lift_classifier', 'mud_pump_classifier', 'top_drive_classifier', ...]`
 
 ---
@@ -40,21 +40,18 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 
 ---
 
-## STEP 3: Session Y was Batch C — Next Tasks Are Batch D–E
+## STEP 3: Session Z completed Batch D — Next Tasks Are Batch E
 
-### Session Y Batch C COMPLETE ✅
-Scrub-reactive + transport lockout + H2 classifier verification. Key deliverables:
-- **Scrub-reactive GDC reset:** `h1CursorIdx` watcher now resets `h1FaultTypeRevealed`, `h1RagRevealed`, `h1EvidenceActive`, `h1ShowEvidenceTable`, `h1RagDoc2Shown`, `h1RagDoc3Shown`, `h1PumpOffExcluded`, `h1GasLockExcluded`, and all doc timers when cursor scrubs back before `gdc_detect_idx`. GDC Advisor returns to "BASELINE MONITORING" state on back-scrub.
-- **Transport lockout post-remediation:** H1 buttons (◀◀/▶/▶▶) and range scrubber become disabled (`opacity:0.4`, `pointer-events:none`) when `h1Resolved || h1Seized`. H2 buttons and scrubber lock on `h2Resolved || h2PullOutcome`.
-- **`h1Reset()` expanded:** Now explicitly clears `h1ShowEvidenceTable`, `h1PumpOffExcluded`, `h1GasLockExcluded` on new scenario load.
-- **Pause-on-remediation:** `executeH1Shutdown()`, `approveH1VFD()`, `dispatchTruckRoll()` all call `h1Pause()`/`h2Pause()` at entry — play timer stops the moment operator clicks any action card.
-- **H2 SCADA pull button:** `@click="h2Pause(); h2PullOutcome='false_positive'"` — pump-pull path also pauses.
-- **H2 classifier_ok verified:** Live curl confirms `classifier_ok: true` — H2 slug_flow_prob is from the real inference-api (not fallback sigmoid).
-- Smoke test: 12/12 assertions, 0 console errors ✅
+### Session Z Batch D COMPLETE ✅
+Remediation HITL audit loop. Key deliverables:
+- **`/api/h1/remediation-record` endpoint (app.py):** New POST endpoint writes `doc_type='remediation_record'`, `lbl_type='hitl_action'` rows to `field_intel`. `RemediationRecordRequest` Pydantic schema: `asset_id`, `fault_type`, `action_label`, `headline`, `detail`.
+- **RAG exclusion (app.py):** `get_rag_context_and_adjusted_rul()` dynamic query now includes `AND lbl_type != 'hitl_action'` — operator actions are written to the audit log but cannot contaminate pre-diagnosis RAG context.
+- **Frontend wired (app.js):** `executeH1Shutdown()` and `approveH1VFD()` both POST to the new endpoint on execution. Shut-in path writes `action_label='emergency_shutin'` with elapsed T+Xmin in detail. VFD-trim-during-drawdown seize path writes `action_label='vfd_trim_contraindicated'` documenting the failure event.
+- **Verified live:** `curl → {"status":"ok",...}` · AlloyDB confirms row `id=73411, lbl_type='hitl_action'` written correctly.
 
-### NEXT: Batch D (scoped, in priority order)
-1. **Remediation writes to field_intel (RT-7):** Once an action card is clicked (VFD trim or shut-in), write a `doc_type='remediation_record'` row to `field_intel` (via POST to a new `/api/h1/remediation-record` endpoint in app.py). This row should be excluded from discrimination RAG (`lbl_type='hitl_action'` filter). Closes the HITL audit loop — the operator's action becomes part of the persistent context.
-2. **Batch E:** Taller wellbore SVG + telemetry in both SCADA+GDC views + self-drawn SVG doc artifacts
+### NEXT: Batch E (scoped, in priority order)
+1. **Taller wellbore SVG + telemetry in both SCADA+GDC views:** SVG Zone 3 wellbore should be taller (current proportions feel cramped). Both the SCADA and GDC tabs should show the live sensor readout tiles (PIP/Amps/Temp/Vib values at cursor position) — currently only GDC tab shows them.
+2. **Self-drawn SVG document artifacts:** Replace the plain text doc cards with small inline SVG sketches (sonic log trace, pressure histogram, shift note icon) to make the document stack more visually compelling.
 
 ---
 
@@ -81,6 +78,7 @@ Scrub-reactive + transport lockout + H2 classifier verification. Key deliverable
 | Scrub-reactive GDC verdict reset | ✅ FIXED Session Y Batch C | Back-scrub before gdc_detect_idx resets all revealed state |
 | Transport controls locked after remediation | ✅ FIXED Session Y Batch C | Buttons + scrubber disabled on h1Resolved/h1Seized/h2Resolved/h2PullOutcome |
 | H2 classifier_ok verified live | ✅ VERIFIED Session Y | curl confirms classifier_ok:true — inference-api running real esp_classifier.ubj |
+| Remediation writes to field_intel | ✅ FIXED Session Z Batch D | `/api/h1/remediation-record` live; lbl_type='hitl_action' excluded from discrimination RAG |
 | MODEL_FOUNDATIONS vs SESSION_LOG precision conflict | ⏳ OPEN | SESSION_LOG says P=0.995 pass; MODEL_FOUNDATIONS says 0.815 fail not committed — reconcile before any accuracy % ships |
 
 ---
@@ -94,5 +92,5 @@ Scrub-reactive + transport lockout + H2 classifier verification. Key deliverable
 - `feature-trio-clean` branch — do NOT merge to main
 - Gas Lock and Fluid Drawdown have IDENTICAL sensor trajectories — this is the H1 premise
 - Physics panel `<` chars in text content: safe only as `< ` (space after) — never `<digit`
-- `app.py` ~6,300 lines, `index.html` ~2,683 lines, `app.js` ~2,240 lines — always grep for line numbers first
+- `app.py` ~6,400 lines, `index.html` ~2,683 lines, `app.js` ~2,300 lines — always grep for line numbers first
 - H2 uses inference-api (not local esp_classifier.bst) — local .bst is 4-class without slug_flow
