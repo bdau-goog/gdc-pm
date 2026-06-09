@@ -2,6 +2,15 @@
 
 ---
 
+## Session S (June 9, 2026) — *Physics audit + model retrain + Surveillance tab*
+
+**Code committed:** `327d85d` (4 commits — physics fix, Surveillance tab, retrained models)
+**fault-trigger-ui image:** `sha256:d0fc6935` · **inference-api image:** `sha256:357c78da`
+**Smoke test:** 12/12 assertions, 0 console errors ✅
+
+This was an ML integrity session. The H1 demo chart was physically wrong — PIP ending at 875–1100 PSI (should be 400–600), winding temperature flat (should rise to 245–265°F), vibration too low (should be 4.5–6.5 mm/s), and the Smart SCADA alarm firing at step 119/120 (never). Root cause: `FAULT_PROFILES` in `app.py`, `fault_signatures.py`, and `retrain_edge_models.py` all had stale gas_lock endpoint ranges. All three files corrected to API RP 11S §4.2/§7.2 and SPE-174536-MS ground truth. `esp_classifier.ubj` retrained (gas_lock P=0.995, all 5 MODEL_FOUNDATIONS §6 gates pass, seed=99 independent of training). `esp_health.ubj` retrained (RMSE=0.00179, SCADA alarm zone correctly at health ≈ 0.30). Live curl verify after deploy: psi_final=536 PSI, temp=253°F, vib=5.11 mm/s, amps=32.7 A, lead_time=7.0 min, model=esp_health.ubj. Smart SCADA Rule C (undercurrent trip Amps < 50A, API RP 11S §7.2) added to `h1_scenario_replay` — now 3-rule ISA-18.2 logic; SCADA fires step 79/120 (~T=20 min). **Surveillance tab** added as the new first tab (`index.html` + `app.js`) — hero scope panel (6 pads / 156 ESPs / 14 alarms / 8,412 pgvector docs), 6-pad triage grid (Alpha amber+anomaly, Bravo–Foxtrot nominal), static DCS-style alarm noise panel, Deep-Dive CTA button -> `setMainTab(horizon1)`. App now opens on Surveillance tab by default. Key rejection: did not start Phase 3 (H1 ISA-101 redesign) — context budget risk; deferred to Session T with full spec in NEXT_SESSION_PROMPT.md.
+
+
 ## Session Q (June 8, 2026) — *H1 Discern tab rebuild — 4-sensor chart, SVG wellbore, smart SCADA, fleet scalability card*
 
 **Code committed:** `1fe60f4` (feat(ui): Session Q — 4-sensor chart, SVG wellbore, smart SCADA, A-3 anchor)
