@@ -124,7 +124,9 @@ createApp({
       h1RagDoc3Timer: null,         // setTimeout handle for doc 3
       h1ShiftNoteModalOpen: false,  // click-through Shift Handover Note modal
       h1SonicLogModalOpen: false,   // click-through Acoustic Sonic Log modal
+      h1GorModalOpen: false,        // click-through GOR/Separator Lab Report modal
       h1OverrideModalOpen: false,   // GDC override confirmation modal (VFD trim during drawdown)
+      h1ShowEvidenceTable: false,   // toggle Bayesian evidence table in Zone 1 verdict
       // Legacy evidence wall state — kept as h1EvidenceActive counter drives h1RagRevealed via watcher
       h1EvidenceWall: [
         {active: false, content: '', cat: 'Telemetry',    icon: '📡'},

@@ -757,7 +757,7 @@
               <!-- Before GDC detection: quiet baseline -->
               <div v-if="!h1FaultTypeRevealed" style="background:rgba(15,23,42,0.4);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;color:var(--muted)">
                 WELL A-3 — BASELINE MONITORING<br>
-                <span style="color:rgba(74,222,128,0.65)">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '1.0000' }}</span>
+                <span style="color:rgba(74,222,128,0.65)">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}</span>
                 <span style="color:var(--muted)"> · threshold 0.65 · scanning</span>
               </div>
               <!-- After detection, before RAG: retrieving context -->
@@ -769,15 +769,45 @@
               </div>
               <!-- After RAG: GDC gas_lock verdict -->
               <div v-if="h1RagRevealed && h1FaultType==='gas_lock'" style="background:rgba(16,36,22,0.55);border:1px solid rgba(74,222,128,0.28);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;line-height:1.7">
-                <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS LOCK CONFIRMED<span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '—' }} · L3 context fused</span></div>
-                <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">L3 Context Fused: Shift Note (06:15 Tour 2) + GOR trend · Casing annulus fully submerged. Gas pocket in pump stages.</div>
+                <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS LOCK CONFIRMED
+                  <span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}
+                    &nbsp;·&nbsp;P(gas_lock) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
+                </div>
+                <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing annulus fully submerged. Gas pocket in pump stages.</div>
                 <div style="color:var(--green);font-size:0.50rem">VFD trim (52→44 Hz) is safe. Motor cooling intact.</div>
+                <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
+                  style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(74,222,128,0.2);color:rgba(74,222,128,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
+                <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
+                  <div style="display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 0.6fr;gap:2px 4px;color:rgba(100,116,139,0.6);font-size:0.38rem;text-transform:uppercase;margin-bottom:2px"><span>Finding</span><span>LR</span><span>Prior</span><span>Post</span></div>
+                  <div v-for="f in h1ReplayData.bayes_findings" :key="f.id" style="display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 0.6fr;gap:2px 4px;padding:1px 0;border-top:1px solid rgba(100,116,139,0.08)">
+                    <span style="color:var(--text2)">{{ f.label }}</span>
+                    <span style="color:rgba(74,222,128,0.8)">×{{ f.lr }}</span>
+                    <span style="color:var(--muted)">{{ f.prior_p }}%</span>
+                    <span style="color:rgba(74,222,128,0.9);font-weight:700">{{ f.post_p }}%</span>
+                  </div>
+                  <div style="margin-top:3px;color:rgba(100,116,139,0.45);font-size:0.36rem">{{ h1ReplayData.bayes_lr_note }}</div>
+                </div>
               </div>
               <!-- After RAG: GDC fluid_drawdown verdict -->
               <div v-if="h1RagRevealed && h1FaultType==='fluid_drawdown'" style="background:rgba(40,20,5,0.55);border:1px solid rgba(251,146,60,0.3);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;line-height:1.7">
-                <div style="color:var(--orange);font-weight:700;font-size:0.60rem">⚠  FLUID DRAWDOWN CONFIRMED<span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData.health_score[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.health_score[h1CursorIdx]).toFixed(4) : '—' }} · L3 context fused</span></div>
-                <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">L3 Context Fused: Sonic Log (06:00) + Casing GOR · Dynamic fluid level 150 ft above intake (min: 120 ft).</div>
+                <div style="color:var(--orange);font-weight:700;font-size:0.60rem">⚠  FLUID DRAWDOWN CONFIRMED
+                  <span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}
+                    &nbsp;·&nbsp;P(drawdown) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
+                </div>
+                <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">Docs fused: Acoustic Survey (06:00) + Separator GOR Lab · Dynamic level declining. No free gas at intake.</div>
                 <div style="color:var(--red);font-size:0.50rem">VFD trim CONTRAINDICATED — drops velocity to 3.1 ft/s < 4.2 ft/s critical lift (SPE-174536).</div>
+                <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
+                  style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(251,146,60,0.2);color:rgba(251,146,60,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
+                <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
+                  <div style="display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 0.6fr;gap:2px 4px;color:rgba(100,116,139,0.6);font-size:0.38rem;text-transform:uppercase;margin-bottom:2px"><span>Finding</span><span>LR</span><span>Prior</span><span>Post</span></div>
+                  <div v-for="f in h1ReplayData.bayes_findings" :key="f.id" style="display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 0.6fr;gap:2px 4px;padding:1px 0;border-top:1px solid rgba(100,116,139,0.08)">
+                    <span style="color:var(--text2)">{{ f.label }}</span>
+                    <span style="color:rgba(251,146,60,0.8)">×{{ f.lr }}</span>
+                    <span style="color:var(--muted)">{{ f.prior_p }}%</span>
+                    <span style="color:rgba(251,146,60,0.9);font-weight:700">{{ f.post_p }}%</span>
+                  </div>
+                  <div style="margin-top:3px;color:rgba(100,116,139,0.45);font-size:0.36rem">{{ h1ReplayData.bayes_lr_note }}</div>
+                </div>
               </div>
             </div>
 
@@ -856,19 +886,19 @@
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px;text-decoration:underline;cursor:pointer">View →</div>
                   </div>
                 </div>
-                <!-- Doc 2: GOR Lab Test (revealed ~2s after RAG) -->
-                <div v-if="h1RagDoc2Shown" class="h1-rag-doc-card">
+                <!-- Doc 2: GOR / Separator Lab Test (revealed ~2s after RAG) -->
+                <div v-if="h1RagDoc2Shown" class="h1-rag-doc-card" @click="h1GorModalOpen=true" title="Click to view full document" style="cursor:pointer">
                   <span style="font-size:0.9rem;flex-shrink:0">📄</span>
                   <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3">GOR Lab Test<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Well A-3 Separator · Gas trend</span></div>
-                    <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.89</div>
+                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Separator Lab Report<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Well A-3 · GOR & Casing Pressure</span></div>
+                    <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px;text-decoration:underline;cursor:pointer">View →</div>
                   </div>
                 </div>
                 <!-- Doc 3: OEM Troubleshooting Guide (revealed ~3.5s after RAG) -->
                 <div v-if="h1RagDoc3Shown" class="h1-rag-doc-card">
                   <span style="font-size:0.9rem;flex-shrink:0">📄</span>
                   <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3">OEM Troubleshooting Guide<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Gas Void Handling · Baker Hughes ESP</span></div>
+                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3">OEM Troubleshooting Guide<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Gas Void Handling · Permian ESP Operational Manual</span></div>
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.82</div>
                   </div>
                 </div>
@@ -993,13 +1023,13 @@
           </div>
           <div class="h1-modal-body h1-field-doc">
             <table class="h1-doc-header-table">
-              <tr><td>Well:</td><td>A-1 · Pad Alpha</td><td>Date:</td><td>{{ new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) }}</td></tr>
+              <tr><td>Well:</td><td>A-3 · Pad Alpha</td><td>Date:</td><td>{{ new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) }}</td></tr>
               <tr><td>Tour:</td><td>Tour 2 (06:00–14:00)</td><td>Time:</td><td>06:15</td></tr>
               <tr><td>Operator:</td><td>J. Morales</td><td>Field:</td><td>Permian Basin — Block 7</td></tr>
             </table>
             <hr style="border-color:var(--border);margin:10px 0"/>
             <div style="font-size:0.62rem;font-weight:700;color:var(--text2);margin-bottom:5px">OPERATIONAL NOTES</div>
-            <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Well A-1 showing elevated gas void fraction at pump intake this morning. GOR up to 1,310 scf/bbl vs Tour 1 baseline of 1,100 scf/bbl (+19%). Casing pressure built +18 PSI vs prior tour — consistent with free gas migration from upper zone into annulus. Separator gas rate: 142 Mscf/d (↑ from 122 Mscf/d Tour 1).</p>
+            <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Well A-3 showing elevated gas void fraction at pump intake this morning. GOR up to 1,310 scf/bbl vs Tour 1 baseline of 1,100 scf/bbl (+19%). Casing pressure built +18 PSI vs prior tour — consistent with free gas migration from upper zone into annulus. Separator gas rate: 142 Mscf/d (↑ from 122 Mscf/d Tour 1).</p>
             <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Pump Intake Pressure declining slowly since ~05:40 — now 1,245 PSI (↓ from 1,380 PSI at Tour 1 handover). Motor amps tracking with PIP decline. Winding temp nominal 197°F, vibration nominal 1.4 mm/s.</p>
             <p style="font-size:0.60rem;color:var(--orange);line-height:1.7;font-weight:600;margin:0 0 8px">Diagnosis: Higher than usual GVF — possibly gas migration from upper zone. Classic gas lock onset. Suggest monitoring closely; recommend VFD speed-down if PIP continues to decline.</p>
             <hr style="border-color:var(--border);margin:8px 0"/>
@@ -1011,13 +1041,13 @@
       <!-- ══ SONIC LOG MODAL ══ -->
       <div v-if="h1SonicLogModalOpen" class="h1-modal-overlay" @click.self="h1SonicLogModalOpen=false">
         <div class="h1-modal-box" style="max-width:600px;max-height:80vh;overflow-y:auto">
-          <div class="h1-modal-title">📊 Baker Hughes Dynamic Acoustic Sonic Log — Well A-1
+          <div class="h1-modal-title">📊 Permian Acoustic Services — Dynamic Fluid Level Survey — Well A-3
             <button @click="h1SonicLogModalOpen=false" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer">✕</button>
           </div>
           <div class="h1-modal-body h1-field-doc">
             <table class="h1-doc-header-table">
-              <tr><td>Well ID:</td><td>A-1 · Pad Alpha</td><td>Survey Type:</td><td>Dynamic Acoustic Fluid Level</td></tr>
-              <tr><td>Date / Time:</td><td>{{ new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) }} / 06:00</td><td>Service Co.:</td><td>Baker Hughes SONiK™</td></tr>
+              <tr><td>Well ID:</td><td>A-3 · Pad Alpha</td><td>Survey Type:</td><td>Dynamic Acoustic Fluid Level</td></tr>
+              <tr><td>Date / Time:</td><td>{{ new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) }} / 06:00</td><td>Service Co.:</td><td>Permian Acoustic Services (SONiX-2)</td></tr>
               <tr><td>Operator:</td><td>J. Morales</td><td>Field:</td><td>Permian Basin — Block 7</td></tr>
             </table>
             <hr style="border-color:var(--border);margin:10px 0"/>
@@ -1026,20 +1056,57 @@
               <thead><tr><th>Parameter</th><th>Measured Value</th><th>Baseline (Tour 1)</th><th>Delta</th></tr></thead>
               <tbody>
                 <tr><td>Static Fluid Level</td><td>1,820 ft TVD</td><td>1,810 ft TVD</td><td>+10 ft</td></tr>
-                <tr><td>Dynamic Fluid Level</td><td class="h1-sonic-alert">1,870 ft TVD (150 ft above intake)</td><td>1,780 ft TVD</td><td class="h1-sonic-alert">+90 ft ↓</td></tr>
+                <tr><td>Dynamic Fluid Level</td><td>1,780 ft TVD (240 ft above intake)</td><td>1,750 ft TVD</td><td>−30 ft (moderate decline)</td></tr>
                 <tr><td>Pump Intake Depth</td><td>2,020 ft TVD</td><td>—</td><td>—</td></tr>
-                <tr><td>Minimum Submergence</td><td class="h1-sonic-warn">150 ft (critical: 120 ft)</td><td>240 ft</td><td class="h1-sonic-alert">−90 ft ↓</td></tr>
+                <tr><td>Minimum Submergence</td><td>240 ft (critical: 120 ft)</td><td>270 ft</td><td>−30 ft (within limits)</td></tr>
                 <tr><td>Casing Pressure</td><td>40 PSI (flat)</td><td>41 PSI</td><td>−1 PSI</td></tr>
-                <tr><td>GOR (scf/bbl)</td><td>1,104 scf/bbl</td><td>1,100 scf/bbl</td><td>+4 scf/bbl (nominal)</td></tr>
                 <tr><td>Free Gas at Intake</td><td>None detected</td><td>None</td><td>—</td></tr>
               </tbody>
             </table>
             <hr style="border-color:var(--border);margin:10px 0"/>
-            <div style="font-size:0.62rem;font-weight:700;color:var(--orange);margin-bottom:4px">⚠ ENGINEER'S NOTE</div>
-            <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Dynamic fluid level 150 ft above pump intake (minimum submergence: 120 ft). Reservoir is depleting — this is NOT a gas migration event. Casing pressure flat (40 PSI) and GOR nominal confirm <strong>no free gas migration</strong>. This is reservoir fluid drawdown.</p>
-            <p style="font-size:0.60rem;color:var(--red);line-height:1.7;font-weight:600;margin:0 0 8px">CONTRAINDICATION: VFD speed-down will drop fluid transport velocity below critical lift (4.2 ft/s). Sand and fines will bridge the completion. Do NOT trim VFD frequency. Emergency shutdown is the correct action.</p>
+            <div style="font-size:0.62rem;font-weight:700;color:var(--text2);margin-bottom:4px">SURVEYOR'S FIELD NOTES</div>
+            <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Dynamic fluid level measured at 240 ft above pump intake (minimum submergence limit: 120 ft). Fluid level has declined 30 ft vs prior survey baseline. Casing annulus pressure flat at 40 PSI; no free gas zone detected in annulus. Survey completed 06:00 Tour 2. Continued periodic monitoring recommended per operating procedure.</p>
             <hr style="border-color:var(--border);margin:8px 0"/>
             <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.97 · AlloyDB on-cluster RAG · No cloud dependency</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ GOR LAB TEST MODAL ══ -->
+      <div v-if="h1GorModalOpen" class="h1-modal-overlay" @click.self="h1GorModalOpen=false">
+        <div class="h1-modal-box" style="max-width:560px;max-height:80vh;overflow-y:auto">
+          <div class="h1-modal-title">🧪 Separator Laboratory Report — Well A-3
+            <button @click="h1GorModalOpen=false" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer">✕</button>
+          </div>
+          <div class="h1-modal-body h1-field-doc">
+            <table class="h1-doc-header-table">
+              <tr><td>Well:</td><td>A-3 · Pad Alpha</td><td>Date:</td><td>{{ new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) }}</td></tr>
+              <tr><td>Sample Time:</td><td>04:30 Tour 2</td><td>Lab:</td><td>Permian Fluid Analytics</td></tr>
+              <tr><td>Field Tech:</td><td>R. Okonkwo</td><td>Analysis:</td><td>Production Gas Test</td></tr>
+            </table>
+            <hr style="border-color:var(--border);margin:10px 0"/>
+            <div style="font-size:0.62rem;font-weight:700;color:var(--text2);margin-bottom:6px">SEPARATOR TEST MEASUREMENTS</div>
+            <table class="h1-sonic-table">
+              <thead><tr><th>Parameter</th><th>Measured Value</th><th>Baseline (Tour 1)</th><th>Delta</th></tr></thead>
+              <tbody>
+                <template v-if="h1FaultType==='gas_lock'">
+                  <tr><td>GOR (scf/bbl)</td><td class="h1-sonic-alert">1,310 scf/bbl ↑</td><td>1,100 scf/bbl</td><td class="h1-sonic-alert">+210 scf/bbl (+19%)</td></tr>
+                  <tr><td>Separator Gas Rate</td><td class="h1-sonic-alert">142 Mscf/d ↑</td><td>98 Mscf/d</td><td class="h1-sonic-alert">+44 Mscf/d</td></tr>
+                  <tr><td>Casing Annulus Pressure</td><td class="h1-sonic-alert">142 PSI (rising)</td><td>124 PSI</td><td class="h1-sonic-alert">+18 PSI ↑</td></tr>
+                  <tr><td>Water Cut</td><td>28.4%</td><td>27.8%</td><td>+0.6% (nominal)</td></tr>
+                  <tr><td>Oil Rate</td><td>244 BPD</td><td>258 BPD</td><td>−14 BPD (minor)</td></tr>
+                </template>
+                <template v-else>
+                  <tr><td>GOR (scf/bbl)</td><td>1,104 scf/bbl</td><td>1,100 scf/bbl</td><td>+4 scf/bbl (nominal)</td></tr>
+                  <tr><td>Separator Gas Rate</td><td>98 Mscf/d</td><td>98 Mscf/d</td><td>Flat (nominal)</td></tr>
+                  <tr><td>Casing Annulus Pressure</td><td>40 PSI (flat)</td><td>41 PSI</td><td>−1 PSI (stable)</td></tr>
+                  <tr><td>Water Cut</td><td>28.4%</td><td>27.8%</td><td>+0.6% (nominal)</td></tr>
+                  <tr><td>Oil Rate</td><td>287 BPD</td><td>292 BPD</td><td>−5 BPD (minor)</td></tr>
+                </template>
+              </tbody>
+            </table>
+            <hr style="border-color:var(--border);margin:10px 0"/>
+            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.89 · AlloyDB on-cluster RAG · No cloud dependency</div>
           </div>
         </div>
       </div>

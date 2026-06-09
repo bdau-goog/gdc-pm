@@ -65,5 +65,24 @@ Trigger phrase **"red team"** re-runs this audit at any checkpoint.
 
 ---
 
-*Last updated: Session V (June 9, 2026) — initial population*
-*Next update: after H2 UI ships and smoke tests pass*
+---
+
+## Batch B Fixes — Session W (June 9, 2026)
+
+| RT # | Challenge | Severity | Fix applied | Status |
+|------|-----------|----------|-------------|--------|
+| RT-1 | "92%/94% confidence literals are fabricated HTML — not from any model or computation" | 🔴 CRITICAL | Replaced with live Bayesian posterior `_bayes_discriminate()` — naive-Bayes log-odds over 4 document-derived findings (Good 1950 / Fagan 1975). `P(fluid_drawdown)` = 99.6% computed live from `_BAYES_FINDINGS`. Verified: API returns `bayes_pct: 99.6` on every run. | ✅ FIXED |
+| RT-2 | "`hs = 1.0000` shows on confirmed-fault verdict when cursor goes past array bound — contradicts active fault state" | 🟠 HIGH | Fixed: Zone 1 health score now uses `Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)` safe clamped index. Pre-detection fallback uses same expression. Never shows 1.0000 on degraded trajectory. | ✅ FIXED |
+| RT-3 | "Sonic log at 06:00 says 'Emergency shutdown is the correct action' — a document with a shutdown order would cause operators to act before the demo window opens" | 🔴 CRITICAL (Document Realism Gate G2/G3) | De-smoking-gunned: sonic log body now shows measurements-only (240 ft submergence, within limits, flat casing pressure). All diagnosis and shutdown orders removed. Moved to GDC verdict layer only. | ✅ FIXED |
+| RT-4 | "GOR provenance: acoustic sonic survey doesn't measure GOR — a separator test does" | 🟠 HIGH (Document Realism Gate G5/G6) | New `Separator Lab Report` modal added with correct GOR provenance (Permian Fluid Analytics lab). GOR row removed from sonic log table. Doc 2 in evidence stack now opens the lab report modal. | ✅ FIXED |
+| RT-5 | "Sonic log modal says 'Well A-1' but the H1 scenario is anchored to Well A-3 everywhere else" | 🟡 MEDIUM | Fixed: sonic log modal, shift note modal, and all document header rows updated to A-3. Confirmed: `Well A-1` count in container = 0. | ✅ FIXED |
+| RT-6 | "The Bayesian posterior is circular — documents are seeded to match the fault type" | 🟡 MEDIUM | This is an honest challenge. Addressed in Physics & Logic panel: 'This is a demonstration of what the system would do when these documents exist. XGBoost detection is genuinely live (new trajectory per run). Bayesian fusion is computed, not hardcoded.' LR values labeled as conservative transparent weights, not calibrated parameters. | ✅ ACKNOWLEDGED |
+| RT-7 | "The sonic log modal has Baker Hughes SONiK™ — a real product trademarked by a real company" | 🟠 HIGH (Document Realism Gate G1) | Replaced with fictional service provider: `Permian Acoustic Services (SONiX-2)`. No real company or product trademark. | ✅ FIXED |
+| RT-8 | "The shut-in option was framed as zero-cost — that's dishonest (restart costs apply)" | 🟠 HIGH | Fixed Session W Batch A. Shut-in now says 'Deferred production + restart costs apply (see ⓘ)'. | ✅ FIXED (Batch A) |
+| RT-9 | "OEM Guide doc card says 'Baker Hughes ESP' — another real-company reference in a synthetic document" | 🟡 MEDIUM (Document Realism Gate G1) | Fixed: doc card now says 'Permian ESP Operational Manual'. | ✅ FIXED |
+| RT-10 | "Bayesian LR values (8, 5, 3, 2) — are those calibrated from data or made up?" | 🟡 MEDIUM | LR values are conservative transparent weights grounded in API RP 11S §7.2 physics. NOT calibrated from empirical data. Stated explicitly on-screen in the evidence table: `{{ h1ReplayData.bayes_lr_note }}` renders 'Conservative transparent weights grounded in API RP 11S §7.2; not calibrated from empirical data.' Pre-empts the challenge. | ✅ ADDRESSED |
+
+---
+
+*Last updated: Session W (June 9, 2026) — Batch B: Bayesian wiring + document de-smoking-gun*
+*Smoke test: 12/12 assertions, 0 console errors · image digest sha256:18155185*
