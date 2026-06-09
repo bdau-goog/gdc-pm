@@ -235,7 +235,7 @@ The old literals (index.html lines 779, 785) are removed as of Batch B implement
 | Evidence table in H1 Zone 1 verdict | Not yet in UI | Batch B |
 | Wire live posterior to Zone 1 headline | Not yet — old fabricated % removed | Batch B |
 | Verify Good/Fagan citation locators | Citations marked "to confirm" above | Pre-Batch B |
-| Reconcile SESSION_LOG (P=0.995) vs MODEL_FOUNDATIONS (0.815, not committed) | Open integrity conflict | Separate verification batch |
+| Reconcile SESSION_LOG (P=0.995) vs MODEL_FOUNDATIONS (0.815, not committed) | ✅ RESOLVED Session AA — MODEL_FOUNDATIONS.md updated; v1 0.815 is correct historical record for the not-committed v1. Deployed v2 = P=0.995, all gates pass. | — |
 
 ---
 
