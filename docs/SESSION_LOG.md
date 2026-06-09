@@ -2,6 +2,16 @@
 
 ---
 
+## Session U (June 9, 2026) — *H1 ISA-101 3-zone Decision Console (steps 3c + 3d) — deployed and verified*
+
+**Code committed:** `c06aaf9` (feat(ui): Session U — ISA-101 3-zone Decision Console (3c+3d): new SCADA view, GDC 3-zone, cursor-reactive SVG wellbore, removed fleet card)
+**fault-trigger-ui image:** `sha256:a33a0833`
+**Smoke test:** 12/12 assertions, 0 console errors ✅
+
+Completed the two remaining H1 Decision Console sub-tasks deferred from Session T. **3c (Full ISA-101 Decision Console redesign):** SCADA View redesigned from a 2-card sensor grid to a proper ISA-101 HP-HMI layout — pre-alarm shows a quiet slate monospace status line (`WELL A-3 — SURVEILLANCE ACTIVE · ALL SENSORS WITHIN LIMITS`, no color, no noise), post-alarm reveals a compact amber alarm banner + 2×2 industrial tag grid (PIP/Amps/Temp/Vib, monospace readouts with SCADA setpoints) + two equal ISA-101 slate-outline action cards (VFD Speed-Down / Emergency Shut-In, not color-saturated since cause is unknown). The old saturated amber cards and 2-sensor pre-alarm grid were replaced. GDC Advisor View restructured from a flat single-column layout into a Three-Zone ISA-101 layout: Zone 1 (full-width assessment headline, monochrome border — quiet baseline → scanning retrieval → full GDC verdict), Zone 2 Left (58%, action cards and outcomes, scrollable), Zone 2 Right (30%, vertical document stack with three pgvector evidence cards revealed sequentially: primary shift note/sonic log fires with RAG, GOR Lab Test fires +2s, OEM Troubleshooting Guide fires +3.5s using existing `h1RagDoc2Shown`/`h1RagDoc3Shown` state), Zone 3 (12% far-right strip, SVG downhole digital twin, GDC view only). **3d (SVG wellbore cursor-reactive binding):** The old SVG wellbore (previously hardcoded to binary `h1RagRevealed` toggle) was completely replaced with a new Zone 3 SVG whose gas bubble and sand particle `<g>` groups have their opacity bound to `Math.max(0, (h1CursorIdx - h1ReplayData.gdc_detect_idx) / Math.max(1, h1ReplayData.n - 1 - h1ReplayData.gdc_detect_idx))` — a continuous 0→1 ramp from the GDC detection index to the end of the trajectory, zero before detection. This is a live, honest coupling of visual animation to model output position. **Fleet Scale Card removed** — the Surveillance tab already makes the fleet-scale argument (156 ESPs, 14 alarms, 8,412 documents); redundant card deleted from Discern tab. Added `.h1-rag-doc-card` CSS class to styles.css for the Zone 2 right document stack cards. No Vue template compiler issues detected (all `<` in text content confirmed as `< ` with space). Smoke test: PIP 1168→493 PSI, Temp 197→248°F, Vib 1.1→5.4 mm/s — all physics correct. **Next task (Session V):** H2 Slug Flow Scenario Replay — same architectural pattern as H1 (backend replay endpoint + frontend Play/scrub + SCADA vs GDC verdict).
+
+---
+
 ## Session T (June 9, 2026) — *H1 ISA-101 partial redesign — scrubber, physics panel, rolling x-axis*
 
 **Code committed:** `6a8b328` (feat(ui): Session T — scrubber inside left col, ⓘ physics panel, rolling x-axis, doc reveal timers, h1SplitPercent=56)

@@ -1,24 +1,32 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session T — ISA-101 H1 partial redesign)
-**git head:** `6a8b328` (1 commit this session)
-**fault-trigger-ui image:** `sha256:45bc0846` (Session T — scrubber inside left col, physics panel, rolling x-axis)
+**Date:** June 9, 2026 (Session U — ISA-101 3-zone Decision Console complete)
+**git head:** `c06aaf9` (1 commit this session)
+**fault-trigger-ui image:** `sha256:a33a0833` (Session U — 3c+3d Decision Console, cursor-reactive SVG wellbore)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
 
-## STEP 1: Run These Four Commands First
+## STEP 1: Run These Five Commands First
 
 ```bash
+source .env && echo "PROJECT=$GOOGLE_CLOUD_PROJECT KUBECONFIG=$KUBECONFIG"
 kubectl get pods -n gdc-pm --no-headers
 kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
 curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
-kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
+kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents; SELECT COUNT(*) FROM telemetry_events;"
+```
+
+**Verification (Command 5 — inference model audit):**
+```bash
+kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "import urllib.request, json; print(list(json.loads(urllib.request.urlopen('http://inference-api:8080/model-info').read().decode())['models'].keys()))"
 ```
 
 **Expected when healthy:**
+- Workspace: `PROJECT=gdc-pm-v2` · `KUBECONFIG=/home/brian/gdc-pm/.kubeconfig`
 - All 8 pods 1/1 Running · ollama replicas: 1
 - ollama_online: True · model: gemma4:latest
-- field_intel: ~2–5 · rag_documents: 18
+- field_intel: ~2–5 · rag_documents: 18 · telemetry_events: > 0
+- inference-api models: `['esp_classifier', 'gas_lift_classifier', 'mud_pump_classifier', 'top_drive_classifier', ...]`
 
 ---
 
@@ -30,45 +38,19 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Session U — Next Implementation Task
+## STEP 3: Session V — Next Implementation Tasks
 
-### PRIORITY 1: H1 ISA-101 Decision Console Redesign (3c + 3d)
+### ALL H1 STEPS NOW COMPLETE ✅
+Steps 3a, 3b, 3c, 3d, and 3e are **DONE and deployed** (Sessions T + U).
 
-Steps 3a, 3b, and 3e are **DONE and deployed** (Session T). These remain:
+### PRIORITY 1: H2 Slug Flow Scenario Replay
+Per DEMO_MASTER.md §5: Build the Classify tab H2 scenario replay following the same architecture as H1.
 
-**3c. Full ISA-101 Decision Console redesign — single batched `replace_in_file` on index.html.**
-Read DEMO_MASTER.md §4.6 carefully. The current file still has the OLD layout:
-- SVG wellbore at top of Decision Console (before the sub-tab bar)
-- SCADA View: shows 2-sensor green grid pre-alarm + 2-card amber cards post-alarm (OLD, not ISA-101)
-- GDC Advisor View: flat single-column layout (OLD, not 3-zone)
+- Backend: `GET /api/h2/scenario-replay?fault=slug_flow` — precompute vibration + temperature trajectory (120 steps), confirm slug flow decorrelation (vib rises, temp FLAT), return discriminator data
+- Frontend: Replace the current static H2 Classify tab content with a proper Scenario Replay layout (▶ Play / scrub, dual-sensor chart: vib rising + temp flat, SCADA vs GDC verdict)
+- Verdict cards: GDC confirms downhole pump is green (healthy), recommends $1,500 surface truck roll; SCADA path leads to $150k false-positive pump pull
 
-Target redesign (from DEMO_MASTER.md §4.6):
-
-SCADA View:
-- Pre-alarm: quiet slate, single monospace line `WELL A-3 — SURVEILLANCE ACTIVE · ALL SENSORS WITHIN LIMITS`
-- Post-alarm: amber banner + 2×2 tag grid (PIP/Amps/Temp/Vib, monospace, no diagnosis)
-- Two equal action cards (ISA-101 slate outline, not amber): Card A VFD Speed-Down, Card B Emergency Shut-In
-- **SVG wellbore: completely hidden on SCADA view** (zero width, no placeholder)
-
-GDC Advisor View — Three-Zone Layout:
-- Zone 1: Standalone Assessment Headline (full-width, monochrome border, pre-detection scanning placeholder)
-- Zone 2: Left 60% = two equal action cards + Right 40% = vertical document stack (3 cards revealed sequentially)
-  - Doc 2 (`h1RagDoc2Shown`) and Doc 3 (`h1RagDoc3Shown`) state vars already wired in app.js ✅
-- Zone 3: SVG wellbore strip (far right 12%, GDC only, full height)
-
-**Remove Fleet Scale Card** from Discern tab entirely (Surveillance tab covers this).
-
-**3d. SVG wellbore scrubber binding** (goes into the new Zone 3 SVG):
-- Gas bubbles: opacity bound to `Math.max(0, h1CursorIdx - h1ReplayData.gdc_detect_idx) / (h1ReplayData.n - 1 - h1ReplayData.gdc_detect_idx)` — zero before detection
-- Sand particles: same binding
-- Already wired in app.js state ✅; implement in the Zone 3 SVG HTML
-
-**After 3c+3d:** rebuild + push fault-trigger-ui, kubectl rollout restart, run smoke test.
-
----
-
-### PRIORITY 2: Deploy and Verify
-
+### PRIORITY 2: Deploy and Verify H2
 ```bash
 docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest gke/fault-trigger-ui/
 docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
@@ -93,9 +75,12 @@ cd ~/gdc-pm && node scripts/ui_smoke.mjs
 | ⓘ Physics & Logic button/panel | ✅ NEW Session T | Uses existing `.physics-panel` CSS; 4-section content |
 | Rolling 30-min x-axis | ✅ NEW Session T | `xMax > 30 ? [xMax-30, xMax] : [0, max(30, xMax)]` |
 | Doc reveal timers | ✅ NEW Session T | h1RagDoc2Shown (+2s), h1RagDoc3Shown (+3.5s) wired in app.js |
-| SCADA tab shows GDC health header | ⚠ INTEGRITY VIOLATION | GDC-only elements visible on SCADA view. Fix in 3c. |
-| SVG wellbore animations | ⚠ FIRE ONCE, STAY | Bound to `h1RagRevealed` (binary). Fix in 3d (cursor-reactive). |
-| Old SVG wellbore still in Decision Console | ⚠ OLD LAYOUT | Still at top of right column. Moves to Zone 3 in 3c. |
+| ISA-101 SCADA view redesign | ✅ NEW Session U | Quiet slate pre-alarm, 2×2 tag grid post-alarm, slate cards |
+| GDC 3-zone layout (3c) | ✅ NEW Session U | Zone 1 headline, Zone 2 action cards + doc stack, Zone 3 SVG |
+| Cursor-reactive SVG wellbore (3d) | ✅ NEW Session U | Bubbles/sand opacity = (cursorIdx - gdc_detect_idx) / (n-1-gdc_detect_idx) |
+| Fleet Scale Card | ✅ REMOVED Session U | Surveillance tab handles fleet scale context |
+| Document stack (Zone 2 right) | ✅ NEW Session U | 3 doc cards revealed sequentially via h1RagRevealed / h1RagDoc2Shown / h1RagDoc3Shown |
+| H2 Classify tab | ⏳ NEXT Session V | Still shows old static content — needs Scenario Replay architecture |
 
 ---
 
@@ -108,3 +93,4 @@ cd ~/gdc-pm && node scripts/ui_smoke.mjs
 - `feature-trio-clean` branch — do NOT merge to main
 - Gas Lock and Fluid Drawdown have IDENTICAL sensor trajectories — this is the H1 premise
 - Physics panel `<` chars in text content: safe only as `< ` (space after) — never `<digit`
+- `app.py` ~5,996 lines, `index.html` ~2,389 lines — always grep for line numbers first
