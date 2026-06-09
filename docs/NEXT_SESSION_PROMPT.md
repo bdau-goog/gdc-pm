@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session Z — Batch D + Batch E deployed)
-**git head:** `4083b2a` (feat(ui): Batch E — SCADA pre-alarm sensor tiles, taller wellbore SVG, SVG doc icons)
-**fault-trigger-ui image:** `sha256:5b608508` (Session Z Batch E — full UI polish deployed)
+**Date:** June 9, 2026 (Session AA — MODEL_FOUNDATIONS precision conflict resolved)
+**git head:** `58190e2` (docs: Session AA — reconcile MODEL_FOUNDATIONS precision conflict)
+**fault-trigger-ui image:** `sha256:5b608508` (Session Z Batch E — no code changes this session)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---

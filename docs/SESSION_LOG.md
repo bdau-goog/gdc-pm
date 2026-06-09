@@ -2,6 +2,16 @@
 
 ---
 
+## Session AA (June 9, 2026) — *Model Foundations precision conflict resolved — docs only, no code changes*
+
+**Code committed:** `58190e2` (docs: Session AA — reconcile MODEL_FOUNDATIONS precision conflict)
+**fault-trigger-ui image:** `sha256:5b608508` (unchanged — no code changes this session)
+**Verified live:** All 8 pods 1/1 Running · ollama_online: True · gemma4:latest · field_intel: 5 · rag_documents: 18 · telemetry_events: 1,121,520 · inference-api: 7 models loaded ✅
+
+This was a documentation-only integrity session. The session opened with mandatory startup commands (all healthy), then read NEXT_SESSION_PROMPT.md, DEMO_MASTER.md, and the full SESSION_LOG history to confirm the open items list. The key finding: the "MODEL_FOUNDATIONS vs SESSION_LOG precision conflict" open item was not a real model quality problem — it was a documentation staleness problem. `MODEL_FOUNDATIONS.md` was authored during the June 5 Session T arc; the June 9 Session S retrain had already resolved the root causes (slope-window mismatch, wrong FAULT_PROFILES) and deployed a v2 model (gas_lock P=0.995, RMSE=0.00179) — without updating MODEL_FOUNDATIONS.md. **Fix:** Updated MODEL_FOUNDATIONS.md §1, §4, §6, §8, and §9 in one batched `replace_in_file` call: historical v1 0.815 results retained in §9 (correct historical record); v2 Session S results documented in §6 (internal holdout: gas_lock P=0.995, slug_flow P=0.993, all 5 classes pass), §8 (implementation status table), and §9 addendum. §4 integrity violations table updated: esp_classifier, esp_health, slug_flow vib_range, sand_ingress amps all marked ✅ FIXED; `vizier_optimize()` hardcoded polynomial remains ❌ OPEN (esp_thermal.ubj not yet built). Also updated `H1_METHODOLOGY.md` §10 and `NEXT_SESSION_PROMPT.md` (Known Integrity State row closed, NEXT TASKS updated, git head bumped to 58190e2). No model training, no UI changes, no container rebuild. Sole remaining model integrity gap: full non-circular external replay through `injection_events` table (verification gap, not model quality gap). **Next task:** H3 Optimize tab review — smoke-test Vertex AI Vizier endpoint, assess esp_thermal.ubj build and vizier_optimize() wiring.
+
+---
+
 ## Session Z — Addendum (June 9, 2026) — *Batch E: SCADA pre-alarm sensor tiles, taller wellbore SVG, SVG doc icons — deployed and verified*
 
 **Code committed:** `4083b2a` (feat(ui): Batch E — SCADA pre-alarm sensor tiles, taller wellbore SVG, SVG doc icons)
