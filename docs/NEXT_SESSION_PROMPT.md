@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** June 9, 2026 (Session W — Batch A integrity fixes deployed)
-**git head:** `1e12ad7` (1 commit this session)
+**git head:** `d9d86af` (2 commits this session)
 **fault-trigger-ui image:** `sha256:b0ebc20d` (Session W Batch A — HITL reframe + strip $ + remove fake % + H1_METHODOLOGY.md)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -25,7 +25,7 @@ kubectl exec -n gdc-pm deployment/fault-trigger-ui -- python3 -c "import urllib.
 - Workspace: `PROJECT=gdc-pm-v2` · `KUBECONFIG=/home/brian/gdc-pm/.kubeconfig`
 - All 8 pods 1/1 Running · ollama replicas: 1
 - ollama_online: True · model: gemma4:latest
-- field_intel: ~2–5 · rag_documents: 18 · telemetry_events: > 0
+- field_intel: ~2–5 · rag_documents: 18 · telemetry_events: > 1,000,000 (healthy accumulation)
 - inference-api models: `['esp_classifier', 'gas_lift_classifier', 'mud_pump_classifier', 'top_drive_classifier', ...]`
 
 ---

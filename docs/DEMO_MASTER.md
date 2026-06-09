@@ -323,6 +323,31 @@ The claim the Scenario Replay design makes is narrow and defensible:
 
 ---
 
+## 8. DOCUMENT REALISM GATE — SYNTHETIC FIELD DOCUMENTS
+
+**Added: Session W (June 9, 2026). Enforcement: blocking — same level as PRIME DIRECTIVE.**
+
+Every synthetic field document (modal, RAG card, seeded `field_intel` row, app.py seed doc) must pass **all 6 gates** before it goes on screen. If it fails any gate, it is reworded or cut.
+
+| Gate | Rule | Failure example (pre-Session W) |
+|---|---|---|
+| **G1 — No third-party identity** | No real company, product, or trademark. Invent fictional vendors (e.g. *"Permian Acoustic Services"*, *"SONiX-2 well analyzer"*). | "Baker Hughes SONiK™" in sonic log modal |
+| **G2 — Measurements, not verdicts** | A raw field doc records **observations/readings only**. It must NOT state the diagnosis or prescribe the action. Diagnosis and action belong to the GDC synthesis layer (`ai_relevance` / verdict). | Sonic log saying "Emergency shutdown is the correct action" |
+| **G3 — No premature-action trigger ("no smoking gun")** | At its timestamp, the doc must NOT contain information so alarming that a competent operator would already have acted before our demo window. Values must be *concerning-in-hindsight*, not *alarming-in-isolation*. Test: *"Would a competent operator act on this document ALONE at its timestamp? If yes, soften the measurement or move the decisive value to the live telemetry signal."* | Sonic log showing fluid level within 30 ft of minimum — an operator sees that at 06:00 and acts immediately. Demo window starts 15 min later. |
+| **G4 — Decisive only in fusion** | The doc earns its value only when combined with the live telemetry + the other docs. Alone, it is ambiguous or routine. This is what proves the L3 moat. | A single doc that already solves the diagnostic case without the telemetry |
+| **G5 — Physically consistent** | Every number obeys the scenario physics (FAULT_PROFILES, submergence limits, GOR ranges, ISA-18.2/API RP 11S setpoints). Units correct. Internally consistent (deltas add up). | Drawdown doc showing rising casing pressure (gas lock sign, not drawdown) |
+| **G6 — Provenance plausible** | The doc type, author role, timestamp, and cadence match how that artifact is actually produced in the field (who logs it, when, why, how often). | Echometer acoustic survey "streaming automatically every 30s" — these are ad-hoc surveys, not continuous streams |
+
+**Workflow:** Before writing or editing any synthetic document text, run the G1–G6 gate check in the session. Log each document and its gate results in CLAIM_LEDGER.md before it appears in the UI. Domain owner (user) reviews document copy before pixels are drawn — same model as the Claim Ledger.
+
+**Documents currently requiring Batch B remediation (Session W open items):**
+- H1 Sonic Log modal: fails G1 (Baker Hughes), G2 (diagnosis in body), G3 (smoking gun — 150 ft near-critical at 06:00)
+- H1 Shift Note: review against G3 (GVF "estimated at 78%" is inferred, not a direct sensor reading — verify wording)
+- H1 OEM Guide doc card: review G4 (does it independently solve the case?)
+- H2 Choke Log, Separator Test, Night Shift Note: verify G3/G5/G6 compliance
+
+---
+
 ## APPENDIX: THE CLAIM LEDGER (MANDATORY VERIFICATION)
 
 Every pixel on screen must map to a `SURVIVES` row below.
