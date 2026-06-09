@@ -1,8 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session S — Physics Audit + Surveillance Tab, code+deploy)
-**git head:** `327d85d` (4 commits this session)
-**fault-trigger-ui image:** `sha256:d0fc6935` (Session S — Surveillance tab + corrected physics)
-**inference-api image:** `sha256:357c78da` (Session S — retrained esp_classifier.ubj)
+**Date:** June 9, 2026 (Session T — ISA-101 H1 partial redesign)
+**git head:** `6a8b328` (1 commit this session)
+**fault-trigger-ui image:** `sha256:45bc0846` (Session T — scrubber inside left col, physics panel, rolling x-axis)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -31,47 +30,40 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Session T — Next Implementation Task
+## STEP 3: Session U — Next Implementation Task
 
-### PRIORITY 1: H1 Frontend ISA-101 Redesign (`index.html`)
+### PRIORITY 1: H1 ISA-101 Decision Console Redesign (3c + 3d)
 
-**All 5 sub-tasks are a single batched `replace_in_file` pass on index.html.**
-Read DEMO_MASTER.md §4.6 carefully before writing any code.
+Steps 3a, 3b, and 3e are **DONE and deployed** (Session T). These remain:
 
-**3a. Move timeline scrubber inside Left Column (above `#h1-replay-chart`):**
-- Remove from its current position (below the banner, full-width)
-- Insert inside the Left Column div, immediately above `#h1-replay-chart`
-- Set `padding-left: 48px; padding-right: 12px` (matches Plotly `margin: {l:48, r:12}`)
-- This makes the scrubber auto-resize with the left column at any width
+**3c. Full ISA-101 Decision Console redesign — single batched `replace_in_file` on index.html.**
+Read DEMO_MASTER.md §4.6 carefully. The current file still has the OLD layout:
+- SVG wellbore at top of Decision Console (before the sub-tab bar)
+- SCADA View: shows 2-sensor green grid pre-alarm + 2-card amber cards post-alarm (OLD, not ISA-101)
+- GDC Advisor View: flat single-column layout (OLD, not 3-zone)
 
-**3b. Add `ⓘ Physics & Logic` info drawer button:**
-- In the Discern tab header bar, next to `↺ New Scenario`
-- Toggles a collapsible info panel explaining: ESP Unloading Physics, SCADA 4-rule trip logic, XGBoost pre-threshold multivariate detection, L3 RAG context fusion
-
-**3c. ISA-101 Decision Console full redesign (replaces current layout):**
-See DEMO_MASTER.md §4.6 for exact 3-zone layout spec.
+Target redesign (from DEMO_MASTER.md §4.6):
 
 SCADA View:
 - Pre-alarm: quiet slate, single monospace line `WELL A-3 — SURVEILLANCE ACTIVE · ALL SENSORS WITHIN LIMITS`
 - Post-alarm: amber banner + 2×2 tag grid (PIP/Amps/Temp/Vib, monospace, no diagnosis)
-- Two equal action cards (ISA-101 slate outline): Card A VFD Speed-Down, Card B Emergency Shut-In (both functional)
+- Two equal action cards (ISA-101 slate outline, not amber): Card A VFD Speed-Down, Card B Emergency Shut-In
 - **SVG wellbore: completely hidden on SCADA view** (zero width, no placeholder)
 
 GDC Advisor View — Three-Zone Layout:
 - Zone 1: Standalone Assessment Headline (full-width, monochrome border, pre-detection scanning placeholder)
 - Zone 2: Left 60% = two equal action cards + Right 40% = vertical document stack (3 cards revealed sequentially)
-- Zone 3: SVG wellbore strip (far right 12%, GDC only, scrubber-reactive)
+  - Doc 2 (`h1RagDoc2Shown`) and Doc 3 (`h1RagDoc3Shown`) state vars already wired in app.js ✅
+- Zone 3: SVG wellbore strip (far right 12%, GDC only, full height)
 
 **Remove Fleet Scale Card** from Discern tab entirely (Surveillance tab covers this).
 
-**3d. SVG wellbore scrubber binding:**
-- Gas bubbles: opacity bound to `Math.max(0, h1CursorIdx - h1ReplayData.gdc_detect_idx) / (h1ReplayData.n - h1ReplayData.gdc_detect_idx)` — zero before detection
-- Sand particles: same binding for fluid_drawdown
-- Hidden entirely on SCADA view tab
+**3d. SVG wellbore scrubber binding** (goes into the new Zone 3 SVG):
+- Gas bubbles: opacity bound to `Math.max(0, h1CursorIdx - h1ReplayData.gdc_detect_idx) / (h1ReplayData.n - 1 - h1ReplayData.gdc_detect_idx)` — zero before detection
+- Sand particles: same binding
+- Already wired in app.js state ✅; implement in the Zone 3 SVG HTML
 
-**3e. Chart x-axis: after 120-step replay, transition to rolling 30-min live window**
-
-**After all 5 sub-tasks:** rebuild + push fault-trigger-ui, kubectl rollout restart, run smoke test.
+**After 3c+3d:** rebuild + push fault-trigger-ui, kubectl rollout restart, run smoke test.
 
 ---
 
@@ -93,13 +85,17 @@ cd ~/gdc-pm && node scripts/ui_smoke.mjs
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 Scenario Replay physics | ✅ FIXED Session S | psi_final 529–601, temp 254–257°F, vib 4.9–5.1, lead 7.0 min |
+| H1 Scenario Replay physics | ✅ FIXED Session S | psi_final 483–529 PSI, temp 254°F, vib 6.1–6.4, lead 7.0 min |
 | Smart SCADA alarm logic | ✅ FIXED Session S | 3-rule ISA-18.2/API RP 11S — fires step 79/120 (~T=20min) |
 | `esp_health.ubj` / `esp_classifier.ubj` | ✅ FIXED Session S | RMSE=0.00179, gas_lock P=0.995, all gates pass |
-| Surveillance tab | ✅ NEW Session S | First tab, static content, opens by default, smoke test 12/12 |
-| SCADA tab shows GDC health header | ⚠ INTEGRITY VIOLATION | GDC-only elements (hs=0.6953, XGBoost threshold) visible on SCADA view. Fix in Phase 3c. |
-| SVG wellbore animations | ⚠ FIRE ONCE, STAY | Fire on `h1RagRevealed = true` and stay indefinitely. Fix in Phase 3d. |
-| Scrubber vs chart misalignment | ⚠ NOT IN LEFT COLUMN | Scrubber is outside the resizable left column. Fix in Phase 3a. |
+| Surveillance tab | ✅ NEW Session S | First tab, static content, opens by default |
+| Scrubber inside Left Column | ✅ FIXED Session T | padding-left:48px aligns with Plotly margin.l:48 |
+| ⓘ Physics & Logic button/panel | ✅ NEW Session T | Uses existing `.physics-panel` CSS; 4-section content |
+| Rolling 30-min x-axis | ✅ NEW Session T | `xMax > 30 ? [xMax-30, xMax] : [0, max(30, xMax)]` |
+| Doc reveal timers | ✅ NEW Session T | h1RagDoc2Shown (+2s), h1RagDoc3Shown (+3.5s) wired in app.js |
+| SCADA tab shows GDC health header | ⚠ INTEGRITY VIOLATION | GDC-only elements visible on SCADA view. Fix in 3c. |
+| SVG wellbore animations | ⚠ FIRE ONCE, STAY | Bound to `h1RagRevealed` (binary). Fix in 3d (cursor-reactive). |
+| Old SVG wellbore still in Decision Console | ⚠ OLD LAYOUT | Still at top of right column. Moves to Zone 3 in 3c. |
 
 ---
 
@@ -111,3 +107,4 @@ cd ~/gdc-pm && node scripts/ui_smoke.mjs
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
 - Gas Lock and Fluid Drawdown have IDENTICAL sensor trajectories — this is the H1 premise
+- Physics panel `<` chars in text content: safe only as `< ` (space after) — never `<digit`

@@ -2,6 +2,16 @@
 
 ---
 
+## Session T (June 9, 2026) — *H1 ISA-101 partial redesign — scrubber, physics panel, rolling x-axis*
+
+**Code committed:** `6a8b328` (feat(ui): Session T — scrubber inside left col, ⓘ physics panel, rolling x-axis, doc reveal timers, h1SplitPercent=56)
+**fault-trigger-ui image:** `sha256:45bc0846`
+**Smoke test:** 12/12 assertions, 0 console errors ✅
+
+Three of the five NEXT_SESSION_PROMPT.md §3 sub-tasks completed and deployed. **3a (Scrubber inside Left Column):** The `<input type="range">` scrubber was moved from a standalone div below the status banner into the Left Column div, directly above `#h1-replay-chart`, with `padding-left:48px;padding-right:12px` to align tick marks exactly with Plotly's `margin:{l:48,r:12}` plot area — the GDC▲ and SCADA▲ labels now land on true data positions at any window size. The Left Column width was bound to `h1SplitPercent` (changed from 38→56 default) via `:style` binding. The `.h1-splitter` drag handle was added between columns; `initH1SplitterDrag` was updated to resize `#h1-replay-chart` (not the legacy `h1-spark-*` IDs). **3b (ⓘ Physics & Logic button + panel):** Added `ⓘ Physics & Logic` button in the H1 banner `hb-actions` div; collapsible `<div v-if="showH1Info" class="physics-panel">` panel inserted after the banner with four sections: ESP Unloading Physics (identical sensor trajectories), Smart SCADA 3-rule ISA-18.2 trip logic (Rules A/B/C), XGBoost pre-threshold detection (W=20 sliding window, hs<0.65), L3 Context Fusion (pgvector RAG <2s). Used existing `.physics-panel/.pp-*` CSS classes shared with H2/H3 panels. **3e (Rolling 30-min x-axis):** `_renderH1ReplayChart` x-axis range changed from `[0, xMax]` to `xMax > 30 ? [xMax-30, xMax] : [0, Math.max(30, xMax)]`. Also wired `h1RagDoc2Shown/h1RagDoc3Shown` state vars and reveal timers (+2s/+3.5s after RAG) and `h1Reset()` timer cleanup — ready for 3c Document Stack. **Key rejection:** Did not start 3c (full ISA-101 Decision Console redesign) or 3d (SVG wellbore cursor-reactive binding) — would require replacing the entire old SCADA+GDC view HTML (200+ lines) which risks another SEARCH failure cascade in a single pass; defer to Session U with full context.
+
+---
+
 ## Session S (June 9, 2026) — *Physics audit + model retrain + Surveillance tab*
 
 **Code committed:** `327d85d` (4 commits — physics fix, Surveillance tab, retrained models)
