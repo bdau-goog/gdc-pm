@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session V — H2 Slug Flow Scenario Replay complete)
-**git head:** `eb0936e` (1 commit this session)
-**fault-trigger-ui image:** `sha256:a8cac759` (Session V — H2 Scenario Replay + Red Team Audit)
+**Date:** June 9, 2026 (Session W — Batch A integrity fixes deployed)
+**git head:** `1e12ad7` (1 commit this session)
+**fault-trigger-ui image:** `sha256:b0ebc20d` (Session W Batch A — HITL reframe + strip $ + remove fake % + H1_METHODOLOGY.md)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -42,31 +42,23 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 
 ## STEP 3: Session W — Next Implementation Tasks
 
-### ALL H1 AND H2 STEPS NOW COMPLETE ✅
-H1 Decision Console (Sessions T + U) — done.
-H2 Slug Flow Scenario Replay (Session V) — done and deployed.
+### Session W Batch A COMPLETE ✅
+All three integrity violations (RT-1 fake %, RT-2 pump-integrity claim, RT-8 shut-in cost) — fixed, deployed, live-verified. H1_METHODOLOGY.md written.
 
-### PRIORITY 1: H2 UX Polish (address remaining user feedback)
-The following items were raised but deferred while physics and integrity issues were fixed first:
+### NEXT: Session W Batch B (truth-critical documents)
+1. **RT-3 — De-smoking-gun the sonic log:** Survey body = measurements only (no diagnosis/action). At 06:00 it shows fluid level declining but WITHIN LIMITS (e.g., ~240 ft → not yet alarm-worthy alone). The "decisive" 150-ft value is the LIVE reading during the demo window. Move "VFD CONTRAINDICATED / emergency shutdown" wording to GDC verdict only.
+2. **RT-4 — GOR provenance:** Move GOR evidence to a separate Separator/Lab doc; survey keeps fluid level + casing pressure + free-gas only.
+3. **RT-5 — Well A-1 → A-3:** Sonic log modal title currently says "Well A-1" — fix to A-3.
+4. **RT-2 — `hs = 1.0000` binding:** GDC verdict shows 1.0000 when cursor past array bound on confirmed-fault state — fix the fallback.
+5. **Document Realism Gate G1–G6 applied to all 3 H1 docs + 3 H2 docs** — fictional vendor (no "Baker Hughes SONiK™"), G3 "no smoking gun" test, G5 physics consistency.
+6. **Bayesian confidence wiring (_bayes_discriminate):** Add `_bayes_discriminate(findings)` to app.py; wire live posterior to H1 Zone 1 verdict headline; add expandable evidence table. Replace "L3 context fused" placeholder with real posterior.
+7. **H2 live `slug_flow_prob`:** Already bound in the UI; verify it's live (not hardcoded).
+8. **RED_TEAM_LEDGER.md:** Append RT-1…RT-10 rows (not yet done this session — deferred to Batch B).
 
-1. **Live-animating baseline feed:** On first page load, left-column charts should scroll in real-time with steady-state telemetry before any scenario is loaded. Currently both H1 and H2 charts are static on first visit. See SESSION V for details of what was planned.
-
-2. **Decision console scrub-binding:** Verify that scrubbing backward on H2 correctly returns the SCADA view to the pre-alarm quiet slate. The watcher on `h2CursorIdx` should handle this since the SCADA view checks `h2CursorIdx < h2ReplayData.scada_hi_idx`.
-
-3. **Cost explanation labels:** Embed concise source citations directly next to monetary values (e.g., `[WTX spot rig $14k/day × 3d · OEM motor]` appears on GDC cards but SCADA view outcome card needs the same treatment).
-
-4. **SVG wellbore annotations:** Add explicit text labels inside the SVG for Pump Intake, API RP 11S submergence limit (H1 only), and reservoir perforations so the schematic is self-explanatory without verbal explanation.
-
-### PRIORITY 2: RED_TEAM_LEDGER.md pending items
-Three items remain in the Pending section of RED_TEAM_LEDGER.md:
-- P-1: Verify `esp_health.ubj` slug_flow output (DONE — dips to 0.52, acknowledged honestly in UI)
-- P-2: Source a citeable SPE reference for in-string slug loading pump vibration (candidate: SPE-174536 §3.4)
-- P-3: Confirm ISA-18.2 H/HH alarm naming matches the standard exactly (ISA-18.2 Table 5.2: Warning → H → HH)
-
-### PRIORITY 3: H3 Vizier Optimize Tab (if H2 polish is complete)
-Per DEMO_MASTER.md §6: H3 tab already has the Vizier Pareto chart working. Next steps:
-- Verify the Vizier API call from the new pod works (OPC/Vertex AI credentials)
-- Add cost explanation cards matching the Claim Ledger
+### PRIORITY 3: Batch C–E (after Batch B deployed + verified)
+- **Batch C:** #4 scrub-reactive GDC (resets on back-scrub) + lock transport/scrubber after remediation chosen
+- **Batch D:** #3 remediation writes a record to `field_intel` (RT-7 scoped: `doc_type='remediation_record'`, excluded from discrimination RAG)
+- **Batch E:** #1 taller wellbore + #5 telemetry in both SCADA+GDC views + #8 self-drawn SVG doc artifacts
 
 ---
 
@@ -84,12 +76,16 @@ Per DEMO_MASTER.md §6: H3 tab already has the Vizier Pareto chart working. Next
 | esp_classifier.bst (4-class) | ✅ NOTED Session V | Local .bst has no slug_flow class; H2 uses inference-api esp_classifier.ubj (5-class) via async httpx |
 | RED_TEAM_LEDGER.md | ✅ NEW Session V | Trigger: "red team" → re-runs hostile-engineer audit |
 | H2 live baseline feed | ⏳ DEFERRED | Charts are static on first visit; live-scroll not yet implemented |
-| `92%/94% confidence` literals in H1 verdict | ⏳ FIXING Session W Batch A | Fabricated HTML literals — no producer; replaced by Bayesian posterior in Batch B |
-| `hs = 1.0000` fallback shown on confirmed-fault verdict | ⏳ FIXING Session W Batch B | Cursor past array bound hits '1.0000' fallback — contradicts confirmed-fault state |
+| `92%/94% confidence` literals in H1 verdict | ✅ FIXED Session W Batch A | Removed; replaced with "L3 context fused" placeholder pending Bayesian wiring (Batch B) |
+| `hs = 1.0000` fallback on confirmed-fault verdict | ⏳ FIXING Session W Batch B | Cursor past array bound hits '1.0000' fallback — contradicts confirmed-fault state |
 | Well A-1 in sonic log modal vs A-3 everywhere else | ⏳ FIXING Session W Batch B | Display identity mismatch |
-| Action-card outcome text: "pump integrity confirmed" | ⏳ FIXING Session W Batch A | We cannot assert this before a controlled restart test — RT-2; removing per HITL reframe |
-| Shut-in framed as zero/no-cost option | ⏳ FIXING Session W Batch A | Deferred production + restart cost are real; framing was misleading |
-| $ figures on operational cards (not behind ⓘ) | ⏳ FIXING Session W Batch A | ISA-101 operational consoles don't show dollar signs; move to info popups |
+| Action-card outcome text: "pump integrity confirmed" | ✅ FIXED Session W Batch A | Replaced: "Awaiting field confirmation · pump condition assessed on controlled restart" |
+| Shut-in framed as zero/no-cost option | ✅ FIXED Session W Batch A | Now: "Deferred production + restart costs apply (see ⓘ)" |
+| $ figures on operational cards | ✅ FIXED Session W Batch A | Stripped from all cards/outcomes/toasts; kept only in ⓘ Physics & Logic panel |
+| "Baker Hughes SONiK™" in sonic log modal | ⏳ FIXING Session W Batch B | RT-3: real company + invented product name → fictional vendor per G1 gate |
+| Sonic log "smoking gun" (diagnosis + shutdown order in doc body) | ⏳ FIXING Session W Batch B | RT-3: doc body should be measurements only; GDC verdict carries the synthesis |
+| Bayesian discrimination confidence not yet wired | ⏳ Session W Batch B | "L3 context fused" is a placeholder; real posterior from _bayes_discriminate() coming |
+| MODEL_FOUNDATIONS vs SESSION_LOG precision conflict | ⏳ OPEN | SESSION_LOG says P=0.995 pass; MODEL_FOUNDATIONS says 0.815 fail not committed — must reconcile before any accuracy % ships |
 
 ---
 

@@ -2,6 +2,16 @@
 
 ---
 
+## Session W (June 9, 2026) — *Integrity Audit + Batch A Fixes: HITL reframe, strip $, remove fake confidence, H1_METHODOLOGY.md — deployed and verified*
+
+**Code committed:** `1e12ad7` (feat(integrity): Session W Batch A)
+**fault-trigger-ui image:** `sha256:b0ebc20d`
+**Smoke test:** 12/12 assertions, 0 console errors ✅ · Live grep: 0 old strings / 10 new strings confirmed
+
+This was a pure integrity and methodology session with no new features. **Planning track:** Extensive pre-Act red-teaming surfaced seven user-raised issues (HITL, cost display, scrubbing, remediations, wellbore sizing, telemetry in both views, images) plus three additional red-team criticals (RT-1: fabricated 92/94% confidence literals; RT-2: "pump integrity confirmed" on unverified state; RT-3: sonic log with diagnosis+shutdown order = "smoking gun" — a document that would have caused operators to act before the demo timeline). **Deep methodology design:** Resolved the "how do we show real confidence on a classifier that can't distinguish gas_lock from fluid_drawdown?" question — the correct answer is a Bayesian differential-diagnosis posterior (naive-Bayes log-odds fusion over document-derived findings, Good 1950 / Fagan 1975), which attributes 100% of discriminating power to the retrieved documents (our L3 thesis), starting from a 50/50 prior (the honest encoding of telemetry ambiguity). This design is documented in the new `docs/H1_METHODOLOGY.md` (18KB standalone document). Also discovered that the fabricated 92/94% confidence would have been self-defeating — it would destroy the L3 moat argument if derived from telemetry alone, which is physically impossible for identical input vectors. **Batch A (deployed):** HITL reframe on all H1+H2 action cards and outcomes ("awaiting field confirmation · pump condition assessed on controlled restart"); stripped all $ figures from operational cards/outcomes/toasts (kept only in ⓘ Physics & Logic panel per ISA-101); shut-in now honestly framed as "Deferred production + restart costs apply"; removed fabricated 92%/94% replaced with "L3 context fused" placeholder. CLAIM_LEDGER.md and NEXT_SESSION_PROMPT.md updated. **Key rejections/deferrals:** RT-3 sonic log redesign deferred to Batch B (requires redesigning document role: measurements-only body, not smoking gun); Bayesian posterior wiring deferred to Batch B; scrub-reactive GDC (issue #4) deferred to Batch C. Document Realism Gate G1–G6 codified in planning — applies to all synthetic field documents. **Next task (Batch B):** RT-3 de-smoking-gun sonic log + fictional vendor + A-1→A-3 + hs=1.0000 fix + _bayes_discriminate() implementation + evidence table in H1 verdict + Document Realism Gate applied to all 6 H1/H2 docs.
+
+---
+
 ## Session V (June 9, 2026) — *H2 Slug Flow Scenario Replay + Red Team Audit — deployed and verified*
 
 **Code committed:** `eb0936e` (feat(h2): Session V — H2 Slug Flow Scenario Replay + Red Team Audit)
