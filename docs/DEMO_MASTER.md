@@ -206,26 +206,61 @@ This is computed from `t_min[h1ScadaAlarmIdx] - t_min[h1GdcDetectIdx]`. If the m
 
 ---
 
-### 4.6 Component B: Decision Console (Right column, two sub-tabs)
+### 4.6 Component B: Decision Console (Right column) — ISA-101 / HP-HMI Design
 
-**The fault type is hidden until the GDC cursor is crossed.** Before `h1GdcDetectIdx`, both sub-tabs show nominal baseline. After, they diverge.
+**ISA-101 principle:** Saturated color is reserved for active anomalies and alarms only. Nominal state is quiet. Maximum information is placed in the operator's field of view with minimum visual noise. The Level-2 detail panel is structured as a clear operational hierarchy: HEADLINE → EVIDENCE → INTERVENTION.
 
-#### 🟡 SCADA View (Sub-Tab 1)
+**The fault type is hidden until the GDC cursor is crossed.** Before `h1GdcDetectIdx`, both sub-tabs show quiet nominal baseline. After, they diverge.
 
-- **Before SCADA alarm idx**: `Sensors within hard limits. No alarm condition.`
-- **After SCADA alarm idx**: `⚠ AMBIGUOUS — Underload alarm fired (PIP rate-of-change or PIP &lt; 1020 PSI). Amps declining. Cannot distinguish Gas Lock from Reservoir Drawdown on available sensor data.`
-- **Action Cards** (using `.h1-action-card` pattern): identical to existing Session N implementation — VFD Speed-Down and Conservative Shutdown, with full descriptive text, "Apply if:" guidance, and velocity risk warning.
-- **Outcome mapping** unchanged from Session N (seizure path, safe shutdown, itemized financial breakdown).
+#### 🟡 SCADA View (Sub-Tab 1) — HP-HMI Bare-Metal Telemetry
 
-#### 🟢 GDC Advisor View (Sub-Tab 2)
+- **Before SCADA alarm idx**: Quiet slate background. Single line: `WELL A-3 — SURVEILLANCE ACTIVE · ALL SENSORS WITHIN LIMITS`. No color.
+- **After SCADA alarm idx**: Narrow, discrete amber/red alarm banner + 2×2 industrial tag grid (large monospace readouts for PIP, Amps, Temp, Vib with their SCADA setpoints and status indicators). No diagnosis — SCADA only knows that an underload alarm fired.
+  - `⚠ UNDERLOAD ALARM — Unloading condition detected. Gas Lock and Reservoir Drawdown produce identical sensor signatures. Cause unknown without document context.`
+- **Action Cards:** Two equally sized, clean slate-bordered cards (not color-saturated — ISA-101 Level-2 style):
+  - **Card A: VFD Speed-Down** — labeled `Reactive Operator Intervention` with annotation `(Safe if Gas Lock · Catastrophic if Drawdown — cause unknown)`
+  - **Card B: Emergency Shut-In** — labeled `Conservative Protective Response` with annotation `(Safe for both causes · ~$3k–$8k deferred restart)`
+  - Both cards are clickable and functional. Card B (Conservative Shut-In) is now a real, functional selectable option that resolves safely. This removes the false appearance that operators are "forced" to take the risky path.
+  - Clicking Card A during Drawdown triggers the seizure path (requires no modal on SCADA side — SCADA doesn't know better).
 
-- **Before GDC detect idx**: `Baseline monitoring. Health score: nominal.`
-- **After GDC detect idx (before SCADA)**: `⚡ Anomaly detected — health score declining. Retrieving field context…` (scanning wellbore schematic, animated).
-- **L3 RAG Context Card** (revealed after brief scan animation):
-  - *Gas Lock*: `📄 Operator Shift Handover Note · 06:15 · GVF elevated (78%)` — click to open full shift note modal.
-  - *Drawdown*: `📄 Dynamic Acoustic Sonic Log · 06:00 · Fluid level 150 ft above intake` — click to open full survey form modal.
-- **GDC-Only Wellbore Digital Twin**: Same CSS/HTML schematic as Session N — gas bubbles for Gas Lock, depleting fluid column + settling sand for Drawdown.
-- **GDC Verdict + Action Cards**: Same as Session N — GDC RECOMMENDED / GDC CONTRAINDICATED labels, velocity boundary reference (SPE-174536), override modal for Drawdown + VFD trim attempt.
+#### 🟢 GDC Advisor View (Sub-Tab 2) — Three-Zone HP-HMI Layout
+
+The GDC Advisor view is structured as three vertical zones using ISA-101 Level-2 detail hierarchy:
+
+**Zone 1 — Standalone Assessment Headline (top, full width):**
+- Clean monochrome box (dark-border, no heavy saturation) with a single colour-coded status tag.
+- Contains the GDC diagnostic statement + health score + confidence level, in clean monospace:
+  ```
+  ✔  GAS LOCK CONFIRMED                                      hs = 0.42 · 92% confidence
+  L3 Context Fused: Shift Note (06:15 Tour 2) + GOR trend
+  Casing annulus fully submerged. Gas pocket in pump stages.
+  VFD trim (52→44 Hz) is safe. Motor cooling intact.
+  ```
+- This zone exists ONLY on the GDC tab. It reveals after `h1GdcDetectIdx` is passed.
+- Before detection, this zone shows a scanning placeholder: `Retrieving field context via pgvector RAG…`
+
+**Zone 2 — Two-Column Middle Layout:**
+- **Left ~60%:** Two equally-sized, ISA-101-compliant Action Cards:
+  - **Card A (Gas Lock → VFD Trim):** `VFD Speed-Down · 52→44 Hz · ~$2,500`  
+    Label: `[✔ GDC RECOMMENDED: Proactive Intervention]` (thin green outline, not saturated)
+  - **Card B (Emergency Shut-In):** `Emergency Shut-In · ~$3k–$8k deferred restart`  
+    Label: `[○ Conservative Fallback — Available]` (thin neutral outline — also clickable and functional)
+  - **For Drawdown scenarios, labels flip:** Card B becomes `[✔ GDC RECOMMENDED: Safe Shut-In]` and Card A becomes `[❌ GDC CONTRAINDICATED — sand bridging risk]` (triggers override modal if clicked).
+- **Right ~40%:** Vertical Supporting Document Stack (ISA-101 Evidence Panel):
+  - A clean vertical list of retrieved context documents, each rendered as a compact card:
+    - `📄 Operator Shift Note · 06:15 Tour 2` (click → field form modal)
+    - `📄 GOR Lab Test · Well A-3 Separator` (click → separator test results modal)
+    - `📄 OEM Troubleshooting Guide · Gas Void Handling` (click → OEM PDF excerpt modal)
+  - The documents are revealed one-by-one as the RAG pipeline retrieves them, timing their appearance for dramatic effect.
+  - Label above the stack: `RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)`
+  - This is the categorical L3 moat — SCADA has no architecture to assemble this evidence list.
+
+**Zone 3 — Downhole Digital Twin strip (far right 12%, GDC only, full height):**
+- SVG wellbore schematic, visible only on GDC Advisor tab.
+- Completely hidden (collapsed to zero width) on SCADA View tab — visually reinforcing that SCADA has no downhole visibility.
+- Scrubber-reactive: fluid column drains with PIP, gas bubbles or sand particles bind to `h1CursorIdx` past `gdc_detect_idx`.
+
+**Fleet Scale Card:** **REMOVED.** The Surveillance tab already establishes fleet-scale context (156 ESPs, 14 active alarms, 8,412 documents). No redundant card needed in the Discern tab.
 
 ---
 
@@ -271,7 +306,7 @@ The claim the Scenario Replay design makes is narrow and defensible:
 ## 7. SHARED UI CONVENTIONS
 
 - **GDC Advisor:** No "Copilot" branding is used. The AI is a streaming, operator-assist Advisor.
-- **Tabs:** "Detect" (fleet map), "Discern" (H1 Unloading), "Classify" (H2 Slug Flow), "Optimize" (H3 VFD).
+- **Tabs (L→R):** `Surveillance` (fleet scope) · `How It Works` · `Discern` (H1 Unloading) · `Classify` (H2 Slug Flow) · `Optimize` (H3 VFD).
 - **No Operating Envelope scatter charts**: These require too much explanation. Use the dual-axis trend chart and the dynamic wellbore schematic instead.
 - **No 14-well pad strip**: This is a visual bloat. The scale story is made through text (e.g. "14 wells under continuous surveillance") rather than a decorative map.
 - **Engineering Diagram wellbore:** Drawn in dark-mode CSS HTML to scale. Horizontal slugging animations rendered *only at surface*, gas lock animations *only at depth*.
