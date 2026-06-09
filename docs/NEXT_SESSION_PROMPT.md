@@ -88,6 +88,31 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 
 ---
 
+### FUTURE SESSION AE: Presenter Script + 5-Minute Veo Video
+
+**Scope:** A full narrated demo script suitable for: (a) live presenter walkthrough and (b) Veo-generated 5-minute video.
+
+**Structure of the 5-minute video (draft outline):**
+
+| Segment | Duration | Content |
+|---|---|---|
+| 1 — The Problem | ~45s | Physics-impossibility frame: gas lock and drawdown produce identical telemetry. Wrong action = $150k seized pump. SCADA cannot distinguish them. |
+| 2 — How It Works | ~60s | Tags vs. tag-patterns vs. documents. GDC reads the field documents the operator already has. The answer is always in the documents. |
+| 3 — H1 Discern (live demo) | ~90s | Scenario replay: sensors decline → SCADA alarm fires → GDC already retrieved 3 docs → Bayesian discrimination → correct action prescribed. Lead-time shown but not featured. |
+| 4 — H2 Classify (live demo) | ~45s | Slug flow: vibration rises, temp flat → classifier + choke log + separator test → do NOT pull well → $1,500 truck roll vs $150k false alarm. |
+| 5 — H3 Optimize (live demo) | ~30s | VFD optimization: Vizier drives Hz search, edge model enforces thermal constraint. Vertex AI collaboration without cloud dependency for the decision. |
+| 6 — Close | ~30s | All-edge, no cloud dependency, sovereign, on-prem. The decision stays at the pad. |
+
+**Deliverable:** A `docs/VIDEO_SCRIPT.md` file containing:
+- Scene-by-scene narration text (Veo voiceover)
+- On-screen UI state descriptions at each beat (what the presenter clicks)
+- On-screen text overlays at each beat
+- Timing targets per segment
+
+**Note:** This is a separate session from Session AD (UI code). Do NOT mix them. Session AD first, then Session AE.
+
+---
+
 ## Known Integrity State
 
 | Item | Status | Note |
