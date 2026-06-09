@@ -96,6 +96,15 @@ def load_health_models() -> None:
                                 f"not loaded (run scripts/retrain_edge_models.py for Phase 5.1 models)")
                 else:
                     log.warning(f"⚠️  No model found for {asset_class} — predictions will use fallback")
+        # ── esp_thermal model (H3 VFD thermal constraint) ──
+        thermal_path = MODELS_DIR / "esp_thermal.ubj"
+        if thermal_path.exists():
+            bt = xgb.Booster()
+            bt.load_model(str(thermal_path))
+            HEALTH_MODELS["esp_thermal"] = bt
+            log.info(f"✅ Loaded thermal constraint model: esp_thermal ({thermal_path.stat().st_size//1024} KB)")
+        else:
+            log.warning("⚠️  esp_thermal.ubj not found — vizier_optimize() will use physics polynomial fallback")
         log.info(f"Health model registry: {list(HEALTH_MODELS.keys())}")
     except ImportError:
         log.warning("xgboost not available — health predictions will use geometric fallback")
@@ -5601,7 +5610,15 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     # ── Physics evaluation helper (same model as before) ──
     def evaluate_hz(hz: float) -> dict:
         flow_rate = round(24.0 * hz, 1)
-        temp_f = round(180.0 + 1.5 * (hz - 45.0) + 0.15 * max(0.0, hz - 58.0) ** 3, 1)
+        # ── Thermal constraint: esp_thermal.ubj XGBoost model (H3 integrity fix) ──
+        # Replaces the hardcoded polynomial. If model not loaded, falls back honestly.
+        _thermal_model = HEALTH_MODELS.get("esp_thermal")
+        if _thermal_model:
+            import xgboost as _xgb_t
+            temp_f = round(float(_thermal_model.predict(
+                _xgb_t.DMatrix([[hz]], feature_names=["vfd_hz"]))[0]), 1)
+        else:
+            temp_f = round(180.0 + 1.5 * (hz - 45.0) + 0.15 * max(0.0, hz - 58.0) ** 3, 1)
         rul_days = round(300.0 * math.exp(-0.11 * (hz - 45.0)), 1)
         power_cost = round(0.1 * (hz ** 3), 1)
         is_temp_burnout = temp_f >= burnout_threshold_f
