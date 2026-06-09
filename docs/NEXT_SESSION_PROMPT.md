@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session X — Batch B integrity fixes deployed)
-**git head:** `5767ccf` (feat(integrity): Session X Batch B)
-**fault-trigger-ui image:** `sha256:18155185` (Session X Batch B — Bayesian posterior + de-smoking-gun + GOR modal)
+**Date:** June 9, 2026 (Session Y — Batch C integrity fixes deployed)
+**git head:** `1ac4c7e` (feat(integrity): Batch C — scrub-reactive GDC reset + transport lockout post-remediation)
+**fault-trigger-ui image:** `sha256:bb285184` (Session Y Batch C — scrub-reactive reset + transport lockout)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -40,28 +40,21 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 
 ---
 
-## STEP 3: Session X was Batch B — Next Tasks Are Batch C
+## STEP 3: Session Y was Batch C — Next Tasks Are Batch D–E
 
-### Session X Batch B COMPLETE ✅
-RT-1…RT-10 all addressed. Key deliverables:
-- `_bayes_discriminate()` live in app.py — naive-Bayes log-odds (Good 1950 / Fagan 1975), returns `bayes_pct: 99.6` on fluid_drawdown
-- Sonic log de-smoking-gunned: 240 ft submergence (within limits at 06:00), no diagnosis/shutdown orders in document body
-- GOR provenance moved to new `Separator Lab Report` modal (Permian Fluid Analytics)
-- All Well A-1 references → A-3 (sonic log, shift note modals)
-- `Baker Hughes SONiK™` → `Permian Acoustic Services (SONiX-2)`
-- `Baker Hughes ESP` → `Permian ESP Operational Manual`
-- Health score fallback: `Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)` — no more 1.0000 on confirmed-fault
-- Expandable Bayesian evidence table in GDC Advisor Zone 1 (toggle button)
+### Session Y Batch C COMPLETE ✅
+Scrub-reactive + transport lockout + H2 classifier verification. Key deliverables:
+- **Scrub-reactive GDC reset:** `h1CursorIdx` watcher now resets `h1FaultTypeRevealed`, `h1RagRevealed`, `h1EvidenceActive`, `h1ShowEvidenceTable`, `h1RagDoc2Shown`, `h1RagDoc3Shown`, `h1PumpOffExcluded`, `h1GasLockExcluded`, and all doc timers when cursor scrubs back before `gdc_detect_idx`. GDC Advisor returns to "BASELINE MONITORING" state on back-scrub.
+- **Transport lockout post-remediation:** H1 buttons (◀◀/▶/▶▶) and range scrubber become disabled (`opacity:0.4`, `pointer-events:none`) when `h1Resolved || h1Seized`. H2 buttons and scrubber lock on `h2Resolved || h2PullOutcome`.
+- **`h1Reset()` expanded:** Now explicitly clears `h1ShowEvidenceTable`, `h1PumpOffExcluded`, `h1GasLockExcluded` on new scenario load.
+- **Pause-on-remediation:** `executeH1Shutdown()`, `approveH1VFD()`, `dispatchTruckRoll()` all call `h1Pause()`/`h2Pause()` at entry — play timer stops the moment operator clicks any action card.
+- **H2 SCADA pull button:** `@click="h2Pause(); h2PullOutcome='false_positive'"` — pump-pull path also pauses.
+- **H2 classifier_ok verified:** Live curl confirms `classifier_ok: true` — H2 slug_flow_prob is from the real inference-api (not fallback sigmoid).
 - Smoke test: 12/12 assertions, 0 console errors ✅
 
-### NEXT: Batch C (scoped, in priority order)
-1. **Scrub-reactive GDC (#4):** GDC verdict resets when cursor scrubs back before `gdc_detect_idx` — currently stays revealed permanently even if scrubber goes back to T+0. Fix: add `h1ShowEvidenceTable=false` reset in `h1Reset()` + clear `h1RagRevealed` when cursor moves back before `gdc_detect_idx` in the `h1CursorIdx` watcher.
-2. **Lock transport/scrubber after remediation:** Once an action card is clicked (resolved or seized), disable the Play/scrub controls so operator can't rewind and replay the decision. Prevents confusing state where resolved=true but cursor at T+0 shows pre-fault sensors.
-3. **H2 live slug_flow_prob verification:** Confirm `slug_flow_prob` in the H2 chart is from the inference-api (not the fallback sigmoid). Check the `classifier_ok` field returned by `/api/h2/scenario-replay`.
-
-### PRIORITY 4: Batch D–E (after Batch C deployed + verified)
-- **Batch D:** Remediation writes a record to `field_intel` (RT-7 scoped: `doc_type='remediation_record'`, excluded from discrimination RAG)
-- **Batch E:** Taller wellbore SVG + telemetry in both SCADA+GDC views + self-drawn SVG doc artifacts
+### NEXT: Batch D (scoped, in priority order)
+1. **Remediation writes to field_intel (RT-7):** Once an action card is clicked (VFD trim or shut-in), write a `doc_type='remediation_record'` row to `field_intel` (via POST to a new `/api/h1/remediation-record` endpoint in app.py). This row should be excluded from discrimination RAG (`lbl_type='hitl_action'` filter). Closes the HITL audit loop — the operator's action becomes part of the persistent context.
+2. **Batch E:** Taller wellbore SVG + telemetry in both SCADA+GDC views + self-drawn SVG doc artifacts
 
 ---
 
@@ -85,8 +78,9 @@ RT-1…RT-10 all addressed. Key deliverables:
 | Bayesian discrimination confidence not wired | ✅ FIXED Session X Batch B | `_bayes_discriminate()` live; evidence table shows F1–F4 LR chain |
 | Action-card HITL reframe | ✅ FIXED Session W Batch A | "Awaiting field confirmation · pump condition assessed on controlled restart" |
 | Shut-in framed as zero-cost | ✅ FIXED Session W Batch A | Now: "Deferred production + restart costs apply (see ⓘ)" |
-| Scrub-reactive GDC (resets on back-scrub) | ⏳ BATCH C | Verdict persists if cursor scrubs back before gdc_detect_idx |
-| Transport controls after remediation | ⏳ BATCH C | Scrubber still enabled after action card clicked |
+| Scrub-reactive GDC verdict reset | ✅ FIXED Session Y Batch C | Back-scrub before gdc_detect_idx resets all revealed state |
+| Transport controls locked after remediation | ✅ FIXED Session Y Batch C | Buttons + scrubber disabled on h1Resolved/h1Seized/h2Resolved/h2PullOutcome |
+| H2 classifier_ok verified live | ✅ VERIFIED Session Y | curl confirms classifier_ok:true — inference-api running real esp_classifier.ubj |
 | MODEL_FOUNDATIONS vs SESSION_LOG precision conflict | ⏳ OPEN | SESSION_LOG says P=0.995 pass; MODEL_FOUNDATIONS says 0.815 fail not committed — reconcile before any accuracy % ships |
 
 ---
@@ -100,5 +94,5 @@ RT-1…RT-10 all addressed. Key deliverables:
 - `feature-trio-clean` branch — do NOT merge to main
 - Gas Lock and Fluid Drawdown have IDENTICAL sensor trajectories — this is the H1 premise
 - Physics panel `<` chars in text content: safe only as `< ` (space after) — never `<digit`
-- `app.py` ~6,300 lines, `index.html` ~2,650 lines, `app.js` ~2,225 lines — always grep for line numbers first
+- `app.py` ~6,300 lines, `index.html` ~2,683 lines, `app.js` ~2,240 lines — always grep for line numbers first
 - H2 uses inference-api (not local esp_classifier.bst) — local .bst is 4-class without slug_flow

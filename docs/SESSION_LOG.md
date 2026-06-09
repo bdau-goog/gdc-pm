@@ -2,6 +2,16 @@
 
 ---
 
+## Session Y (June 9, 2026) — *Batch C: Scrub-reactive GDC reset + transport lockout post-remediation + H2 classifier verified — deployed and verified*
+
+**Code committed:** `1ac4c7e` (feat(integrity): Batch C — scrub-reactive GDC reset + transport lockout post-remediation)
+**fault-trigger-ui image:** `sha256:bb285184`
+**Smoke test:** 12/12 assertions, 0 console errors ✅ · H2 classifier_ok: true (live inference-api confirmed)
+
+This was a pure integrity and narrative-consistency session completing all Batch C items. **Scrub-reactive GDC verdict reset:** The h1CursorIdx watcher in app.js now includes a backward-scrub guard — if the cursor moves back before gdc_detect_idx and h1FaultTypeRevealed is true, it explicitly resets h1FaultTypeRevealed, h1RagRevealed, h1EvidenceActive, h1ShowEvidenceTable, h1RagDoc2Shown, h1RagDoc3Shown, h1PumpOffExcluded, h1GasLockExcluded, and cancels all pending document reveal timers. GDC Advisor zone returns to "BASELINE MONITORING — scanning" on back-scrub. This closes the integrity gap where a presenter could show the GDC verdict, scrub back to T+0, and the verdict would still show — a temporal impossibility any engineer would call out. Note: h1FaultType is intentionally NOT reset to avoid SVG wellbore flicker during continuous scrubbing. **Transport lockout post-remediation:** H1 transport controls (◀◀/▶/▶▶ buttons and range scrubber) bind :disabled="h1Resolved || h1Seized" and the wrapper div binds pointer-events:none; opacity:0.4 on the same condition. H2 transport controls bind on h2Resolved || h2PullOutcome. approveH1VFD(), executeH1Shutdown(), and dispatchTruckRoll() all call h1Pause()/h2Pause() as their first action — play stops the instant the operator clicks any action card. H2 SCADA pump-pull button updated to h2Pause(); h2PullOutcome="false_positive". **h1Reset() expanded:** Now explicitly clears h1ShowEvidenceTable, h1PumpOffExcluded, h1GasLockExcluded to prevent stale exclusion flags persisting across new scenarios. **H2 classifier verified:** Live curl of /api/h2/scenario-replay confirmed classifier_ok: true — H2 slug_flow_prob comes from the real esp_classifier.ubj on the inference-api, not the fallback sigmoid ramp. MODEL_FOUNDATIONS vs SESSION_LOG precision conflict (0.815 vs 0.995) remains open — must be reconciled before any accuracy percentage ships on screen. **Next task (Batch D):** Remediation writes a doc_type=remediation_record row to field_intel via a new /api/h1/remediation-record endpoint, closing the HITL audit loop.
+
+---
+
 ## Session X (June 9, 2026) — *Batch B: Bayesian posterior wired, sonic log de-smoking-gunned, GOR modal, Document Realism Gate RT-1…RT-10 — deployed and verified*
 
 **Code committed:** `5767ccf` (feat(integrity): Session X Batch B)
