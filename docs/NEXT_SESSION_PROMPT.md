@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 8, 2026 (Session Q — H1 Discern tab rebuild COMPLETE and deployed)
-**git head:** `1fe60f4` (feat(ui): Session Q — 4-sensor chart, SVG wellbore, smart SCADA, A-3 anchor)
-**fault-trigger-ui image:** `sha256:a751a83e` (1/1 Running — Session Q, current)
+**Date:** June 9, 2026 (Session R — Physics Audit & Design Overhaul, doc-only)
+**git head:** `f27f6c6` (pre-session — no code changed this session, design only)
+**fault-trigger-ui image:** `sha256:a751a83e` (1/1 Running — Session Q, still current)
 **inference-api image:** `sha256:d1194989` (1/1 Running — unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -21,19 +21,6 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama_online: True · model: gemma4:latest
 - field_intel: ~2–3 · rag_documents: 18
 
-**Also verify the scenario-replay endpoint with smart SCADA:**
-```bash
-curl -s "http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock" | python3 -c \
-  "import sys,json;d=json.load(sys.stdin);print('n:',d['n'],'gdc:',d['gdc_detect_idx'],'scada:',d['scada_alarm_idx'],'lead:',d['lead_time_minutes'],'rule:',d.get('scada_rule_fired','MISSING')[:40],'model:',d['model_used'])"
-# Expected: n: 120, gdc < scada, lead ~21+ min, rule starts with "Rate-of-change", model: esp_health.ubj
-```
-
-**Run smoke test after any deploy:**
-```bash
-cd ~/gdc-pm && node scripts/ui_smoke.mjs
-# Expected: ✅ SMOKE TEST PASSED (12/12 assertions, 0 console errors)
-```
-
 ---
 
 ## STEP 2: Read DEMO_MASTER.md (MANDATORY)
@@ -44,35 +31,117 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Session R — Next Tasks
+## STEP 3: Session S — Next Implementation Tasks
 
-### H1 Discern tab is COMPLETE (Session Q)
+### ⚠ PRIORITY 1: Model Retraining (ML Integrity — MUST DO FIRST)
 
-The full Session Q rebuild is deployed and verified:
-- `GET /api/h1/scenario-replay` — smart SCADA rate-of-change trip (ISA-18.2 §5.3 / API RP 11S §7.2)
-- 4-stack Plotly subplots (PIP/Amps/Temp/Vib) sharing x-axis, single relayout cursor
-- Controls (◀◀/▶/▶▶) moved to header far right
-- Slider padded l:48/r:12 to align exactly with Plotly plot area margins
-- SVG wellbore (vector, reactive fluid column, gas bubbles/sand particles, PUMP/MOTOR/PERFS)
-- SCADA alarm banner shows `scada_rule_fired` text from backend
-- GDC disambiguation banner replaces lead-time banner as headline
-- Greyed/disabled mitigation cards until respective alarm index
-- Fleet scalability card (6 ESPs, one model, ISA-18.2/EEMUA-191 sourced)
-- `docs/CLAIM_LEDGER.md` created with all H1 rows SURVIVES
-- Smoke test: 12/12 assertions, 0 errors ✅
+Our XGBoost models (`esp_health.ubj`, `esp_classifier.ubj`) were trained on **physically inaccurate** fault endpoint ranges. The H1 demo chart currently shows flat ~199°F temperature and modest PIP decline — which is physically wrong for an ESP unloading event (motor cooling collapses, winding temp must rise). We CANNOT show these charts to O&G engineers until this is fixed.
 
-### Potential Session Q refinements (get user feedback first)
+**The Ground-Truth Physics Ranges (sourced: API RP 11S §4.2 / §7.2, SPE-174536-MS):**
 
-1. **Smart SCADA fires very late** — in the current run, `scada_alarm_idx=119` (out of 120), meaning the smart SCADA barely fires at end of the trajectory. This gives a 21+ min lead time which is honest and compelling. The rate-of-change threshold (-35 PSI/min) may be conservative; if the audience asks why SCADA fires so late, the answer is: "the rate alarm requires a sustained 2.5-min ramp, not a single spike — that's the physically correct ISA-18.2 §5.3 design." This is defensible but worth user review.
-2. **SVG wellbore sizing** — the SVG is 68×154px. May want to increase if it looks small on the target display.
-3. **GDC▲/SCADA▲ tick marks** — currently positioned by % of slider width. With the new l:48/r:12 padding, these should align closely with the chart lines. Verify visually.
+| Metric | Nominal | Fault End-State (Gas Lock & Drawdown) | Physical Reason |
+|--------|---------|----------------------------------------|-----------------|
+| PIP (`psi`) | 1200–1250 PSI | **400–600 PSI** | Casing annulus hydrostatic column depleted / gas unloads stages |
+| Amps (`amps`) | 85–92 A | **20–45 A** (midpoint 32.5A) | Motor underload as impeller stages fill with gas/vapor |
+| Winding Temp (`temp_f`) | 195–202°F | **245–265°F** | Thermal runaway — motor cooling fluid flow collapses |
+| Vibration (`vib`) | 0.8–1.4 mm/s | **4.5–6.5 mm/s** | Intense downhole cavitation during stage unloading |
 
-### Next major feature: H2 Classify tab
+**CRITICAL:** Gas Lock and Fluid Drawdown have **IDENTICAL raw sensor trajectories** (this is the H1 premise). Only unstructured context (RAG) distinguishes them.
 
-Per DEMO_MASTER §5 — H2 Slug Flow scenario. The current H2 tab still uses the old inject-and-wait model. Same Scenario Replay architecture applies:
-- `GET /api/h2/scenario-replay?fault=slug_flow` — precompute 120-step trajectory, run gas-lift classifier
-- SCADA sub-tab: Vibration rising, Temp flat — SCADA alarms on vib > 5.0 mm/s
-- GDC sub-tab: vib+temp decorrelation → slug flow verdict → $1,500 truck roll vs $150k well pull
+**Retraining Steps:**
+```bash
+# 1. Update canonical physics ranges
+#    Edit gke/shared/fault_signatures.py:
+#    gas_lock:      psi(400,600), temp(245,265), vib(4.5,6.5), amps(20,45)
+#    fluid_drawdown: same as gas_lock (they are identical on raw sensors)
+
+# 2. Run ESP classifier retraining (~10 seconds)
+cd ~/gdc-pm
+python scripts/train_classifiers.py --asset-class esp \
+    --output-dir gke/inference-api/models \
+    --n-trajectories 600 --n-normal 24000 --rounds 300
+
+# 3. Run health model retraining (~10 seconds)
+python scripts/seed-and-train-og-models.py
+
+# 4. Rebuild and deploy inference-api
+docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest gke/inference-api/
+docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/inference-api:latest
+kubectl rollout restart deployment/inference-api -n gdc-pm
+
+# 5. Run the offline verification check
+python scripts/verify_classifier_offline.py
+# Expected: gas_lock >= 0.92 precision, slug_flow >= 0.90 precision, normal >= 0.95
+```
+
+---
+
+### PRIORITY 2: Backend Scenario Replay Physics Update (`app.py`)
+
+Update `/api/h1/scenario-replay` (lines 5827–5965):
+1. **`psi_nom`** ramp: start `random.uniform(1180, 1250)`, end `random.uniform(400, 600)` (not 875–1100)
+2. **`temp_nom`** ramp: start `random.uniform(195, 202)`, end `random.uniform(245, 265)` (not 195–210)
+3. **`vib_nom`** ramp: start `random.uniform(0.8, 1.4)`, end `random.uniform(4.5, 6.5)` (not 2.0–3.5)
+4. **`amps_nom`** ramp: start `random.uniform(85, 92)`, end midpoint of `(20, 45)` = 32.5A
+5. **SCADA alarm rules**: Update from the single `psi < 1020` floor to the 3-rule set:
+   - Rule A: dPIP/dt < -35 PSI/min (rolling 2.5-min rate alarm, ISA-18.2 §5.3)
+   - Rule B: rolling-avg PIP < 1020 PSI (pressure underload floor, API RP 11S §7.2) ← fires ~T=10 min
+   - Rule C: Amps < 50 A (motor undercurrent trip, API RP 11S §7.2) ← fires ~T=18 min
+   - Fire at earliest of all three. Also update `FAULT_PROFILES["gas_lock"]` and `["fluid_drawdown"]` in `app.py` to match these ranges so the degrade thread is also corrected.
+6. **Update SCADA alarm banner text** to say `"PIP < 1020 PSI"` (not 800).
+
+**Expected result after fix:** GDC detects at ~T=6 min, Smart-SCADA alarms at ~T=10 min, lead-time = ~4 minutes.
+
+---
+
+### PRIORITY 3: H1 Frontend Layout Redesign (`index.html` + `app.js`)
+
+**3a. Move timeline scrubber directly above the 4-stack charts (Left Column only):**
+- Remove the scrubber from its current position (below the banner, spanning full width).
+- Place it inside the Left Column `div`, immediately above `#h1-replay-chart`.
+- Set `padding-left: 48px; padding-right: 12px` (matches Plotly's `margin: {l:48, r:12}`).
+- Because the scrubber now lives inside the resizable left column, it will resize with the Plotly area automatically. The grey cursor line and slider knob will stay **perfectly vertically aligned** at any column width.
+
+**3b. Add "ⓘ Physics & Logic" info drawer button:**
+- Place it in the header bar next to `↺ New Scenario`.
+- Toggles a collapsable info panel above the charts explaining: ESP Unloading Physics, SCADA 4-rule trip logic, XGBoost pre-threshold multivariate detection, L3 RAG context fusion.
+
+**3c. Strict SCADA/GDC visual partition in Decision Console:**
+- **SCADA View active:** Hide the SVG downhole wellbore panel entirely. Hide GDC-only elements (`hs = X.XXXX`, health threshold labels, fault type reveal). Show a bare-metal 2×2 sensor grid (PIP / Amps / Temp / Vib) with live cursor values and SCADA threshold annotations. No downhole visualization (SCADA does not have a downhole digital twin).
+- **GDC Advisor active:** Reveal the SVG wellbore digital twin. Show GDC health score, pgvector RAG document cards, fault type, and informed intervention cards.
+
+**3d. Scrubber-reactive SVG wellbore digital twin:**
+- **Fluid column** (already bound to PIP) — with the PIP now crashing to 400–600 PSI, the visible drain will be dramatic.
+- **Gas bubbles** (Gas Lock): opacity and count bound to `Math.max(0, h1CursorIdx - h1ReplayData.gdc_detect_idx) / (h1ReplayData.n - h1ReplayData.gdc_detect_idx)`. Pre-detection: 0 bubbles. Post-detection: bubbles intensify as you scrub.
+- **Sand settling** (Drawdown): same binding — sand particles become visible and sink as scrubber passes detection.
+- **No flashing/gamified effects** — clean, static-positioned SVG elements with opacity transitions only.
+
+**3e. Eliminate chart x-axis truncation:**
+- The current code shows the full 30-minute pre-computed array. After the 120-step array is played, the chart should transition to continuous live telemetry scrolling, showing the last 30 minutes as a rolling window.
+
+---
+
+### PRIORITY 4: Deploy and Verify
+
+```bash
+# Rebuild fault-trigger-ui
+docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest gke/fault-trigger-ui/
+docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
+kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+
+# Verify smoke test passes
+cd ~/gdc-pm && node scripts/ui_smoke.mjs
+# Expected: ✅ SMOKE TEST PASSED (12/12 assertions, 0 console errors)
+
+# Verify scenario replay with updated physics
+curl -s "http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock" | python3 -c \
+  "import sys,json;d=json.load(sys.stdin);
+   print('n:',d['n'],'gdc:',d['gdc_detect_idx'],'scada:',d['scada_alarm_idx'],
+         'lead:',d['lead_time_minutes'],'psi_final:',round(d['psi'][-1],0),
+         'temp_final:',round(d['temp'][-1],0),'amps_final:',round(d['amps'][-1],1),
+         'vib_final:',round(d['vib'][-1],2),'model:',d['model_used'])"
+# Expected: gdc ~ 24, scada ~ 40, lead ~ 4 min, psi_final ~ 450–550, temp_final ~ 255–265, amps_final ~ 30–35, vib_final ~ 5.0–6.0
+```
 
 ---
 
@@ -80,12 +149,12 @@ Per DEMO_MASTER §5 — H2 Slug Flow scenario. The current H2 tab still uses the
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 Scenario Replay (Session Q) | ✅ LIVE | SHA sha256:a751a83e. 4-stack chart, SVG wellbore, smart SCADA. |
-| Smart SCADA rate-of-change trip | ✅ LIVE | ISA-18.2 §5.3 / API RP 11S §7.2. scada_rule_fired in API response. |
-| `model_used: FALLBACK_SYNTHETIC` | ✅ Integrity guard | UI shows banner if model fails — never silent |
-| docs/CLAIM_LEDGER.md | ✅ CREATED | All 8 H1 rows SURVIVES |
-| H2 inject-and-wait model | ⚠ STILL OLD | H2 tab not yet updated to Scenario Replay |
-| Vue template crash | ✅ Fixed | All `<` escaped; smoke test checks for leaks |
+| H1 Scenario Replay (Session Q) | ⚠ PHYSICS INACCURATE | PIP too high (875–1100 → correct: 400–600), Temp flat (needs to rise to 245–265°F), Vib too low |
+| Smart SCADA alarm logic | ⚠ FIRES TOO LATE | scada_alarm_idx=119/120 in Session Q. Needs multi-rule update (PIP floor, Amps trip). |
+| `esp_health.ubj` / `esp_classifier.ubj` | ⚠ RETRAIN REQUIRED | Trained on old (875–1100 PSI, 195–210°F) ranges. Will mis-score corrected physics trajectory. |
+| SCADA tab shows GDC health header | ⚠ INTEGRITY VIOLATION | GDC-only elements (hs=0.6953, XGBoost threshold) visible on SCADA view. Must be hidden. |
+| SVG wellbore animations | ⚠ FIRE ONCE, STAY | Currently fire on `h1RagRevealed = true` and stay indefinitely. Need scrubber-position binding. |
+| Scrubber vs chart misalignment | ⚠ NOT IN LEFT COLUMN | Scrubber is outside the resizable left column. GDC▲/SCADA▲ tick marks may drift. |
 
 ---
 
@@ -96,4 +165,4 @@ Per DEMO_MASTER §5 — H2 Slug Flow scenario. The current H2 tab still uses the
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
-- SCADA threshold = smart SCADA rate-of-change (ISA-18.2) + static floor 1020 PSI (API RP 11S §7.2)
+- Gas Lock and Fluid Drawdown have IDENTICAL sensor trajectories — this is the H1 premise
