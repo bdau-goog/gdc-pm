@@ -2,6 +2,12 @@
 
 ---
 
+## Session AJ (June 10, 2026) — *Financial Justification modal raw-mustache fix — integrity repair, deployed & verified*
+
+Fixed the long-standing bug where both the Financial Justification modal and the Feed Detail modal rendered raw `{{ }}` mustache templates instead of evaluated Vue values. Root cause: the Architecture tab's "overview" pane contained 2 stray `</div>` tags in the 3-tier comparison box closing cascade (old lines 2577–2578 of `index.html`), leaving `opens=1183, closes=1181` net balance of −2. These prematurely terminated `app-body` and `#app` in the browser's parsed DOM, ejecting both modals outside Vue's mount scope. Diagnosis used a multi-line-aware tag-stack parser (strips HTML comments preserving line numbers, then token-walks all `<div>` / `</div>` using regex with `re.S`). Fix: single `replace_in_file` deleting the 2 stray closers; verified balance 1181=1181, net 0, zero extra closes. Built and pushed new image `sha256:471fb644`; deployed with `kubectl set image @sha256:<digest>` (`:latest` rollout-restart does not repull on this cluster). Live verification: `curl` confirmed modal at served-line 3122 inside `</div><!-- #app -->` at line 3207. No claims, data, or UI behaviour changed — pure structural integrity fix. Committed `e93328f`. Next task: Sprint 3 H2 Briefing (3 panels).
+
+---
+
 ## Session AI (June 10, 2026) — *Sprint 2c+2d+2e: H1 Briefing ALL 6 Panels — complete demo briefing deployed and verified*
 
 **Code committed:** `52baa53` (Panel 4) · `db26131` (Panel 5) · `a8c5d27` (Panel 6)

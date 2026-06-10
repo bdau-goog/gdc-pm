@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AI — Sprint 2c+2d+2e ✅ H1 Briefing ALL 6 Panels deployed)
-**git head:** `a8c5d27` (feat(sprint2e): H1 Briefing Panel 6 — This Pattern Is Universal)
-**fault-trigger-ui image:** `sha256:ca6cea662e39501e9f19e21112f2a2a2eb3416abbf2298cec0d1f74f4e56e3e9` (Session AI — Sprint 2e deployed)
+**Date:** June 10, 2026 (Session AJ — Financial Justification modal fix deployed)
+**git head:** `e93328f` (fix(modal): remove 2 stray </div> in arch overview pane)
+**fault-trigger-ui image:** `sha256:471fb64422f56fce00719dfb255aa694f03b1b45d60e904c9cc1a48b696fef21` (Session AJ)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -34,18 +34,10 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ## STEP 3: Session AI COMPLETE ✅ — H1 Briefing DONE (all 6 panels) — Next Task is Sprint 3
 
-### Session AI Summary
-Sprints 2c, 2d, AND 2e complete this session. **The H1 Briefing is now fully built (all 6 panels).**
+### Session AJ Summary
+Financial Justification modal fix deployed. Both modals (Financial Justification + Feed Detail) were rendering raw `{{ }}` mustaches because the Architecture tab's "overview" pane contained 2 stray `</div>` tags in the 3-tier comparison box closing cascade. These prematurely terminated `app-body` and `#app` in the browser DOM, ejecting both modals outside Vue's mount scope.
 
-- **Sprint 2c** (commit `52baa53`): Panel 4 — STATE vs. CONTEXT
-- **Sprint 2d** (commit `db26131`): Panel 5 — Why Sand Changes Everything (2×2 decision matrix)
-- **Sprint 2e** (commit `a8c5d27`): Panel 6 — This Pattern Is Universal. 4-row animated industry table slides in row by row via `h1-p6-rowin` (translateX -16px→0, 0.5s ease-out, `both` fill): Row 1 O&G/ESP (delay 0.3s, blue border) → Row 2 P&E/Transformer (delay 1.2s, purple border) → Row 3 MFG/Factory motor (delay 2.1s, amber border) → Row 4 MINING/Haul truck (delay 3.0s, yellow border). Each row: industry badge | STATE column (sensor readings) | → arrow | CONTEXT column (document types). Closing quote at 3.8s: *"This is not an oilfield trick. It is the structural gap in every industrial AI deployment."* + *"GDC: the AI goes to the data."* Run the Scenario CTA button at 4.3s (inline in panel + footer). Dot 6 upgraded from static cosmetic to reactive Vue-bound. Next `< 5` → `< 6`. Run the Scenario `===5` → `===6`. Hint text: 6-case ternary. All HTML entities (&#x2192; &#x2191; &#x2193; etc.) to avoid any emoji/Unicode parse issues. Deployed `sha256:ca6cea662`.
-
-**Deployment note (permanent):** `kubectl rollout restart` with `:latest` does NOT pull new images (GKE node cache). Always use:
-```bash
-kubectl set image deployment/fault-trigger-ui -n gdc-pm \
-  fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<digest>
-```
+Fix: Deleted 2 stray `</div>` (old lines 2577–2578). Div balance: 1183→1181 opens = 1181 closes, net 0. Verified live: modal at served-line 3122, `</div><!-- #app -->` at 3207. Deployed `sha256:471fb644`.
 
 ### NEXT TASK — Sprint 3: H2 Briefing (3 Panels)
 **File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call per sub-sprint)
@@ -69,8 +61,6 @@ H2 Briefing follows the same pattern as H1 (h2BriefingMode / h2BriefingPanel). 3
 
 **Implementation:** Add `h2BriefingMode: true` + `h2BriefingPanel: 1` to Vue data in app.js. Wrap existing H2 scenario replay in `<template v-else>`. Insert briefing `<div v-if="h2BriefingMode">` before it.
 
-**Note on Financial Justification modal:** Pre-existing bug (confirmed present since before Session AI work — div balance -21 unchanged). Not blocking briefing demo. Investigate in a separate session.
-
 ---
 
 ## Known Integrity State
@@ -86,6 +76,7 @@ H2 Briefing follows the same pattern as H1 (h2BriefingMode / h2BriefingPanel). 3
 | STATE-vs-CONTEXT premise | ✅ LOCKED DEMO_MASTER §3 | Claim Ledger PREMISE row added |
 | Sand/shut-in physics | ✅ LOCKED DEMO_MASTER §4.1 + P5-A/B/C | Scoped: moderate-sand well · AR-trim |
 | SPE-174536 citation | ⚠️ UNVERIFIED | Replaced with SPE-170776 in Claim Ledger P4; 4.2 ft/s = representative, not a constant |
+| Financial Justification modal raw {{ }} | ✅ FIXED Session AJ | 2 stray </div> in arch overview pane; div balance net 0; deployed sha256:471fb644 |
 
 ---
 
@@ -97,6 +88,6 @@ H2 Briefing follows the same pattern as H1 (h2BriefingMode / h2BriefingPanel). 3
 - **Deploy with explicit digest** — `kubectl rollout restart` with `:latest` does NOT pull from registry on this cluster (node cache). Always use `kubectl set image ... @sha256:<digest>`
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,400 lines, `index.html` ~2,827 lines, `app.js` ~2,300 lines — always grep for line numbers first
+- `app.py` ~6,400 lines, `index.html` ~3,210 lines, `app.js` ~2,300 lines — always grep for line numbers first
 - H2 uses inference-api (not local esp_classifier.bst) — local .bst is 4-class without slug_flow
 - Gas Lock / Drawdown STATE identical on intake-only wells — premise is now "decision window ambiguity" not "physically impossible forever"
