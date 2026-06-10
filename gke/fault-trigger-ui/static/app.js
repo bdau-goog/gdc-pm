@@ -60,7 +60,7 @@ const DEMO_SCENARIOS = [
 createApp({
   data() {
     return {
-      mainTab: 'architecture',
+      mainTab: 'horizon1',
       archPane: 'overview',
       archInfoOpen: false,
       currentView: 'dashboard',
@@ -1499,7 +1499,7 @@ createApp({
           font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
         // Smart SCADA label — top of paper
-        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>Smart SCADA</b>',
+        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>SCADA</b>',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
@@ -1594,15 +1594,15 @@ createApp({
               asset_id: _seizeWell2,
               fault_type: 'fluid_drawdown',
               action_label: 'vfd_trim_contraindicated',
-              headline: `VFD Trim Executed on Fluid Drawdown — Pump Seized — ${_seizeWell2}`,
-              detail: `Operator executed VFD trim (52→44 Hz) during confirmed fluid drawdown. Transport velocity dropped below critical lift threshold (4.2 ft/s → 3.1 ft/s, SPE-174536). Sand bridge formed. Pump seized. Engineering assessment required. GDC contraindication was not followed.`
+              headline: `VFD Trim Executed on Fluid Drawdown — Unplanned Shutdown — ${_seizeWell2}`,
+              detail: `Operator executed VFD trim (52→44 Hz) during confirmed fluid drawdown. Wellbore response abnormal — well removed from production. Fluid-level recovery and engineering assessment required. GDC contraindication was not followed.`
             })
           });
         } catch(e) {}
         this.h1Recovering = false;
         if (this.h1ElapsedTimer) { clearInterval(this.h1ElapsedTimer); this.h1ElapsedTimer = null; }
-        this.h1AdvisorHtml += '<br><br><strong style="color:var(--red)">⚠ VFD trim executed on a fluid drawdown — frequency reduced to 44 Hz dropped fluid transport velocity from 4.2 ft/s to 3.1 ft/s, breaching the critical sand-transport lift boundary (SPE-174536). Suspended sand settled and bridged the completion string. Motor unresponsive on restart. Engineering assessment required.</strong>';
-        this.showToast('⚠ Pump seized — VFD trim contraindicated during fluid drawdown', 'var(--red)');
+        this.h1AdvisorHtml += '<br><br><strong style="color:var(--yellow)">⚠ VFD trim executed against GDC recommendation during fluid drawdown — wellbore response abnormal. Well removed from production for fluid-level recovery and engineering assessment. Production deferred. Unplanned intervention cost applies.</strong>';
+        this.showToast('⚠ Unplanned outcome — well taken offline for assessment', 'var(--yellow)');
         const _seizeWell = this.h1TargetWell || 'ESP-ALPHA-1';
         try { await fetch(`/api/cancel-degrade/${_seizeWell}`, {method:'POST'}); } catch(e) {}
         return;
