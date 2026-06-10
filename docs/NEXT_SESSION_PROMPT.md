@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AI — Sprint 2c+2d ✅ H1 Briefing Panels 4+5 deployed)
-**git head:** `db26131` (feat(sprint2d): H1 Briefing Panel 5 — Why Sand Changes Everything (2x2 decision matrix))
-**fault-trigger-ui image:** `sha256:3f8ecc7cbef399b964c61f803b9d2ce11c1dfad71aaf287beb74de8d9d8ec52e` (Session AI — Sprint 2d deployed)
+**Date:** June 10, 2026 (Session AI — Sprint 2c+2d+2e ✅ H1 Briefing ALL 6 Panels deployed)
+**git head:** `a8c5d27` (feat(sprint2e): H1 Briefing Panel 6 — This Pattern Is Universal)
+**fault-trigger-ui image:** `sha256:ca6cea662e39501e9f19e21112f2a2a2eb3416abbf2298cec0d1f74f4e56e3e9` (Session AI — Sprint 2e deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -32,14 +32,14 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ---
 
-## STEP 3: Session AI COMPLETE ✅ — Next Task is Sprint 2e
+## STEP 3: Session AI COMPLETE ✅ — H1 Briefing DONE (all 6 panels) — Next Task is Sprint 3
 
 ### Session AI Summary
-Sprints 2c AND 2d complete this session.
+Sprints 2c, 2d, AND 2e complete this session. **The H1 Briefing is now fully built (all 6 panels).**
 
-- **Sprint 2c** (commit `52baa53`): H1 Briefing Panel 4 — "STATE vs. CONTEXT". Full-screen two-column animated reveal. LEFT = blue STATE column (4 sensor tiles fading in at 0.1/0.4/0.7/1.0/1.3s). RIGHT = amber CONTEXT column (4 document cards at 1.6/2.2/2.8/3.4/4.0s). Bottom quote: *"You cannot instrument your way out of a context gap."* CSS: `h1-p4-fadein` + `h1-p4-state-row` + `h1-p4-ctx-card` with `animation-fill-mode:both`.
-
-- **Sprint 2d** (commit `db26131`): H1 Briefing Panel 5 — "Why Sand Changes Everything". 3×3 CSS grid decision matrix with scope badge "moderate-sand well · AR-trim". Cells appear one by one via `h1-p5-cellin` scale(0.92→1) animation: Cell 1 VFD TRIM × GAS LOCK ✅ SAFE ~$2,500 (delay 0.2s) → Cell 2 VFD TRIM × DRAWDOWN ❌ CATASTROPHIC ~$150k with `h1-p5-sand-fill` animation growing from 0→82% at 2.5s (sand accumulating bar) → Cell 3 SHUT-IN × GAS LOCK ⚠ DEFERRED ~$1-3k restart (delay 1.8s) → Cell 4 SHUT-IN × DRAWDOWN ✅ RECOVERABLE (delay 2.6s). Bottom quote row (delay 3.4s): *"Blind to the cause, trim risks seizure. Shut-in is safe in both — the rational default."* + *"The context that removes the blindness is in the documents. GDC reads them in seconds."* Dot 5 upgraded from static cosmetic to reactive Vue-bound. Next `< 4` → `< 5`. Run the Scenario `===4` → `===5`. Hint text: 5-case ternary. HTML entities used (&#x2705; &#x274C; &#x26A0;) in place of emoji to avoid any template-parse issues. Deployed `sha256:3f8ecc7cbef399b964c61f803b9d2ce11c1dfad71aaf287beb74de8d9d8ec52e`.
+- **Sprint 2c** (commit `52baa53`): Panel 4 — STATE vs. CONTEXT
+- **Sprint 2d** (commit `db26131`): Panel 5 — Why Sand Changes Everything (2×2 decision matrix)
+- **Sprint 2e** (commit `a8c5d27`): Panel 6 — This Pattern Is Universal. 4-row animated industry table slides in row by row via `h1-p6-rowin` (translateX -16px→0, 0.5s ease-out, `both` fill): Row 1 O&G/ESP (delay 0.3s, blue border) → Row 2 P&E/Transformer (delay 1.2s, purple border) → Row 3 MFG/Factory motor (delay 2.1s, amber border) → Row 4 MINING/Haul truck (delay 3.0s, yellow border). Each row: industry badge | STATE column (sensor readings) | → arrow | CONTEXT column (document types). Closing quote at 3.8s: *"This is not an oilfield trick. It is the structural gap in every industrial AI deployment."* + *"GDC: the AI goes to the data."* Run the Scenario CTA button at 4.3s (inline in panel + footer). Dot 6 upgraded from static cosmetic to reactive Vue-bound. Next `< 5` → `< 6`. Run the Scenario `===5` → `===6`. Hint text: 6-case ternary. All HTML entities (&#x2192; &#x2191; &#x2193; etc.) to avoid any emoji/Unicode parse issues. Deployed `sha256:ca6cea662`.
 
 **Deployment note (permanent):** `kubectl rollout restart` with `:latest` does NOT pull new images (GKE node cache). Always use:
 ```bash
@@ -47,23 +47,29 @@ kubectl set image deployment/fault-trigger-ui -n gdc-pm \
   fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<digest>
 ```
 
-### NEXT TASK — Sprint 2e: H1 Briefing — Panel 6 (Universal Pattern)
-**File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call)
-**Spec:** `docs/SPRINT_PLAN.md §Sprint 2e` and `DEMO_MASTER.md §4 Panel 6`
+### NEXT TASK — Sprint 3: H2 Briefing (3 Panels)
+**File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call per sub-sprint)
+**Spec:** `docs/SPRINT_PLAN.md §Sprint 3` and `DEMO_MASTER.md §5`
 
-Panel 6 — *This Pattern Is Universal* — 4-row animated table:
-- **4-row table appears row by row** (each row: asset | STATE sensor | CONTEXT document):
-  - O&G ESP · PIP / Amps declining → Workover record / GOR trend / shift note
-  - Power transformer · Load current rising → Loading plan / maintenance log / seasonal forecast
-  - Factory motor · Vibration rising → Lubrication record / OEM bulletin / line throughput log
-  - Haul truck · Fuel consumption rising → Haul-road report / service history / grade profile
-- Caption per row: "sensor STATE → document CONTEXT" arrow
-- Full-width quote: "This is not an oilfield trick. It is the structural gap in every industrial AI deployment."
-- `[▶ Run the Scenario]` CTA — hands off to `h1BriefingMode=false; loadH1Scenario()`
-- Progress dot 6 activates. Next button removed (only Run the Scenario). Run the Scenario: `===5` → `===6`
-- Dot 6 upgraded from static cosmetic to reactive Vue-bound.
+H2 Briefing follows the same pattern as H1 (h2BriefingMode / h2BriefingPanel). 3 panels:
 
-**Note on Financial Justification modal:** Pre-existing bug (confirmed present before Session AI work) — the modal div has `position:fixed;inset:0` and may intercept clicks before Vue fully mounts. Root cause unknown (not related to Session AI changes — div balance was -21 before and after). Investigate separately if time permits; not blocking the briefing panels.
+**Panel 1 — What is Slug Flow?**
+- Surface slugs → cyclic vibration at pump intake
+- Animated: slug pulses in production tubing, PDG gauge showing cyclic PIP
+
+**Panel 2 — Why It Looks Like a Failing Pump**
+- Vibration rising (alarming STATE) — SCADA HI fires
+- "The sensor shows the pattern. It doesn't tell you what's driving it."
+
+**Panel 3 — STATE vs. CONTEXT (the exoneration)**
+- STATE: vibration rising + flat motor temp → "something changed, but not at the motor"
+- CONTEXT cards reveal: choke log (3 adjustments) · separator test (1.8 bbl slugs) · shift note ("pumping rough but temp normal")
+- "The documents say: do NOT pull. $1,500 surface adjustment vs. $150k false alarm."
+- `[▶ Run the Scenario]` CTA
+
+**Implementation:** Add `h2BriefingMode: true` + `h2BriefingPanel: 1` to Vue data in app.js. Wrap existing H2 scenario replay in `<template v-else>`. Insert briefing `<div v-if="h2BriefingMode">` before it.
+
+**Note on Financial Justification modal:** Pre-existing bug (confirmed present since before Session AI work — div balance -21 unchanged). Not blocking briefing demo. Investigate in a separate session.
 
 ---
 

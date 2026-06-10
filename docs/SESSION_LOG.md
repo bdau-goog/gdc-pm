@@ -2,6 +2,21 @@
 
 ---
 
+## Session AI (June 10, 2026) — *Sprint 2c+2d+2e: H1 Briefing ALL 6 Panels — complete demo briefing deployed and verified*
+
+**Code committed:** `52baa53` (Panel 4) · `db26131` (Panel 5) · `a8c5d27` (Panel 6)
+**Cluster image digest:** `sha256:ca6cea662` (Sprint 2e) · 16 Panel 6 strings + 2 CSS animation strings confirmed in live pod
+
+**Sprint 2e — Panel 6 (This Pattern Is Universal):** 4-row industry table slides in row-by-row via `h1-p6-rowin` (translateX -16px→0, 0.5s ease-out both): Row 1 O&G/ESP blue border (delay 0.3s) — PIP↓·Amps↓ → Workover record/GOR trend/shift note; Row 2 P&E/Transformer purple border (delay 1.2s) — Load current↑·temp↑ → Loading plan/maintenance log/seasonal forecast; Row 3 MFG/Factory motor amber border (delay 2.1s) — Vibration↑·temp nominal → Lubrication record/OEM bulletin/line throughput; Row 4 MINING/Haul truck yellow border (delay 3.0s) — Fuel consumption↑·payload nominal → Haul-road report/service history/grade profile. Closing quote at 3.8s: *"This is not an oilfield trick. It is the structural gap in every industrial AI deployment."* + *"GDC: the AI goes to the data."* Inline `▶ Run the Scenario` CTA button at 4.3s (plus footer button for panel 6). All arrows and symbols use HTML entities (&#x2192; &#x2191; &#x2193;). Dot 6 upgraded to reactive Vue-bound. Navigation `< 5` → `< 6`, `===5` → `===6`. Hint text: 6-case ternary. **H1 Briefing is now complete — all 6 panels built and deployed.**
+
+**Key decisions:** (a) Slide-in from left (translateX) chosen for row animation — "appearing one by one left to right" is the most natural visual for a table row reveal; contrasts with Panel 4's fade-down and Panel 5's scale-in. (b) All HTML entities throughout Panel 6 (no emoji, no variation selectors) — defensive choice following the `🗺️` potential issue in Panel 4. (c) Two CTA paths: inline button in panel body (most prominent) + footer button (always available from navigation footer). (d) Industry badges use text abbreviations (O&G, P&E, MFG, MINING) — no emoji, clean monospace rendering.
+
+**Verification:** 16 Panel 6 strings + 2 CSS strings confirmed in live pod · rollout clean.
+
+**Next task:** Sprint 3 — H2 Briefing (3 panels: What is Slug Flow? · Why It Looks Like a Failing Pump · STATE vs. CONTEXT exoneration). Same architecture as H1 briefing (`h2BriefingMode`/`h2BriefingPanel` in Vue data, `<template v-else>` wrapper around existing H2 scenario replay). See SPRINT_PLAN.md §Sprint 3 and DEMO_MASTER.md §5.
+
+---
+
 ## Session AI (June 10, 2026) — *Sprint 2c+2d: H1 Briefing Panels 4+5 — STATE vs. CONTEXT + 2×2 Decision Matrix — deployed and verified*
 
 **Code committed:** `52baa53` (Sprint 2c: Panel 4) · `db26131` (Sprint 2d: Panel 5)
