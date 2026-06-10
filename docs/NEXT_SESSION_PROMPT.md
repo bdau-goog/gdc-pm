@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 9, 2026 (Session AC — L3-centered narrative locked, Surveillance removed, DEMO_MASTER §3/§3.5 rewritten)
-**git head:** (pending final commit — docs only)
-**fault-trigger-ui image:** `sha256:fa0d96b9` (Session AB — no code changes in Sessions AA or AC)
+**Date:** June 10, 2026 (Session AD — Surveillance removed, L3 narrative locked in UI, all integrity fixes deployed)
+**git head:** `a8e6d81` (feat(ui): Session AD)
+**fault-trigger-ui image:** `sha256:a74f5fbf` (Session AD)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -40,55 +40,22 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 
 ---
 
-## STEP 3: Session Z completed Batch D + Batch E — Next Tasks
+## STEP 3: Session AD COMPLETE — Next Task is Session AE
 
-### Session Z Batch D COMPLETE ✅
-- `/api/h1/remediation-record` endpoint live — writes `doc_type='remediation_record'`, `lbl_type='hitl_action'` to `field_intel`
-- `get_rag_context_and_adjusted_rul()` excludes `hitl_action` rows (`AND lbl_type != 'hitl_action'`)
-- `executeH1Shutdown()` and `approveH1VFD()` wired in `app.js` to POST remediation record
+### Session AD COMPLETE ✅
+All UI changes deployed and verified live (`sha256:a74f5fbf`):
+- **Surveillance tab removed** — nav div + full HTML block (344–508) deleted. `<!-- ══ end TAB: SURVEILLANCE ══ -->` comment kept as tombstone only.
+- **Default opening tab** changed: `mainTab: 'surveillance'` → `mainTab: 'architecture'` (How It Works opens first)
+- **Physics-impossibility premise** added to H1 Physics & Logic panel — blue callout box before the pp-cols grid, stating the physical measurement constraint cleanly
+- **"8,412 field documents"** removed from Physics & Logic panel (L3 Context Fusion section) → replaced with "field-document corpus (shift notes, sonic logs, GOR reports)"
+- **GDC disambiguation banner** (H1 post-RAG) reworded: "GDC resolved fault type from field documents — SCADA alarm remains ambiguous without document context"
+- **Zone 2 Right synthesis payload** added after "RETRIEVED CONTEXT" label: "The answer was never in the sensors. GDC read these documents, cross-referenced them against live telemetry, and resolved the fault in under 2s." (appears only when h1RagRevealed=true)
+- **How It Works Pane 1 GDC compare card** — bullets reordered L3-first: "Reads field documents (shift notes, sonic logs, GOR reports)" → "Resolves physically ambiguous faults sensors alone cannot" → "5s local stream — no WAN needed" → "Learned risk scoring — not fixed thresholds"
+- **Tags vs. Tag-Patterns vs. Documents** — 3-column comparison centerpiece added after Pane 1 compare cards (Threshold SCADA / Advanced APM Platforms / GDC Edge AI)
+- **Pane 3 ML Detection header** — paragraph replaced: "Learned risk scoring — not fixed thresholds. Against best-of-breed predictive platforms, detection converges; document fusion is GDC's categorical edge."
+- **`model_drift_detected: False`** → `model_drift_detection: "not_implemented"` (integrity fix, app.py line 4975)
 
-### Session Z Batch E COMPLETE ✅
-- **SCADA pre-alarm sensor tiles:** Live PIP/Amps/Temp/Vib tiles (green nominal state) now shown on SCADA tab BEFORE alarm fires — same data as GDC tab. Symmetric presentation, ISA-101 compliant.
-- **Taller wellbore SVG (Zone 3):** Container 12%→15%. viewBox 0 0 40 210 → 0 0 44 250. Added surface Christmas tree (X-MAS block at top), 4 perforation pairs, formation/reservoir block at bottom (~9,800 ft MD). Depth tick marks at 3k/6k ft.
-- **SVG document icons:** Replaced plain 📄 emoji with distinct inline SVG badges: waveform acoustic trace (sonic log/shift note), bar chart GOR trend (separator lab report), open book (OEM guide). Each has distinct color (green/blue/purple) + label text.
-
-### Session AA COMPLETE ✅
-- `MODEL_FOUNDATIONS.md` precision conflict resolved — 0.815 is correct v1 historical record; v2 P=0.995 documented.
-
-### Session AB COMPLETE ✅
-- `esp_thermal.ubj` trained (50,200 rows, single feature `vfd_hz`, max delta ±0.33°F from physics polynomial)
-- `load_health_models()` extended to load `esp_thermal.ubj` at startup — confirmed live in `HEALTH_MODELS` registry
-- `evaluate_hz()` in `vizier_optimize()` now calls `HEALTH_MODELS["esp_thermal"].predict()` with honest polynomial fallback
-- Deployed `sha256:fa0d96b9`, rollout successful, `api/model/status` confirms `esp_thermal` in models_loaded
-
-### Session AC COMPLETE ✅ (docs only — narrative strategy locked)
-- DEMO_MASTER.md §3/§3.5 rewritten: L3 = sole categorical moat; L1+L2 conceded; Surveillance removed with full rationale. Rejected L2 claims documented (cannot be re-introduced without SME source).
-- SESSION_LOG + NEXT_SESSION_PROMPT updated with all decisions + H1/H2/H3 UI impact.
-
-### NEXT TASKS — Session AD: UI Implementation
-
-**1. index.html — Surveillance removal + How It Works + H1 re-emphasis (single batched call):**
-- Remove Surveillance tab HTML block (lines ~345–508)
-- Remove Surveillance nav `<div>` (line ~21)
-- How It Works: reorder GDC column bullets — L3 ("Reads field documents") first; ML detection moves to one honest line conceding both tiers
-- How It Works System Overview or Context Fusion: add "tags vs. tag-patterns vs. documents" 3-line comparison
-- How It Works Pane 3 (ML Detection): replace "Multivariate ML detection" with: *"Learned risk scoring — not fixed thresholds. Against best-of-breed predictive platforms, detection converges; document fusion is GDC's categorical edge."*
-- H1 banner or Physics & Logic panel: add physics-impossibility premise — *"Gas lock and fluid drawdown produce identical PIP/Amps/Temp/Vib. No sensor model can distinguish them. The answer exists only in field documents."*
-- H1 GDC Advisor Zone 2 Right doc-reveal label: add synthesis payload — *"The answer was never in the sensors. GDC read these documents, cross-referenced them against live telemetry, and resolved the fault in under 2s."*
-- H1 lead-time callout: demote from headline to compact annotation
-- INTEGRITY: line ~572 "8,412 field documents" → "field-document corpus (shift notes, sonic logs, GOR reports)"
-
-**2. app.js — Default tab (1 line):**
-- `mainTab: 'surveillance'` → `mainTab: 'architecture'`
-
-**3. app.py — Integrity fix (1 line):**
-- Line ~4975: `"model_drift_detected": False` → remove the field or relabel as `"model_drift_detection": "not_implemented"`. Do NOT imply an active detector.
-
-**After:** docker build → push → `kubectl set image` with explicit digest → verify grep (no "surveillance" nav, no "8,412", model_drift relabeled, mainTab default = 'architecture').
-
----
-
-### FUTURE SESSION AE: Presenter Script + 5-Minute Veo Video
+### NEXT TASK — Session AE: Presenter Script + 5-Minute Veo Video
 
 **Scope:** A full narrated demo script suitable for: (a) live presenter walkthrough and (b) Veo-generated 5-minute video.
 
@@ -109,7 +76,7 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 - On-screen text overlays at each beat
 - Timing targets per segment
 
-**Note:** This is a separate session from Session AD (UI code). Do NOT mix them. Session AD first, then Session AE.
+**Note:** Session AD is complete. Session AE is the video script only — no code changes expected.
 
 ---
 
@@ -134,10 +101,11 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 | SVG document icons | ✅ NEW Session Z Batch E | Distinct inline SVG badges (sonic waveform, GOR bar chart, OEM book) replace 📄 emoji |
 | MODEL_FOUNDATIONS vs SESSION_LOG precision conflict | ✅ FIXED Session AA | MODEL_FOUNDATIONS.md updated — v2 results (P=0.995, all gates pass) documented in §6/§8/§9 addendum. 0.815 retained in §9 as correct v1 historical record. |
 | `vizier_optimize()` hardcoded polynomial (H3 integrity) | ✅ FIXED Session AB | `esp_thermal.ubj` trained + deployed; `evaluate_hz()` now calls `HEALTH_MODELS["esp_thermal"].predict()`. Confirmed in HEALTH_MODELS registry. |
-| Surveillance tab fabrications (8,412/14/156) | ✅ SPEC REMOVED Session AC | DEMO_MASTER §3.5 documents all 4 reasons. UI removal = Session AD. |
+| Surveillance tab fabrications (8,412/14/156) | ✅ REMOVED Session AD | Surveillance tab HTML block deleted. Nav div deleted. No fabricated counts anywhere in UI. |
 | DEMO_MASTER §3 L2 overclaims | ✅ FIXED Session AC | Rejected L2 claims table in DEMO_MASTER §3 — cannot be reintroduced. |
-| `model_drift_detected: False` stub (app.py ~4975) | ⏳ OPEN Session AD | Remove or relabel — implies an active detector that always returns OK. |
-| "8,412 field documents" (index.html ~572) | ⏳ OPEN Session AD | Remove count; rephrase as "field-document corpus." |
+| `model_drift_detected: False` stub (app.py ~4975) | ✅ FIXED Session AD | Now `model_drift_detection: "not_implemented"` — no longer implies active detector. |
+| "8,412 field documents" (index.html) | ✅ FIXED Session AD | Removed from Physics & Logic panel → "field-document corpus (shift notes, sonic logs, GOR reports)". |
+| Surveillance nav tab | ✅ REMOVED Session AD | Nav div deleted; default tab changed to 'architecture' (How It Works). |
 
 ---
 

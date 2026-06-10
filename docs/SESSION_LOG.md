@@ -2,6 +2,16 @@
 
 ---
 
+## Session AD (June 10, 2026) — *UI narrative locked: Surveillance removed + physics-impossibility premise + tags vs patterns vs docs + integrity fixes — deployed and verified*
+
+**Code committed:** `a8e6d81` (feat(ui): Session AD — Surveillance removed, physics-impossibility premise, tags vs patterns vs docs, model_drift relabeled, mainTab→architecture)
+**fault-trigger-ui image:** `sha256:a74f5fbf`
+**Verified live:** 4/4 grep checks pass — no `Surveillance</div>` nav, no `8,412`, `model_drift_detection: not_implemented`, `mainTab='architecture'` present ✅
+
+This was a pure UI implementation session executing all items queued in Session AC. Three files changed in one batched session: `index.html` (7 SEARCH/REPLACE blocks in one call), `app.js` (1 line), `app.py` (1 line). **Surveillance tab fully removed:** nav div deleted (line 21), full HTML block deleted (lines 344–508, all 165 lines including the fabricated "8,412 / 14 / 156" hero numbers, the pad triage grid, and the SCADA alarm feed). A `<!-- ══ end TAB: SURVEILLANCE ══ -->` tombstone comment remains. **Default opening tab changed** from `'surveillance'` to `'architecture'` — demo now opens on How It Works. **Physics-impossibility premise added** to H1 Physics & Logic panel as a blue callout box: *"Gas lock and fluid drawdown produce physically identical PIP / Amps / Temp / Vibration signatures — with opposite correct actions... The answer exists only in field documents."* **"8,412 field documents"** removed from the L3 Context Fusion section → "field-document corpus (shift notes, sonic logs, GOR reports)". **GDC disambiguation banner** reworded to "resolved fault type from field documents". **Zone 2 Right synthesis payload** added: "The answer was never in the sensors. GDC read these documents, cross-referenced them against live telemetry, and resolved the fault in under 2s." — appears only when `h1RagRevealed=true`. **How It Works Pane 1 GDC compare card** reordered L3-first. **3-column "TAGS vs. TAG-PATTERNS vs. DOCUMENTS"** centerpiece added after Pane 1 compare cards. **Pane 3 ML Detection header** replaced with honest concessive text. **`model_drift_detected: False`** relabeled `model_drift_detection: "not_implemented"`. All changes deployed `sha256:a74f5fbf`, verified with live curl grep. Known Integrity State: 0 open items. **Next task:** Session AE — Presenter Script + 5-Minute Veo Video (`docs/VIDEO_SCRIPT.md`).
+
+---
+
 ## Session AC (June 9, 2026) — *Narrative strategy locked: L3 categorical moat, Surveillance removed, DEMO_MASTER §3/§3.5 rewritten — docs only, no code*
 
 **Code committed:** (docs only — pending commit at session wrap)
