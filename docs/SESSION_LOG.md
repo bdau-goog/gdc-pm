@@ -2,6 +2,25 @@
 
 ---
 
+## Session AL (June 10, 2026) — *Sprint AK: Panel 2+3 scrubber rebuild — deployed and verified*
+
+**Code committed:** `bc5edd7` (feat(sprint-ak): Panel 2+3 scrubber rebuild)
+**Cluster image digest:** `sha256:ca4c110c` (Session AL) · 3 files changed, 44 insertions(+), 28 deletions(-)
+
+**Panel 2 ("What is an Unloading Event?") — fixed:** Replaced infinite `@keyframes h1-brief-decline` CSS loop (87%→22%→87% perpetual, amber-only bars, wrong orientation) with presenter-controlled scrubber `h1P2Scrub` (0=nominal → 100=fault). All 4 gauges now start GREEN at scrub=0. PIP shrinks 90%→30%, AMPS shrinks 90%→20%, both flip amber when scrub>50 — implementing "short bar = worse / lower value" orientation. WINDING TEMP fixed width 70% green (was 16% slate). VIB fixed width 60% green (was 14% slate). Tile borders and header labels also react to scrub>50. Diagnostic story told in one gesture: two gauges go amber and shrink, two stay green and flat.
+
+**Panel 3 ("One Signature, Two Causes") — fixed:** (a) Wellbore SVG containers: `max-height:148px` → `max-height:280px` on both Gas Lock and Fluid Drawdown SVGs, roughly doubling visible size. (b) Gas bubbles: removed `animation:h1-bubble-rise 2.5s ease-in infinite` infinite loop; replaced with `opacity` bound to `h1P3Scrub/100` (scrub=0 → invisible, scrub=100 → fully visible). (c) Fluid drain: removed `h1-p3-fluid-drain` infinite `scaleY` animation; replaced with `h1-p3-fluid-scrub` class + `:style="{transform:'scaleY('+…+')'}"` bound to `1 - 0.85 * h1P3Scrub / 100`. At scrub=100, fluid column shrinks to 15% height. (d) Bottom "SAME SENSOR OUTPUT" strip: both PIP (blue) and AMPS (green) bars now use `h1-bar-scrub` class with h1P3Scrub-driven width, making the caption "the live decline looks the same" visually accurate.
+
+**styles.css changes:** Removed 5 infinite-loop constructs (`@keyframes h1-brief-decline`, `.h1-brief-decline-bar`, `@keyframes h1-p3-drain`, `.h1-p3-fluid-drain`, `@keyframes h1-bubble-rise` from `.h1-wb-bubble`). Added `.h1-bar-scrub` (transition:width 0.4s ease) and `.h1-p3-fluid-scrub` (transform-origin:center bottom; transition:transform 0.4s ease). Fixed `.h1-wb-bubble` to use `fill` (not `background` which doesn't apply to SVG) + `transition:opacity 0.4s ease`.
+
+**app.js changes:** Added `h1P2Scrub: 0` and `h1P3Scrub: 0` to Vue data. Added `h1BriefingPanel()` watcher that resets both scrubbers to 0 on every panel change — prevents stale fault state when presenter navigates backward.
+
+**Verification:** Pod grep: `h1-bar-scrub`/`h1-p3-fluid-scrub`/`h1P2Scrub`/`h1P3Scrub` present in all three files ✅. Old infinite keyframes: 0 hits in pod styles.css and index.html ✅. All 6 H1 Briefing panels now SHIP-READY.
+
+**Next task:** Sprint 3 — H2 Briefing (3 panels: What is Slug Flow? · Why It Looks Like a Failing Pump · STATE vs. CONTEXT Exoneration). Same architecture as H1 briefing (`h2BriefingMode`/`h2BriefingPanel` in Vue data, `<template v-else>` wrapper around existing H2 scenario replay). No styles.css changes needed — reuse H1 briefing CSS classes.
+
+---
+
 ## Session AK (June 10, 2026) — *Panel review + scrubber spec locked — wrap only, no code*
 
 User reviewed all 6 H1 Briefing panels at proper zoom. Panels 1, 4, 5, 6 approved as ship-ready; do not touch. Panels 2 and 3 require a scrubber rebuild. Panel 2 issues: animated bars use an infinite CSS loop (`h1-brief-decline` 87%→22%→87% perpetual) rendering amber only, both PIP and AMPS the same color, and orientation is backwards (long = worse, should be short = worse/lower). Panel 3 issues: wellbore SVGs are postage-stamp size (`max-height:148px` cap) and animations are also infinite loops not under presenter control. Design locked for next session: per-panel scrubber (`h1P2Scrub`/`h1P3Scrub` 0→100), CSS transition replacing `@keyframes`, all bars start GREEN at 0, PIP and AMPS go amber and shrink as scrub increases, TEMP and VIB stay green and flat (that IS the diagnostic story in one gesture), short bar = worse orientation, Panel 3 SVGs scaled up to ~280px, bubble/drain opacity driven by scrub value not time. Sprint 3 (H2 Briefing) deferred until Panel 2+3 are fixed. No code written this session — clean handoff. Full spec in NEXT_SESSION_PROMPT.md.
