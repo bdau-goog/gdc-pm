@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AP — single-alarm collapse + Bayes softening deployed)
-**git head:** `7c17220` (fix(h1-single-alarm): collapse detection race to single shared alarm moment, soften Bayes posterior to 93%, remove contraindicated path)
-**fault-trigger-ui image:** `sha256:7849e9e3f9bcac0e50b96165fa6e0ac12b29a00deebb3520db284b8983b4fecb` (Session AP)
+**Date:** June 10, 2026 (Session AQ — H1 Briefing Batch 2 deployed)
+**git head:** `71b68b3` (fix(h1-briefing-batch2): P1 remove sand-stakes row + move callout top, P2 strip dev-leak, P3 soften drawdown footer, P5 replace sand matrix with How Operators Decide Today)
+**fault-trigger-ui image:** `sha256:2fd95932a9b8ae9ca0eb6c961cf9a031b264a97ad69705fb8197a05999414a9a` (Session AQ)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -31,51 +31,37 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: NEXT TASK — H1 BRIEFING PANEL REWORK (Batch 2)
+## STEP 3: NEXT TASK — H1 Briefing Batch 3 + H2 Briefing (Sprint 3)
 
-> **✅ Session AP completed Batch 1:** The detection race is structurally gone from the scenario runtime.
-> Single `alarm_idx`, both views reveal simultaneously, Bayes posterior 93.1%, no contraindicated card,
-> no seizure path. Committed `7c17220`, deployed, verified live.
+> **✅ Session AQ completed Batch 2:** All 4 briefing panel reworks deployed and verified live.
+> P1: sand-stakes row removed, callout moved to top; P2: dev-leak stripped; P3: drawdown footer softened;
+> P5: sand matrix replaced with "How Operators Decide Today" two-column layout.
 
-### What's still outstanding (Batch 2 — briefing panels):
+### Remaining H1 work (Batch 3):
+1. **OEM Troubleshooting Guide (Doc 3)** — no click handler. Needs modal + G1–G6-gated content. Low priority — gate on user direction.
 
-**Hard constraints (from NEXT_SESSION_PROMPT AO — still apply):**
-1. **Remove sand-stakes row from Panel 1 "The Setup".** Sand is not a setup fact; it's the decision-context reason shut-in is the conservative default. Move to Panel 5 (where it already belongs).
-2. **Panel 2 "What is an Unloading Event?"** — remove dev-leak text `(Sprint 2b–2e)` and the "GDC detects before any SCADA threshold" line from the callout. Both are racing claims.
-3. **Panel 3 "One Signature, Two Causes"** — drawdown footer still says "VFD trim catastrophic ~$150k" and shows a `SAND` zone. Since Batch 1 removed the catastrophe path from the scenario, the briefing should match: soften to "shut-in is the correct action — sand makes trim risky in this well type," not "catastrophic seizure." The $150k and sand are still ON SCREEN here (briefing) — user confirmed sand stays as the policy rationale, just not the catastrophe framing.
-4. **Panel 5 "Why Sand Changes Everything"** — the user wants this REPLACED with a new "How Operators Decide Today" panel. See wireframe in NEXT_SESSION_PROMPT AO §STEP 3 for the agreed content. Sand is the reason shut-in is the conservative default, not a $150k catastrophe story.
-5. **Panel 2 callout leak** — strip `Sprint 2b–2e` reference and the "detects before SCADA" line.
+### Next major work — H2 Briefing (Sprint 3):
+3 animated panels, same architecture as H1 briefing (`h2BriefingMode`/`h2BriefingPanel` in Vue data, `<template v-else>` wrapper around existing H2 scenario replay):
 
-### Agreed 6-panel arc (for reference):
-1. **What We're Watching — A Mature ESP** (rework P1: de-sand the setup)
-2. **What is an Unloading Event?** (keep P2, strip dev-leak line)
-3. **Two Causes, One Signature** (rework P3 footer: soften $150k to "riskier if drawdown" consistent with scenario)
-4. **STATE vs CONTEXT** (keep P4 as-is — perfect)
-5. **How Operators Decide Today** (NEW — replace sand matrix; sand = policy rationale, no catastrophe)
-6. **This Pattern Is Universal** (keep P6 as-is)
+#### Panel 1 — What is Slug Flow?
+- Surface slugs → cyclic vibration at pump intake
+- Animated: slug pulses in production tubing, PDG gauge showing cyclic PIP
 
-### New Panel 5 content (agreed wireframe):
-```
-Panel 5 of 6 — The Decision    How Operators Decide Today
-[ moderate-sand well · AR-trim ]
+#### Panel 2 — Why It Looks Like a Failing Pump
+- Vibration rising (alarming STATE) — SCADA HI fires
+- "The sensor shows the pattern. It doesn't tell you what's driving it."
 
-⚠ ONE ALARM: UNDERLOAD — cause unknown → gas lock OR drawdown?
-
-     [ VFD TRIM ]              [ SHUT-IN ]
-   right for gas lock         safe for BOTH causes
-   stays online ~$2.5k        but DEFERS PRODUCTION
-   risky if drawdown          + restart $3–8k · every time
-   (sand makes it costly)
-
-"Safe is not free. The protective shut-in is paid on every
- ambiguous alarm — including the ones that were only gas lock."
-```
+#### Panel 3 — STATE vs. CONTEXT (the exoneration)
+- STATE: vibration rising + **flat motor temp** → "something changed, but not at the motor"
+- CONTEXT cards reveal: choke log (3 adjustments) · separator test (1.8 bbl slugs) · shift note ("pumping rough but temp normal")
+- "The documents say: do NOT pull. $1,500 surface adjustment vs. $150k false alarm."
+- `[▶ Run the Scenario]` CTA
 
 ### Method:
-1. Read current P1/P2/P3/P5 content (already in context from Session AP; use `grep -n` first)
-2. Propose revised copy as ASCII wireframes / inline tables for user review
-3. Get sign-off on each panel BEFORE writing HTML
-4. Batch all 4 panel edits into ONE `replace_in_file` call on index.html
+1. Read current H2 scenario header in index.html (`grep -n "h2BriefingMode\|tab-horizon2\|Classify"`)
+2. Propose panel wireframes for user review
+3. Get sign-off BEFORE writing HTML
+4. Batch all changes into ONE `replace_in_file` call on index.html
 
 ---
 
@@ -97,10 +83,10 @@ Panel 5 of 6 — The Decision    How Operators Decide Today
 | H1 contraindicated card + seizure path | ✅ REMOVED Session AP | drawdown both cards → shut-in |
 | Tab default landing | ✅ FIXED Session AO | mainTab → 'horizon1'; How It Works → ⓘ Reference |
 | Panel 6 Mining row | ✅ REMOVED Session AO | 3 rows remain: O&G / P&E / MFG |
-| Panel 1 sand-stakes row ($150k on setup) | ⚠️ BATCH 2 | Needs removal; sand stays in P5 only |
-| Panel 2 dev-leak line + detection race text | ⚠️ BATCH 2 | Strip "Sprint 2b–2e" + "GDC detects before SCADA" |
-| Panel 3 drawdown footer ($150k seizure) | ⚠️ BATCH 2 | Soften to match scenario (no catastrophe) |
-| Panel 5 sand matrix → "How Operators Decide" | ⚠️ BATCH 2 | Full replacement; sand stays as policy rationale |
+| Panel 1 sand-stakes row ($150k on setup) | ✅ FIXED Session AQ | Row removed; callout moved to top |
+| Panel 2 dev-leak line + detection race text | ✅ FIXED Session AQ | Stripped "Sprint 2b–2e" + "GDC detects before SCADA" |
+| Panel 3 drawdown footer ($150k seizure) | ✅ FIXED Session AQ | Softened to "riskier" + "shut-in is correct" |
+| Panel 5 sand matrix → "How Operators Decide" | ✅ FIXED Session AQ | Full replacement; two-column layout |
 | OEM Troubleshooting Guide no click handler | ⚠️ BATCH 3 | Doc 3 needs modal + content (G1–G6 gate) |
 | STATE-vs-CONTEXT premise | ✅ LOCKED | Claim Ledger PREMISE row |
 | SPE-174536 citation (on-screen in GDC verdict) | ⚠️ UNVERIFIED | Still on screen in Zone-1 drawdown text — OK in ⓘ Reference, flag for removal from main verdict |
