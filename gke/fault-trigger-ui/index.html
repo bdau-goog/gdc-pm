@@ -372,7 +372,10 @@
             <div>
               <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:6px">Panel 1 of 6 — This Well</div>
               <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 5px">The Setup</h2>
-              <p style="font-size:0.65rem;color:var(--muted);margin:0">What kind of well are we watching — and why do the sand stakes matter?</p>
+              <p style="font-size:0.65rem;color:var(--muted);margin:0">What kind of well are we watching, and what is the diagnostic challenge?</p>
+            </div>
+            <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+              The RTOC operator sees PIP, Amps, Winding Temp, and Vibration from this well in real time. The full document corpus — shift notes, sonic surveys, GOR lab reports, workover records — is available in AlloyDB.
             </div>
             <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.22);border-radius:8px;padding:16px 20px">
               <div style="font-family:var(--mono);font-size:0.68rem;color:#93c5fd;font-weight:700;margin-bottom:12px;letter-spacing:0.04em">WELL ESP-ALPHA-N · PAD ALPHA · PERMIAN BASIN</div>
@@ -393,14 +396,7 @@
                   <span style="font-size:0.62rem;color:#64748b;width:116px;flex-shrink:0;padding-top:1px">Operating</span>
                   <span style="font-size:0.62rem;color:var(--text2)">52 Hz · 3,120 RPM · nominal PIP ~1,245 PSI</span>
                 </div>
-                <div style="display:flex;align-items:flex-start;gap:12px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.06)">
-                  <span style="font-size:0.62rem;color:#64748b;width:116px;flex-shrink:0;padding-top:1px">Sand stakes</span>
-                  <span style="font-size:0.62rem;color:#fca5a5">VFD trim below critical velocity in a moderate-sand well → solids compact around the rotating shaft → <strong>pump seizure (~$150k)</strong></span>
-                </div>
               </div>
-            </div>
-            <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
-              The RTOC operator sees PIP, Amps, Winding Temp, and Vibration from this well in real time. The full document corpus — shift notes, sonic surveys, GOR lab reports, workover records — is available in AlloyDB.
             </div>
           </div>
 
@@ -517,7 +513,7 @@
           </div>
           <!-- Key insight callout -->
           <div style="flex-shrink:0;padding:10px 16px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;font-size:0.63rem;color:#93c5fd;line-height:1.65">
-            <strong>Key insight:</strong> PIP and Amps decline together while Temp and Vib stay flat. <strong>This pre-alarm signature is what GDC detects before any SCADA threshold is crossed.</strong> The cause — gas lock or drawdown — is not in any of these numbers. It lives in the field documents. <span style="color:var(--muted)">→ Panels 3–6 (Sprint 2b–2e): one signature · two opposite actions · STATE vs CONTEXT · universal pattern.</span>
+            <strong>Key insight:</strong> PIP and Amps decline together while Temp and Vib stay flat. The cause &#x2014; gas lock or drawdown &#x2014; is not in any of these numbers. It lives in the field documents. <span style="color:var(--muted)">&#x2192; Panels 3&#x2013;6: one signature &middot; two opposite actions &middot; STATE vs CONTEXT &middot; universal pattern.</span>
           </div>
         </div><!-- /panel-2 -->
 
@@ -606,7 +602,7 @@
                 </svg>
               </div>
               <div style="padding:6px 10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:0.55rem;color:#fca5a5;line-height:1.5;flex-shrink:0">
-                <strong>✘ VFD trim is catastrophic:</strong> drops velocity below sand transport threshold → pump seizure. <span style="color:#f87171">~$150k</span>
+                <strong>&#x2718; VFD trim is riskier:</strong> velocity drops toward sand-transport limit at 44 Hz. Shut-in is the correct action for this well type. <span style="color:#f87171">~$150k risk</span>
               </div>
             </div>
           </div>
@@ -731,74 +727,53 @@
         <!-- ── PANEL 5: Why Sand Makes the Stakes Asymmetric ── -->
         <div v-if="h1BriefingPanel===5" style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 28px 10px;gap:8px;overflow:hidden">
           <div style="flex-shrink:0">
-            <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:4px">Panel 5 of 6 — The Stakes</div>
+            <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:4px">Panel 5 of 6 &#x2014; The Decision</div>
             <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:4px">
-              <h2 style="font-size:1.5rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0">Why Sand Changes Everything</h2>
-              <span style="font-size:0.52rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.35);color:#fb923c;white-space:nowrap">moderate-sand well · AR-trim</span>
+              <h2 style="font-size:1.5rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0">How Operators Decide Today</h2>
+              <span style="font-size:0.52rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.35);color:#fb923c;white-space:nowrap">moderate-sand well &middot; AR-trim</span>
             </div>
-            <p style="font-size:0.63rem;color:var(--muted);margin:0;line-height:1.5">On this well, VFD trim is the $2,500 safe fix for gas lock — and the $150k catastrophe for drawdown. The cause you cannot read from the sensor determines which.</p>
           </div>
 
-          <!-- 3×3 decision matrix: corner + column headers + row headers + 4 cells -->
-          <div style="flex:1;display:grid;grid-template-columns:82px 1fr 1fr;grid-template-rows:36px 1fr 1fr;gap:7px;min-height:0">
-
-            <!-- Corner + column headers -->
-            <div style="display:flex;align-items:center;justify-content:center;font-size:0.44rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.05em">ACTION</div>
-            <div style="display:flex;align-items:center;justify-content:center;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:6px;font-family:var(--mono);font-size:0.6rem;font-weight:700;color:#60a5fa;letter-spacing:0.06em">GAS LOCK</div>
-            <div style="display:flex;align-items:center;justify-content:center;background:rgba(251,146,60,0.08);border:1px solid rgba(251,146,60,0.22);border-radius:6px;font-family:var(--mono);font-size:0.6rem;font-weight:700;color:#fb923c;letter-spacing:0.06em">FLUID DRAWDOWN</div>
-
-            <!-- Row 1 label: VFD TRIM -->
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.2);border-radius:6px;padding:6px 4px;gap:2px">
-              <div style="font-size:0.52rem;font-weight:700;color:var(--text2);text-align:center;text-transform:uppercase;letter-spacing:0.06em">VFD TRIM</div>
-              <div style="font-size:0.44rem;color:var(--muted);text-align:center">52 → 44 Hz</div>
+          <!-- Alarm banner -->
+          <div style="flex-shrink:0;padding:10px 16px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:7px;display:flex;align-items:center;gap:10px">
+            <span style="font-size:1rem;line-height:1;flex-shrink:0">&#x26A0;</span>
+            <div>
+              <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:#fbbf24;letter-spacing:0.06em">ONE ALARM: UNDERLOAD</div>
+              <div style="font-size:0.58rem;color:var(--text2);margin-top:2px">Cause unknown &#x2014; gas lock <strong style="color:#60a5fa">OR</strong> fluid drawdown?</div>
             </div>
+          </div>
 
-            <!-- Cell 1: VFD TRIM × GAS LOCK -->
-            <div class="h1-p5-cell" style="animation-delay:0.2s;background:rgba(16,185,129,0.08);border:1px solid rgba(74,222,128,0.35);border-radius:7px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;overflow:hidden">
-              <div style="font-size:0.72rem;font-weight:800;color:#4ade80">&#x2705; SAFE</div>
-              <div style="font-size:0.56rem;color:var(--text2);line-height:1.5">Gas pocket vents up the flooded annulus. Pump returns to normal liquid delivery.</div>
-              <div style="margin-top:auto;font-family:var(--mono);font-size:0.64rem;font-weight:700;color:#4ade80">~$2,500</div>
-            </div>
+          <!-- Two-column decision cards -->
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0">
 
-            <!-- Cell 2: VFD TRIM × DRAWDOWN -->
-            <div class="h1-p5-cell" style="animation-delay:1.0s;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.4);border-radius:7px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;overflow:hidden">
-              <div style="font-size:0.72rem;font-weight:800;color:#f87171">&#x274C; CATASTROPHIC</div>
-              <div style="font-size:0.56rem;color:var(--text2);line-height:1.5">44 Hz drops velocity to 3.1 ft/s — below 4.2 ft/s critical sand-transport threshold (SPE-170776). Solids compact around shaft.</div>
-              <div style="margin-top:auto">
-                <div style="font-size:0.46rem;color:rgba(180,83,9,0.7);margin-bottom:3px;font-family:var(--mono);letter-spacing:0.04em">SAND ACCUMULATING &#x25BE;</div>
-                <div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden">
-                  <div class="h1-p5-sand-fill" style="height:100%;background:linear-gradient(90deg,rgba(180,83,9,0.85),rgba(251,146,60,0.6));border-radius:3px"></div>
-                </div>
-                <div style="font-family:var(--mono);font-size:0.64rem;font-weight:700;color:#f87171;margin-top:4px">~$150k seizure</div>
+            <!-- VFD TRIM card -->
+            <div class="h1-p5-cell" style="animation-delay:0.2s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+              <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">VFD TRIM <span style="font-weight:400;color:var(--muted)">52 &#x2192; 44 Hz</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">&#x2714;</span> Right for gas lock &#x2014; stays online</div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">&#x2714;</span> Preserves production &nbsp;<span style="font-family:var(--mono);color:#4ade80">~$2,500</span></div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#f87171;flex-shrink:0;font-weight:700">&#x2718;</span> Riskier if drawdown</div>
+                <div style="font-size:0.55rem;color:rgba(251,146,60,0.8);padding:5px 8px;background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.2);border-radius:4px;margin-top:2px">Sand makes it costly &#x2014; velocity drops toward transport limit</div>
               </div>
             </div>
 
-            <!-- Row 2 label: SHUT-IN -->
-            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(100,116,139,0.08);border:1px solid rgba(100,116,139,0.2);border-radius:6px;padding:6px 4px;gap:2px">
-              <div style="font-size:0.52rem;font-weight:700;color:var(--text2);text-align:center;text-transform:uppercase;letter-spacing:0.06em">SHUT-IN</div>
-              <div style="font-size:0.44rem;color:var(--muted);text-align:center">Well offline</div>
-            </div>
-
-            <!-- Cell 3: SHUT-IN × GAS LOCK -->
-            <div class="h1-p5-cell" style="animation-delay:1.8s;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.3);border-radius:7px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;overflow:hidden">
-              <div style="font-size:0.72rem;font-weight:800;color:#fbbf24">&#x26A0; DEFERRED</div>
-              <div style="font-size:0.56rem;color:var(--text2);line-height:1.5">Production offline until restart. Gas dissipates on shut-in. Pump condition preserved.</div>
-              <div style="margin-top:auto;font-family:var(--mono);font-size:0.64rem;font-weight:700;color:#fbbf24">~$1-3k restart</div>
-            </div>
-
-            <!-- Cell 4: SHUT-IN × DRAWDOWN -->
-            <div class="h1-p5-cell" style="animation-delay:2.6s;background:rgba(16,185,129,0.08);border:1px solid rgba(74,222,128,0.35);border-radius:7px;padding:10px 12px;display:flex;flex-direction:column;gap:5px;overflow:hidden">
-              <div style="font-size:0.72rem;font-weight:800;color:#4ade80">&#x2705; RECOVERABLE</div>
-              <div style="font-size:0.56rem;color:var(--text2);line-height:1.5">Fluid level recovers at shut-in. Pump stationary — no sand compaction. Controlled restart clears loose sand bed.</div>
-              <div style="margin-top:auto;font-family:var(--mono);font-size:0.64rem;font-weight:700;color:#4ade80">Pump safe</div>
+            <!-- SHUT-IN card -->
+            <div class="h1-p5-cell" style="animation-delay:0.8s;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.28);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+              <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">SHUT-IN <span style="font-weight:400;color:var(--muted)">Well offline</span></div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">&#x2714;</span> Safe for <strong>both</strong> causes</div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">&#x2714;</span> Pump always protected</div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">&#x2718;</span> Defers production</div>
+                <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2);padding-left:16px">+ restart cost &nbsp;<span style="font-family:var(--mono);color:#fbbf24">$3&#x2013;8k &middot; every time</span></div>
+              </div>
             </div>
 
           </div>
 
-          <!-- Bottom quotes -->
-          <div class="h1-p5-cell" style="flex-shrink:0;animation-delay:3.4s;padding:10px 16px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-            <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0">"Blind to the cause, trim risks seizure. Shut-in is safe in both — the rational default."</div>
-            <div style="font-size:0.58rem;color:var(--muted);margin-top:4px;font-style:italic">"The context that removes the blindness is in the documents. GDC reads them in seconds."</div>
+          <!-- Bottom quote -->
+          <div class="h1-p5-cell" style="flex-shrink:0;animation-delay:1.6s;padding:10px 16px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+            <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0">"Safe is not free. The protective shut-in is paid on every ambiguous alarm &#x2014; including the ones that were only gas lock."</div>
+            <div style="font-size:0.58rem;color:var(--muted);margin-top:4px;font-style:italic">GDC reads the documents. The confident call replaces the cautious default.</div>
           </div>
         </div><!-- /panel-5 -->
 
@@ -897,7 +872,7 @@
           </button>
           <div v-else style="width:84px"></div>
           <span style="font-size:0.52rem;color:rgba(100,116,139,0.4);font-style:italic;text-align:center">
-            {{ h1BriefingPanel===1 ? '1 panel ahead · the universal pattern' : h1BriefingPanel===2 ? 'Same sensor, two opposite actions — Panel 3 shows why' : h1BriefingPanel===3 ? 'STATE is observable. CONTEXT is decisive. Panel 4 makes the case.' : h1BriefingPanel===4 ? 'Trim is $2,500 or $150k. Panel 5 shows why context changes everything.' : h1BriefingPanel===5 ? 'The same gap exists in every industry. Panel 6 shows it.' : 'Clicking ▶ Run the Scenario starts the interactive 30-minute ESP replay' }}
+            {{ h1BriefingPanel===1 ? '1 panel ahead · the universal pattern' : h1BriefingPanel===2 ? 'Same sensor, two opposite actions — Panel 3 shows why' : h1BriefingPanel===3 ? 'STATE is observable. CONTEXT is decisive. Panel 4 makes the case.' : h1BriefingPanel===4 ? 'Shut-in is the safe default. Panel 5 shows what that costs on every ambiguous alarm.' : h1BriefingPanel===5 ? 'The same gap exists in every industry. Panel 6 shows it.' : 'Clicking ▶ Run the Scenario starts the interactive 30-minute ESP replay' }}
           </span>
           <div style="display:flex;gap:8px;align-items:center">
             <button v-if="h1BriefingPanel < 6" @click="h1BriefingPanel++"
