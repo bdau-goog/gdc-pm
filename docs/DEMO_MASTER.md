@@ -125,6 +125,8 @@ This argument lives in two places in the revised demo:
 
 ## 4. H1 SPECIFICATION — THE DISCERN TAB (ESP UNLOADING COMPARATIVE DETECTION SCENARIO)
 
+> **⚠️ OPEN QUESTION — Session AN (June 10, 2026):** The H1 competitive framing is under active review. After full concessions — detection speed ties advanced APM, operator has non-exclusive document access, shut-in is the safe rational default — H1's surviving claim is **fleet-scale document-fusion workflow efficiency**, not categorical superiority. The current §4.2/§4.5/§4.7 timeline-race language ("GDC detects before SCADA", "Smart SCADA" label, lead-time banner) is **contested and not pixel-eligible** until one of two paths is ruled: Path A (reframe H1 as sovereign cited-evidence analyst, drop SCADA race) or Path B (H2 as stronger lead, H1 as pattern-setter). Do NOT treat the §4 detection-speed claims as settled. Do NOT build Stage B panels or timeline relabels until the ruling lands.
+
 ### 4.1 The Core Problem: Ambiguous Unloading Telemetry on an Intake-Only String
 
 **Well context (H1 scope — state explicitly in Briefing Panel 1):** A mature Permian ESP well, moderate-sand formation, AR-trim (abrasion-resistant) pump, standard **intake-only** PDG sensor string (no downhole discharge-pressure gauge — the configuration of ~90% of Permian ESPs). The operator's RTOC has PIP, Amps, Temp, and Vibration from this well.

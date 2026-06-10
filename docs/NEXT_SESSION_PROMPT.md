@@ -31,9 +31,30 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Next Task — Stage B Briefing Rework + Batch 2 (OEM modal + extra doc cards)
+## STEP 3: Next Task — FOUNDATIONAL FIRST, then Batch 2 / Stage B
 
-### Batch 2 — Next Session Tasks
+### ⚠️ FOUNDATIONAL (resolve before any H1 code — everything else is blocked on this)
+
+**Is the H1 document-fusion premise strong enough to lead the demo, or is it a supporting act for H2?**
+
+After this session's honest review, the following concessions are locked:
+- **Detection speed:** conceded to advanced APM (SmartSignal/PRiSM/Mtell tie us on multivariate ML). "GDC detects before SCADA" is true only vs a conservative threshold trip, not vs best-of-breed. Not a durable claim.
+- **Document access:** non-exclusive. The sonic log, GOR report, shift note are all in the operator's systems. We have no exclusive access advantage.
+- **Shut-in is the safe default:** a good engineer shuts in. It's safe for both gas lock and drawdown. The "forced bad choice" frame is false.
+
+**What survives:** Fleet-scale document-fusion efficiency — GDC retrieves and correlates scattered docs against live telemetry in seconds across 200-500 wells, enabling confident production-preserving action instead of reflexive shut-in. This is real but is an *efficiency/workflow* claim, not a categorical superiority claim.
+
+**The "contrived" feeling traces here:** We've been framing an efficiency claim as a SCADA-competition victory. Every honest concession weakened the frame because the frame was wrong.
+
+**Two paths — ruling needed at session start:**
+- **Path A:** Reframe H1. Drop the SCADA race. Stage H1 as "sovereign cited-evidence analyst" — alarm fires (both systems, same time), GDC hands the operator an auditable document-fusion verdict in seconds vs. hours of manual research, at fleet scale. No lead-time claim. L3 only.
+- **Path B:** Consider H2 (slug flow) as the stronger lead scenario. H2's wrong-action consequence ($150k unnecessary pump pull) is crisper, cleaner, and doesn't have the "but you can just shut in safely" exposure. H1 becomes the pattern-setter; H2 demonstrates the concrete value.
+
+**No H1 code until this ruling lands.** Timeline relabel, lead-time removal, Stage B panels, and the Alarm→PNR reframe are all downstream and on hold.
+
+---
+
+### Batch 2 — Next Session Tasks (queued, pending foundational ruling)
 
 **2A — HP-HMI Color Full-Compliance Pass (no content approval needed, code-only):**
 Per ISA-101.01 §5 / HP-HMI: gray is normal, color = alarm only. Current violations to fix in ONE batched `replace_in_file`:
