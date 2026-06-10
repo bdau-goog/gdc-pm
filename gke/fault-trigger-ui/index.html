@@ -466,26 +466,32 @@
             <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 5px">What is an Unloading Event?</h2>
             <p style="font-size:0.65rem;color:var(--muted);margin:0;line-height:1.6">The pump stops moving fluid effectively. <strong style="color:#93c5fd">PIP and Motor Amps decline together</strong> — while Winding Temp and Vibration stay flat in the early window.</p>
           </div>
-          <!-- 2×2 sensor tiles with CSS decline animation -->
+          <!-- Scrubber control — 0=nominal · 100=fault -->
+          <div style="flex-shrink:0;display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--mono);font-size:0.52rem;color:rgba(148,163,184,0.55);white-space:nowrap">NOMINAL</span>
+            <input type="range" min="0" max="100" v-model.number="h1P2Scrub" style="flex:1;accent-color:#3b82f6;cursor:pointer;height:4px"/>
+            <span style="font-family:var(--mono);font-size:0.52rem;color:rgba(251,191,36,0.6);white-space:nowrap">FAULT</span>
+          </div>
+          <!-- 2×2 sensor tiles — scrubber-driven -->
           <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0">
-            <!-- PIP — declining (animated) -->
-            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(251,191,36,0.32);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
-              <div style="font-family:var(--mono);font-size:0.6rem;font-weight:700;color:var(--yellow);display:flex;justify-content:space-between;align-items:center">
-                <span>PUMP INTAKE PRESSURE ↘</span><span style="font-size:0.46rem;color:rgba(251,191,36,0.6)">DECLINING</span>
+            <!-- PIP — scrubber-driven -->
+            <div :style="{background:'rgba(15,23,42,0.65)', border:'1px solid '+(h1P2Scrub>50?'rgba(251,191,36,0.32)':'rgba(74,222,128,0.28)'), borderRadius:'8px', padding:'14px 16px', display:'flex', flexDirection:'column', gap:'8px', overflow:'hidden'}">
+              <div style="font-family:var(--mono);font-size:0.6rem;font-weight:700;display:flex;justify-content:space-between;align-items:center" :style="{color: h1P2Scrub>50 ? 'var(--yellow)' : 'rgba(74,222,128,0.85)'}">
+                <span>PUMP INTAKE PRESSURE {{ h1P2Scrub>50 ? '↘' : '→' }}</span><span style="font-size:0.46rem">{{ h1P2Scrub>50 ? 'DECLINING' : 'NOMINAL' }}</span>
               </div>
               <div style="position:relative;height:20px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden">
-                <div class="h1-brief-decline-bar" style="height:100%;background:linear-gradient(90deg,rgba(251,191,36,0.85),rgba(251,191,36,0.4));border-radius:4px"></div>
+                <div class="h1-bar-scrub" :style="{width:(90-60*h1P2Scrub/100).toFixed(1)+'%', background:h1P2Scrub>50?'linear-gradient(90deg,rgba(251,191,36,0.85),rgba(251,191,36,0.4))':'linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))'}"></div>
               </div>
               <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.54rem"><span style="color:rgba(74,222,128,0.6)">~1,245 PSI nominal</span><span style="color:rgba(251,191,36,0.75)">→ ~850 PSI</span></div>
               <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">Hydraulic head drops as gas enters pump stages or reservoir fluid level depletes</div>
             </div>
-            <!-- AMPS — declining (animated, slight delay) -->
-            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(251,191,36,0.32);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
-              <div style="font-family:var(--mono);font-size:0.6rem;font-weight:700;color:var(--yellow);display:flex;justify-content:space-between;align-items:center">
-                <span>MOTOR AMPS ↘</span><span style="font-size:0.46rem;color:rgba(251,191,36,0.6)">DECLINING</span>
+            <!-- AMPS — scrubber-driven -->
+            <div :style="{background:'rgba(15,23,42,0.65)', border:'1px solid '+(h1P2Scrub>50?'rgba(251,191,36,0.32)':'rgba(74,222,128,0.28)'), borderRadius:'8px', padding:'14px 16px', display:'flex', flexDirection:'column', gap:'8px', overflow:'hidden'}">
+              <div style="font-family:var(--mono);font-size:0.6rem;font-weight:700;display:flex;justify-content:space-between;align-items:center" :style="{color: h1P2Scrub>50 ? 'var(--yellow)' : 'rgba(74,222,128,0.85)'}">
+                <span>MOTOR AMPS {{ h1P2Scrub>50 ? '↘' : '→' }}</span><span style="font-size:0.46rem">{{ h1P2Scrub>50 ? 'DECLINING' : 'NOMINAL' }}</span>
               </div>
               <div style="position:relative;height:20px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden">
-                <div class="h1-brief-decline-bar" style="height:100%;background:linear-gradient(90deg,rgba(251,191,36,0.85),rgba(251,191,36,0.4));border-radius:4px;animation-delay:0.45s"></div>
+                <div class="h1-bar-scrub" :style="{width:(90-70*h1P2Scrub/100).toFixed(1)+'%', background:h1P2Scrub>50?'linear-gradient(90deg,rgba(251,191,36,0.85),rgba(251,191,36,0.4))':'linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))'}"></div>
               </div>
               <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.54rem"><span style="color:rgba(74,222,128,0.6)">~68 A nominal</span><span style="color:rgba(251,191,36,0.75)">→ ~28 A</span></div>
               <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">VFD current drops as the impeller loses hydraulic resistance — correlated with PIP decline</div>
@@ -496,7 +502,7 @@
                 <span>WINDING TEMP →</span><span style="font-size:0.46rem;color:rgba(100,116,139,0.5)">INITIALLY FLAT</span>
               </div>
               <div style="position:relative;height:20px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden">
-                <div style="width:16%;height:100%;background:linear-gradient(90deg,rgba(148,163,184,0.5),rgba(148,163,184,0.25));border-radius:4px"></div>
+                <div style="width:70%;height:100%;background:linear-gradient(90deg,rgba(74,222,128,0.6),rgba(74,222,128,0.3));border-radius:4px"></div>
               </div>
               <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.54rem"><span style="color:rgba(74,222,128,0.6)">~197°F nominal</span><span style="color:rgba(148,163,184,0.6)">stays flat early</span></div>
               <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">Motor cooling still flowing — temp is the <em>lagging</em> signal. Rises only with sustained gas lock (API RP 11S §4.2)</div>
@@ -507,7 +513,7 @@
                 <span>VIBRATION →</span><span style="font-size:0.46rem;color:rgba(100,116,139,0.5)">FLAT</span>
               </div>
               <div style="position:relative;height:20px;background:rgba(255,255,255,0.04);border-radius:4px;overflow:hidden">
-                <div style="width:14%;height:100%;background:linear-gradient(90deg,rgba(148,163,184,0.45),rgba(148,163,184,0.2));border-radius:4px"></div>
+                <div style="width:60%;height:100%;background:linear-gradient(90deg,rgba(74,222,128,0.55),rgba(74,222,128,0.25));border-radius:4px"></div>
               </div>
               <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.54rem"><span style="color:rgba(74,222,128,0.6)">~1.4 mm/s nominal</span><span style="color:rgba(148,163,184,0.6)">stays flat</span></div>
               <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">No bearing contact change during pure hydraulic unloading</div>
@@ -527,6 +533,13 @@
             <p style="font-size:0.65rem;color:var(--muted);margin:0;line-height:1.6">Both failure modes produce the <strong style="color:#93c5fd">identical PIP + Amps decline</strong> on an intake-only sensor string. The cause — and the correct action — are not in these numbers.</p>
           </div>
 
+          <!-- Scrubber control — 0=nominal · 100=fault onset -->
+          <div style="flex-shrink:0;display:flex;align-items:center;gap:10px">
+            <span style="font-family:var(--mono);font-size:0.52rem;color:rgba(148,163,184,0.55);white-space:nowrap">NOMINAL</span>
+            <input type="range" min="0" max="100" v-model.number="h1P3Scrub" style="flex:1;accent-color:#3b82f6;cursor:pointer;height:4px"/>
+            <span style="font-family:var(--mono);font-size:0.52rem;color:rgba(251,191,36,0.6);white-space:nowrap">FAULT ONSET</span>
+          </div>
+
           <!-- Split screen: LEFT = Gas Lock, RIGHT = Fluid Drawdown -->
           <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0">
 
@@ -535,7 +548,7 @@
               <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS LOCK</div>
               <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus HIGH · Gas pocket at pump intake</div>
               <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
-                <svg viewBox="0 0 62 200" style="height:100%;width:auto;max-height:148px">
+                <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:280px">
                   <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
                   <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
                   <!-- Full fluid column (high, stable) -->
@@ -547,9 +560,9 @@
                   <line x1="19" y1="14" x2="13" y2="14" stroke="rgba(96,165,250,0.45)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
                   <text x="12" y="13" text-anchor="end" fill="rgba(96,165,250,0.65)" font-size="3" font-family="monospace">HIGH</text>
                   <!-- Animated bubbles rising -->
-                  <circle class="h1-wb-bubble" cx="27" cy="135" r="2.5" style="animation-duration:2.4s;animation-delay:0s"/>
-                  <circle class="h1-wb-bubble" cx="36" cy="122" r="1.8" style="animation-duration:1.9s;animation-delay:0.85s"/>
-                  <circle class="h1-wb-bubble" cx="31" cy="129" r="2.1" style="animation-duration:2.8s;animation-delay:1.6s"/>
+                  <circle class="h1-wb-bubble" cx="27" cy="135" r="2.5" :style="{opacity:(h1P3Scrub/100).toFixed(2)}"/>
+                  <circle class="h1-wb-bubble" cx="36" cy="122" r="1.8" :style="{opacity:(h1P3Scrub/100*0.8).toFixed(2)}"/>
+                  <circle class="h1-wb-bubble" cx="31" cy="129" r="2.1" :style="{opacity:(h1P3Scrub/100*0.9).toFixed(2)}"/>
                   <!-- Pump — gas-loaded -->
                   <rect x="16" y="143" width="30" height="8" rx="1.5" fill="rgba(251,191,36,0.3)" stroke="rgba(251,191,36,0.55)" stroke-width="0.8"/>
                   <text x="31" y="149" text-anchor="middle" fill="rgba(251,191,36,0.85)" font-size="3.8" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
@@ -571,14 +584,14 @@
               <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">FLUID DRAWDOWN</div>
               <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus DEPLETED · Dynamic fluid level falling</div>
               <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
-                <svg viewBox="0 0 62 200" style="height:100%;width:auto;max-height:148px">
+                <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:280px">
                   <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
                   <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
                   <!-- Empty depleted casing zone (always visible background) -->
                   <rect x="20" y="14" width="22" height="127" fill="rgba(15,23,42,0.55)"/>
                   <text x="31" y="50" text-anchor="middle" fill="rgba(100,116,139,0.28)" font-size="3.5" font-family="Inter,sans-serif">DEPLETED</text>
                   <!-- Animated declining fluid column — scaleY from bottom (level falls) -->
-                  <rect x="20" y="14" width="22" height="105" class="h1-p3-fluid-drain" style="fill:rgba(120,53,15,0.4);stroke:rgba(180,83,9,0.3);stroke-width:0.5"/>
+                  <rect x="20" y="14" width="22" height="105" class="h1-p3-fluid-scrub" :style="{transform:'scaleY('+(1-0.85*h1P3Scrub/100).toFixed(3)+')', fill:'rgba(120,53,15,0.4)', stroke:'rgba(180,83,9,0.3)', strokeWidth:'0.5'}"/>
                   <!-- Low fluid level label (annotates the shrinking top) -->
                   <line x1="19" y1="90" x2="13" y2="90" stroke="rgba(251,146,60,0.5)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
                   <text x="12" y="89" text-anchor="end" fill="rgba(251,146,60,0.65)" font-size="3" font-family="monospace">LOW</text>
@@ -609,13 +622,13 @@
               <div style="display:flex;align-items:center;gap:8px">
                 <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:32px;flex-shrink:0">PIP</span>
                 <div style="flex:1;height:12px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden">
-                  <div class="h1-brief-decline-bar" style="height:100%;background:linear-gradient(90deg,rgba(59,130,246,0.85),rgba(59,130,246,0.4));border-radius:3px"></div>
+                  <div class="h1-bar-scrub" :style="{width:(90-60*h1P3Scrub/100).toFixed(1)+'%', background:'linear-gradient(90deg,rgba(59,130,246,0.85),rgba(59,130,246,0.4))'}"></div>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:8px">
                 <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:32px;flex-shrink:0">AMPS</span>
                 <div style="flex:1;height:12px;background:rgba(255,255,255,0.04);border-radius:3px;overflow:hidden">
-                  <div class="h1-brief-decline-bar" style="height:100%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35));border-radius:3px;animation-delay:0.45s"></div>
+                  <div class="h1-bar-scrub" :style="{width:(90-70*h1P3Scrub/100).toFixed(1)+'%', background:'linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))'}"></div>
                 </div>
               </div>
             </div>

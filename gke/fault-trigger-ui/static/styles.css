@@ -976,8 +976,7 @@
     .h1-wb-sand-zone{position:absolute;left:0;right:0;top:0;height:60%;overflow:hidden;pointer-events:none}
 
     /* Rising gold bubbles (Gas Lock) */
-    .h1-wb-bubble{position:absolute;border-radius:50%;background:rgba(251,191,36,0.9);animation:h1-bubble-rise 2.5s ease-in infinite}
-    @keyframes h1-bubble-rise{0%{transform:translateY(0);opacity:0.9}80%{opacity:0.6}100%{transform:translateY(-180px);opacity:0}}
+    .h1-wb-bubble{fill:rgba(251,191,36,0.9);transition:opacity 0.4s ease}
 
     /* Falling brown sand particles (Drawdown) */
     .h1-wb-sand{position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(146,64,14,0.85);top:-4px;animation:h1-sand-fall 1.8s linear infinite}
@@ -1037,11 +1036,9 @@
     .h1-sonic-table tr:last-child td{border-bottom:none}
     .h1-sonic-alert{color:var(--red);font-weight:700}
     .h1-sonic-warn{color:var(--orange);font-weight:700}
-    /* ── Sprint 2a: H1 Briefing — Panel 2 decline animation ── */
-    @keyframes h1-brief-decline{0%{width:87%}55%{width:22%}100%{width:87%}}
-    .h1-brief-decline-bar{animation:h1-brief-decline 4.5s cubic-bezier(0.4,0,0.6,1) infinite;will-change:width}
-    @keyframes h1-p3-drain{0%{transform:scaleY(1)}65%{transform:scaleY(0.15)}100%{transform:scaleY(0.15)}}
-    .h1-p3-fluid-drain{animation:h1-p3-drain 4.2s ease-in-out infinite alternate;transform-origin:center bottom;transform-box:fill-box}
+    /* ── Sprint AK: H1 Briefing — Panel 2+3 scrubber-driven bars (replaces infinite keyframes) ── */
+    .h1-bar-scrub{height:100%;border-radius:4px;transition:width 0.4s ease}
+    .h1-p3-fluid-scrub{transform-origin:center bottom;transform-box:fill-box;transition:transform 0.4s ease}
     /* ── Sprint 2c: H1 Briefing — Panel 4 STATE vs. CONTEXT staggered reveal ── */
     @keyframes h1-p4-fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
     .h1-p4-state-row{animation:h1-p4-fadein 0.55s ease-out both}

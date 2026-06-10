@@ -108,6 +108,8 @@ createApp({
       h1Dragging: false,
       h1BriefingMode: true,     // true=show animated briefing panels; false=scenario replay
       h1BriefingPanel: 1,       // 1=This Well, 2=What is an Unload? (panels 3-6 in Sprint 2b-2e)
+      h1P2Scrub: 0,             // 0=nominal → 100=fault; Panel 2 scrubber (resets on panel change)
+      h1P3Scrub: 0,             // 0=nominal → 100=fault; Panel 3 scrubber (resets on panel change)
       h1SplitPercent: 56,
       h1ChartH: 140,
       h1DegPollTimer: null,
@@ -337,6 +339,10 @@ createApp({
   },
 
   watch: {
+    h1BriefingPanel() {
+      this.h1P2Scrub = 0;
+      this.h1P3Scrub = 0;
+    },
     h1FeedItems(newVal, oldVal) {
       if (!this.h1Injected || this.h1Resolved || this.h1AdvisorStreaming) return;
       if (newVal.length > 0 && oldVal && oldVal.length > 0 && newVal[0].id !== oldVal[0]?.id) {
