@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AI — Sprint 2c ✅ H1 Briefing Panel 4 deployed)
-**git head:** `52baa53` (feat(sprint2c): H1 Briefing Panel 4 — STATE vs. CONTEXT animated two-column reveal)
-**fault-trigger-ui image:** `sha256:6a52012088427e3693bc9027050370461940d5ff020fe87e293ce4dac9d5bbf9` (Session AI — Sprint 2c deployed)
+**Date:** June 10, 2026 (Session AI — Sprint 2c+2d ✅ H1 Briefing Panels 4+5 deployed)
+**git head:** `db26131` (feat(sprint2d): H1 Briefing Panel 5 — Why Sand Changes Everything (2x2 decision matrix))
+**fault-trigger-ui image:** `sha256:3f8ecc7cbef399b964c61f803b9d2ce11c1dfad71aaf287beb74de8d9d8ec52e` (Session AI — Sprint 2d deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -32,12 +32,14 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ---
 
-## STEP 3: Session AI COMPLETE ✅ — Next Task is Sprint 2d
+## STEP 3: Session AI COMPLETE ✅ — Next Task is Sprint 2e
 
 ### Session AI Summary
-Sprint 2c complete this session.
+Sprints 2c AND 2d complete this session.
 
-- **Sprint 2c** (commit `52baa53`): H1 Briefing Panel 4 — "STATE vs. CONTEXT". Full-screen two-column animated reveal: LEFT = blue STATE column (header "STATE", 4 sensor tiles: PIP 612 PSI↓, AMPS 34.2 A↓, WINDING TEMP 246°F, VIBRATION 0.41 in/s, staggered `h1-p4-state-row` fade-in at 0.1/0.4/0.7/1.0/1.3s delays), RIGHT = amber CONTEXT column (header "CONTEXT", 4 document cards appearing one by one: WORKOVER RECORD→GOR TREND→OFFSET FRAC REPORT→SHIFT NOTE, `h1-p4-ctx-card` fade-in at 1.6/2.2/2.8/3.4/4.0s delays). Full-width bottom quote: *"You cannot instrument your way out of a context gap."* Dot 4 upgraded from static cosmetic to reactive Vue-bound (same 8px as dots 1-3). Next button: `< 3` → `< 4`. Run the Scenario: `===3` → `===4`. Hint text extended to 4-case ternary. CSS: `@keyframes h1-p4-fadein` + `.h1-p4-state-row` + `.h1-p4-ctx-card` (animation-fill-mode:both for proper pre/post state). Deployed `sha256:6a52012088427e3693bc9027050370461940d5ff020fe87e293ce4dac9d5bbf9`.
+- **Sprint 2c** (commit `52baa53`): H1 Briefing Panel 4 — "STATE vs. CONTEXT". Full-screen two-column animated reveal. LEFT = blue STATE column (4 sensor tiles fading in at 0.1/0.4/0.7/1.0/1.3s). RIGHT = amber CONTEXT column (4 document cards at 1.6/2.2/2.8/3.4/4.0s). Bottom quote: *"You cannot instrument your way out of a context gap."* CSS: `h1-p4-fadein` + `h1-p4-state-row` + `h1-p4-ctx-card` with `animation-fill-mode:both`.
+
+- **Sprint 2d** (commit `db26131`): H1 Briefing Panel 5 — "Why Sand Changes Everything". 3×3 CSS grid decision matrix with scope badge "moderate-sand well · AR-trim". Cells appear one by one via `h1-p5-cellin` scale(0.92→1) animation: Cell 1 VFD TRIM × GAS LOCK ✅ SAFE ~$2,500 (delay 0.2s) → Cell 2 VFD TRIM × DRAWDOWN ❌ CATASTROPHIC ~$150k with `h1-p5-sand-fill` animation growing from 0→82% at 2.5s (sand accumulating bar) → Cell 3 SHUT-IN × GAS LOCK ⚠ DEFERRED ~$1-3k restart (delay 1.8s) → Cell 4 SHUT-IN × DRAWDOWN ✅ RECOVERABLE (delay 2.6s). Bottom quote row (delay 3.4s): *"Blind to the cause, trim risks seizure. Shut-in is safe in both — the rational default."* + *"The context that removes the blindness is in the documents. GDC reads them in seconds."* Dot 5 upgraded from static cosmetic to reactive Vue-bound. Next `< 4` → `< 5`. Run the Scenario `===4` → `===5`. Hint text: 5-case ternary. HTML entities used (&#x2705; &#x274C; &#x26A0;) in place of emoji to avoid any template-parse issues. Deployed `sha256:3f8ecc7cbef399b964c61f803b9d2ce11c1dfad71aaf287beb74de8d9d8ec52e`.
 
 **Deployment note (permanent):** `kubectl rollout restart` with `:latest` does NOT pull new images (GKE node cache). Always use:
 ```bash
@@ -45,18 +47,23 @@ kubectl set image deployment/fault-trigger-ui -n gdc-pm \
   fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<digest>
 ```
 
-### NEXT TASK — Sprint 2d: H1 Briefing — Panel 5 (Sand Stakes / Decision Matrix)
+### NEXT TASK — Sprint 2e: H1 Briefing — Panel 6 (Universal Pattern)
 **File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call)
-**Spec:** `docs/SPRINT_PLAN.md §Sprint 2d` and `DEMO_MASTER.md §4`
+**Spec:** `docs/SPRINT_PLAN.md §Sprint 2e` and `DEMO_MASTER.md §4 Panel 6`
 
-Panel 5 — *Why Sand Makes the Stakes Asymmetric* — 2×2 animated decision matrix:
-- **Scope badge visible:** "moderate-sand well · AR-trim"
-- **2×2 cell-by-cell reveal:** Trim + Gas Lock (✅ ~$2,500) → Trim + Drawdown (❌ $150k seizure, animated sand packing) → Shut-in + Gas Lock (⚠️ deferred production) → Shut-in + Drawdown (✅ recoverable)
-- Bottom quote: "Blind to the cause, trim risks seizure. Shut-in is safe in both — the rational default."
-- Sub-quote: "The context that removes the blindness is in the documents. GDC reads them in seconds."
-- Navigation: [← Back] [Next →] (advances to panel 6)
-- Progress dot 5 activates when at panel 5
-- Extend Next: `< 4` → `< 5`; Run the Scenario: `===4` → `===5`
+Panel 6 — *This Pattern Is Universal* — 4-row animated table:
+- **4-row table appears row by row** (each row: asset | STATE sensor | CONTEXT document):
+  - O&G ESP · PIP / Amps declining → Workover record / GOR trend / shift note
+  - Power transformer · Load current rising → Loading plan / maintenance log / seasonal forecast
+  - Factory motor · Vibration rising → Lubrication record / OEM bulletin / line throughput log
+  - Haul truck · Fuel consumption rising → Haul-road report / service history / grade profile
+- Caption per row: "sensor STATE → document CONTEXT" arrow
+- Full-width quote: "This is not an oilfield trick. It is the structural gap in every industrial AI deployment."
+- `[▶ Run the Scenario]` CTA — hands off to `h1BriefingMode=false; loadH1Scenario()`
+- Progress dot 6 activates. Next button removed (only Run the Scenario). Run the Scenario: `===5` → `===6`
+- Dot 6 upgraded from static cosmetic to reactive Vue-bound.
+
+**Note on Financial Justification modal:** Pre-existing bug (confirmed present before Session AI work) — the modal div has `position:fixed;inset:0` and may intercept clicks before Vue fully mounts. Root cause unknown (not related to Session AI changes — div balance was -21 before and after). Investigate separately if time permits; not blocking the briefing panels.
 
 ---
 

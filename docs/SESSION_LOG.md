@@ -2,6 +2,25 @@
 
 ---
 
+## Session AI (June 10, 2026) — *Sprint 2c+2d: H1 Briefing Panels 4+5 — STATE vs. CONTEXT + 2×2 Decision Matrix — deployed and verified*
+
+**Code committed:** `52baa53` (Sprint 2c: Panel 4) · `db26131` (Sprint 2d: Panel 5)
+**Cluster image digest:** `sha256:3f8ecc7` (fault-trigger-ui) · 25 Panel 5 strings + 4 CSS animation strings confirmed in live pod
+
+**Sprint 2c — Panel 4 (STATE vs. CONTEXT):** Full-screen two-column animated reveal. LEFT blue "STATE" column: 4 sensor readout tiles (PIP 612 PSI↓, AMPS 34.2 A↓, WINDING TEMP 246°F, VIBRATION 0.41 in/s) staggered fade-in at 0.1/0.4/0.7/1.0s via `.h1-p4-state-row`; quote fades at 1.3s: *"Even a perfect gauge sharpens the STATE. It cannot report what happened last week."* RIGHT amber "CONTEXT" column: 4 document cards (WORKOVER RECORD→GOR TREND→OFFSET FRAC REPORT→SHIFT NOTE) at 1.6/2.2/2.8/3.4s via `.h1-p4-ctx-card`; amber quote at 4.0s: *"The deciding context lives here. Not on any sensor."* Full-width bottom: *"You cannot instrument your way out of a context gap."* CSS uses `animation-fill-mode:both`. Dot 4 upgraded to reactive Vue-bound. Navigation `< 3` → `< 4`, `===3` → `===4`.
+
+**Sprint 2d — Panel 5 (Why Sand Changes Everything):** 3×3 CSS grid decision matrix. Scope badge: "moderate-sand well · AR-trim". Header row: GAS LOCK (blue) | FLUID DRAWDOWN (amber). Row labels: VFD TRIM · SHUT-IN. Four cells appear via `h1-p5-cellin` scale(0.92→1) animation: Cell 1 VFD TRIM × GAS LOCK ✅ SAFE ~$2,500 (0.2s) → Cell 2 VFD TRIM × DRAWDOWN ❌ CATASTROPHIC ~$150k (1.0s) with `h1-p5-sand-fill` bar growing 0→82% at 2.5s delay (sand accumulating visual) → Cell 3 SHUT-IN × GAS LOCK ⚠ DEFERRED ~$1-3k (1.8s) → Cell 4 SHUT-IN × DRAWDOWN ✅ RECOVERABLE (2.6s). Bottom quote row at 3.4s: *"Blind to the cause, trim risks seizure. Shut-in is safe in both — the rational default."* SPE-170776 cited for 4.2 ft/s / 3.1 ft/s velocity boundary. HTML entities (&#x2705; &#x274C; &#x26A0;) used instead of raw emoji to avoid any Vue template parser issues. Dot 5 upgraded to reactive Vue-bound. Navigation `< 4` → `< 5`, `===4` → `===5`. Both sprints deployed in single session.
+
+**Key decisions:** (a) HTML entities instead of emoji for outcome indicators — avoids any potential Unicode parse issue in Vue 3 browser template compiler (see Financial Justification modal bug below). (b) `margin-top:auto` inside flex-column cells correctly pushes cost figures to bottom of each cell. (c) Sand fill bar uses CSS `both` fill-mode with 2.5s delay — appears naturally after the cell fades in (1.0s) and holds at 82% width permanently.
+
+**Known issue — Financial Justification modal:** Pre-existing bug (div balance of -21 existed identically in `9691e93` baseline, before all Session AI work). The modal `v-if="justifyModalOpen"` div has `position:fixed;inset:0;z-index:400` — if Vue hasn't fully mounted when the smoke test clicks, the un-v-if'd modal intercepts. Root cause: the modal displays raw `{{ }}` in the screenshot the user shared. Confirmed NOT caused by Session AI changes (same -21 depth before/after). Not blocking briefing panel demo flow.
+
+**Verification:** 25 Panel 5 strings + 4 CSS strings confirmed in live pod · rollout clean.
+
+**Next task:** Sprint 2e — Panel 6 (*This Pattern Is Universal*): 4-row animated table (O&G / Power / Manufacturing / Mining). Each row: asset | STATE sensor → CONTEXT document. Full-width quote: "This is not an oilfield trick." `▶ Run the Scenario` CTA. See SPRINT_PLAN.md §Sprint 2e and DEMO_MASTER.md §4 Panel 6.
+
+---
+
 ## Session AI (June 10, 2026) — *Sprint 2c: H1 Briefing Panel 4 — STATE vs. CONTEXT — deployed and verified*
 
 **Code committed:** `52baa53` (feat(sprint2c): H1 Briefing Panel 4 — STATE vs. CONTEXT animated two-column reveal)
