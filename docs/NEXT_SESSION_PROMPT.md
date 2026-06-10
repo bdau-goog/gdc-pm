@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AG — Sprint 1 ✅ + Sprint 2a ✅; H1 Briefing Panels 1&2 deployed)
-**git head:** `d41d27b` (feat(sprint2a): H1 Briefing panels 1&2 — This Well + What is an Unload?)
-**fault-trigger-ui image:** `sha256:7d22b015` (Session AG — Sprint 2a deployed)
+**Date:** June 10, 2026 (Session AH — Sprint 2b ✅ H1 Briefing Panel 3 deployed)
+**git head:** `1c02e6b` (feat(sprint2b): H1 Briefing Panel 3 — One Signature, Two Causes)
+**fault-trigger-ui image:** `sha256:68948a277` (Session AH — Sprint 2b deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -32,13 +32,12 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ---
 
-## STEP 3: Session AG COMPLETE ✅ — Next Task is Sprint 2b
+## STEP 3: Session AH COMPLETE ✅ — Next Task is Sprint 2c
 
-### Session AG Summary
-Sprint 1 + Sprint 2a complete this session.
+### Session AH Summary
+Sprint 2b complete this session.
 
-- **Sprint 1** (commit `9691e93`): All 5 integrity violations fixed — RTOC-sovereign framing, 3 sovereignty pillars, IEC 62443/Purdue, retired 200GB/VSAT/E-House/NERC-CIP errors, SCADA path label, industry generalization. Deployed `sha256:3d6009a2`.
-- **Sprint 2a** (commit `d41d27b`): H1 Briefing container + Panels 1 & 2. `h1BriefingMode: true` default state; `v-else` wraps existing scenario replay. Panel 1 = This Well (scope card + nominal wellbore SVG + 4 green sensor tiles). Panel 2 = What is an Unload? (2×2 animated tiles — PIP/Amps declining with `h1-brief-decline-bar` CSS keyframe, Temp/Vib flat). "Skip to Scenario →" + "▶ Run the Scenario" CTAs wired to `h1BriefingMode=false; loadH1Scenario()`. Deployed `sha256:7d22b015`.
+- **Sprint 2b** (commit `1c02e6b`): H1 Briefing Panel 3 — "One Signature, Two Causes". Full-screen split: LEFT = Gas Lock (blue fluid column, 3 animated `h1-wb-bubble` rising, pump ⚠ PUMP, green MOTOR ✓) vs RIGHT = Fluid Drawdown (depleted dark casing, `h1-p3-fluid-drain` CSS scaleY animation showing fluid level falling, amber pump ⚠, sand zone near perfs). Bottom strip: identical PIP + Amps declining trace (reused `h1-brief-decline-bar`) with italic quote *"On this well's sensor, the live decline looks the same."* Progress dots extended to 6 (dots 4-6 cosmetically greyed). Panel counter updated to `/6`. Run the Scenario CTA moved from panel 2 → panel 3. CSS: `@keyframes h1-p3-drain` + `.h1-p3-fluid-drain` added to styles.css. Deployed `sha256:68948a277`.
 
 **Deployment note (permanent):** `kubectl rollout restart` with `:latest` does NOT pull new images (GKE node cache). Always use:
 ```bash
@@ -46,18 +45,18 @@ kubectl set image deployment/fault-trigger-ui -n gdc-pm \
   fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<digest>
 ```
 
-### NEXT TASK — Sprint 2b: H1 Briefing — Panel 3 (One Signature, Two Causes)
+### NEXT TASK — Sprint 2c: H1 Briefing — Panel 4 (STATE vs. CONTEXT)
 **File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call)
-**Spec:** `docs/SPRINT_PLAN.md §Sprint 2b` and `DEMO_MASTER.md §4`
+**Spec:** `docs/SPRINT_PLAN.md §Sprint 2c` and `DEMO_MASTER.md §4`
 
-Panel 3 — *One Signature, Two Causes* — the most visually complex panel:
-- Full-screen split: LEFT = Gas Lock wellbore (annulus full, bubbles entering pump) · RIGHT = Drawdown wellbore (fluid level falling)
-- Below BOTH: the SAME PIP/Amps trace (proving identical sensor output)
-- Animated: bubbles rising left, fluid level dropping right — both produce identical chart below
-- Text: "On this well's sensor, the live decline looks the same."
-- Navigation: [← Back] [Next →]
+Panel 4 — *STATE vs. CONTEXT* — the moat argument, animated two-column reveal:
+- **LEFT column (STATE):** PIP, Amps, Temp, Vib readouts pulse in. Text: "Even a perfect gauge sharpens the STATE. It cannot report what happened last week."
+- **RIGHT column (CONTEXT):** Document cards appear one by one — workover record · GOR trend · offset-frac report · shift note. Text: "The deciding context lives here. Not on any sensor."
+- Full-width bottom quote: "You cannot instrument your way out of a context gap."
+- Navigation: [← Back] [Next →] (advances to panel 5)
+- Progress dot 4 activates when at panel 4
 
-Also add `h1BriefingPanel` to the progress dots and stepper (extend to 6 dots, grey out 3–6 as "coming in Sprint 2c–2e").
+Also: extend `v-if="h1BriefingPanel < 3"` → `< 4` for Next button, `===3` → `===4` for Run the Scenario.
 
 ---
 
@@ -85,6 +84,6 @@ Also add `h1BriefingPanel` to the progress dots and stepper (extend to 6 dots, g
 - **Deploy with explicit digest** — `kubectl rollout restart` with `:latest` does NOT pull from registry on this cluster (node cache). Always use `kubectl set image ... @sha256:<digest>`
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,400 lines, `index.html` ~2,760 lines, `app.js` ~2,300 lines — always grep for line numbers first
+- `app.py` ~6,400 lines, `index.html` ~2,827 lines, `app.js` ~2,300 lines — always grep for line numbers first
 - H2 uses inference-api (not local esp_classifier.bst) — local .bst is 4-class without slug_flow
 - Gas Lock / Drawdown STATE identical on intake-only wells — premise is now "decision window ambiguity" not "physically impossible forever"

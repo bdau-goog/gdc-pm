@@ -647,6 +647,21 @@ Complete rebuild of the H1 Discern tab in response to five user feedback items. 
 
 ---
 
+## Session AH (June 10, 2026) — *Sprint 2b: H1 Briefing Panel 3 — One Signature, Two Causes*
+
+**Code committed:** `1c02e6b` (feat(sprint2b): H1 Briefing Panel 3 — One Signature, Two Causes)
+**Cluster image digest:** `sha256:68948a277d43` (fault-trigger-ui)
+
+**What was built and deployed:** H1 Briefing Panel 3 added as the third step in the guided briefing flow. Full-screen two-column split: LEFT = Gas Lock (blue fluid column, full annulus, 3 animated `h1-wb-bubble` CSS circles rising with staggered `animation-delay`, amber gas pocket zone at top, green PUMP ⚠ / MOTOR ✓) vs RIGHT = Fluid Drawdown (dark depleted casing background, amber fluid column animated via new `h1-p3-fluid-drain` CSS class — `transform: scaleY()` with `transform-origin: center bottom; transform-box: fill-box` — giving a convincing "level dropping" effect, sand zone near perfs, red PUMP ⚠). Below both sides: identical PIP (blue) + Amps (green) `h1-brief-decline-bar` declining traces with the hero quote: *"On this well's sensor, the live decline looks the same."* Progress dots extended from 2 to 6 (dots 4–6 cosmetically greyed with tooltips "Coming: STATE vs. CONTEXT / Sand Stakes / Universal Pattern"). Counter updated to `/6`. Panel 1 & 2 labels updated to `X of 6`. Navigation: `Next →` now unlocks panel 3; `▶ Run the Scenario` CTA moved from panel 2 → panel 3. Hint text updated for each panel state. CSS: `@keyframes h1-p3-drain` + `.h1-p3-fluid-drain` added to styles.css.
+
+**Key design decisions:** Reused existing `h1-wb-bubble` class and `@keyframes h1-bubble-rise` (already defined for the H1 scenario replay wellbore strip) rather than adding new bubble keyframes — keeps CSS DRY. Used `transform: scaleY()` with `transform-box: fill-box` for the drawdown animation instead of animating SVG `height`/`y` attributes directly — more reliable across modern Chrome. Fluid level annotation line left at a fixed y=90 (approximate mid-drain position) — cosmetically acceptable without JS-driven positioning. Bottom trace deliberately reuses `h1-brief-decline-bar` (the same class as Panel 2) because the design spec requires *visually identical* output — intentional not a copy-paste error.
+
+**Verification:** Pod `fault-trigger-ui-9c956bd5-bfnzg` 1/1 Running (age 20s at check). Deployed via `kubectl set image` with explicit digest (not rollout restart — per permanent constraint). Build: `c694904ff499`. Push confirmed two new layers.
+
+**Next task:** Sprint 2c — H1 Briefing Panel 4 (STATE vs. CONTEXT): two-column animated reveal, sensor readouts pulse in on left, document cards appear one by one on right, "You cannot instrument your way out of a context gap." Also extend navigation from `< 3` → `< 4` and `===3` → `===4`.
+
+---
+
 ## Session N (June 4, 2026) — *H1 chart design — approved, not yet implemented*
 
 **Code committed:** None (design session only — no code written)
