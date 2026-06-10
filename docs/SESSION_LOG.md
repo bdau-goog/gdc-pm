@@ -2,6 +2,23 @@
 
 ---
 
+## Session AG (June 10, 2026) — *Sprint 1 + Sprint 2a: integrity fixes + H1 Briefing Panels 1&2 — deployed and verified*
+
+**Code committed:** `9691e93` (fix(sprint1): integrity fixes — RTOC-sovereign, 3 pillars, IEC 62443, retire 200GB/VSAT/E-House, SCADA label, industry generalization) · `d41d27b` (feat(sprint2a): H1 Briefing panels 1&2 — This Well + What is an Unload?)
+**Cluster image digest:** `sha256:7d22b015` (fault-trigger-ui) · pod running, 8 briefing strings confirmed in live pod
+
+**What was built and deployed — Sprint 1:** All 5 open integrity violations in the "How It Works" tab fixed in one batched `replace_in_file` call (12 SEARCH/REPLACE blocks). Rewrote `ⓘ "Why Not Cloud?"` → 3 sovereignty pillars (IEC 62443/Purdue isolation+self-sufficiency; data residency; governance/IP) with explicit NERC-CIP scoping to P&E BES only — deleted "200 GB/day" and "VSAT 15–25 min". Retitled deployment → "Operator RTOC / Sovereign Data Center". Added muted anchor line with IEC 62443/Purdue/NERC-CIP scoping. Retired all "No cloud dependency" → "No public-cloud dependency — sovereign, outage-immune" (4 occurrences). Reframed SCADA path label → "control-layer telemetry path · threshold alarms & setpoints · advanced APM platforms add ML on top". Added "generalizes across industrial verticals" line below TAGS/TAG-PATTERNS/DOCUMENTS (4 industries). Cleaned up 6 secondary E-House references throughout.
+
+**What was built and deployed — Sprint 2a:** H1 Briefing container (2 panels, extensible to 6 in Sprint 2b–2e). Architecture: `h1BriefingMode: true` + `h1BriefingPanel: 1` added to Vue data; `v-if="h1BriefingMode"` briefing div inserted before `<template v-else>` wrapper around existing scenario replay content. Panel 1 (*This Well*): full-screen layout — left column has scope declaration (formation/pump/sensor-string/operating/sand-stakes table with callout quote), right column has nominal wellbore SVG (X-MAS tree, full blue fluid column, intake PDG marker, "no discharge gauge" annotation, healthy green PUMP ✓ / MOTOR ✓, PERFS, FORMATION) + 4 green nominal sensor readout tiles. Panel 2 (*What is an Unload?*): 2×2 sensor tile grid — PIP and AMPS tiles have `.h1-brief-decline-bar` CSS class (4.5s `cubic-bezier(0.4,0,0.6,1)` keyframe, 87%→22%→87%, 0.45s delay on AMPS for visual separation); WINDING TEMP and VIBRATION tiles are static flat bars. Key insight callout at bottom: "PIP and Amps decline together... the cause is not in any of these numbers." Navigation footer: ← Back / Next → / ▶ Run the Scenario (wired to `h1BriefingMode=false; loadH1Scenario()`). Progress dots (2 of eventual 6) in the header strip.
+
+**Key decisions:** (a) `v-else`/`<template>` wrapper approach chosen over conditional display — cleanest separation, no impact on existing scenario replay HTML. (b) CSS animation approach for Panel 2 decline bars chosen over Vue timers — zero JS, no `mounted()` hooks, works reliably in dark-mode dark backgrounds. (c) Deployment discovery (Sprint 1): `kubectl rollout restart` with `:latest` tag returns stale cached image on this GKE cluster despite `imagePullPolicy: Always`. Fix permanently documented: always `kubectl set image ... @sha256:<digest>`.
+
+**Verification:** Pod running `sha256:7d22b015` · 8 briefing-related strings confirmed in live pod via exec grep · git clean on `feature-trio-clean`.
+
+**Next task:** Sprint 2b — Panel 3 (*One Signature, Two Causes*): full-screen split with left=gas lock wellbore + right=drawdown wellbore, identical PIP/Amps trace below both. Extend progress dots to show 6 total (3–6 greyed). See SPRINT_PLAN.md §Sprint 2b and DEMO_MASTER.md §4.
+
+---
+
 ## Session AG (June 10, 2026) — *Sprint 1: integrity fixes — deployed and verified*
 
 **Code committed:** `9691e93` (fix(sprint1): integrity fixes — RTOC-sovereign deployment, 3 sovereignty pillars, IEC 62443, retire 200GB/VSAT/E-House claims, SCADA label, industry generalization)

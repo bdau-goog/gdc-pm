@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AG — Sprint 1 COMPLETE; all 5 integrity violations fixed and deployed)
-**git head:** `9691e93` (fix(sprint1): integrity fixes — RTOC-sovereign, 3 pillars, IEC 62443, retire 200GB/VSAT/E-House, SCADA label, industry generalization)
-**fault-trigger-ui image:** `sha256:3d6009a2` (Session AG — Sprint 1 deployed)
+**Date:** June 10, 2026 (Session AG — Sprint 1 ✅ + Sprint 2a ✅; H1 Briefing Panels 1&2 deployed)
+**git head:** `d41d27b` (feat(sprint2a): H1 Briefing panels 1&2 — This Well + What is an Unload?)
+**fault-trigger-ui image:** `sha256:7d22b015` (Session AG — Sprint 2a deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -32,27 +32,32 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ---
 
-## STEP 3: Session AG COMPLETE ✅ — Next Task is Sprint 2a
+## STEP 3: Session AG COMPLETE ✅ — Next Task is Sprint 2b
 
 ### Session AG Summary
-Sprint 1 complete — all 5 integrity violations fixed in one batched `replace_in_file` call (12 blocks) to `index.html`, deployed as `sha256:3d6009a2`.
+Sprint 1 + Sprint 2a complete this session.
 
-**Deployment note:** `kubectl rollout restart` with `:latest` tag did NOT pull the new image (GKE node cache). Fix: always deploy with explicit digest:
+- **Sprint 1** (commit `9691e93`): All 5 integrity violations fixed — RTOC-sovereign framing, 3 sovereignty pillars, IEC 62443/Purdue, retired 200GB/VSAT/E-House/NERC-CIP errors, SCADA path label, industry generalization. Deployed `sha256:3d6009a2`.
+- **Sprint 2a** (commit `d41d27b`): H1 Briefing container + Panels 1 & 2. `h1BriefingMode: true` default state; `v-else` wraps existing scenario replay. Panel 1 = This Well (scope card + nominal wellbore SVG + 4 green sensor tiles). Panel 2 = What is an Unload? (2×2 animated tiles — PIP/Amps declining with `h1-brief-decline-bar` CSS keyframe, Temp/Vib flat). "Skip to Scenario →" + "▶ Run the Scenario" CTAs wired to `h1BriefingMode=false; loadH1Scenario()`. Deployed `sha256:7d22b015`.
+
+**Deployment note (permanent):** `kubectl rollout restart` with `:latest` does NOT pull new images (GKE node cache). Always use:
 ```bash
 kubectl set image deployment/fault-trigger-ui -n gdc-pm \
-  fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<new-digest>
+  fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<digest>
 ```
 
-### NEXT TASK — Sprint 2a: H1 Briefing — Panels 1 & 2
+### NEXT TASK — Sprint 2b: H1 Briefing — Panel 3 (One Signature, Two Causes)
 **File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call)
-**Spec:** `docs/SPRINT_PLAN.md §Sprint 2` and `DEMO_MASTER.md §4`
+**Spec:** `docs/SPRINT_PLAN.md §Sprint 2b` and `DEMO_MASTER.md §4`
 
-Two sub-tasks in one session:
-1. **Briefing container** — Add a `h1BriefingMode` Vue data flag; H1 tab loads in Briefing mode by default (before scenario replay); `[▶ Run the Scenario]` CTA exits to replay. Panel navigation: prev/next stepper.
-2. **Panel 1** — *This Well* static scope card: "Well ESP-ALPHA-N · Mature Permian Basin · Moderate-sand formation · AR-trim pump · Intake-only PDG · Operating at 52 Hz" + nominal wellbore SVG.
-3. **Panel 2** — *What is an Unload?* PIP + Amps tiles declining together + brief physics text.
+Panel 3 — *One Signature, Two Causes* — the most visually complex panel:
+- Full-screen split: LEFT = Gas Lock wellbore (annulus full, bubbles entering pump) · RIGHT = Drawdown wellbore (fluid level falling)
+- Below BOTH: the SAME PIP/Amps trace (proving identical sensor output)
+- Animated: bubbles rising left, fluid level dropping right — both produce identical chart below
+- Text: "On this well's sensor, the live decline looks the same."
+- Navigation: [← Back] [Next →]
 
-Panels must be full-width, full-height of the briefing viewport. CSS transitions preferred. No external deps.
+Also add `h1BriefingPanel` to the progress dots and stepper (extend to 6 dots, grey out 3–6 as "coming in Sprint 2c–2e").
 
 ---
 
