@@ -358,7 +358,8 @@
                 :style="{background: h1BriefingPanel===2 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
           <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
                 :style="{background: h1BriefingPanel===3 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
-          <span title="Coming: STATE vs. CONTEXT" style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:rgba(100,116,139,0.18)"></span>
+          <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
+                :style="{background: h1BriefingPanel===4 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
           <span title="Coming: Sand Stakes" style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:rgba(100,116,139,0.18)"></span>
           <span title="Coming: Universal Pattern" style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:rgba(100,116,139,0.18)"></span>
           <span style="font-size:0.54rem;color:var(--muted);margin-left:2px">{{ h1BriefingPanel }} / 6</span>
@@ -620,6 +621,102 @@
           </div>
         </div><!-- /panel-3 -->
 
+        <!-- ── PANEL 4: STATE vs. CONTEXT ── -->
+        <div v-if="h1BriefingPanel===4" style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 28px 10px;gap:10px;overflow:hidden">
+          <div style="flex-shrink:0">
+            <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:5px">Panel 4 of 6 — The Moat</div>
+            <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 5px">STATE vs. CONTEXT</h2>
+            <p style="font-size:0.65rem;color:var(--muted);margin:0;line-height:1.6">Sensors report what the well is doing <em>right now</em>. The correct action depends on what <em>happened</em> — and that is categorically not a real-time measurement.</p>
+          </div>
+
+          <!-- Two-column animated reveal: LEFT = STATE, RIGHT = CONTEXT -->
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0">
+
+            <!-- LEFT: STATE -->
+            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+              <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#60a5fa;letter-spacing:0.1em;text-align:center">STATE</div>
+              <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:2px">What the sensors report — right now</div>
+              <div class="h1-p4-state-row" style="animation-delay:0.1s">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px">
+                  <span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">PIP</span>
+                  <span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">612 <span style="font-size:0.52rem;font-weight:400">PSI ↓</span></span>
+                </div>
+              </div>
+              <div class="h1-p4-state-row" style="animation-delay:0.4s">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px">
+                  <span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">AMPS</span>
+                  <span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">34.2 <span style="font-size:0.52rem;font-weight:400">A ↓</span></span>
+                </div>
+              </div>
+              <div class="h1-p4-state-row" style="animation-delay:0.7s">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px">
+                  <span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">WINDING TEMP</span>
+                  <span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">246 <span style="font-size:0.52rem;font-weight:400">°F —</span></span>
+                </div>
+              </div>
+              <div class="h1-p4-state-row" style="animation-delay:1.0s">
+                <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px">
+                  <span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">VIBRATION</span>
+                  <span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">0.41 <span style="font-size:0.52rem;font-weight:400">in/s —</span></span>
+                </div>
+              </div>
+              <div class="h1-p4-state-row" style="animation-delay:1.3s;padding-top:6px;border-top:1px solid rgba(59,130,246,0.12)">
+                <p style="font-size:0.57rem;color:#93c5fd;line-height:1.6;font-style:italic;margin:0">"Even a perfect gauge sharpens the STATE. It cannot report what happened last week."</p>
+              </div>
+            </div>
+
+            <!-- RIGHT: CONTEXT -->
+            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(251,146,60,0.28);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+              <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#fb923c;letter-spacing:0.1em;text-align:center">CONTEXT</div>
+              <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:2px">What no sensor can report</div>
+              <div class="h1-p4-ctx-card" style="animation-delay:1.6s">
+                <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
+                  <span style="font-size:0.85rem;flex-shrink:0">📋</span>
+                  <div>
+                    <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">WORKOVER RECORD</div>
+                    <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Last workover: 14 months ago · annulus condition unknown</div>
+                  </div>
+                </div>
+              </div>
+              <div class="h1-p4-ctx-card" style="animation-delay:2.2s">
+                <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
+                  <span style="font-size:0.85rem;flex-shrink:0">📈</span>
+                  <div>
+                    <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">GOR TREND</div>
+                    <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Gas-Oil Ratio rising +18% over 60 days — reservoir depletion signal</div>
+                  </div>
+                </div>
+              </div>
+              <div class="h1-p4-ctx-card" style="animation-delay:2.8s">
+                <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
+                  <span style="font-size:0.85rem;flex-shrink:0">🗺️</span>
+                  <div>
+                    <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">OFFSET FRAC REPORT</div>
+                    <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div>
+                  </div>
+                </div>
+              </div>
+              <div class="h1-p4-ctx-card" style="animation-delay:3.4s">
+                <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
+                  <span style="font-size:0.85rem;flex-shrink:0">📝</span>
+                  <div>
+                    <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">SHIFT NOTE</div>
+                    <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div>
+                  </div>
+                </div>
+              </div>
+              <div class="h1-p4-ctx-card" style="animation-delay:4.0s;padding-top:6px;border-top:1px solid rgba(251,146,60,0.12)">
+                <p style="font-size:0.57rem;color:#fb923c;line-height:1.6;font-style:italic;margin:0">"The deciding context lives here. Not on any sensor."</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Full-width bottom quote -->
+          <div style="flex-shrink:0;padding:12px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+            <span style="font-size:0.82rem;font-weight:800;color:#e2e8f0;letter-spacing:0.01em">"You cannot instrument your way out of a context gap."</span>
+          </div>
+        </div><!-- /panel-4 -->
+
         <!-- BRIEFING NAVIGATION FOOTER -->
         <div style="flex-shrink:0;padding:10px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surf2);gap:12px">
           <button v-if="h1BriefingPanel > 1" @click="h1BriefingPanel--"
@@ -628,14 +725,14 @@
           </button>
           <div v-else style="width:84px"></div>
           <span style="font-size:0.52rem;color:rgba(100,116,139,0.4);font-style:italic;text-align:center">
-            {{ h1BriefingPanel===1 ? '2 more panels ready · STATE vs CONTEXT · sand stakes coming in 2c–2e' : h1BriefingPanel===2 ? 'Same sensor, two opposite actions — Panel 3 shows why' : 'Clicking ▶ Run the Scenario starts the interactive 30-minute ESP replay' }}
+            {{ h1BriefingPanel===1 ? '3 panels ahead · STATE vs CONTEXT · sand stakes · universal pattern' : h1BriefingPanel===2 ? 'Same sensor, two opposite actions — Panel 3 shows why' : h1BriefingPanel===3 ? 'STATE is observable. CONTEXT is decisive. Panel 4 makes the case.' : 'Clicking ▶ Run the Scenario starts the interactive 30-minute ESP replay' }}
           </span>
           <div style="display:flex;gap:8px;align-items:center">
-            <button v-if="h1BriefingPanel < 3" @click="h1BriefingPanel++"
+            <button v-if="h1BriefingPanel < 4" @click="h1BriefingPanel++"
                     style="padding:5px 16px;border-radius:5px;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.12);color:#93c5fd;font-size:0.63rem;font-weight:700;cursor:pointer">
               Next →
             </button>
-            <button v-if="h1BriefingPanel===3" @click="h1BriefingMode=false;loadH1Scenario()"
+            <button v-if="h1BriefingPanel===4" @click="h1BriefingMode=false;loadH1Scenario()"
                     style="padding:5px 20px;border-radius:5px;border:none;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);color:#fff;font-size:0.65rem;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(29,78,216,0.4)">
               ▶ Run the Scenario
             </button>
