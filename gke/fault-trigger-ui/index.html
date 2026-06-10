@@ -130,13 +130,13 @@
             <template v-else-if="injectionRunning">
               <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px">
                 <span style="font-size:14px">⚠</span>
-                <span style="font-size:0.62rem;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.06em">SCADA Alarm Zone — Lead Time Consumed</span>
+                <span style="font-size:0.62rem;font-weight:400;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">SCADA alarm zone — GDC already resolved the ambiguous fault signal</span>
               </div>
             </template>
             <template v-else>
               <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0.3">
                 <span style="font-size:12px">⏱</span>
-                <span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Inject a fault to see GDC lead time advantage</span>
+                <span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Inject a fault to see GDC resolve ambiguous fault signals</span>
               </div>
             </template>
           </div>
@@ -576,7 +576,7 @@
                 <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:7px 9px">
                   <div style="font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">TEMP</div>
                   <div style="font-size:0.95rem;font-weight:800;color:var(--text1);font-family:var(--mono)">{{ h1ReplayData.temp[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.temp[h1CursorIdx]).toFixed(0) : '—' }}°F</div>
-                  <div style="font-size:0.42rem;color:var(--muted)">SP: 275°F TRIP</div>
+                  <div style="font-size:0.42rem;color:var(--muted)">SP: 280°F TRIP</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:7px 9px">
                   <div style="font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">VIB</div>
@@ -1472,7 +1472,7 @@
           <div>
             <div class="pp-section">
               <div class="pp-section-title">⚙ The Physics — The VFD Tradeoff</div>
-              <p class="pp-text">Running an ESP at higher VFD frequency (Hz) increases flow rate and revenue. However, motor winding temperature increases non-linearly with frequency — at high frequencies, excess heat degrades Class H polyimide insulation exponentially. Once winding temperature exceeds 270°F consistently, RUL drops from years to weeks. Burnout costs $150,000 in capital + $45,000/day in deferred production.</p>
+              <p class="pp-text">Running an ESP at higher VFD frequency (Hz) increases flow rate and revenue. However, motor winding temperature increases non-linearly with frequency — at high frequencies, excess heat accelerates insulation degradation exponentially. Once winding temperature exceeds 280°F consistently (the derated operating setpoint; Class H insulation is rated 356°F / 180°C per IEC 60085, but operators derate well below the nameplate class), RUL drops from years to weeks. Burnout costs $150,000 in capital + $45,000/day in deferred production.</p>
             </div>
             <div class="pp-section">
               <div class="pp-section-title">🔎 Why Manual Optimization Fails</div>
@@ -1487,7 +1487,7 @@
               <div class="pp-section-title">⚡ How GDC Vizier Solves This</div>
               <ul class="pp-list">
                 <li>XGBoost RUL model projects thermal degradation trajectories at each hypothetical Hz setpoint (milliseconds vs 48-hour field trials)</li>
-                <li>OEM Class H insulation limit (284°F per API RP 11S) retrieved from AlloyDB pgvector and used as hard constraint</li>
+                <li>Derated winding-temp operating limit (280°F; Class H insulation rated 356°F / 180°C per IEC 60085) retrieved from AlloyDB pgvector and used as hard constraint</li>
                 <li><strong>Google Vertex AI Vizier</strong> executes 15 Gaussian Process Bandit trials — each Hz is suggested by Vizier's Bayesian model, evaluated against the local XGBoost RUL projection, and reported back to Vertex AI. The edge cluster runs the physics; Vertex AI Vizier drives the search.</li>
                 <li>Converges on the <span class="pp-em">Pareto Frontier</span> — the maximum Hz that maximizes net cash flow without triggering motor burnout</li>
               </ul>
@@ -2011,7 +2011,7 @@
               <div class="arch-info-title">📡 Sensor Physics</div>
               <ul>
                 <li><strong style="color:var(--blue)">Pump Intake Pressure (PIP)</strong> — Pump inlet pressure. Drop below 180 PSI indicates gas lock or low reservoir pressure (though positive reservoir pressure must be maintained to prevent pump cavitation). Nominal: 220–280 PSI.</li>
-                <li><strong style="color:var(--orange)">Winding Temp °F</strong> — Motor insulation health. Class H limit: 284°F. Gas lock causes heat buildup as the motor runs dry.</li>
+                <li><strong style="color:var(--orange)">Winding Temp °F</strong> — Motor insulation health. Derated operating setpoint: 280°F (Class H insulation rated 356°F / 180°C, IEC 60085). Gas lock causes heat buildup as the motor runs dry.</li>
                 <li><strong style="color:var(--orange)">Vibration mm/s</strong> — Impeller/bearing wear indicator. Nominal: &lt;0.05 mm/s. Failure threshold: &gt;0.50 mm/s (ISO 10816-3).</li>
                 <li><strong style="color:var(--blue)">Motor Amps</strong> — VFD current draw. Rising trend = increasing mechanical resistance (sand ingress, scale buildup).</li>
               </ul>

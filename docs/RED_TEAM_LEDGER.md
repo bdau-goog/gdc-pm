@@ -84,5 +84,17 @@ Trigger phrase **"red team"** re-runs this audit at any checkpoint.
 
 ---
 
-*Last updated: Session W (June 9, 2026) — Batch B: Bayesian wiring + document de-smoking-gun*
-*Smoke test: 12/12 assertions, 0 console errors · image digest sha256:18155185*
+*Last updated: Session AE (June 10, 2026) — RT-NEW-2/3/5 + L2-drift lead-time banner fix*
+*Smoke test: pending Session AE build verification*
+
+---
+
+## Session AE — New Findings (June 10, 2026)
+
+| RT # | Challenge | Target | Severity | Honest answer? | Fix applied |
+|------|-----------|--------|----------|----------------|-------------|
+| RT-NEW-2 | "Your Class H limit is listed as 270°F, 275°F, 284°F, and 300°F in four different places — and none of them is Class H (Class H = 180°C = 356°F per IEC 60085 / NEMA MG-1)" | index.html thermal copy (H3 panel, SCADA SP tile, sensor glossary) | 🔴 CRITICAL — NO-SILENT-LIE + SOURCE violation | ✅ YES — 280°F is a defensible derated operating setpoint; labeling it "Class H limit" was wrong. Class H = 356°F / 180°C (IEC 60085 — stable textbook standard). Fix: reconciled all on-screen values to 280°F; relabeled to "derated operating setpoint"; IEC 60085 / NEMA MG-1 cited for insulation rating. app.py motor_overheat methodology also updated. | **Fixed Session AE** |
+| RT-NEW-3 | "Your CLAIM_LEDGER says SCADA fires a 'multivariate rate-of-change alarm, not a static threshold' — but 12/12 live runs fire the static floor" | CLAIM_LEDGER.md H1 row 2 vs. live behavior | 🟠 HIGH — internal contradiction (ledger vs system) | ✅ YES — static floor (1,020 PSI rolling avg) structurally beats the rate rule because 1,020 PSI is only ~15% below nominal. On-screen `scada_rule_fired` already shows the true rule (no UI silent lie). The CLAIM_LEDGER narrative was over-claiming. Fix: relabel to factual description of what fires. | **Ledger reworded Session AE** |
+| RT-NEW-4 | "$45,000/day deferred production (H3 panel) is unsourced" | index.html H3 panel footnote | 🟡 MEDIUM | ⚠ WEAK — this is the WTX rig spread rate cited as C3 basis for the $150k gas_lock workover. Same figure; not independently unsourced. Survivable if challenged consistently. No change required — figure traces to app.py FINANCIAL_JUSTIFICATIONS gas_lock line_items. | **No change — SURVIVES with C3 citation chain** |
+| RT-NEW-5 | "18-hour lead / $200k / ROI 66:1 for motor_overheat — how is that sourced?" | app.py FINANCIAL_JUSTIFICATIONS motor_overheat methodology string | 🟡 MEDIUM — 🔴 NEEDS-EXPERT | ✅ ADDRESSED — dropped "ROI: 66:1" (false precision), corrected "Class H limit 280°F" label, softened "$200,000" to "~$150k–$200k (motor + workover + deferred production)", added 🔴 NEEDS-EXPERT tag so the string cannot ship as a hard fact. Motor_overheat is not in the scripted H1/H2/H3 path but is latent in the intel feed; reachability via justify modal still needs SME confirmation before demo. | **Softened Session AE** |
+| RT-L2-DRIFT | "Your 'SCADA Alarm Zone — Lead Time Consumed' banner is in red uppercase — that's a headline, not a footnote. DEMO_MASTER §3 says lead-time is demoted to supporting evidence." | index.html injectionRunning banner (legacy operations panel) + empty-state "see GDC lead time advantage" | 🟡 MEDIUM — L3-pivot fidelity | ✅ YES — DEMO_MASTER §3(6) explicitly demotes lead-time to footnote. Fix: color changed from `var(--red)` to `var(--muted)`, weight from 700 to 400, text from "SCADA Alarm Zone — Lead Time Consumed" to "SCADA alarm zone — GDC already resolved the ambiguous fault signal". Empty-state text changed from "see GDC lead time advantage" to "see GDC resolve ambiguous fault signals". Lead-time on H1/H2 Discern/Classify banners already correctly styled as `color:var(--muted)` footnotes — no change needed there. | **Fixed Session AE** |

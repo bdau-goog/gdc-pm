@@ -1155,7 +1155,7 @@ FINANCIAL_JUSTIFICATIONS = {
                 {"label": "VFD calibration verification and compliance documentation", "usd": 630, "note": "Electrical tech 1.5h + process upset log entry (PSM requirement)"},
             ]
         },
-        "methodology": "At 67% water cut, downhole motor cooling is severely degraded. GDC thermal model detects winding temp trending toward Class H limit 18 hours ahead of SCADA alarm at 280°F. Early VFD intervention costs ~$3,000; unmitigated failure costs $200,000. ROI: 66:1.",
+        "methodology": "At 67% water cut, downhole motor cooling is severely degraded. GDC thermal model detects winding temp trending toward the 280°F derated operating setpoint (Class H insulation rated 356°F / 180°C per IEC 60085; operators derate well below the nameplate class). GDC provides hours of advance notice on this chronic thermal trend vs. the SCADA high alarm at 280°F. Early VFD intervention costs ~$3,000; unmitigated failure costs ~$150k–$200k (motor replacement, workover rig, deferred production). 🔴 NEEDS-EXPERT: exact lead hours and ROI ratio are field-specific — contact O&G SME before presenting as hard numbers.",
         "references": ["Baker Hughes: ESP Motor Thermal Design Manual", "SPE-68094: Effect of Water Cut on ESP Motor Temperature", "API RP 11S2: Electrical Submersible Pump Motor Recommended Practice", "IEEE 1068: IEEE Guide for Winding Insulation Thermal Ratings"]
     },
     "thermal_runaway": {
