@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AF — Strategy locked; DEMO_MASTER rewritten; SPRINT_PLAN.md created)
-**git head:** `0c35a8f` (docs(strategy): Session AF)
-**fault-trigger-ui image:** `sha256:2f5d3cab` (Session AE — no UI changes this session)
+**Date:** June 10, 2026 (Session AG — Sprint 1 COMPLETE; all 5 integrity violations fixed and deployed)
+**git head:** `9691e93` (fix(sprint1): integrity fixes — RTOC-sovereign, 3 pillars, IEC 62443, retire 200GB/VSAT/E-House, SCADA label, industry generalization)
+**fault-trigger-ui image:** `sha256:3d6009a2` (Session AG — Sprint 1 deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -32,29 +32,27 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ---
 
-## STEP 3: Session AF COMPLETE ✅ — Next Task is Sprint 1
+## STEP 3: Session AG COMPLETE ✅ — Next Task is Sprint 2a
 
-### Session AF Summary
-Pure strategy session — no UI code written. Major decisions locked:
-- **STATE-vs-CONTEXT** is the universal moat (replaces "physics-impossibility"). Sensors report STATE; decisions need CONTEXT in documents.
-- **RTOC-sovereign canonical** deployment (not pad E-house). Sovereignty pillars: OT-segmentation/self-sufficiency (IEC 62443), data residency, governance/IP.
-- **Horizontal positioning confirmed:** 4-industry mapping (O&G / P&E / Manufacturing / Mining) baked into DEMO_MASTER §3.
-- **5 integrity fixes locked:** delete "200 GB/day" (wrong 1000×), delete "VSAT 15–25 min" (wrong physics), retire "decision at pad" (RTOC), retire "no cloud dependency" (replace with sovereignty framing), scope NERC-CIP to P&E BES only.
-- **H1 premise corrected:** intake-only scoping + sand-as-stakes (not "physically identical forever").
-- **SPRINT_PLAN.md** created — 5–6 sessions to full completion.
+### Session AG Summary
+Sprint 1 complete — all 5 integrity violations fixed in one batched `replace_in_file` call (12 blocks) to `index.html`, deployed as `sha256:3d6009a2`.
 
-### NEXT TASK — Sprint 1: How It Works Reconciliation
+**Deployment note:** `kubectl rollout restart` with `:latest` tag did NOT pull the new image (GKE node cache). Fix: always deploy with explicit digest:
+```bash
+kubectl set image deployment/fault-trigger-ui -n gdc-pm \
+  fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<new-digest>
+```
+
+### NEXT TASK — Sprint 2a: H1 Briefing — Panels 1 & 2
 **File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call)
+**Spec:** `docs/SPRINT_PLAN.md §Sprint 2` and `DEMO_MASTER.md §4`
 
-Six changes — all in one batched call:
-1. Rewrite `ⓘ "Why Not Cloud?"` panel (lines ~1809–1817) → 3 sovereignty pillars + IEC 62443/Purdue/NERC-CIP scoping (fixes 200 GB/day + VSAT latency)
-2. Retitle deployment → "Operator RTOC / sovereign data center (inside the security perimeter)"
-3. Add one muted anchor line: "Runs inside the operator's security perimeter — IEC 62443 / NERC-CIP (P&E) · sovereign, outage-immune"
-4. Retire "no cloud dependency for the decision" → "No public-cloud dependency — sovereign, outage-immune"
-5. Reframe SCADA path label → "control-layer telemetry path" + APM-add-ML note
-6. Add one "generalizes across industrial verticals" line below the TAGS / TAG-PATTERNS / DOCUMENTS centerpiece
+Two sub-tasks in one session:
+1. **Briefing container** — Add a `h1BriefingMode` Vue data flag; H1 tab loads in Briefing mode by default (before scenario replay); `[▶ Run the Scenario]` CTA exits to replay. Panel navigation: prev/next stepper.
+2. **Panel 1** — *This Well* static scope card: "Well ESP-ALPHA-N · Mature Permian Basin · Moderate-sand formation · AR-trim pump · Intake-only PDG · Operating at 52 Hz" + nominal wellbore SVG.
+3. **Panel 2** — *What is an Unload?* PIP + Amps tiles declining together + brief physics text.
 
-After Sprint 1: deploy + verify with grep. Then Sprint 2 (H1 Briefing, 6 panels animated).
+Panels must be full-width, full-height of the briefing viewport. CSS transitions preferred. No external deps.
 
 ---
 
@@ -62,11 +60,11 @@ After Sprint 1: deploy + verify with grep. Then Sprint 2 (H1 Briefing, 6 panels 
 
 | Item | Status | Note |
 |------|--------|------|
-| "200 GB/day for 38 wells" (info panel) | ❌ OPEN Sprint 1 | Wrong by ~1000× for scalar SCADA. Fix in Sprint 1. |
-| "VSAT round-trip 15–25 minutes" (info panel) | ❌ OPEN Sprint 1 | Physically wrong (~600 ms). Fix in Sprint 1. |
-| "E-House on the well pad" deployment framing | ❌ OPEN Sprint 1 | Should be RTOC. Fix in Sprint 1. |
-| "No cloud dependency for the decision" tagline | ❌ OPEN Sprint 1 | Replace with sovereignty framing. Fix in Sprint 1. |
-| NERC-CIP cited for upstream O&G | ❌ OPEN Sprint 1 | NERC-CIP = BES (power) only. Fix in Sprint 1. |
+| "200 GB/day for 38 wells" (info panel) | ✅ FIXED Session AG | Deleted; replaced with sovereignty framing |
+| "VSAT round-trip 15–25 minutes" (info panel) | ✅ FIXED Session AG | Deleted |
+| "E-House on the well pad" deployment framing | ✅ FIXED Session AG | Replaced with RTOC / sovereign data center |
+| "No cloud dependency for the decision" tagline | ✅ FIXED Session AG | Replaced with "No public-cloud dependency — sovereign, outage-immune" |
+| NERC-CIP cited for upstream O&G | ✅ FIXED Session AG | Scoped to P&E BES only in all occurrences |
 | All Session AE RT fixes | ✅ FIXED Session AE | 280°F, IEC 60085, scada_rule_fired, lead-time banner |
 | STATE-vs-CONTEXT premise | ✅ LOCKED DEMO_MASTER §3 | Claim Ledger PREMISE row added |
 | Sand/shut-in physics | ✅ LOCKED DEMO_MASTER §4.1 + P5-A/B/C | Scoped: moderate-sand well · AR-trim |
@@ -79,6 +77,7 @@ After Sprint 1: deploy + verify with grep. Then Sprint 2 (H1 Briefing, 6 panels 
 - No browser on SSH remote — use `node scripts/ui_smoke.mjs` instead
 - Batch all edits to same file in ONE `replace_in_file` call
 - Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest`
+- **Deploy with explicit digest** — `kubectl rollout restart` with `:latest` does NOT pull from registry on this cluster (node cache). Always use `kubectl set image ... @sha256:<digest>`
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
 - `app.py` ~6,400 lines, `index.html` ~2,760 lines, `app.js` ~2,300 lines — always grep for line numbers first

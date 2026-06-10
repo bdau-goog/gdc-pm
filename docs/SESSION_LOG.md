@@ -2,6 +2,21 @@
 
 ---
 
+## Session AG (June 10, 2026) — *Sprint 1: integrity fixes — deployed and verified*
+
+**Code committed:** `9691e93` (fix(sprint1): integrity fixes — RTOC-sovereign deployment, 3 sovereignty pillars, IEC 62443, retire 200GB/VSAT/E-House claims, SCADA label, industry generalization)
+**Cluster image digest:** `sha256:3d6009a2` (fault-trigger-ui) · pod `fault-trigger-ui-68474c5d78-x88z2` (later replaced by explicit-digest deploy) 1/1 Running
+
+**What was built and deployed:** Sprint 1 complete — all 5 open integrity violations in the "How It Works" tab fixed in a single batched `replace_in_file` call (12 SEARCH/REPLACE blocks). Changes: (1) Rewrote `ⓘ "Why Not Cloud?"` panel → 3 sovereignty pillars (IEC 62443/Purdue isolation+self-sufficiency; data residency; governance/IP) with explicit NERC-CIP scoping to P&E BES only — deleted "200 GB/day" and "VSAT 15–25 min". (2) Retitled deployment → "Operator RTOC / Sovereign Data Center" with corrected bullet text (RTOC decision-maker, production network, document corpus convergence). (3) Added muted anchor line: "Runs inside the operator's security perimeter — IEC 62443 / Purdue Model · NERC-CIP (Power & Energy BES only) · sovereign, outage-immune". (4) Retired all "No cloud dependency" / "zero cloud dependency" strings → "No public-cloud dependency — sovereign, outage-immune". (5) Reframed SCADA path label → "control-layer telemetry path · threshold alarms & setpoints · advanced APM platforms add ML on top". (6) Added "generalizes across industrial verticals" line below TAGS/TAG-PATTERNS/DOCUMENTS centerpiece. Also cleaned up 4 secondary E-House references throughout the file.
+
+**Key decisions:** Deployment issue discovered: `kubectl rollout restart` with `:latest` tag does NOT pull the new image on this GKE cluster (node-level image cache returns old digest despite `imagePullPolicy: Always`). Fix established: always deploy with `kubectl set image ... @sha256:<digest>` using the explicit digest from `docker push` output. This constraint documented in NEXT_SESSION_PROMPT.md Constraints section.
+
+**Verification:** Pod running `sha256:3d6009a2` confirmed · `grep -c "RTOC" /app/index.html` → 6 in pod · old integrity strings absent from live pod · git clean on `feature-trio-clean`.
+
+**Next task:** Sprint 2a — H1 Briefing container + Panels 1 & 2 (This Well + What is an Unload?). See SPRINT_PLAN.md §Sprint 2 and DEMO_MASTER.md §4 for full spec.
+
+---
+
 ## Session AF (June 10, 2026) — *Pure strategy session: STATE-vs-CONTEXT universal moat locked; RTOC-sovereign deployment; §9 data architecture; H1 premise corrected; SPRINT_PLAN.md created — docs only, no UI changes*
 
 **Code committed:** `0c35a8f` (docs(strategy): Session AF — STATE-vs-CONTEXT universal moat; RTOC-sovereign deployment; §9 data architecture; integrity fixes; 4-industry mapping; Claim Ledger P5-A/B/C + PREMISE)
