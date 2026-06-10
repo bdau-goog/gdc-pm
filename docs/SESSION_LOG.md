@@ -2,6 +2,15 @@
 
 ---
 
+## Session AP (June 10, 2026) — *H1 structural race fix + Bayes softening — deployed and verified*
+
+**Code committed:** `7c17220` (fix(h1-single-alarm): collapse detection race to single shared alarm moment, soften Bayes posterior to 93%, remove contraindicated path)
+**Cluster image digest:** `sha256:7849e9e3f9bcac0e50b96165fa6e0ac12b29a00deebb3520db284b8983b4fecb` (Session AP) · 3 files changed, 76 insertions(+), 78 deletions(-)
+
+Full H1 assessment identified four structurally coupled locations where the detection race lived (NEXT_SESSION_PROMPT AO constraints). Session AP fixed all four in one commit. Backend (app.py): endpoint now returns `alarm_idx` (= earliest SCADA underload rule crossing) instead of separate `gdc_detect_idx`/`scada_alarm_idx` for reveal timing; `gdc_detect_idx` retained as metadata-only (shows declining hs curve pre-alarm, tells the "router" story without a separate earlier reveal beat); `lead_time_minutes` removed from response. Bayes posterior softened from 99.6% to 93.1% by adjusting LRs 8/5/3/2 → 3.0/2.0/1.6/1.4 (conservative correlation haircut — findings are correlated, not independent; naive-Bayes maximum inflates the posterior). app.js: cursor watcher uses `alarm_idx` for both reveal gates; cursor relayout updated from `shapes[2]` to `shapes[1]` (amber GDC Detects shape removed, only 2 shapes remain); chart render uses `d.alarm_idx` not `d.scada_alarm_idx`. index.html: scrubber has single `ALARM▲` marker; all pre/post-alarm display gates use `alarm_idx`; GDC drawdown contraindicated card removed (both drawdown cards now route to shut-in, seizure path out of scope); outcome text softened from "pump seizure" to "production deferred for assessment"; Zone-1 baseline label changed to "XGBoost routing score · alarm threshold 0.65". Live verification: `alarm_idx=64`, `gdc_detect_idx=39` (metadata), `bayes_pct=93.1%`, `lead_time_minutes` absent, `model_used=esp_health.ubj`. Key design decisions: (a) 50/50 fault distribution kept — drawdown run shows GDC confirms the conservative call with cited confidence, not just always saying "trim"; (b) health score remains visible throughout (user direction). Next: Batch 2 — briefing panel rework: P1 (remove sand-stakes row), P2 (strip dev-leak line), P3 (soften drawdown footer), P5 (replace sand matrix with "How Operators Decide Today" new panel).
+
+---
+
 ## Session AO (June 10, 2026) — *H1 narrative reframe: cited-evidence analyst — deployed and verified*
 
 **Code committed:** `7e7af08` (fix(h1-narrative): reframe H1 as cited-evidence analyst — cut detection race, relabel tabs, Mining row removed, seizure→unplanned outcome, Discern as default tab)

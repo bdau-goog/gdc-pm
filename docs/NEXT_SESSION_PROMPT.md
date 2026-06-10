@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AO — H1 narrative reframe deployed; Discern as default tab)
-**git head:** `7e7af08` (fix(h1-narrative): reframe H1 as cited-evidence analyst — cut detection race, relabel tabs, Mining row removed, seizure→unplanned outcome, Discern as default tab)
-**fault-trigger-ui image:** `sha256:b0e186376502e3296c6253f1559dcfcaa555e73728cbfa28b9508e844a6a2ae3` (Session AO)
+**Date:** June 10, 2026 (Session AP — single-alarm collapse + Bayes softening deployed)
+**git head:** `7c17220` (fix(h1-single-alarm): collapse detection race to single shared alarm moment, soften Bayes posterior to 93%, remove contraindicated path)
+**fault-trigger-ui image:** `sha256:7849e9e3f9bcac0e50b96165fa6e0ac12b29a00deebb3520db284b8983b4fecb` (Session AP)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -31,47 +31,51 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: NEXT TASK — H1 PANEL + SCENARIO REDESIGN (START IN PLAN MODE)
+## STEP 3: NEXT TASK — H1 BRIEFING PANEL REWORK (Batch 2)
 
-> **⚠️ H1 IS NOT DONE. Session AO relabeled text only. The detection race is still structurally present — two separate indices, two scrubber markers, two reveal times. The real work is next session.**
+> **✅ Session AP completed Batch 1:** The detection race is structurally gone from the scenario runtime.
+> Single `alarm_idx`, both views reveal simultaneously, Bayes posterior 93.1%, no contraindicated card,
+> no seizure path. Committed `7c17220`, deployed, verified live.
 
-### Your locked thesis
-There is a **class of SCADA-informed decisions that skew toward safety/asset-protection** and, in doing so, **cost money and lose production** (reflexive shut-ins, unnecessary conservatism). Better decisions — less outage, lower cost — are possible when **AI + RAG + active document monitoring + LLM is implemented sovereignly on GDC.** This reduces to one line:
+### What's still outstanding (Batch 2 — briefing panels):
 
-> **Better informed = less cost, more uptime, more production.**
+**Hard constraints (from NEXT_SESSION_PROMPT AO — still apply):**
+1. **Remove sand-stakes row from Panel 1 "The Setup".** Sand is not a setup fact; it's the decision-context reason shut-in is the conservative default. Move to Panel 5 (where it already belongs).
+2. **Panel 2 "What is an Unloading Event?"** — remove dev-leak text `(Sprint 2b–2e)` and the "GDC detects before any SCADA threshold" line from the callout. Both are racing claims.
+3. **Panel 3 "One Signature, Two Causes"** — drawdown footer still says "VFD trim catastrophic ~$150k" and shows a `SAND` zone. Since Batch 1 removed the catastrophe path from the scenario, the briefing should match: soften to "shut-in is the correct action — sand makes trim risky in this well type," not "catastrophic seizure." The $150k and sand are still ON SCREEN here (briefing) — user confirmed sand stays as the policy rationale, just not the catastrophe framing.
+4. **Panel 5 "Why Sand Changes Everything"** — the user wants this REPLACED with a new "How Operators Decide Today" panel. See wireframe in NEXT_SESSION_PROMPT AO §STEP 3 for the agreed content. Sand is the reason shut-in is the conservative default, not a $150k catastrophe story.
+5. **Panel 2 callout leak** — strip `Sprint 2b–2e` reference and the "detects before SCADA" line.
 
-ESP unloading is **one worked example of the class — not the point itself.**
+### Agreed 6-panel arc (for reference):
+1. **What We're Watching — A Mature ESP** (rework P1: de-sand the setup)
+2. **What is an Unloading Event?** (keep P2, strip dev-leak line)
+3. **Two Causes, One Signature** (rework P3 footer: soften $150k to "riskier if drawdown" consistent with scenario)
+4. **STATE vs CONTEXT** (keep P4 as-is — perfect)
+5. **How Operators Decide Today** (NEW — replace sand matrix; sand = policy rationale, no catastrophe)
+6. **This Pattern Is Universal** (keep P6 as-is)
 
-### Hard constraints (locked, non-negotiable)
-1. **Remove ALL detection-lead over SCADA.** This is structural — not copy:
-   - `app.py` ~L6113–6141: two indices (`gdc_detect_idx`, `scada_alarm_idx`, `lead_time_minutes`) → **collapse to a single shared alarm moment**
-   - `index.html` scrubber: two markers → **one alarm marker**
-   - `app.js` `_renderH1ReplayChart` annotations + `h1CursorIdx` watcher that reveals GDC at `gdc_detect_idx` vs SCADA at `scada_alarm_idx` → **both reveal at the same alarm index**
-   - The ONLY post-alarm difference: **decision quality** (GDC adds fused context), never timing.
-2. **Remove 'sand' from the narrative spine.** No sand-bridging, no "moderate-sand well" as the stakes-setter, no AR-trim, no sand decision matrix (Panel 5). Reframe as a **generic mature ESP**; describe the use-case as **a class of problems GDC solves**. Sand physics may live deep in ⓘ Reference but is out of the story.
-3. **Remove the $150k catastrophe story.** No catastrophe number, no "PUMP SEIZED" / "UNPLANNED OUTCOME." Honest contrast: *production-deferring shut-in (lost uptime + restart cost)* vs. *informed production-preserving action (cheaper, more uptime)*. Quieter, defensible delta — no scary outlier.
+### New Panel 5 content (agreed wireframe):
+```
+Panel 5 of 6 — The Decision    How Operators Decide Today
+[ moderate-sand well · AR-trim ]
 
-### Guidance for my review (NOT a fixed spec — I propose a panel flow for your sign-off)
-User's suggested arc to review and refine:
-1. What is an ESP?
-2. What is unloading?
-3. What might cause unloading?
-4. Why do they look the same (on the sensor)?
-5. How do operators react today? — the *class of problems* beat: SCADA-informed default skews protective → production deferred, cost incurred
-6. How GDC decides better — fuses context → production-preserving action → framed as uptime + cost only
+⚠ ONE ALARM: UNDERLOAD — cause unknown → gas lock OR drawdown?
 
-**My job at session start:** read the current panel content, then **propose a refined 6-panel flow with content as ASCII wireframes/tables for user review** BEFORE any code.
+     [ VFD TRIM ]              [ SHUT-IN ]
+   right for gas lock         safe for BOTH causes
+   stays online ~$2.5k        but DEFERS PRODUCTION
+   risky if drawdown          + restart $3–8k · every time
+   (sand makes it costly)
 
-### Build state to rework (do not rebuild from scratch)
-- 6 briefing panels at `index.html` ~L368–908. **Panels 1, 3, 5** are sand-dependent → rework. **Panels 4** (STATE vs CONTEXT) and **6** (universal class, 3 rows) are reusable.
-- Live scenario: `/api/h1/scenario-replay` (app.py ~L6060–6145) + `loadH1Scenario` / `_renderH1ReplayChart` / `h1CursorIdx` watcher (app.js) + console views (index.html ~L1074–1345). **This is where the detection race physically lives.**
-- H2 has the same two-index pattern (app.py ~L6307–6350) — same fix applies there in a later session.
+"Safe is not free. The protective shut-in is paid on every
+ ambiguous alarm — including the ones that were only gas lock."
+```
 
-### Method
-1. **PLAN MODE** — read current panel content; propose revised panel flow + content; get user sign-off
-2. **Agree single-alarm interaction model** (one marker, both views reveal together, GDC adds context not lead-time)
-3. **ACT** — backend (collapse indices) → briefing panels → scenario console → deploy with explicit digest → verify
-4. **Update Claim Ledger** — retire detection-lead row and $150k row; surviving spine is STATE-vs-CONTEXT / better-informed-decision (PREMISE row SURVIVES)
+### Method:
+1. Read current P1/P2/P3/P5 content (already in context from Session AP; use `grep -n` first)
+2. Propose revised copy as ASCII wireframes / inline tables for user review
+3. Get sign-off on each panel BEFORE writing HTML
+4. Batch all 4 panel edits into ONE `replace_in_file` call on index.html
 
 ---
 
@@ -88,12 +92,19 @@ User's suggested arc to review and refine:
 | ← Briefing re-entry button | ✅ ADDED Session AM | h1BriefingMode=true |
 | ISA-101 card color scoping | ✅ FIXED Session AN | `.h1-card-green .h1-card-header` |
 | SCADA leading-the-witness text | ✅ FIXED Session AN | Card A/B neutralized |
-| H1 detection-race framing | ✅ RETIRED Session AO | Lead-time banner, "Smart SCADA", "PUMP SEIZED" removed |
+| H1 detection-race framing | ✅ FIXED Session AP | Single alarm_idx, both views reveal together |
+| H1 Bayes posterior overconfidence | ✅ FIXED Session AP | 99.6% → 93.1% (LRs 3/2/1.6/1.4) |
+| H1 contraindicated card + seizure path | ✅ REMOVED Session AP | drawdown both cards → shut-in |
 | Tab default landing | ✅ FIXED Session AO | mainTab → 'horizon1'; How It Works → ⓘ Reference |
 | Panel 6 Mining row | ✅ REMOVED Session AO | 3 rows remain: O&G / P&E / MFG |
-| OEM Troubleshooting Guide no click handler | ⚠️ BATCH 2 | Doc 3 needs modal + content (G1–G6 gate) |
+| Panel 1 sand-stakes row ($150k on setup) | ⚠️ BATCH 2 | Needs removal; sand stays in P5 only |
+| Panel 2 dev-leak line + detection race text | ⚠️ BATCH 2 | Strip "Sprint 2b–2e" + "GDC detects before SCADA" |
+| Panel 3 drawdown footer ($150k seizure) | ⚠️ BATCH 2 | Soften to match scenario (no catastrophe) |
+| Panel 5 sand matrix → "How Operators Decide" | ⚠️ BATCH 2 | Full replacement; sand stays as policy rationale |
+| OEM Troubleshooting Guide no click handler | ⚠️ BATCH 3 | Doc 3 needs modal + content (G1–G6 gate) |
 | STATE-vs-CONTEXT premise | ✅ LOCKED | Claim Ledger PREMISE row |
-| SPE-174536 citation | ⚠️ UNVERIFIED | Using SPE-170776; 4.2 ft/s = representative |
+| SPE-174536 citation (on-screen in GDC verdict) | ⚠️ UNVERIFIED | Still on screen in Zone-1 drawdown text — OK in ⓘ Reference, flag for removal from main verdict |
+| SPE-174536 citation in override modal | ⚠️ NOTE | Override modal still references SPE-174536; modal is low-visibility path now |
 
 ---
 
@@ -105,5 +116,5 @@ User's suggested arc to review and refine:
 - **Deploy with explicit digest** — `kubectl rollout restart` with `:latest` does NOT pull from registry
 - Do NOT use "Copilot" anywhere in the UI
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,400 lines, `index.html` ~3,210 lines, `app.js` ~2,300 lines — grep for line numbers first
+- `app.py` ~6,400 lines, `index.html` ~3,200 lines, `app.js` ~2,300 lines — grep for line numbers first
 - H2 uses inference-api (not local esp_classifier.bst)
