@@ -953,7 +953,7 @@
             <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Pump Intake Pressure declining slowly since ~05:40 — now 1,245 PSI (↓ from 1,380 PSI at Tour 1 handover). Motor amps tracking with PIP decline. Winding temp nominal 197°F, vibration nominal 1.4 mm/s.</p>
             <p style="font-size:0.60rem;color:var(--orange);line-height:1.7;font-weight:600;margin:0 0 8px">Diagnosis: Higher than usual GVF — possibly gas migration from upper zone. Classic gas lock onset. Suggest monitoring closely; recommend VFD speed-down if PIP continues to decline.</p>
             <hr style="border-color:var(--border);margin:8px 0"/>
-            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.94 · AlloyDB on-cluster RAG · No cloud dependency</div>
+            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.94 · AlloyDB on-cluster RAG · No public-cloud dependency — sovereign, outage-immune</div>
           </div>
         </div>
       </div>
@@ -987,7 +987,7 @@
             <div style="font-size:0.62rem;font-weight:700;color:var(--text2);margin-bottom:4px">SURVEYOR'S FIELD NOTES</div>
             <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Dynamic fluid level measured at 240 ft above pump intake (minimum submergence limit: 120 ft). Fluid level has declined 30 ft vs prior survey baseline. Casing annulus pressure flat at 40 PSI; no free gas zone detected in annulus. Survey completed 06:00 Tour 2. Continued periodic monitoring recommended per operating procedure.</p>
             <hr style="border-color:var(--border);margin:8px 0"/>
-            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.97 · AlloyDB on-cluster RAG · No cloud dependency</div>
+            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.97 · AlloyDB on-cluster RAG · No public-cloud dependency — sovereign, outage-immune</div>
           </div>
         </div>
       </div>
@@ -1026,7 +1026,7 @@
               </tbody>
             </table>
             <hr style="border-color:var(--border);margin:10px 0"/>
-            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.89 · AlloyDB on-cluster RAG · No cloud dependency</div>
+            <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.89 · AlloyDB on-cluster RAG · No public-cloud dependency — sovereign, outage-immune</div>
           </div>
         </div>
       </div>
@@ -1787,12 +1787,12 @@
           <div v-if="archInfoOpen && archPane==='overview'" class="arch-info-panel">
             <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
             <div class="arch-info-section">
-              <div class="arch-info-title">🌐 Deployment Location: Multi-Well Pad E-House</div>
+              <div class="arch-info-title">🌐 Deployment Location: Operator RTOC / Sovereign Data Center</div>
               <ul>
-                <li>GDC Software Only runs on customer-provided ruggedized hardware (e.g. Dell PowerEdge XR, HPE Edgeline) installed inside the climate-controlled <strong>E-House (Electrical House)</strong> on the well pad.</li>
-                <li>The E-House already houses the VFDs, motor control centers, and PLCs — the GDC server shares this protected, powered environment.</li>
-                <li>All sensors stream to the GDC server over the <strong>local hardwired field network</strong> at 5-second cadence — no WAN required for data acquisition.</li>
-                <li>Only low-bandwidth insights (health scores, alerts, recommendations) are transmitted over the slow VSAT/LTE backhaul to central SCADA/headquarters.</li>
+                <li>GDC runs on customer-provided hardware co-located inside the operator's <strong>Real-Time Operations Center (RTOC)</strong> or corporate data center — inside the IT/OT security perimeter, serving multiple assets over the existing production network.</li>
+                <li>The decision-maker authorizing a well shut-in or VFD trim sits in the RTOC, not at the pad. Shale pads are typically unmanned; lease operators run drive-by routes. VFD commands are executed remotely from the RTOC, or by dispatched field personnel.</li>
+                <li>All sensors stream to GDC over the <strong>existing production network</strong> at 5-second cadence. GDC transmits only insights (kilobytes) outbound — never raw telemetry.</li>
+                <li>The full document corpus (shift notes, lab reports, work orders, sonic surveys) converges naturally at the RTOC — the ideal ingestion point for L3 context fusion.</li>
               </ul>
             </div>
             <div class="arch-info-section">
@@ -1807,12 +1807,11 @@
               </ul>
             </div>
             <div class="arch-info-section">
-              <div class="arch-info-title">🔒 Why Not Cloud?</div>
+              <div class="arch-info-title">🔒 Why Sovereign — Not Public Cloud?</div>
               <ul>
-                <li>38-well fleet generates ~200GB/day of raw telemetry — economically infeasible to backhaul over VSAT at $0.015/MB</li>
-                <li>Gas Lock point-of-no-return: 25 minutes. VSAT round-trip latency: 15–25 minutes. Cloud analytics cannot deliver the alert in time.</li>
-                <li>Production rates and reservoir pressure data are commercially sensitive — must remain on-premises</li>
-                <li>WAN outages occur regularly offshore and in remote land operations. GDC continues monitoring through any network interruption.</li>
+                <li><strong>Pillar 1 — Isolation &amp; self-sufficiency (IEC 62443 / Purdue Model):</strong> OT/production data must not cross the public internet under the operator's OT-security policy. The AI must also keep functioning when the outside link is severed — a satellite or WAN drop during a process upset is a real scenario. Local corpus + local inference is outage-immune by design. <em>Note: NERC-CIP CIP-005/007 applies to Power &amp; Energy Bulk Electric System assets — not upstream O&amp;G.</em></li>
+                <li><strong>Pillar 2 — Data residency &amp; sovereignty:</strong> Reservoir and production data is commercially sensitive. Many NOCs and regulated jurisdictions require it to remain in-country and off public multi-tenant cloud. GDC co-locates compute with the data — it never moves.</li>
+                <li><strong>Pillar 3 — Governance &amp; IP:</strong> Open-weight Gemma on GDC means proprietary prompts (live telemetry + field documents) never transit a third-party model API and are never externally logged or exposed.</li>
               </ul>
             </div>
           </div>
@@ -1895,7 +1894,7 @@
             <!-- ── SCADA Legacy Path (6-box mirrored) ── -->
             <div style="display:flex;align-items:center;gap:10px;margin:14px 0 6px;padding:5px 14px;background:rgba(60,80,100,0.07);border:1px solid rgba(90,110,140,0.25);border-radius:6px">
               <span style="font-size:0.63rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.09em">🛢 Traditional SCADA Path</span>
-              <span style="font-size:0.58rem;color:var(--muted);font-style:italic">— alarm-based, threshold-driven approach</span>
+              <span style="font-size:0.58rem;color:var(--muted);font-style:italic">— control-layer telemetry path · threshold alarms &amp; setpoints · advanced APM platforms add ML on top</span>
             </div>
 
             <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
@@ -1964,7 +1963,7 @@
                 </ul>
               </div>
               <div class="arch-compare-card acc-gdc">
-                <div class="acc-title acc-title-gdc">⚡ GDC Edge AI (E-House)</div>
+                <div class="acc-title acc-title-gdc">⚡ GDC Edge AI (Sovereign RTOC)</div>
                 <ul class="acc-items">
                   <li class="yes">Reads field documents (shift notes, sonic logs, GOR reports)</li>
                   <li class="yes">Resolves physically ambiguous faults sensors alone cannot</li>
@@ -1973,6 +1972,7 @@
                 </ul>
               </div>
             </div>
+            <div style="margin:6px 0 12px;padding:5px 14px;background:rgba(10,30,55,0.35);border:1px solid rgba(74,144,200,0.2);border-radius:5px;font-size:0.58rem;color:var(--muted);font-style:italic;text-align:center">Runs inside the operator's security perimeter — IEC 62443 / Purdue Model (O&amp;G, manufacturing) · NERC-CIP (Power &amp; Energy BES only) · sovereign, outage-immune</div>
             <!-- Tags vs Tag-Patterns vs Documents — 3-tier comparison centerpiece -->
             <div style="margin-top:14px;background:rgba(10,20,35,0.6);border:1px solid rgba(74,144,200,0.25);border-radius:6px;padding:12px 16px">
               <div style="font-family:'JetBrains Mono',monospace;font-size:0.63rem;font-weight:700;color:#7ab8e8;letter-spacing:0.07em;margin-bottom:10px">TAGS vs. TAG-PATTERNS vs. DOCUMENTS — Three Detection Tiers</div>
@@ -1988,6 +1988,9 @@
                 <div style="background:rgba(10,30,55,0.4);border:1px solid rgba(74,222,128,0.3);border-radius:5px;padding:10px 12px">
                   <div style="font-size:0.63rem;font-weight:700;color:#4ade80;margin-bottom:4px">⚡ GDC Edge AI</div>
                   <div style="font-size:0.59rem;color:#86efac;line-height:1.5">Monitors tags and patterns and <strong>reads the documents</strong> — the only tier that resolves a fault where the sensor signature is physically ambiguous. The disambiguation exists only in a field document.</div>
+                </div>
+              </div>
+              <div style="margin-top:8px;padding:6px 10px;border-top:1px solid rgba(74,144,200,0.15);font-size:0.58rem;color:var(--muted);font-style:italic">This pattern is not oilfield-specific — the same STATE-vs-CONTEXT gap applies wherever unstructured operational knowledge is the missing tier: Power &amp; Energy (transformer logs, loading plans), manufacturing (lubrication records, OEM bulletins), mining (service history, haul-road reports).</div>
                 </div>
               </div>
             </div>
@@ -2029,7 +2032,7 @@
               <div class="arch-info-title">📶 Local Field Network vs. WAN</div>
               <ul>
                 <li>The 5s telemetry stream is pulled over a local high-speed field-mesh network within the pad facility — no WAN link involved in data acquisition</li>
-                <li>Central SCADA in headquarters polls over a VSAT/LTE backhaul — typically receiving 15-minute averages only due to bandwidth constraints</li>
+                <li>Central SCADA in headquarters polls the field network over an existing WAN link — GDC's sovereign deployment means the AI decision never depends on that link being available</li>
                 <li>GDC protects the WAN link by transmitting only insights (kilobytes), not raw telemetry (gigabytes)</li>
               </ul>
             </div>
@@ -2047,7 +2050,7 @@
                 <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Echo</span><span class="arch-chip-val">8 Wells</span></div>
                 <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Foxtrot</span><span class="arch-chip-val">6 Wells</span></div>
               </div>
-              <div style="font-size:0.6rem;color:var(--muted);margin-top:8px;font-style:italic">GDC Software Only on customer hardware · E-House at Central Battery · Local field-mesh network (no WAN)</div>
+              <div style="font-size:0.6rem;color:var(--muted);margin-top:8px;font-style:italic">GDC Software Only on customer hardware · Operator RTOC or sovereign data center · Local production network (no public-cloud dependency)</div>
             </div>
 
             <div class="arch-connector">↓ <span class="arch-connector-label">High-speed local field-mesh · 5s continuous telemetry stream · bypasses slow WAN backhaul</span></div>
@@ -2347,9 +2350,9 @@
               <ul>
                 <li>Cloud LLM APIs (Vertex AI, OpenAI) require a WAN connection and introduce 2–5 second network latency — assuming the link is up</li>
                 <li>A wellsite with 4G failover may have packet loss during a storm — exactly when you need the AI most</li>
-                <li>Sensitive operational data (well test reports, production rates, lab results) never leaves the E-House premises</li>
+                <li>Sensitive operational data (well test reports, production rates, lab results) never leaves the operator's sovereign boundary</li>
               </ul>
-              <div class="arch-callout callout-purple">Gemma 4 8B on the L4 GPU achieves comparable reasoning quality to Gemini Flash for structured O&G fault diagnosis, with zero cloud dependency and full offline operation.</div>
+              <div class="arch-callout callout-purple">Gemma 4 8B on the L4 GPU achieves comparable reasoning quality to Gemini Flash for structured O&G fault diagnosis, with no public-cloud dependency and full offline operation.</div>
             </div>
             <div class="arch-info-section">
               <div class="arch-info-title">🎯 What the LLM Actually Does</div>
