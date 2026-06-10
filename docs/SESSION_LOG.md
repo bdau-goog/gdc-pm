@@ -2,6 +2,12 @@
 
 ---
 
+## Session AK (June 10, 2026) — *Panel review + scrubber spec locked — wrap only, no code*
+
+User reviewed all 6 H1 Briefing panels at proper zoom. Panels 1, 4, 5, 6 approved as ship-ready; do not touch. Panels 2 and 3 require a scrubber rebuild. Panel 2 issues: animated bars use an infinite CSS loop (`h1-brief-decline` 87%→22%→87% perpetual) rendering amber only, both PIP and AMPS the same color, and orientation is backwards (long = worse, should be short = worse/lower). Panel 3 issues: wellbore SVGs are postage-stamp size (`max-height:148px` cap) and animations are also infinite loops not under presenter control. Design locked for next session: per-panel scrubber (`h1P2Scrub`/`h1P3Scrub` 0→100), CSS transition replacing `@keyframes`, all bars start GREEN at 0, PIP and AMPS go amber and shrink as scrub increases, TEMP and VIB stay green and flat (that IS the diagnostic story in one gesture), short bar = worse orientation, Panel 3 SVGs scaled up to ~280px, bubble/drain opacity driven by scrub value not time. Sprint 3 (H2 Briefing) deferred until Panel 2+3 are fixed. No code written this session — clean handoff. Full spec in NEXT_SESSION_PROMPT.md.
+
+---
+
 ## Session AJ (June 10, 2026) — *Financial Justification modal raw-mustache fix — integrity repair, deployed & verified*
 
 Fixed the long-standing bug where both the Financial Justification modal and the Feed Detail modal rendered raw `{{ }}` mustache templates instead of evaluated Vue values. Root cause: the Architecture tab's "overview" pane contained 2 stray `</div>` tags in the 3-tier comparison box closing cascade (old lines 2577–2578 of `index.html`), leaving `opens=1183, closes=1181` net balance of −2. These prematurely terminated `app-body` and `#app` in the browser's parsed DOM, ejecting both modals outside Vue's mount scope. Diagnosis used a multi-line-aware tag-stack parser (strips HTML comments preserving line numbers, then token-walks all `<div>` / `</div>` using regex with `re.S`). Fix: single `replace_in_file` deleting the 2 stray closers; verified balance 1181=1181, net 0, zero extra closes. Built and pushed new image `sha256:471fb644`; deployed with `kubectl set image @sha256:<digest>` (`:latest` rollout-restart does not repull on this cluster). Live verification: `curl` confirmed modal at served-line 3122 inside `</div><!-- #app -->` at line 3207. No claims, data, or UI behaviour changed — pure structural integrity fix. Committed `e93328f`. Next task: Sprint 3 H2 Briefing (3 panels).
