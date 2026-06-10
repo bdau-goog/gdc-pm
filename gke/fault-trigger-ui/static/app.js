@@ -60,7 +60,7 @@ const DEMO_SCENARIOS = [
 createApp({
   data() {
     return {
-      mainTab: 'surveillance',
+      mainTab: 'architecture',
       archPane: 'overview',
       archInfoOpen: false,
       currentView: 'dashboard',

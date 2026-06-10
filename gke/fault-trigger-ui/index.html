@@ -18,7 +18,6 @@
     <span class="hdr-title">GDC Predictive Maintenance</span>
     <span class="hdr-badge">O&G EDGE AI</span>
     <div class="hdr-tabs">
-      <div class="hdr-tab" :class="{active: mainTab==='surveillance'}" @click="mainTab='surveillance'">Surveillance</div>
       <div class="hdr-tab" :class="{active: mainTab==='architecture'}" @click="mainTab='architecture'">How It Works</div>
       <div class="hdr-tab" :class="{active: mainTab==='horizon1'}" @click="setMainTab('horizon1')">Discern</div>
       <div class="hdr-tab" :class="{active: mainTab==='horizon2'}" @click="setMainTab('horizon2')">Classify</div>
@@ -341,171 +340,6 @@
     </div><!-- tab-operations -->
 
     <!-- ══ TAB: SURVEILLANCE — Fleet Scope (Session S) ══ -->
-    <div class="main-tab-content" :class="{active: mainTab==='surveillance'}">
-      <div style="padding:16px 20px;max-width:1400px;margin:0 auto">
-
-        <!-- Hero Scope Panel -->
-        <div style="background:linear-gradient(135deg,#0a1a2e,#0d2140);border:1px solid #1a3a5c;border-radius:8px;padding:20px 28px;margin-bottom:18px">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
-            <span style="font-size:1.1rem">📡</span>
-            <span style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:#7ab8e8;font-weight:700;letter-spacing:0.08em">FLEET OPERATIONAL SCOPE — PAD ALPHA PRODUCTION DISTRICT</span>
-            <span style="margin-left:auto;background:#0a2a1a;border:1px solid #1a5c3a;border-radius:4px;padding:3px 10px;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#00c87a">✅ GDC AI ACTIVE · Fleet-scanning every 5 seconds</span>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px">
-            <div style="background:#06111c;border:1px solid #1a3a5c;border-radius:6px;padding:14px 18px;text-align:center">
-              <div style="font-family:'JetBrains Mono',monospace;font-size:1.9rem;font-weight:700;color:#e0e8f0;line-height:1">6</div>
-              <div style="font-size:0.7rem;color:#4a7a9a;margin-top:6px">Monitored Production Pads</div>
-            </div>
-            <div style="background:#06111c;border:1px solid #1a3a5c;border-radius:6px;padding:14px 18px;text-align:center">
-              <div style="font-family:'JetBrains Mono',monospace;font-size:1.9rem;font-weight:700;color:#e0e8f0;line-height:1">156</div>
-              <div style="font-size:0.7rem;color:#4a7a9a;margin-top:6px">Active ESPs</div>
-            </div>
-            <div style="background:#06111c;border:1px solid #c8600a;border-radius:6px;padding:14px 18px;text-align:center">
-              <div style="font-family:'JetBrains Mono',monospace;font-size:1.9rem;font-weight:700;color:#ffb347;line-height:1">14</div>
-              <div style="font-size:0.7rem;color:#8a5a3a;margin-top:6px">Active SCADA Alarms</div>
-            </div>
-            <div style="background:#06111c;border:1px solid #1a3a5c;border-radius:6px;padding:14px 18px;text-align:center">
-              <div style="font-family:'JetBrains Mono',monospace;font-size:1.5rem;font-weight:700;color:#4a9ad0;line-height:1">8,412</div>
-              <div style="font-size:0.7rem;color:#4a7a9a;margin-top:6px">Unstructured Documents<br><span style="color:#2a5a7a;font-size:0.63rem">(AlloyDB pgvector)</span></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Two-column: pad grid (left) + alarm panel (right ~30%) -->
-        <div style="display:grid;grid-template-columns:1fr 320px;gap:16px">
-
-          <!-- Pad Triage Grid -->
-          <div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#4a7a9a;letter-spacing:0.1em;margin-bottom:10px">PAD / FIELD TRIAGE — REAL-TIME STATUS</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
-
-              <!-- Pad Alpha — ANOMALY ACTIVE -->
-              <div style="background:#12100a;border:1.5px solid #c8600a;border-radius:8px;padding:14px 16px;cursor:pointer" @click="setMainTab('horizon1')">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#f97316;display:inline-block;box-shadow:0 0 6px #f97316"></span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#e0c070">PAD ALPHA</span>
-                </div>
-                <div style="font-size:0.68rem;color:#6a5030;margin-bottom:8px">26 ESPs · Pad Alpha Production</div>
-                <div style="background:#1a0a00;border:1px solid #6a3010;border-radius:4px;padding:5px 8px">
-                  <span style="font-size:0.66rem;color:#f97316">⚠ Well A-3 — Unloading Anomaly Active</span>
-                </div>
-                <div style="font-size:0.6rem;color:#5a3a1a;margin-top:6px">1 alarm active</div>
-              </div>
-
-              <!-- Pad Bravo -->
-              <div style="background:#06111c;border:1px solid #1a3a2a;border-radius:8px;padding:14px 16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block"></span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#4a8a6a">PAD BRAVO</span>
-                </div>
-                <div style="font-size:0.68rem;color:#2a5a4a;margin-bottom:8px">18 ESPs · Gas Lift Production</div>
-                <div style="font-size:0.66rem;color:#1a4a3a">✓ Nominal — No active alarms</div>
-              </div>
-
-              <!-- Pad Charlie -->
-              <div style="background:#06111c;border:1px solid #1a3a2a;border-radius:8px;padding:14px 16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block"></span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#4a8a6a">PAD CHARLIE</span>
-                </div>
-                <div style="font-size:0.68rem;color:#2a5a4a;margin-bottom:8px">31 ESPs · Pad Charlie Production</div>
-                <div style="font-size:0.66rem;color:#1a4a3a">✓ Nominal — No active alarms</div>
-              </div>
-
-              <!-- Pad Delta -->
-              <div style="background:#06111c;border:1px solid #1a3a2a;border-radius:8px;padding:14px 16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block"></span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#4a8a6a">PAD DELTA</span>
-                </div>
-                <div style="font-size:0.68rem;color:#2a5a4a;margin-bottom:8px">22 ESPs · Pad Delta Production</div>
-                <div style="font-size:0.66rem;color:#1a4a3a">✓ Nominal — No active alarms</div>
-              </div>
-
-              <!-- Pad Echo -->
-              <div style="background:#06111c;border:1px solid #1a3a2a;border-radius:8px;padding:14px 16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block"></span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#4a8a6a">PAD ECHO</span>
-                </div>
-                <div style="font-size:0.68rem;color:#2a5a4a;margin-bottom:8px">35 ESPs · Pad Echo Production</div>
-                <div style="font-size:0.66rem;color:#1a4a3a">✓ Nominal — No active alarms</div>
-              </div>
-
-              <!-- Pad Foxtrot -->
-              <div style="background:#06111c;border:1px solid #1a3a2a;border-radius:8px;padding:14px 16px">
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-                  <span style="width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block"></span>
-                  <span style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;font-weight:700;color:#4a8a6a">PAD FOXTROT</span>
-                </div>
-                <div style="font-size:0.68rem;color:#2a5a4a;margin-bottom:8px">24 ESPs · Pad Foxtrot Production</div>
-                <div style="font-size:0.66rem;color:#1a4a3a">✓ Nominal — No active alarms</div>
-              </div>
-
-            </div>
-
-            <!-- Deep-Dive CTA -->
-            <div style="margin-top:18px">
-              <button @click="setMainTab('horizon1')" style="width:100%;background:linear-gradient(135deg,#0d1e32,#091626);border:1.5px solid #2a5a8a;border-radius:8px;padding:14px 24px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;font-weight:700;color:#5a9ad0;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:border-color 0.15s" onmouseover="this.style.borderColor='#4a8ac0'" onmouseout="this.style.borderColor='#2a5a8a'">
-                🔍 Deep-Dive — Well A-3 Unloading Anomaly
-              </button>
-            </div>
-          </div>
-
-          <!-- Active Alarm Noise Panel -->
-          <div>
-            <div style="font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:#c86030;letter-spacing:0.1em;margin-bottom:10px">⚠ ACTIVE SCADA ALARMS — LIVE FEED</div>
-            <div style="background:#080a0d;border:1px solid #2a1a0a;border-radius:8px;padding:10px;height:calc(100% - 30px);overflow-y:auto">
-              <div style="display:flex;flex-direction:column;gap:5px">
-                <div style="background:#120c06;border-left:3px solid #f97316;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f97316;font-weight:700">⚠ ESP-ALPHA-3</div>
-                  <div style="font-size:0.63rem;color:#7a4a20;margin-top:1px">PIP Declining</div>
-                  <div style="font-size:0.58rem;color:#4a2a10;margin-top:1px">00:45 ago ← THIS ONE</div>
-                </div>
-                <div style="background:#0a0c0e;border-left:3px solid #f59e0b;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f59e0b;font-weight:700">⚠ GLIFT-BRAVO-1</div>
-                  <div style="font-size:0.63rem;color:#7a5a20;margin-top:1px">High Vibration (6.2 mm/s)</div>
-                  <div style="font-size:0.58rem;color:#4a3a10;margin-top:1px">03:14 ago</div>
-                </div>
-                <div style="background:#0a0c0e;border-left:3px solid #f59e0b;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f59e0b;font-weight:700">⚠ MUD-RIG42-2</div>
-                  <div style="font-size:0.63rem;color:#7a5a20;margin-top:1px">Fluid End Temp High (138°F)</div>
-                  <div style="font-size:0.58rem;color:#4a3a10;margin-top:1px">07:22 ago</div>
-                </div>
-                <div style="background:#0a0c0e;border-left:3px solid #f59e0b;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f59e0b;font-weight:700">⚠ TOPDRIVE-RIG42</div>
-                  <div style="font-size:0.63rem;color:#7a5a20;margin-top:1px">Gearbox Temp Elevated (198°F)</div>
-                  <div style="font-size:0.58rem;color:#4a3a10;margin-top:1px">11:07 ago</div>
-                </div>
-                <div style="background:#0a0c0e;border-left:3px solid #f59e0b;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f59e0b;font-weight:700">⚠ GLIFT-BRAVO-3</div>
-                  <div style="font-size:0.63rem;color:#7a5a20;margin-top:1px">Discharge Pressure Low</div>
-                  <div style="font-size:0.58rem;color:#4a3a10;margin-top:1px">19:44 ago</div>
-                </div>
-                <div style="background:#0a0c0e;border-left:3px solid #f59e0b;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f59e0b">⚠ ESP-CHARLIE-7</div>
-                  <div style="font-size:0.63rem;color:#7a5a20;margin-top:1px">Motor Amps Undercurrent</div>
-                  <div style="font-size:0.58rem;color:#4a3a10;margin-top:1px">24:11 ago</div>
-                </div>
-                <div style="background:#0a0c0e;border-left:3px solid #f59e0b;border-radius:3px;padding:7px 10px">
-                  <div style="font-family:'JetBrains Mono',monospace;font-size:0.66rem;color:#f59e0b">⚠ ESP-DELTA-12</div>
-                  <div style="font-size:0.63rem;color:#7a5a20;margin-top:1px">Vibration Spike (4.1 mm/s)</div>
-                  <div style="font-size:0.58rem;color:#4a3a10;margin-top:1px">28:33 ago</div>
-                </div>
-                <div style="padding:8px 6px;text-align:center;font-size:0.62rem;color:#3a4a5a;font-family:'JetBrains Mono',monospace;border-top:1px solid #1a2030;margin-top:2px">
-                  … 7 more alarms active
-                </div>
-              </div>
-            </div>
-            <div style="margin-top:8px;font-size:0.62rem;color:#3a5a4a;text-align:center;line-height:1.5;padding:0 4px">
-              14 alarms active — GDC scanning 8,412 documents on all 156 ESPs simultaneously
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-    <!-- ══ end TAB: SURVEILLANCE ══ -->
 
     <!-- ══ TAB: HORIZON 1 — Discern (Session Q — 4-Sensor Scenario Replay) ══ -->
     <div class="main-tab-content" :class="{active: mainTab==='horizon1'}">
@@ -547,6 +381,10 @@
 
       <!-- H1 Physics & Logic Info Panel -->
       <div v-if="showH1Info" class="physics-panel">
+        <div style="background:rgba(14,27,45,0.8);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:10px 14px;margin-bottom:12px">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;font-weight:700;color:#93c5fd;margin-bottom:4px">⚠ The Physical Measurement Constraint</div>
+          <p style="font-size:0.65rem;color:#cbd5e1;line-height:1.6;margin:0">Gas lock and fluid drawdown produce <strong>physically identical</strong> PIP / Amps / Temp / Vibration signatures — with opposite correct actions (safe VFD trim vs. catastrophic sand-bridge risk). This is not a limitation of any sensor model; it is a physical measurement constraint. No sensor-based system can disambiguate them. <strong>The answer exists only in field documents.</strong></p>
+        </div>
         <div class="pp-cols">
           <div>
             <div class="pp-section">
@@ -569,7 +407,7 @@
             </div>
             <div class="pp-section">
               <div class="pp-section-title">📄 L3 Context Fusion — The Categorical Moat</div>
-              <p class="pp-text">Once GDC detects the anomaly, it queries AlloyDB pgvector across 8,412 field documents. Shift notes, acoustic sonic logs, and GOR lab reports are retrieved in under 2 seconds. <strong>SCADA has no architecture for this.</strong> Fusion of unstructured context with structured telemetry is GDC's categorical advantage over threshold rules alone.</p>
+              <p class="pp-text">Once GDC detects the anomaly, it queries AlloyDB pgvector across the field-document corpus (shift notes, sonic logs, GOR reports). Relevant documents are retrieved in under 2 seconds. <strong>SCADA has no architecture for this.</strong> Fusion of unstructured context with structured telemetry is GDC's categorical advantage over threshold rules alone.</p>
             </div>
           </div>
         </div>
@@ -585,7 +423,7 @@
       <!-- GDC DISAMBIGUATION BANNER — after RAG reveal: fault identified, action justified -->
       <div v-if="h1ReplayData && h1RagRevealed"
            style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(59,130,246,0.10);border:1px solid rgba(59,130,246,0.28);font-size:0.58rem;color:#93c5fd;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span>⚡ GDC identifies fault type from unstructured context · SCADA alarm remains ambiguous</span>
+        <span>⚡ GDC resolved fault type from field documents — SCADA alarm remains ambiguous without document context</span>
         <span v-if="h1ReplayData.lead_time_minutes > 0" style="font-weight:400;color:var(--muted);white-space:nowrap">
           · {{ h1ReplayData.lead_time_minutes }} min ahead of Smart SCADA
         </span>
@@ -905,6 +743,7 @@
               <!-- ZONE 2 RIGHT ~30%: Vertical Document Stack (pgvector Evidence Panel) -->
               <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
                 <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)</div>
+                <div v-if="h1RagRevealed" style="font-size:0.52rem;color:rgba(147,197,253,0.8);line-height:1.5;margin-bottom:4px;flex-shrink:0;font-style:italic;padding:4px 6px;background:rgba(30,50,80,0.3);border-radius:3px">The answer was never in the sensors. GDC read these documents, cross-referenced them against live telemetry, and resolved the fault in under 2s.</div>
                 <!-- Doc 1: primary shift note / sonic log (fires with RAG) -->
                 <div v-if="h1RagRevealed" class="h1-rag-doc-card"
                      @click="h1FaultType==='fluid_drawdown' ? h1SonicLogModalOpen=true : h1ShiftNoteModalOpen=true"
@@ -2127,11 +1966,29 @@
               <div class="arch-compare-card acc-gdc">
                 <div class="acc-title acc-title-gdc">⚡ GDC Edge AI (E-House)</div>
                 <ul class="acc-items">
-                  <li class="yes">Multivariate ML detection</li>
+                  <li class="yes">Reads field documents (shift notes, sonic logs, GOR reports)</li>
+                  <li class="yes">Resolves physically ambiguous faults sensors alone cannot</li>
                   <li class="yes">5s local stream — no WAN needed</li>
-                  <li class="yes">OEM manuals + ops records fused</li>
-                  <li class="yes">Scheduled proactive intervention</li>
+                  <li class="yes">Learned risk scoring — not fixed thresholds</li>
                 </ul>
+              </div>
+            </div>
+            <!-- Tags vs Tag-Patterns vs Documents — 3-tier comparison centerpiece -->
+            <div style="margin-top:14px;background:rgba(10,20,35,0.6);border:1px solid rgba(74,144,200,0.25);border-radius:6px;padding:12px 16px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.63rem;font-weight:700;color:#7ab8e8;letter-spacing:0.07em;margin-bottom:10px">TAGS vs. TAG-PATTERNS vs. DOCUMENTS — Three Detection Tiers</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <div style="background:rgba(60,80,100,0.12);border:1px solid rgba(100,140,180,0.18);border-radius:5px;padding:10px 12px">
+                  <div style="font-size:0.63rem;font-weight:700;color:#94a3b8;margin-bottom:4px">🛢 Threshold SCADA</div>
+                  <div style="font-size:0.59rem;color:#64748b;line-height:1.5">Monitors <strong style="color:#94a3b8">tags</strong> against fixed setpoints. Alarms when a threshold is crossed. Cannot distinguish gas lock from drawdown on the same PIP/Amps decline.</div>
+                </div>
+                <div style="background:rgba(60,80,100,0.12);border:1px solid rgba(100,140,180,0.18);border-radius:5px;padding:10px 12px">
+                  <div style="font-size:0.63rem;font-weight:700;color:#94a3b8;margin-bottom:4px">📊 Advanced APM Platforms</div>
+                  <div style="font-size:0.59rem;color:#64748b;line-height:1.5">Monitors <strong style="color:#94a3b8">tag patterns</strong> across sensors — adaptive ML, retraining workflows. Still cannot resolve a fault where the sensor signature is physically ambiguous.</div>
+                </div>
+                <div style="background:rgba(10,30,55,0.4);border:1px solid rgba(74,222,128,0.3);border-radius:5px;padding:10px 12px">
+                  <div style="font-size:0.63rem;font-weight:700;color:#4ade80;margin-bottom:4px">⚡ GDC Edge AI</div>
+                  <div style="font-size:0.59rem;color:#86efac;line-height:1.5">Monitors tags and patterns and <strong>reads the documents</strong> — the only tier that resolves a fault where the sensor signature is physically ambiguous. The disambiguation exists only in a field document.</div>
+                </div>
               </div>
             </div>
           </div>
@@ -2266,7 +2123,7 @@
           <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
             <div style="flex:1">
               <h2>ML Anomaly Detection — XGBoost Health Scoring</h2>
-              <p>A trained XGBoost model ingests 6 input features (4 sensor readings + 2 rolling rate-of-change slopes) and outputs a Health Score from 1.0 (nominal) to 0.0 (failure). This model operates purely on numerical sensor data — no documents.</p>
+              <p>A trained XGBoost model ingests 6 input features (4 sensor readings + 2 rolling rate-of-change slopes) and outputs a Health Score from 1.0 (nominal) to 0.0 (failure). Learned risk scoring — not fixed thresholds. Against best-of-breed predictive platforms, detection converges; document fusion is GDC's categorical edge.</p>
             </div>
             <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
           </div>

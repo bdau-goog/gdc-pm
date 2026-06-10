@@ -4972,7 +4972,7 @@ def get_mlops_status():
         "wan_state": wan_state,
         "edge_compute_pct": min(95, 38 + active_count * 12 + random.randint(-3, 3)),
         "models_loaded": list(HEALTH_MODELS.keys()),
-        "model_drift_detected": False,
+        "model_drift_detection": "not_implemented",
         "last_cloud_sync": _get_last_event_time(),
         "ollama_model": OLLAMA_MODEL if ollama_online else "offline",
         "ollama_online": ollama_online,
