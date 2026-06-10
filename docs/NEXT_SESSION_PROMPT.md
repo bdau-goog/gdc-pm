@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AD — Surveillance removed, L3 narrative locked in UI, all integrity fixes deployed)
-**git head:** `a8e6d81` (feat(ui): Session AD)
-**fault-trigger-ui image:** `sha256:a74f5fbf` (Session AD)
+**Date:** June 10, 2026 (Session AE — RT-NEW-2/3/L2 integrity fixes deployed)
+**git head:** `9d07ac2` (fix(integrity): Session AE)
+**fault-trigger-ui image:** `sha256:2f5d3cab` (Session AE)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -42,7 +42,15 @@ Also read: `docs/RED_TEAM_LEDGER.md` — trigger phrase "**red team**" re-runs t
 
 ## STEP 3: Session AD COMPLETE — Next Task is Session AE
 
-### Session AD COMPLETE ✅
+### Session AE COMPLETE ✅
+All integrity fixes deployed and verified live (`sha256:2f5d3cab`):
+- **RT-NEW-2 (Class H thermal label):** Reconciled all on-screen temp values to **280°F** (single consistent derated operating setpoint). Removed incorrect "Class H limit" label + unverifiable "per API RP 11S" citation. Now shows: "derated winding-temp operating limit (280°F; Class H insulation rated 356°F / 180°C per IEC 60085)". SCADA tile: `SP: 280°F TRIP`. Sensor glossary: `Derated operating setpoint: 280°F`. app.py motor_overheat methodology: dropped "ROI: 66:1" and softened "$200,000" to "~$150k–$200k" with 🔴 NEEDS-EXPERT tag.
+- **RT-NEW-3 (SCADA ledger reword):** CLAIM_LEDGER.md §H1 row 2 reworded from "multivariate rate-of-change alarm, not a static threshold" to honest description of what fires (12/12 live runs = static rolling-average floor at 1,020 PSI). No UI change needed — `scada_rule_fired` already shows the true rule.
+- **RT-L2-DRIFT (lead-time banner demoted):** Legacy injectionRunning banner demoted from red uppercase headline to muted weight. Text changed from "SCADA Alarm Zone — Lead Time Consumed" → "SCADA alarm zone — GDC already resolved the ambiguous fault signal". Empty-state: "see GDC lead time advantage" → "see GDC resolve ambiguous fault signals". Aligns with DEMO_MASTER §3(6) lead-time-as-footnote intent.
+- **RED_TEAM_LEDGER.md + CLAIM_LEDGER.md** updated with all Session AE findings.
+- Grep confirmed: `280°F TRIP`, `derated operating setpoint`, `IEC 60085`, `GDC already resolved`, `resolve ambiguous` — all live ✅. No 270/275/284/356 temp numbers on screen.
+
+### Session AD history ✅
 All UI changes deployed and verified live (`sha256:a74f5fbf`):
 - **Surveillance tab removed** — nav div + full HTML block (344–508) deleted. `<!-- ══ end TAB: SURVEILLANCE ══ -->` comment kept as tombstone only.
 - **Default opening tab** changed: `mainTab: 'surveillance'` → `mainTab: 'architecture'` (How It Works opens first)
@@ -55,7 +63,7 @@ All UI changes deployed and verified live (`sha256:a74f5fbf`):
 - **Pane 3 ML Detection header** — paragraph replaced: "Learned risk scoring — not fixed thresholds. Against best-of-breed predictive platforms, detection converges; document fusion is GDC's categorical edge."
 - **`model_drift_detected: False`** → `model_drift_detection: "not_implemented"` (integrity fix, app.py line 4975)
 
-### NEXT TASK — Session AE: Presenter Script + 5-Minute Veo Video
+### NEXT TASK — Session AF: Presenter Script + 5-Minute Veo Video
 
 **Scope:** A full narrated demo script suitable for: (a) live presenter walkthrough and (b) Veo-generated 5-minute video.
 
@@ -106,6 +114,10 @@ All UI changes deployed and verified live (`sha256:a74f5fbf`):
 | `model_drift_detected: False` stub (app.py ~4975) | ✅ FIXED Session AD | Now `model_drift_detection: "not_implemented"` — no longer implies active detector. |
 | "8,412 field documents" (index.html) | ✅ FIXED Session AD | Removed from Physics & Logic panel → "field-document corpus (shift notes, sonic logs, GOR reports)". |
 | Surveillance nav tab | ✅ REMOVED Session AD | Nav div deleted; default tab changed to 'architecture' (How It Works). |
+| Class H thermal label (270/275/284°F, unverifiable API RP 11S citation) | ✅ FIXED Session AE | All values reconciled to 280°F derated setpoint; IEC 60085 cited for insulation class; "Class H limit" label removed. |
+| CLAIM_LEDGER H1 row 2 "multivariate rate-of-change" overclaim | ✅ FIXED Session AE | Reworded to match live behavior (static floor fires 12/12 runs). |
+| Lead-time banner "SCADA Alarm Zone — Lead Time Consumed" (red uppercase) | ✅ FIXED Session AE | Demoted to muted footnote per DEMO_MASTER §3(6). |
+| motor_overheat methodology "ROI: 66:1 / $200,000" false precision | ✅ SOFTENED Session AE | Dropped ROI ratio; softened to ~$150k–$200k range; 🔴 NEEDS-EXPERT tag added. |
 
 ---
 

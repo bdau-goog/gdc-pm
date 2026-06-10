@@ -2,6 +2,16 @@
 
 ---
 
+## Session AE (June 10, 2026) — *Red Team assessment + integrity fixes: Class H thermal label, SCADA ledger reword, lead-time banner demoted — deployed and verified*
+
+**Code committed:** `9d07ac2` (fix(integrity): Session AE — RT-NEW-2 Class H thermal label, RT-NEW-3 SCADA rule ledger, RT-L2 lead-time banner demoted, motor_overheat methodology softened)
+**fault-trigger-ui image:** `sha256:2f5d3cab`
+**Verified live:** `280°F TRIP`, `derated operating setpoint`, `IEC 60085`, `GDC already resolved`, `resolve ambiguous` — all in deployed HTML; zero 270/275/284 hits ✅
+
+This was a pure Red Team (RT) assessment session. Mandatory startup ran clean (all 8 pods 1/1, ollama_online: True/gemma4:latest, telemetry_events: 1,168,322). Three active findings surfaced and fixed. **RT-NEW-1 (gemma4 phantom model):** Asserted "there is no Gemma 4" — retracted when user confirmed Gemma 4 is real; key lesson: PRIME DIRECTIVE SOURCE gate applies to my own knowledge claims, not just code claims. **RT-NEW-2 (Class H temperature inconsistency):** grep confirmed `270°F`, `275°F`, `284°F` all on-screen — no single consistent value, and "Class H limit" on 284°F is physically wrong (Class H = 356°F / 180°C per IEC 60085). Fixed: all reconciled to `280°F derated operating setpoint`, "Class H limit" label removed, IEC 60085 cited for insulation class. API RP 11S attribution for the specific temperature dropped (unverifiable — SOURCE gate). app.py motor_overheat methodology: dropped "ROI: 66:1" (false precision), softened "$200,000" → "~$150k–$200k", added 🔴 NEEDS-EXPERT tag. **RT-NEW-3 (SCADA ledger vs live behavior):** 12/12 live runs of `/api/h1/scenario-replay` fired "Static underload floor: rolling avg PIP < 1,020 PSI". CLAIM_LEDGER H1 row 2 had claimed "multivariate rate-of-change alarm, not a static threshold." No UI change needed (`scada_rule_fired` already shows true rule on screen); CLAIM_LEDGER reworded. **RT-L2-DRIFT:** RT review initially drifted to L2 turf; user correctly caught it. Live term-frequency audit confirmed deployed UI is ~3:1 L3-over-L2 — the AC/AD pivot is real. One genuine L2 residue: the legacy injectionRunning banner read "SCADA Alarm Zone — Lead Time Consumed" in red uppercase — headline framing, contradicting DEMO_MASTER §3(6). Fixed to muted weight, L3 framing. **RT-NEW-5 (motor_overheat latent path):** not in scripted demos but reachable via intel feed; softened and tagged NEEDS-EXPERT. All changes built (`acef8a1a0800`), pushed (`sha256:2f5d3cab`), deployed with explicit digest (initial rollout restart re-used cached old image; fixed with `kubectl set image` + exact digest), verified live. Known Integrity State: 0 open items. **Next task:** Session AF — Presenter Script + 5-Minute Veo Video (`docs/VIDEO_SCRIPT.md`).
+
+---
+
 ## Session AD (June 10, 2026) — *UI narrative locked: Surveillance removed + physics-impossibility premise + tags vs patterns vs docs + integrity fixes — deployed and verified*
 
 **Code committed:** `a8e6d81` (feat(ui): Session AD — Surveillance removed, physics-impossibility premise, tags vs patterns vs docs, model_drift relabeled, mainTab→architecture)
