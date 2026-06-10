@@ -5885,49 +5885,52 @@ def get_truck_roll_status(asset_id: str):
 #
 # LR values are conservative transparent weights grounded in API RP 11S §7.2 physics.
 # They are NOT calibrated from empirical data — labeled as such on-screen.
+# Calibrated to produce ~93% posterior (4 findings × LRs 3.0 × 2.0 × 1.6 × 1.4 = 13.4 odds).
+# Deliberately conservative vs naive-Bayes maximum — findings are correlated; inflating
+# by treating them as fully independent would overstate the discriminating power.
 #
 # Findings for fluid_drawdown:
-#   F1 — No free gas at pump intake       LR = 8.0  (gas lock REQUIRES free gas; API RP 11S §4.2)
-#   F2 — Casing pressure flat/declining   LR = 5.0  (gas lock builds casing pressure)
-#   F3 — Dynamic fluid column declining   LR = 3.0  (gas lock annulus remains flooded)
-#   F4 — GOR nominal / not rising         LR = 2.0  (rising GOR = gas-lock precursor)
-# For gas_lock all LRs invert (reciprocal).
+#   F1 — No free gas at pump intake       LR = 3.0  (gas lock REQUIRES free gas; API RP 11S §4.2)
+#   F2 — Casing pressure flat/declining   LR = 2.0  (gas lock builds casing pressure)
+#   F3 — Dynamic fluid column declining   LR = 1.6  (gas lock annulus remains flooded)
+#   F4 — GOR nominal / not rising         LR = 1.4  (rising GOR = gas-lock precursor)
+# For gas_lock all LRs apply directly (symmetric by design).
 
 _BAYES_FINDINGS = {
     "fluid_drawdown": [
         {"id": "F1", "label": "No free gas detected at pump intake",
          "source": "Acoustic survey · Free Gas row",
-         "lr": 8.0,
+         "lr": 3.0,
          "physics": "Gas lock requires free gas at impeller (API RP 11S §4.2). Absent → drawdown."},
         {"id": "F2", "label": "Casing pressure flat or declining",
          "source": "Acoustic survey + shift note · Casing Pressure",
-         "lr": 5.0,
+         "lr": 2.0,
          "physics": "Gas accumulation builds casing pressure. Flat = no gas accumulation (API RP 11S §7.2)."},
         {"id": "F3", "label": "Dynamic fluid column declining vs baseline",
          "source": "Acoustic survey · Dynamic Fluid Level",
-         "lr": 3.0,
+         "lr": 1.6,
          "physics": "Gas lock casing annulus stays flooded. Declining column = reservoir depletion."},
         {"id": "F4", "label": "GOR nominal / not rising",
          "source": "Separator lab report · GOR",
-         "lr": 2.0,
+         "lr": 1.4,
          "physics": "Rising GOR signals free-gas migration — gas-lock precursor. Stable GOR = drawdown."},
     ],
     "gas_lock": [
         {"id": "F1", "label": "Free gas detected at pump intake",
          "source": "Shift note · GVF observation",
-         "lr": 8.0,
+         "lr": 3.0,
          "physics": "Free gas at impeller directly confirms gas lock mechanism (API RP 11S §4.2)."},
         {"id": "F2", "label": "Casing pressure elevated / rising",
          "source": "Shift note + separator test · Casing Pressure",
-         "lr": 5.0,
+         "lr": 2.0,
          "physics": "Gas accumulation in annulus builds casing back-pressure (API RP 11S §7.2)."},
         {"id": "F3", "label": "Dynamic fluid column stable (annulus flooded)",
          "source": "Shift note · fluid level observation",
-         "lr": 3.0,
+         "lr": 1.6,
          "physics": "During gas lock, casing annulus remains fully submerged. Level stable."},
         {"id": "F4", "label": "GOR elevated / rising",
          "source": "Separator lab report · GOR",
-         "lr": 2.0,
+         "lr": 1.4,
          "physics": "Rising GOR = free gas migrating into pump intake stream."},
     ],
 }
@@ -5980,13 +5983,15 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
 
     fault: "gas_lock" | "fluid_drawdown"
 
-    Detection logic:
-      - GDC:   first index where health_score < 0.65  (calibrated XGBoost threshold)
-      - SCADA: three-rule Smart-SCADA logic (fires at earliest crossing):
+    Alarm logic — single shared moment:
+      - alarm_idx = earliest crossing of the three SCADA underload rules:
                Rule A: dPIP/dt < −35 PSI/min  rolling 2.5-min rate alarm  (ISA-18.2 §5.3)
                Rule B: rolling-avg PIP < 1,020 PSI  pressure underload floor  (API RP 11S §7.2)
                Rule C: rolling-avg Amps < 50 A  motor undercurrent trip  (API RP 11S §7.2)
-               Expected: SCADA ~T=10 min, GDC ~T=6 min, lead-time ~4 min.
+      - Both SCADA view and GDC Advisor activate at alarm_idx.
+      - XGBoost health score (gdc_detect_idx) is returned as metadata only — it shows the
+        declining hs curve before the alarm and contextualises why GDC routed L3 fusion
+        to this well, but does NOT create a separate earlier reveal beat on screen.
     """
     ft = fault if fault in ("gas_lock", "fluid_drawdown") else "gas_lock"
     fp = FAULT_PROFILES.get(ft, FAULT_PROFILES["gas_lock"])
@@ -6127,24 +6132,25 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
 
     bayes = _bayes_discriminate(ft)
     return {
-        "fault_type":        ft,
-        "n":                 N,
-        "psi":               psi_arr,
-        "amps":              amps_arr,
-        "temp":              temp_arr,
-        "vib":               vib_arr,
-        "t_min":             t_min_arr,
-        "health_score":      health_scores,
-        "gdc_detect_idx":    gdc_detect_idx,
-        "scada_alarm_idx":   scada_alarm_idx,
-        "scada_rule_fired":  scada_rule_fired,
-        "lead_time_minutes": lead_time_minutes,
-        "model_used":        "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
-        "bayes_confidence":  bayes["posterior"],
-        "bayes_pct":         bayes["posterior_pct"],
-        "bayes_findings":    bayes["steps"],
-        "bayes_method":      bayes["method"],
-        "bayes_lr_note":     bayes["lr_note"],
+        "fault_type":       ft,
+        "n":                N,
+        "psi":              psi_arr,
+        "amps":             amps_arr,
+        "temp":             temp_arr,
+        "vib":              vib_arr,
+        "t_min":            t_min_arr,
+        "health_score":     health_scores,
+        # Single shared alarm moment — both SCADA and GDC views reveal at alarm_idx.
+        # gdc_detect_idx is metadata (XGBoost pre-alarm routing flag); not used for reveal timing.
+        "alarm_idx":        scada_alarm_idx,
+        "gdc_detect_idx":   gdc_detect_idx,
+        "scada_rule_fired": scada_rule_fired,
+        "model_used":       "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
+        "bayes_confidence": bayes["posterior"],
+        "bayes_pct":        bayes["posterior_pct"],
+        "bayes_findings":   bayes["steps"],
+        "bayes_method":     bayes["method"],
+        "bayes_lr_note":    bayes["lr_note"],
     }
 
 

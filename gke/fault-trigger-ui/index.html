@@ -987,8 +987,8 @@
         </div>
       </div>
 
-      <!-- SMART SCADA ALARM BANNER — before RAG reveal: SCADA fired but cause unknown -->
-      <div v-if="h1ReplayData && h1CursorIdx >= h1ReplayData.scada_alarm_idx && !h1RagRevealed"
+      <!-- ALARM BANNER — after alarm fires, before RAG reveal: cause unknown on both views -->
+      <div v-if="h1ReplayData && h1CursorIdx >= h1ReplayData.alarm_idx && !h1RagRevealed"
            style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.28);font-size:0.58rem;color:#fca5a5;font-weight:700">
         ⚠ SCADA alarm — <strong>ambiguous underload</strong> — gas lock and fluid drawdown produce identical telemetry: cause cannot be determined from sensor data alone
         <span v-if="h1ScadaRuleFired" style="font-size:0.50rem;color:var(--muted);font-weight:400;margin-left:6px">({{ h1ScadaRuleFired }})</span>
@@ -1036,10 +1036,8 @@
                    style="width:100%;accent-color:#3b82f6;display:block">
             <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
               <span style="position:absolute;left:0">T+0</span>
-              <span style="color:rgba(251,191,36,0.88);position:absolute"
-                    :style="{left: (h1ReplayData.gdc_detect_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC: context fused</span>
               <span style="color:var(--red);position:absolute"
-                    :style="{left: (h1ReplayData.scada_alarm_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">SCADA▲</span>
+                    :style="{left: (h1ReplayData.alarm_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">ALARM▲</span>
               <span style="position:absolute;right:0">T+{{ h1ReplayData.t_min[h1ReplayData.n-1] }} min</span>
             </div>
           </div>
@@ -1073,7 +1071,7 @@
           <div v-if="h1ConsoleTab==='scada'" class="h1-scada-view" style="flex:1;overflow-y:auto">
 
             <!-- Pre-alarm: quiet slate — single monospace status line (ISA-101: no colour pre-alarm) -->
-            <div v-if="h1CursorIdx < h1ReplayData.scada_alarm_idx" style="flex:1;display:flex;flex-direction:column;padding:10px 14px;gap:8px">
+            <div v-if="h1CursorIdx < h1ReplayData.alarm_idx" style="flex:1;display:flex;flex-direction:column;padding:10px 14px;gap:8px">
               <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:9px 14px;font-family:var(--mono);font-size:0.60rem;color:rgba(148,163,184,0.7);letter-spacing:0.05em;line-height:1.6">
                 WELL A-3 — SURVEILLANCE ACTIVE<br>
                 <span style="color:rgba(74,222,128,0.65)">ALL SENSORS WITHIN LIMITS</span>
@@ -1119,7 +1117,7 @@
             </div>
 
             <!-- Post-alarm: amber banner + 2×2 ISA-101 tag grid + slate action cards -->
-            <div v-if="h1CursorIdx >= h1ReplayData.scada_alarm_idx" style="display:flex;flex-direction:column">
+            <div v-if="h1CursorIdx >= h1ReplayData.alarm_idx" style="display:flex;flex-direction:column">
               <div class="h1-scada-alarm-banner">
                 <span style="font-size:1.1rem">⚠</span>
                 <div style="flex:1">
@@ -1168,8 +1166,8 @@
               </div>
               <!-- Outcomes -->
               <div v-if="h1Seized" class="h1-outcome-seized" style="margin:0 10px 8px">
-                <div style="font-weight:700;margin-bottom:6px">⚠ UNPLANNED OUTCOME — Well Taken Offline for Assessment</div>
-                <div style="font-size:0.57rem;opacity:0.85;line-height:1.6">VFD trim applied without confirmed fault type. Protective monitoring detected abnormal wellbore response. Well removed from production pending fluid-level recovery and engineering assessment. Production deferred.</div>
+                <div style="font-weight:700;margin-bottom:6px">⚠ PRODUCTION DEFERRED — Well Taken Offline for Assessment</div>
+                <div style="font-size:0.57rem;opacity:0.85;line-height:1.6">VFD trim applied under ambiguous alarm. Wellbore response indicated fluid-level issue. Well removed from production pending engineering assessment and controlled restart. Restart cost applies.</div>
               </div>
               <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved" style="margin:0 10px 8px">
                 <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
@@ -1191,12 +1189,12 @@
 
             <!-- ZONE 1: Standalone Assessment Headline (full-width, monochrome border) -->
             <div style="flex-shrink:0;padding:7px 10px;border-bottom:1px solid var(--border)">
-              <!-- Before GDC detection: quiet baseline -->
-              <div v-if="!h1FaultTypeRevealed" style="background:rgba(15,23,42,0.4);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;color:var(--muted)">
-                WELL A-3 — BASELINE MONITORING<br>
-                <span style="color:rgba(74,222,128,0.65)">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}</span>
-                <span style="color:var(--muted)"> · threshold 0.65 · scanning</span>
-              </div>
+                  <!-- Before alarm: quiet baseline — health score visible as router context -->
+                  <div v-if="!h1FaultTypeRevealed" style="background:rgba(15,23,42,0.4);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;color:var(--muted)">
+                    WELL A-3 — BASELINE MONITORING<br>
+                    <span style="color:rgba(74,222,128,0.65)">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}</span>
+                    <span style="color:var(--muted)"> · XGBoost routing score · alarm threshold 0.65</span>
+                  </div>
               <!-- After detection, before RAG: retrieving context -->
               <div v-if="h1FaultTypeRevealed && !h1RagRevealed" style="background:rgba(15,23,42,0.5);border:1px solid rgba(251,191,36,0.25);border-radius:4px;padding:8px 12px">
                 <div style="display:flex;align-items:center;gap:8px">
@@ -1279,21 +1277,21 @@
                       ○ Conservative Fallback — Emergency Shut-In (deferred production + restart costs apply)
                     </button>
                   </div>
+                  <!-- Drawdown: GDC recommends shut-in. No catastrophe path shown. -->
                   <div v-if="!h1Resolved && !h1Seized && h1FaultType==='fluid_drawdown'" style="display:flex;flex-direction:column;gap:5px">
                     <button @click="executeH1Shutdown()" class="h1-action-card h1-card-green">
                       <div class="h1-card-header">✔ GDC RECOMMENDED: Emergency Shut-In</div>
                       <div class="h1-card-sub">Well offline · fluid recovery · pump preserved</div>
-                      <div class="h1-card-desc">Sonic log: fluid level 150 ft (min 120 ft). Conservative protective response — prevents sand bridge risk.</div>
+                      <div class="h1-card-desc">Acoustic survey: dynamic fluid level 150 ft above intake (min 120 ft). Reservoir depleting — shut-in allows level recovery, controlled restart.</div>
                     </button>
-                    <button @click="approveH1VFD()" class="h1-action-card h1-card-contraindicated">
-                      <div class="h1-card-header">❌ GDC CONTRAINDICATED: VFD Speed-Down</div>
-                      <div class="h1-card-sub">Drops velocity to 3.1 ft/s — below 4.2 ft/s critical lift (SPE-174536)</div>
-                      <div class="h1-card-desc">Reservoir depleting. Speed-down drops velocity to 3.1 ft/s — below 4.2 ft/s critical lift (SPE-174536). Sand bridge risk.</div>
+                    <button @click="executeH1Shutdown()"
+                            style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.56rem;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
+                      ○ Conservative Fallback — also Shut-In (GDC confirms this is the safe action for both fault types)
                     </button>
                   </div>
                   <div v-if="h1Seized" class="h1-outcome-seized">
-                    <div style="font-weight:700;margin-bottom:6px">⚠ UNPLANNED OUTCOME — GDC Contraindication Not Followed</div>
-                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD trim executed against GDC recommendation. Wellbore response abnormal — well removed from production for fluid-level recovery and engineering assessment. Production deferred. Unplanned intervention cost applies.</div>
+                    <div style="font-weight:700;margin-bottom:6px">⚠ PRODUCTION DEFERRED — Well Offline for Assessment</div>
+                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Action taken without confirmed fault type. Wellbore response required engineering assessment. Well offline — fluid-level recovery in progress. Production deferred; restart cost applies.</div>
                   </div>
                   <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
                     <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>

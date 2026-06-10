@@ -369,8 +369,8 @@ createApp({
     // ── Scenario Replay: advance state when cursor crosses detection thresholds ──
     h1CursorIdx(val) {
       if (!this.h1ReplayData) return;
-      // ── Scrub BACK past GDC detect → undo all revealed state ──────────────────
-      if (val < this.h1ReplayData.gdc_detect_idx && this.h1FaultTypeRevealed) {
+      // ── Scrub BACK past alarm → undo all revealed state ──────────────────────
+      if (val < this.h1ReplayData.alarm_idx && this.h1FaultTypeRevealed) {
         if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
         if (this.h1RagDoc2Timer)   { clearTimeout(this.h1RagDoc2Timer);   this.h1RagDoc2Timer   = null; }
         if (this.h1RagDoc3Timer)   { clearTimeout(this.h1RagDoc3Timer);   this.h1RagDoc3Timer   = null; }
@@ -385,8 +385,8 @@ createApp({
         // Note: h1FaultType intentionally kept (already drawn from replay data);
         // resetting it would cause the SVG wellbore to flicker during scrub.
       }
-      // Cross GDC detect threshold → reveal fault type + schedule RAG reveal (1.5s)
-      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
+      // Cross alarm threshold → reveal fault type on both views + schedule RAG reveal (1.5s)
+      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.alarm_idx) {
         this.h1FaultTypeRevealed = true;
         this.h1FaultType = this.h1ReplayData.fault_type;
         if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
@@ -400,7 +400,7 @@ createApp({
           this.h1RagDoc3Timer = setTimeout(() => { this.h1RagDoc3Shown = true; }, 3500);
         }, 1500);
       }
-      // Update Plotly cursor line via relayout (shape index 2 = cursor in the 4-stack chart)
+      // Update Plotly cursor line via relayout (shape index 1 = cursor; shape[0] = alarm marker)
       this._updateH1ReplayCursor(val);
     },
 
@@ -1454,15 +1454,16 @@ createApp({
       if (!this.h1ReplayData) return;
       try {
         const t = this.h1ReplayData.t_min[idx] || 0;
-        Plotly.relayout('h1-replay-chart', { 'shapes[2].x0': t, 'shapes[2].x1': t });
+        // shapes[0] = alarm marker (red dashed), shapes[1] = cursor (grey dotted)
+        Plotly.relayout('h1-replay-chart', { 'shapes[1].x0': t, 'shapes[1].x1': t });
       } catch(e) {}
     },
     _renderH1ReplayChart() {
       const d = this.h1ReplayData;
       if (!d || !d.psi || !d.amps) return;
       const cursorT = d.t_min[this.h1CursorIdx] || 0;
-      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;
-      const scadaT  = d.t_min[d.scada_alarm_idx]  || 0;
+      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;  // metadata only — not drawn as separate marker
+      const scadaT  = d.t_min[d.alarm_idx]        || 0;  // single shared alarm moment
       const xMax    = d.t_min[d.n - 1] || 30;
 
       // ── 4 stacked subplots sharing the same x-axis ───────────────────────
@@ -1481,11 +1482,8 @@ createApp({
           line: {color:'#a78bfa', width:1.8}, xaxis:'x', yaxis:'y4', showlegend:true },
       ];
 
-      // Both detection lines span the FULL paper height (all 4 subplots)
-      // Cursor line is shape index 2 — updated cheaply via relayout during playback
+      // Single shared alarm marker spans all 4 subplots + grey cursor line
       const shapes = [
-        { type:'line', x0:gdcT,    x1:gdcT,    y0:0, y1:1, xref:'x', yref:'paper',
-          line:{color:'rgba(251,191,36,0.88)', width:2, dash:'dash'} },
         { type:'line', x0:scadaT,  x1:scadaT,  y0:0, y1:1, xref:'x', yref:'paper',
           line:{color:'rgba(239,68,68,0.88)',   width:2, dash:'dash'} },
         { type:'line', x0:cursorT, x1:cursorT, y0:0, y1:1, xref:'x', yref:'paper',
@@ -1493,13 +1491,8 @@ createApp({
       ];
 
       const annotations = [
-        // GDC label — top of paper (above PIP chart)
-        { x:gdcT,   y:1.01, xref:'x', yref:'paper', text:'<b>GDC Detects</b>',
-          showarrow:false, xanchor:'left', yanchor:'bottom',
-          font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
-          bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
-        // Smart SCADA label — top of paper
-        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>SCADA</b>',
+        // Single alarm label — top of paper
+        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>ALARM</b>',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
@@ -1540,9 +1533,10 @@ createApp({
       }, {displayModeBar:false, responsive:true});
     },
     async approveH1VFDForce() {
-      // Called ONLY from the override modal "Override & Trim" button
+      // Override path removed per design (seizure path out of scope).
+      // Route directly to the standard VFD trim action.
       this.h1OverrideModalOpen = false;
-      // Now execute the wrong action — causes pump seizure
+      // Execute VFD trim (same as recommended path for gas lock)
       await this.approveH1VFD();
     },
     async executeH1Shutdown() {
