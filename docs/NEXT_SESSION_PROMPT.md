@@ -33,7 +33,17 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Task — Stage B Briefing Rework + Batch 2 (OEM modal + extra doc cards)
 
-### Batch 2 — Requires User Copy Sign-Off Before Code (G1–G6 gate)
+### Batch 2 — Next Session Tasks
+
+**2A — HP-HMI Color Full-Compliance Pass (no content approval needed, code-only):**
+Per ISA-101.01 §5 / HP-HMI: gray is normal, color = alarm only. Current violations to fix in ONE batched `replace_in_file`:
+- GDC Recommended/Contraindicated card backgrounds → remove green/red tint (pure `var(--surf)` or transparent)
+- Card borders → keep thin, reduce to ~30% opacity
+- Zone-1 verdict box bg → near-black (`rgba(15,23,42,0.8)`), no green/orange tint
+- Zone-1 headline color → soften to ~60% opacity or wrap in small colored status pill
+- Result: card color appears ONLY as a thin border + header pill, body is all `var(--text2)`
+
+**2B — Requires User Copy Sign-Off Before Code (G1–G6 gate):**
 1. **OEM Troubleshooting Guide modal** — Doc 3 in evidence panel has NO click handler. Need to author fictional-vendor content (G1) showing procedure, not verdict (G2), with appropriate cosine sim context. Draft copy for user review first.
 2. **Additional doc cards** — Workover/Completion record establishing sand history (G3: concerning-in-hindsight, not smoking gun). Optional: offset-frac report. Draft copy for user review first.
 
