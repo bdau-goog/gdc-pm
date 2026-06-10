@@ -24,10 +24,6 @@
       <div class="hdr-tab" :class="{active: mainTab==='horizon3'}" @click="setMainTab('horizon3')">Optimize</div>
     </div>
     <div class="hdr-right">
-      <span class="wan-badge" :class="'wan-' + (mlops.wan_state||'stable')">
-        {{ mlops.wan_state === 'stable' ? '⚡ Field Link' : mlops.wan_state === 'intermittent' ? '⚠ Field Link' : '⬇ Field Link' }}
-        {{ mlops.wan_bandwidth_mbps }} Mbps
-      </span>
       <span class="ts-lbl">{{ lastRefresh }}</span>
     </div>
   </header>
@@ -450,10 +446,10 @@
               <text x="31" y="243.5" text-anchor="middle" fill="rgba(180,120,30,0.4)" font-size="2.9" font-family="monospace">~9,800 ft MD</text>
             </svg>
             <div style="display:flex;flex-direction:column;gap:3px;width:148px">
-              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">PIP</span><span style="color:rgba(74,222,128,0.85)">1,245 PSI 🟢</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">AMPS</span><span style="color:rgba(74,222,128,0.85)">68.2 A 🟢</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">TEMP</span><span style="color:rgba(74,222,128,0.85)">197°F 🟢</span></div>
-              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">VIB</span><span style="color:rgba(74,222,128,0.85)">1.4 mm/s 🟢</span></div>
+              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">PIP</span><span style="color:rgba(74,222,128,0.85)">1,245 PSI <span class="h1-ok-dot">&#x25CF;</span></span></div>
+              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">AMPS</span><span style="color:rgba(74,222,128,0.85)">68.2 A <span class="h1-ok-dot">&#x25CF;</span></span></div>
+              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">TEMP</span><span style="color:rgba(74,222,128,0.85)">197&#xb0;F <span class="h1-ok-dot">&#x25CF;</span></span></div>
+              <div style="display:flex;justify-content:space-between;font-size:0.48rem;font-family:var(--mono);padding:3px 7px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:3px"><span style="color:#64748b">VIB</span><span style="color:rgba(74,222,128,0.85)">1.4 mm/s <span class="h1-ok-dot">&#x25CF;</span></span></div>
             </div>
           </div>
 
@@ -686,7 +682,7 @@
               <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:2px">What no sensor can report</div>
               <div class="h1-p4-ctx-card" style="animation-delay:1.6s">
                 <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
-                  <span style="font-size:0.85rem;flex-shrink:0">📋</span>
+                  <span style="display:inline-block;width:9px;height:9px;background:rgba(251,146,60,0.8);border-radius:2px;flex-shrink:0;margin-top:3px"></span>
                   <div>
                     <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">WORKOVER RECORD</div>
                     <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Last workover: 14 months ago · annulus condition unknown</div>
@@ -695,7 +691,7 @@
               </div>
               <div class="h1-p4-ctx-card" style="animation-delay:2.2s">
                 <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
-                  <span style="font-size:0.85rem;flex-shrink:0">📈</span>
+                  <span style="display:inline-block;width:9px;height:9px;background:rgba(251,146,60,0.8);border-radius:2px;flex-shrink:0;margin-top:3px"></span>
                   <div>
                     <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">GOR TREND</div>
                     <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Gas-Oil Ratio rising +18% over 60 days — reservoir depletion signal</div>
@@ -704,7 +700,7 @@
               </div>
               <div class="h1-p4-ctx-card" style="animation-delay:2.8s">
                 <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
-                  <span style="font-size:0.85rem;flex-shrink:0">🗺️</span>
+                  <span style="display:inline-block;width:9px;height:9px;background:rgba(251,146,60,0.8);border-radius:2px;flex-shrink:0;margin-top:3px"></span>
                   <div>
                     <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">OFFSET FRAC REPORT</div>
                     <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div>
@@ -713,7 +709,7 @@
               </div>
               <div class="h1-p4-ctx-card" style="animation-delay:3.4s">
                 <div style="display:flex;align-items:flex-start;gap:9px;padding:8px 10px;background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.2);border-radius:5px">
-                  <span style="font-size:0.85rem;flex-shrink:0">📝</span>
+                  <span style="display:inline-block;width:9px;height:9px;background:rgba(251,146,60,0.8);border-radius:2px;flex-shrink:0;margin-top:3px"></span>
                   <div>
                     <div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">SHIFT NOTE</div>
                     <div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div>
@@ -941,6 +937,7 @@
       <!-- HEADER BAR: title + transport controls (far right) + New Scenario -->
       <div class="horizon-banner" style="padding:8px 20px;gap:10px">
         <div style="display:flex;align-items:center;gap:8px;flex:1">
+          <button @click="h1BriefingMode=true" title="Return to Background Briefing" style="padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--muted);font-size:0.56rem;cursor:pointer;flex-shrink:0">&#x2190; Briefing</button>
           <h2 class="hb-title" style="margin:0;font-size:0.88rem">Discern — ESP Fluid Unloading</h2>
           <span style="font-size:0.65rem;color:var(--muted)" v-if="h1ReplayData">
             &nbsp;·&nbsp; Well A-3 &nbsp;·&nbsp; Pad Alpha &nbsp;·&nbsp; ⏺ Scenario Replay

@@ -1038,16 +1038,17 @@
     .h1-sonic-warn{color:var(--orange);font-weight:700}
     /* ── Sprint AK: H1 Briefing — Panel 2+3 scrubber-driven bars (replaces infinite keyframes) ── */
     .h1-bar-scrub{height:100%;border-radius:4px;transition:width 0.4s ease}
+    .h1-ok-dot{color:rgba(74,222,128,0.85);font-size:0.6rem;flex-shrink:0}
     .h1-p3-fluid-scrub{transform-origin:center bottom;transform-box:fill-box;transition:transform 0.4s ease}
     /* ── Sprint 2c: H1 Briefing — Panel 4 STATE vs. CONTEXT staggered reveal ── */
-    @keyframes h1-p4-fadein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes h1-p4-fadein{from{opacity:0}to{opacity:1}}
     .h1-p4-state-row{animation:h1-p4-fadein 0.55s ease-out both}
     .h1-p4-ctx-card{animation:h1-p4-fadein 0.6s ease-out both}
     /* ── Sprint 2d: H1 Briefing — Panel 5 decision matrix cell reveal ── */
-    @keyframes h1-p5-cellin{from{opacity:0;transform:scale(0.92)}to{opacity:1;transform:scale(1)}}
+    @keyframes h1-p5-cellin{from{opacity:0}to{opacity:1}}
     .h1-p5-cell{animation:h1-p5-cellin 0.45s ease-out both}
     @keyframes h1-p5-sand{from{width:0}to{width:82%}}
     .h1-p5-sand-fill{animation:h1-p5-sand 1.2s 2.5s ease-in both}
     /* ── Sprint 2e: H1 Briefing — Panel 6 industry table row reveal ── */
-    @keyframes h1-p6-rowin{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes h1-p6-rowin{from{opacity:0}to{opacity:1}}
     .h1-p6-row{animation:h1-p6-rowin 0.5s ease-out both}
