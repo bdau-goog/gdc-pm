@@ -2,6 +2,15 @@
 
 ---
 
+## Session AM (June 10, 2026) — *Stage A: Flicker fixes + Field Link removal + briefing re-entry — deployed and verified*
+
+**Code committed:** `97f008c` (fix(stage-a): flicker fixes + Field Link removal + briefing re-entry button)
+**Cluster image digest:** `sha256:153a7f9b` (Session AM) · 2 files changed, 13 insertions(+), 15 deletions(-)
+
+User reviewed all 6 H1 Briefing panels and provided detailed content feedback. Panels 1, 4, 5, 6 showed discernible flickering. Comprehensive panel-by-panel review captured (see NEXT_SESSION_PROMPT.md Stage B/C plan). Diagnosis: two distinct flicker causes — (A) one-shot CSS @keyframes using GPU-expensive `transform` operations on Panels 4/5/6 causing build-shimmer; (B) continuous background-poller repaints forcing re-rasterization of color-emoji on Panels 1 and 4. Stage A (mechanical fixes only) implemented, deployed, and verified: `styles.css` — rewrote all three reveal keyframes to opacity-only (removed translateY, scale, translateX); `index.html` — removed wan-badge Field Link span (bandwidth claims retired per DEMO_MASTER §9, also the primary driver of continuous header repaints hitting Panel 1); replaced 4x Panel 1 green-circle color-emoji with `.h1-ok-dot` CSS spans; replaced 4x Panel 4 CONTEXT card color-emoji with 9px monochrome CSS squares; added `← Briefing` re-entry button to scenario header. Stage B/C deferred — content reworks require ruling on "GDC detects before SCADA" claim before code is written. Proposed 7-panel deck documented in NEXT_SESSION_PROMPT.md. Key decisions: Field Link removal endorsed (DEMO_MASTER §9 retired bandwidth as a claim; wan_bandwidth_mbps poll was also the main reactive state causing Panel 1's continuous flicker). Briefing-in-app pattern confirmed as NOT an anti-pattern — guided overlay with live Vue animation bindings. "GDC detects before SCADA" framing: strip from briefing entirely (static panels should not carry a timing claim); keep only as honestly-computed model output in live scenario. Ruling pending next session.
+
+---
+
 ## Session AL (June 10, 2026) — *Sprint AK: Panel 2+3 scrubber rebuild — deployed and verified*
 
 **Code committed:** `bc5edd7` (feat(sprint-ak): Panel 2+3 scrubber rebuild)

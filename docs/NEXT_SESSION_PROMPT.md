@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AL — Panel 2+3 scrubber rebuild complete)
-**git head:** `bc5edd7` (feat(sprint-ak): Panel 2+3 scrubber rebuild)
-**fault-trigger-ui image:** `sha256:ca4c110c37e9e7e0030f0577656c6115a0a1f6ff830132115168b7b0961ea10b` (Session AL)
+**Date:** June 10, 2026 (Session AM — Stage A flicker fixes + Field Link removal + briefing re-entry)
+**git head:** `97f008c` (fix(stage-a): flicker fixes + Field Link removal + briefing re-entry button)
+**fault-trigger-ui image:** `sha256:153a7f9b27caef9ee8f4f8cfc87a9b28789f7cdcab75e1b2fab2af71360832a9` (Session AM)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -31,25 +31,31 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Next Task — Sprint 3 H2 Briefing (3 Panels)
+## STEP 3: Next Task — Stage B + Stage C (H1 Briefing Content Rework)
 
-Panels 1–6 of H1 Briefing are all ship-ready (Panels 2+3 fixed this session). Next task is Sprint 3: H2 Briefing.
+### Open Items from Session AM Review
 
-### H2 Briefing — 3 Panels
-Architecture: `h2BriefingMode: true` + `h2BriefingPanel: 1` in Vue data, `<template v-else>` wrapper around existing H2 scenario replay. Same pattern as H1 briefing.
+**Open rulings needed before any Stage B code:**
+1. **"GDC detects before SCADA" claim** — strip from briefing entirely? (my rec: yes — rest on L3 moat). Affects Panel 2 Key Insight line AND the live scenario lead-time marker.
+2. **Field Link** — REMOVED this session. ✅
 
-| Panel | Title | Key Message |
+### Stage B — Content Reworks (Panels 1, 2, 3, 6, 7)
+Deck now proposed as **7 panels** (new "Options" panel between P3 and old P4):
+
+| # | Title | Change |
 |---|---|---|
-| 1 | What is Slug Flow? | Gas-liquid slugs in surface flowline transmit mechanical shocks → vibration rises, temp FLAT |
-| 2 | Why It Looks Like a Failing Pump | SCADA sees vib alarm → conservative operator orders $150k pump pull |
-| 3 | STATE vs. CONTEXT Exoneration | Temp flatness + choke log + separator test = pump healthy. Surface truck roll $1,500 |
+| 1 | This Well | Rebalance: lead with ESP characteristics, sand demoted to a property |
+| 2 | An Unloading Event Is a Critical ESP Failure | Retitle from question→stakes; remove "detects before SCADA" (pending ruling) |
+| 3 | One Signature, Two Causes | Wider wellbores; multi-stage pump schematic; gas bubbles at pump intake; depth cues; remove inline actions |
+| 4 (NEW) | Responding to an Unloading Event | VFD trim vs Shut-in: mechanism, cost, when each is used |
+| 5 | Why Knowing the Cause Is Critical | Reframe: sand = stakes-setter; simplify 2x2; reword bottom line |
+| 6 | STATE vs. CONTEXT | Spell out "Pump Intake Pressure"; emoji already fixed (this session) |
+| 7 | This Pattern Is Universal | Single CTA (inline one removed); rephrase close (gap is universal → AI closes it → at the edge) |
 
-**Files to edit (same 3-file pattern as H1):**
-- `gke/fault-trigger-ui/static/app.js` — add `h2BriefingMode`, `h2BriefingPanel` to Vue data
-- `gke/fault-trigger-ui/index.html` — H2 Briefing markup (ONE batched call)
-- No styles.css changes needed (reuse H1 briefing CSS classes)
+**Token discipline:** `index.html` is ~3,210 lines. Grep for line numbers first. Batch all index.html changes into ONE `replace_in_file` call per panel set.
 
-**Token discipline:** `index.html` is ~3,210 lines. Grep for line numbers first. Batch all index.html changes into ONE `replace_in_file` call.
+### Stage C — Panel 5 2×2 redesign + new Panel 4 build
+After Stage B panels are approved visually.
 
 ---
 
@@ -58,12 +64,17 @@ Architecture: `h2BriefingMode: true` + `h2BriefingPanel: 1` in Vue data, `<templ
 | Item | Status | Note |
 |------|--------|------|
 | Financial Justification modal raw {{ }} | ✅ FIXED Session AJ | div balance net 0 |
-| Panel 2 animated bars (infinite loop) | ✅ FIXED Session AL | h1P2Scrub scrubber — green→amber, short=worse |
-| Panel 3 wellbore SVG size | ✅ FIXED Session AL | max-height:148px → 280px |
+| Panel 2 animated bars (infinite loop) | ✅ FIXED Session AL | h1P2Scrub scrubber |
 | Panel 3 infinite bubble/drain loops | ✅ FIXED Session AL | opacity/scaleY scrubber-driven |
+| Panel 1+4 flicker (color-emoji repaint) | ✅ FIXED Session AM | .h1-ok-dot + CSS squares |
+| Panels 4/5/6 build shimmer (@keyframes) | ✅ FIXED Session AM | opacity-only, no transforms |
+| Field Link (bandwidth claim, DEMO_MASTER §9) | ✅ REMOVED Session AM | wan-badge span deleted |
+| ← Briefing re-entry button | ✅ ADDED Session AM | h1BriefingMode=true |
 | STATE-vs-CONTEXT premise | ✅ LOCKED | Claim Ledger PREMISE row |
 | SPE-174536 citation | ⚠️ UNVERIFIED | Using SPE-170776; 4.2 ft/s = representative |
-| Panels 1, 2, 3, 4, 5, 6 | ✅ SHIP-READY | All 6 H1 Briefing panels approved |
+| "GDC detects before SCADA" in Panel 2 + scenario | ⚠️ PENDING RULING | My rec: strip from briefing; keep as model output in scenario only |
+| Panel 1 vertical space + lead-in copy | ⚠️ STAGE B | Too sparse; dives into VFD/sand too early |
+| Panel kicker copy (Setup/Event/Hook/Moat/etc.) | ⚠️ DEFERRED | Simple pass after structure lands |
 
 ---
 
