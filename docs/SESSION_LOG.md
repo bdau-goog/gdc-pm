@@ -2,6 +2,21 @@
 
 ---
 
+## Session AI (June 10, 2026) — *Sprint 2c: H1 Briefing Panel 4 — STATE vs. CONTEXT — deployed and verified*
+
+**Code committed:** `52baa53` (feat(sprint2c): H1 Briefing Panel 4 — STATE vs. CONTEXT animated two-column reveal)
+**Cluster image digest:** `sha256:6a52012` (fault-trigger-ui) · pod rolled out clean · 19 Panel 4 strings + 3 CSS animation strings confirmed in live pod
+
+**What was built and deployed:** Sprint 2c complete. Panel 4 *STATE vs. CONTEXT* — the core moat argument of the briefing. Full-screen two-column animated reveal: LEFT blue column ("STATE") shows 4 sensor readout tiles (PIP 612 PSI↓, AMPS 34.2 A↓, WINDING TEMP 246°F, VIBRATION 0.41 in/s) fading in with staggered delays (0.1/0.4/0.7/1.0s) via `.h1-p4-state-row` class, with a 5th italic quote fading in at 1.3s: *"Even a perfect gauge sharpens the STATE. It cannot report what happened last week."* RIGHT amber column ("CONTEXT") shows 4 document cards appearing one by one (WORKOVER RECORD→GOR TREND→OFFSET FRAC REPORT→SHIFT NOTE) at delays 1.6/2.2/2.8/3.4s via `.h1-p4-ctx-card`, plus final amber italic quote at 4.0s: *"The deciding context lives here. Not on any sensor."* Full-width bottom strip: *"You cannot instrument your way out of a context gap."* (large, bold, centered). CSS: `@keyframes h1-p4-fadein` (opacity 0→1 + translateY 10px→0) with `animation-fill-mode:both` so elements start invisible during delay and stay visible after animating in — critical for the staggered narrative effect. Progress dot 4 upgraded from static cosmetic 6px span to reactive Vue-bound 8px span (matches dots 1-3). Navigation: Next `< 3` → `< 4`; Run the Scenario `===3` → `===4`. Hint text extended to 4-case ternary (panel 3 hint: "STATE is observable. CONTEXT is decisive. Panel 4 makes the case."). Both `index.html` and `static/styles.css` edited in single batched calls.
+
+**Key decisions:** (a) CSS `animation-fill-mode:both` is the correct approach — elements invisible before their delay fires, stay visible after — no JS timers, no Vue watchers, zero side-effects on `v-if` remount. (b) Context card delays staggered 0.6s apart (1.6→4.0s) so STATE tiles fully load before CONTEXT cards begin appearing — deliberate narrative separation. (c) Panel 4 values (PIP 612, AMPS 34.2, TEMP 246, VIB 0.41) match the mid-decline phase of the H1 scenario replay — SOURCE = OUR-CODE from FAULT_PROFILES trajectory. No silent lies.
+
+**Verification:** 19 Panel 4 strings in live pod index.html · 3 CSS animation strings in live pod styles.css · rollout clean.
+
+**Next task:** Sprint 2d — Panel 5 (*Why Sand Makes the Stakes Asymmetric*): 2×2 animated decision matrix (Trim/Shut-in × Gas Lock/Drawdown). See SPRINT_PLAN.md §Sprint 2d and DEMO_MASTER.md §4 Panel 5 spec. Extend dot 5, Next `< 5`, Run the Scenario `===5`.
+
+---
+
 ## Session AG (June 10, 2026) — *Sprint 1 + Sprint 2a: integrity fixes + H1 Briefing Panels 1&2 — deployed and verified*
 
 **Code committed:** `9691e93` (fix(sprint1): integrity fixes — RTOC-sovereign, 3 pillars, IEC 62443, retire 200GB/VSAT/E-House, SCADA label, industry generalization) · `d41d27b` (feat(sprint2a): H1 Briefing panels 1&2 — This Well + What is an Unload?)

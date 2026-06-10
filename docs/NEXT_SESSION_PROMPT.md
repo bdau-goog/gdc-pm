@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AH — Sprint 2b ✅ H1 Briefing Panel 3 deployed)
-**git head:** `1c02e6b` (feat(sprint2b): H1 Briefing Panel 3 — One Signature, Two Causes)
-**fault-trigger-ui image:** `sha256:68948a277` (Session AH — Sprint 2b deployed)
+**Date:** June 10, 2026 (Session AI — Sprint 2c ✅ H1 Briefing Panel 4 deployed)
+**git head:** `52baa53` (feat(sprint2c): H1 Briefing Panel 4 — STATE vs. CONTEXT animated two-column reveal)
+**fault-trigger-ui image:** `sha256:6a52012088427e3693bc9027050370461940d5ff020fe87e293ce4dac9d5bbf9` (Session AI — Sprint 2c deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -32,12 +32,12 @@ cat ~/gdc-pm/docs/SPRINT_PLAN.md    # Sprint breakdown + panel specs
 
 ---
 
-## STEP 3: Session AH COMPLETE ✅ — Next Task is Sprint 2c
+## STEP 3: Session AI COMPLETE ✅ — Next Task is Sprint 2d
 
-### Session AH Summary
-Sprint 2b complete this session.
+### Session AI Summary
+Sprint 2c complete this session.
 
-- **Sprint 2b** (commit `1c02e6b`): H1 Briefing Panel 3 — "One Signature, Two Causes". Full-screen split: LEFT = Gas Lock (blue fluid column, 3 animated `h1-wb-bubble` rising, pump ⚠ PUMP, green MOTOR ✓) vs RIGHT = Fluid Drawdown (depleted dark casing, `h1-p3-fluid-drain` CSS scaleY animation showing fluid level falling, amber pump ⚠, sand zone near perfs). Bottom strip: identical PIP + Amps declining trace (reused `h1-brief-decline-bar`) with italic quote *"On this well's sensor, the live decline looks the same."* Progress dots extended to 6 (dots 4-6 cosmetically greyed). Panel counter updated to `/6`. Run the Scenario CTA moved from panel 2 → panel 3. CSS: `@keyframes h1-p3-drain` + `.h1-p3-fluid-drain` added to styles.css. Deployed `sha256:68948a277`.
+- **Sprint 2c** (commit `52baa53`): H1 Briefing Panel 4 — "STATE vs. CONTEXT". Full-screen two-column animated reveal: LEFT = blue STATE column (header "STATE", 4 sensor tiles: PIP 612 PSI↓, AMPS 34.2 A↓, WINDING TEMP 246°F, VIBRATION 0.41 in/s, staggered `h1-p4-state-row` fade-in at 0.1/0.4/0.7/1.0/1.3s delays), RIGHT = amber CONTEXT column (header "CONTEXT", 4 document cards appearing one by one: WORKOVER RECORD→GOR TREND→OFFSET FRAC REPORT→SHIFT NOTE, `h1-p4-ctx-card` fade-in at 1.6/2.2/2.8/3.4/4.0s delays). Full-width bottom quote: *"You cannot instrument your way out of a context gap."* Dot 4 upgraded from static cosmetic to reactive Vue-bound (same 8px as dots 1-3). Next button: `< 3` → `< 4`. Run the Scenario: `===3` → `===4`. Hint text extended to 4-case ternary. CSS: `@keyframes h1-p4-fadein` + `.h1-p4-state-row` + `.h1-p4-ctx-card` (animation-fill-mode:both for proper pre/post state). Deployed `sha256:6a52012088427e3693bc9027050370461940d5ff020fe87e293ce4dac9d5bbf9`.
 
 **Deployment note (permanent):** `kubectl rollout restart` with `:latest` does NOT pull new images (GKE node cache). Always use:
 ```bash
@@ -45,18 +45,18 @@ kubectl set image deployment/fault-trigger-ui -n gdc-pm \
   fault-trigger-ui=us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui@sha256:<digest>
 ```
 
-### NEXT TASK — Sprint 2c: H1 Briefing — Panel 4 (STATE vs. CONTEXT)
+### NEXT TASK — Sprint 2d: H1 Briefing — Panel 5 (Sand Stakes / Decision Matrix)
 **File:** `gke/fault-trigger-ui/index.html` (ONE batched replace_in_file call)
-**Spec:** `docs/SPRINT_PLAN.md §Sprint 2c` and `DEMO_MASTER.md §4`
+**Spec:** `docs/SPRINT_PLAN.md §Sprint 2d` and `DEMO_MASTER.md §4`
 
-Panel 4 — *STATE vs. CONTEXT* — the moat argument, animated two-column reveal:
-- **LEFT column (STATE):** PIP, Amps, Temp, Vib readouts pulse in. Text: "Even a perfect gauge sharpens the STATE. It cannot report what happened last week."
-- **RIGHT column (CONTEXT):** Document cards appear one by one — workover record · GOR trend · offset-frac report · shift note. Text: "The deciding context lives here. Not on any sensor."
-- Full-width bottom quote: "You cannot instrument your way out of a context gap."
-- Navigation: [← Back] [Next →] (advances to panel 5)
-- Progress dot 4 activates when at panel 4
-
-Also: extend `v-if="h1BriefingPanel < 3"` → `< 4` for Next button, `===3` → `===4` for Run the Scenario.
+Panel 5 — *Why Sand Makes the Stakes Asymmetric* — 2×2 animated decision matrix:
+- **Scope badge visible:** "moderate-sand well · AR-trim"
+- **2×2 cell-by-cell reveal:** Trim + Gas Lock (✅ ~$2,500) → Trim + Drawdown (❌ $150k seizure, animated sand packing) → Shut-in + Gas Lock (⚠️ deferred production) → Shut-in + Drawdown (✅ recoverable)
+- Bottom quote: "Blind to the cause, trim risks seizure. Shut-in is safe in both — the rational default."
+- Sub-quote: "The context that removes the blindness is in the documents. GDC reads them in seconds."
+- Navigation: [← Back] [Next →] (advances to panel 6)
+- Progress dot 5 activates when at panel 5
+- Extend Next: `< 4` → `< 5`; Run the Scenario: `===4` → `===5`
 
 ---
 
