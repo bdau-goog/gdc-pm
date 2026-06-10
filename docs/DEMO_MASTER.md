@@ -322,6 +322,87 @@ The claim the Scenario Replay design makes is narrow and defensible:
 
 ---
 
+## 4.5 BRIEFING PATTERN SPEC — Canonical for All Three Tabs
+
+**This section is the authoritative look-and-feel reference.** Every briefing panel (H1/H2/H3) must conform before code is written. Do not drift from it.
+
+### Chrome — identical on all three tabs
+```
+┌─ PROGRESS STRIP (var(--surf2), border-bottom) ──────────────────────┐
+│ {Tab} — {Asset}   Background Briefing    ● ● ○ …   M / N   Skip →   │
+├─ PANEL BODY (flex:1, padding 16–20px 28px, gap 8–14px) ─────────────┤
+│   KICKER  (0.58rem · 700 · UPPERCASE · 0.12em · color #3b82f6)      │
+│   Panel N of M — {Beat Name}                                        │
+│   TITLE   (1.5–1.7rem · 800 · var(--text2))   ← the claim, ≤6 words │
+│   subtitle (0.65rem · var(--muted))            ← the tension, 1 line │
+│   …panel content…                                                   │
+├─ NAV FOOTER (var(--surf2), border-top, justify-content:space-between)│
+│   ← Back   │  {hint, 0.52rem italic muted}  │  Next →  /  ▶ Run …  │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### Color discipline (ISA-101 HP-HMI)
+- **Blue** = STATE / sensors / system data (border `rgba(59,130,246,0.20)`, fill `rgba(59,130,246,0.05)`)
+- **Amber** = CONTEXT / documents / caution (border `rgba(251,191,36,0.22)`, fill `rgba(251,191,36,0.05)`)
+- **Green** = safe / healthy / recommended (border `rgba(74,222,128,0.22)`, fill `rgba(16,185,129,0.06)`)
+- **Red/orange** = risk / contraindicated (border `rgba(239,68,68,0.22)`, fill `rgba(239,68,68,0.05)`)
+- **Slate** = structure / secondary (border `rgba(100,116,139,0.22)`)
+
+**Toned-down palette rule (locked Session AQ-continued):** All briefing chrome (borders, fills, badges, section headers) uses the lower-opacity values above. Saturated `#4ade80 / #f87171 / #fbbf24` reserved for status-indicator-only (ISA-101: saturated color = status, not decoration). Large text (titles, quotes) stays high-contrast `var(--text2) / #e2e8f0`.
+
+### Card anatomy
+```html
+<!-- Standard panel info-box card -->
+<div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.20);border-radius:8px;padding:16px 20px">
+
+<!-- Blue left-rule callout -->
+<div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+
+<!-- Bottom closing quote -->
+<div style="padding:10px 16px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:7px;text-align:center">
+  <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0">…main quote…</div>
+  <div style="font-size:0.58rem;color:var(--muted);margin-top:4px;font-style:italic">…secondary…</div>
+</div>
+
+<!-- Two-column action card (reuse for decision panels) -->
+<div class="h1-p5-cell" style="animation-delay:Xs;border:1px solid rgba(C,0.22);border-radius:8px;padding:14px 16px;...">
+```
+
+### Animation — reuse these classes, do not add new ones
+- `.h1-p4-state-row` — staggered fade-in (STATE tiles, left column rows)
+- `.h1-p4-ctx-card` — staggered fade-in (CONTEXT cards, right column)
+- `.h1-p5-cell` — scale/opacity in (action cards, decision grids)
+- `.h1-p6-row` — opacity in (industry/table rows)
+- `.h1-bar-scrub` — width transition (scrubber-driven bars)
+- **No new keyframe loops.** No CSS transforms that cause repaints. Opacity-only for all build animations.
+
+### HTML entity discipline (Vue template safety)
+`&#x2714;` ✔ · `&#x2718;` ✘ · `&#x2192;` → · `&#x2191;` ↑ · `&#x2193;` ↓ · `&#x2014;` — · `&middot;` · · `&#x26A0;` ⚠ · `&#x2013;` –
+Never raw `<digit` in template text. Never raw `{{ }}` in static strings.
+
+### Copy voice rules
+| Element | Rule |
+|---|---|
+| Kicker | Role label only: "Panel N of M — {Beat Name}" |
+| Title | Plain-English claim, ≤6 words, present tense |
+| Subtitle | One sentence: the tension that this panel resolves |
+| Callout body | First person of the RTOC operator's reality |
+| Quote | The one line they'll repeat leaving the room |
+| SCADA framing | SCADA *trips to protect* — never "lets the pump die." |
+| Cost language | State both sides: "X avoids Y" not just "saves Y" |
+| Never | "Copilot" · "revolutionary" · vague "AI-powered" |
+
+### Unified 3-beat arc across all three tabs
+| Beat | H1 Discern (6 panels) | H2 Classify (3) | H3 Optimize (3) |
+|---|---|---|---|
+| **Setup** | This Well / The Event | The Equipment | The Opportunity |
+| **Hook** | The Hook | The Hook | The Tradeoff |
+| **Decision** | The Moat / The Decision | The Decision | The Optimization |
+
+**Closing spine sentence** (same on every final panel): the scenario CTA button. Label honest to the action: `▶ Run the Scenario` (H1/H2) · `▶ Run the Optimization` (H3).
+
+---
+
 ## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP SLUG FLOW DISCRIMINATION)
 
 **Status: COMPLETE AND DEPLOYED (Session V)**
