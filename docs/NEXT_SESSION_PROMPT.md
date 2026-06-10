@@ -31,32 +31,47 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Next Tasks — Batch 2 / H2 Briefing
+## STEP 3: NEXT TASK — H1 PANEL + SCENARIO REDESIGN (START IN PLAN MODE)
 
-### H1 is video-ready (Session AO ruling locked and deployed)
+> **⚠️ H1 IS NOT DONE. Session AO relabeled text only. The detection race is still structurally present — two separate indices, two scrubber markers, two reveal times. The real work is next session.**
 
-**H1 narrative spine is settled.** Three beats, no straw-man, no detection race:
-1. SCADA alarm fires — AMBIGUOUS — standard policy = shut in (honest, defensible)
-2. GDC L3 docs → cited verdict in seconds → confident, production-preserving action
-3. Class of problems, not a one-off (Panels 4/5/6)
+### Your locked thesis
+There is a **class of SCADA-informed decisions that skew toward safety/asset-protection** and, in doing so, **cost money and lose production** (reflexive shut-ins, unnecessary conservatism). Better decisions — less outage, lower cost — are possible when **AI + RAG + active document monitoring + LLM is implemented sovereignly on GDC.** This reduces to one line:
 
-**Unblocked now (no content approval needed — code only):**
+> **Better informed = less cost, more uptime, more production.**
 
-**Batch 2A — HP-HMI Color Full-Compliance Pass:**
-Per ISA-101.01 §5: gray is normal, color = alarm only. Fix in ONE batched `replace_in_file`:
-- GDC Recommended/Contraindicated card backgrounds → remove green/red tint (pure `var(--surf)`)
-- Card borders → thin, ~30% opacity
-- Zone-1 verdict box bg → near-black (`rgba(15,23,42,0.8)`), no green/orange tint
-- Zone-1 headline color → wrap in small colored status pill; body = all `var(--text2)`
+ESP unloading is **one worked example of the class — not the point itself.**
 
-**Batch 2B — OEM Troubleshooting Guide modal (requires copy sign-off G1–G6 before code):**
-Doc 3 in H1 evidence panel has NO click handler. Draft fictional-vendor content against G1–G6 gates for user review first.
+### Hard constraints (locked, non-negotiable)
+1. **Remove ALL detection-lead over SCADA.** This is structural — not copy:
+   - `app.py` ~L6113–6141: two indices (`gdc_detect_idx`, `scada_alarm_idx`, `lead_time_minutes`) → **collapse to a single shared alarm moment**
+   - `index.html` scrubber: two markers → **one alarm marker**
+   - `app.js` `_renderH1ReplayChart` annotations + `h1CursorIdx` watcher that reveals GDC at `gdc_detect_idx` vs SCADA at `scada_alarm_idx` → **both reveal at the same alarm index**
+   - The ONLY post-alarm difference: **decision quality** (GDC adds fused context), never timing.
+2. **Remove 'sand' from the narrative spine.** No sand-bridging, no "moderate-sand well" as the stakes-setter, no AR-trim, no sand decision matrix (Panel 5). Reframe as a **generic mature ESP**; describe the use-case as **a class of problems GDC solves**. Sand physics may live deep in ⓘ Reference but is out of the story.
+3. **Remove the $150k catastrophe story.** No catastrophe number, no "PUMP SEIZED" / "UNPLANNED OUTCOME." Honest contrast: *production-deferring shut-in (lost uptime + restart cost)* vs. *informed production-preserving action (cheaper, more uptime)*. Quieter, defensible delta — no scary outlier.
 
-**Sprint 3 — H2 Briefing (3 panels):**
-- Panel 1: The Well (slug flow setup)
-- Panel 2: Why It Looks Like a Failing Pump (vibration HI, but temp flat)
-- Panel 3: STATE vs. CONTEXT exoneration (same 3-beat structure as H1)
-Same architecture as H1 briefing (`h2BriefingMode`/`h2BriefingPanel` in Vue data, `<template v-else>` wrapper).
+### Guidance for my review (NOT a fixed spec — I propose a panel flow for your sign-off)
+User's suggested arc to review and refine:
+1. What is an ESP?
+2. What is unloading?
+3. What might cause unloading?
+4. Why do they look the same (on the sensor)?
+5. How do operators react today? — the *class of problems* beat: SCADA-informed default skews protective → production deferred, cost incurred
+6. How GDC decides better — fuses context → production-preserving action → framed as uptime + cost only
+
+**My job at session start:** read the current panel content, then **propose a refined 6-panel flow with content as ASCII wireframes/tables for user review** BEFORE any code.
+
+### Build state to rework (do not rebuild from scratch)
+- 6 briefing panels at `index.html` ~L368–908. **Panels 1, 3, 5** are sand-dependent → rework. **Panels 4** (STATE vs CONTEXT) and **6** (universal class, 3 rows) are reusable.
+- Live scenario: `/api/h1/scenario-replay` (app.py ~L6060–6145) + `loadH1Scenario` / `_renderH1ReplayChart` / `h1CursorIdx` watcher (app.js) + console views (index.html ~L1074–1345). **This is where the detection race physically lives.**
+- H2 has the same two-index pattern (app.py ~L6307–6350) — same fix applies there in a later session.
+
+### Method
+1. **PLAN MODE** — read current panel content; propose revised panel flow + content; get user sign-off
+2. **Agree single-alarm interaction model** (one marker, both views reveal together, GDC adds context not lead-time)
+3. **ACT** — backend (collapse indices) → briefing panels → scenario console → deploy with explicit digest → verify
+4. **Update Claim Ledger** — retire detection-lead row and $150k row; surviving spine is STATE-vs-CONTEXT / better-informed-decision (PREMISE row SURVIVES)
 
 ---
 
