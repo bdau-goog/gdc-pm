@@ -106,6 +106,8 @@ createApp({
       h1ActiveSensor: 'psi',
       h1Recovering: false,
       h1Dragging: false,
+      h1BriefingMode: true,     // true=show animated briefing panels; false=scenario replay
+      h1BriefingPanel: 1,       // 1=This Well, 2=What is an Unload? (panels 3-6 in Sprint 2b-2e)
       h1SplitPercent: 56,
       h1ChartH: 140,
       h1DegPollTimer: null,

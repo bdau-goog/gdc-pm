@@ -1037,3 +1037,6 @@
     .h1-sonic-table tr:last-child td{border-bottom:none}
     .h1-sonic-alert{color:var(--red);font-weight:700}
     .h1-sonic-warn{color:var(--orange);font-weight:700}
+    /* ── Sprint 2a: H1 Briefing — Panel 2 decline animation ── */
+    @keyframes h1-brief-decline{0%{width:87%}55%{width:22%}100%{width:87%}}
+    .h1-brief-decline-bar{animation:h1-brief-decline 4.5s cubic-bezier(0.4,0,0.6,1) infinite;will-change:width}
