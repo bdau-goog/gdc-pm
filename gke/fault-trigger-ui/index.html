@@ -362,7 +362,8 @@
                 :style="{background: h1BriefingPanel===4 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
           <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
                 :style="{background: h1BriefingPanel===5 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
-          <span title="Coming: Universal Pattern" style="width:6px;height:6px;border-radius:50%;flex-shrink:0;background:rgba(100,116,139,0.18)"></span>
+          <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
+                :style="{background: h1BriefingPanel===6 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
           <span style="font-size:0.54rem;color:var(--muted);margin-left:2px">{{ h1BriefingPanel }} / 6</span>
           <button @click="h1BriefingMode=false" style="font-size:0.56rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;margin-left:8px">Skip to Scenario →</button>
         </div>
@@ -792,6 +793,111 @@
           </div>
         </div><!-- /panel-5 -->
 
+        <!-- ── PANEL 6: This Pattern Is Universal ── -->
+        <div v-if="h1BriefingPanel===6" style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 28px 12px;gap:10px;overflow:hidden">
+          <div style="flex-shrink:0">
+            <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:4px">Panel 6 of 6 — The Platform</div>
+            <h2 style="font-size:1.5rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 4px">This Pattern Is Universal</h2>
+            <p style="font-size:0.63rem;color:var(--muted);margin:0;line-height:1.5">STATE is what every gauge reports. CONTEXT is what decides. This gap exists in every industry that runs physical assets.</p>
+          </div>
+
+          <!-- 4-row animated table: industry | STATE | → | CONTEXT -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:7px;min-height:0;overflow:hidden">
+
+            <!-- Row 1: O&G ESP -->
+            <div class="h1-p6-row" style="animation-delay:0.3s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.22);border-radius:7px;flex:1;min-height:0">
+              <div style="flex:0 0 94px;text-align:center">
+                <div style="font-size:0.52rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">O&amp;G</div>
+                <div style="font-size:0.56rem;color:var(--text2);font-weight:600">ESP Well</div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60a5fa;margin-bottom:2px">STATE</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">PIP &#x2193; · Amps &#x2193;</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Intake-only PDG — identical on gas lock &amp; drawdown</div>
+              </div>
+              <div style="font-size:1.3rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">&#x2192;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Workover record · GOR trend</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Shift note from tour operator</div>
+              </div>
+            </div>
+
+            <!-- Row 2: Power transformer -->
+            <div class="h1-p6-row" style="animation-delay:1.2s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(167,139,250,0.22);border-radius:7px;flex:1;min-height:0">
+              <div style="flex:0 0 94px;text-align:center">
+                <div style="font-size:0.52rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#c4b5fd;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">P&amp;E</div>
+                <div style="font-size:0.56rem;color:var(--text2);font-weight:600">Transformer</div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c4b5fd;margin-bottom:2px">STATE</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Load current &#x2191; · winding temp &#x2191;</div>
+                <div style="font-size:0.51rem;color:var(--muted)">SCADA flags thermal exceedance</div>
+              </div>
+              <div style="font-size:1.3rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">&#x2192;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Loading plan · maintenance log</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Seasonal demand forecast</div>
+              </div>
+            </div>
+
+            <!-- Row 3: Factory motor -->
+            <div class="h1-p6-row" style="animation-delay:2.1s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(251,146,60,0.22);border-radius:7px;flex:1;min-height:0">
+              <div style="flex:0 0 94px;text-align:center">
+                <div style="font-size:0.52rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.28);color:#fb923c;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">MFG</div>
+                <div style="font-size:0.56rem;color:var(--text2);font-weight:600">Factory motor</div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">STATE</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Vibration &#x2191; · temperature nominal</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Same signature as bearing wear</div>
+              </div>
+              <div style="font-size:1.3rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">&#x2192;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Lubrication record · OEM bulletin</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Line throughput log</div>
+              </div>
+            </div>
+
+            <!-- Row 4: Haul truck -->
+            <div class="h1-p6-row" style="animation-delay:3.0s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.22);border-radius:7px;flex:1;min-height:0">
+              <div style="flex:0 0 94px;text-align:center">
+                <div style="font-size:0.52rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.28);color:#fbbf24;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">MINING</div>
+                <div style="font-size:0.56rem;color:var(--text2);font-weight:600">Haul truck</div>
+              </div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fbbf24;margin-bottom:2px">STATE</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Fuel consumption &#x2191; · payload nominal</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Engine load out of expected range</div>
+              </div>
+              <div style="font-size:1.3rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">&#x2192;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+                <div style="font-size:0.6rem;color:var(--text2);font-weight:600">Haul-road report · service history</div>
+                <div style="font-size:0.51rem;color:var(--muted)">Grade profile for current route</div>
+              </div>
+            </div>
+
+          </div><!-- /table rows -->
+
+          <!-- Closing quote -->
+          <div class="h1-p6-row" style="flex-shrink:0;animation-delay:3.8s;padding:11px 16px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+            <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0;margin-bottom:3px">"This is not an oilfield trick. It is the structural gap in every industrial AI deployment."</div>
+            <div style="font-size:0.55rem;color:var(--muted);font-style:italic">GDC: the AI goes to the data.</div>
+          </div>
+
+          <!-- Run the Scenario CTA -->
+          <div class="h1-p6-row" style="flex-shrink:0;animation-delay:4.3s;display:flex;justify-content:center">
+            <button @click="h1BriefingMode=false;loadH1Scenario()"
+                    style="padding:10px 36px;border-radius:7px;border:none;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);color:#fff;font-size:0.75rem;font-weight:700;cursor:pointer;box-shadow:0 4px 18px rgba(29,78,216,0.5);letter-spacing:0.03em">
+              &#x25BA; Run the Scenario
+            </button>
+          </div>
+
+        </div><!-- /panel-6 -->
+
         <!-- BRIEFING NAVIGATION FOOTER -->
         <div style="flex-shrink:0;padding:10px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--surf2);gap:12px">
           <button v-if="h1BriefingPanel > 1" @click="h1BriefingPanel--"
@@ -800,14 +906,14 @@
           </button>
           <div v-else style="width:84px"></div>
           <span style="font-size:0.52rem;color:rgba(100,116,139,0.4);font-style:italic;text-align:center">
-            {{ h1BriefingPanel===1 ? '2 panels ahead · sand stakes · universal pattern' : h1BriefingPanel===2 ? 'Same sensor, two opposite actions — Panel 3 shows why' : h1BriefingPanel===3 ? 'STATE is observable. CONTEXT is decisive. Panel 4 makes the case.' : h1BriefingPanel===4 ? 'Trim is $2,500 or $150k. Panel 5 shows why context changes everything.' : 'Clicking ▶ Run the Scenario starts the interactive 30-minute ESP replay' }}
+            {{ h1BriefingPanel===1 ? '1 panel ahead · the universal pattern' : h1BriefingPanel===2 ? 'Same sensor, two opposite actions — Panel 3 shows why' : h1BriefingPanel===3 ? 'STATE is observable. CONTEXT is decisive. Panel 4 makes the case.' : h1BriefingPanel===4 ? 'Trim is $2,500 or $150k. Panel 5 shows why context changes everything.' : h1BriefingPanel===5 ? 'The same gap exists in every industry. Panel 6 shows it.' : 'Clicking ▶ Run the Scenario starts the interactive 30-minute ESP replay' }}
           </span>
           <div style="display:flex;gap:8px;align-items:center">
-            <button v-if="h1BriefingPanel < 5" @click="h1BriefingPanel++"
+            <button v-if="h1BriefingPanel < 6" @click="h1BriefingPanel++"
                     style="padding:5px 16px;border-radius:5px;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.12);color:#93c5fd;font-size:0.63rem;font-weight:700;cursor:pointer">
               Next →
             </button>
-            <button v-if="h1BriefingPanel===5" @click="h1BriefingMode=false;loadH1Scenario()"
+            <button v-if="h1BriefingPanel===6" @click="h1BriefingMode=false;loadH1Scenario()"
                     style="padding:5px 20px;border-radius:5px;border:none;background:linear-gradient(135deg,#1d4ed8,#1e3a8a);color:#fff;font-size:0.65rem;font-weight:700;cursor:pointer;box-shadow:0 2px 12px rgba(29,78,216,0.4)">
               ▶ Run the Scenario
             </button>
