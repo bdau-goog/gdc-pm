@@ -2,6 +2,15 @@
 
 ---
 
+## Session AO (June 10, 2026) — *H1 narrative reframe: cited-evidence analyst — deployed and verified*
+
+**Code committed:** `7e7af08` (fix(h1-narrative): reframe H1 as cited-evidence analyst — cut detection race, relabel tabs, Mining row removed, seizure→unplanned outcome, Discern as default tab)
+**Cluster image digest:** `sha256:b0e186376502` (Session AO) · 2 files changed, 18 insertions(+), 40 deletions(-)
+
+Extended planning session (Plan Mode) resolved the foundational H1 framing question blocked since Session AN. The detection-race framing was the root cause of H1 feeling "contrived and weak" — not the underlying assets. GDC's value vs SCADA/APM is the L3 document-fusion-determines-action architecture, not detection speed. XGBoost demoted to "router that aims L3 fusion pre-threshold." H1 survives as canonical worked example of a class of problems (not a single trick), with H2 still carrying the crispest money proof ($150k false pull). Three-beat frame: (1) SCADA alarm fires — cause unknown — standard policy = production-deferring shut-in; (2) GDC L3 fuses docs in seconds, cited verdict enables production-preserving action; (3) structural gap exists across O&G / Power & Energy / Manufacturing. Planning confirmed: threshold SCADA (65–75% of market per Gemini assessment) is the honest realistic baseline; adaptive APM is real but primarily a cloud play, not widely deployed across legacy fleets. The pre-threshold detection story re-admitted as honest background context — scoped to threshold SCADA as-deployed, never claimed against best-of-breed APM. XGBoost = the router/attention mechanism that decides which well/fault hypothesis deserves the expensive L3 fusion pass. LLM-after-SCADA ("just wait for the alarm, then assist") rejected: cedes the entire pre-threshold window and can't scale L3 across 200–500 wells without a classifier to route it. Changes deployed: lead-time banner removed, "Smart SCADA" → "SCADA" throughout, scrubber GDC▲ → "GDC: context fused", SCADA cards relabeled as honest operator choices, PUMP SEIZED → "UNPLANNED OUTCOME" (strawman retired), Panel 6 Mining row removed (user: keep O&G / P&E / MFG only), tab order: Discern (default) / Classify / Optimize / ⓘ Reference. DEMO_MASTER §4 open-question banner → RULING LOCKED. NEXT_SESSION_PROMPT and SESSION_LOG updated. Next: Batch 2A ISA-101 color pass + Sprint 3 H2 Briefing.
+
+---
+
 ## Session AN (June 10, 2026) — *ISA-101 color/UX pass + scenario Batch 1 — deployed and verified*
 
 **Code committed:** `074d803` (fix(scenario): ISA-101 color/UX pass — P6 text bump, neutral SCADA cards, color-scoped action cards, Formation overflow, animation snap, y-axis labels, narration removed)

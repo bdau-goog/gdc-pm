@@ -125,7 +125,12 @@ This argument lives in two places in the revised demo:
 
 ## 4. H1 SPECIFICATION — THE DISCERN TAB (ESP UNLOADING COMPARATIVE DETECTION SCENARIO)
 
-> **⚠️ OPEN QUESTION — Session AN (June 10, 2026):** The H1 competitive framing is under active review. After full concessions — detection speed ties advanced APM, operator has non-exclusive document access, shut-in is the safe rational default — H1's surviving claim is **fleet-scale document-fusion workflow efficiency**, not categorical superiority. The current §4.2/§4.5/§4.7 timeline-race language ("GDC detects before SCADA", "Smart SCADA" label, lead-time banner) is **contested and not pixel-eligible** until one of two paths is ruled: Path A (reframe H1 as sovereign cited-evidence analyst, drop SCADA race) or Path B (H2 as stronger lead, H1 as pattern-setter). Do NOT treat the §4 detection-speed claims as settled. Do NOT build Stage B panels or timeline relabels until the ruling lands.
+> **✅ RULING LOCKED — Session AO (June 10, 2026):** H1 narrative reframe deployed and verified at `7e7af08`. The detection-race framing is **retired**. The new H1 spine:
+> 1. **Even with advanced SCADA, certain fault pairs produce ambiguous symptoms — the safe default is a production-deferring shut-in** (shown honestly in SCADA view as "standard protective policy").
+> 2. **GDC's L3 document fusion hands the operator an auditable cited verdict in seconds** — turning the policy default into a confident, production-preserving action.
+> 3. **This is a class of problems, not a one-off** (Panel 6: O&G / Power & Energy / Manufacturing — Mining row removed).
+>
+> **Removed from UI:** lead-time banner, "Smart SCADA" label, "PUMP SEIZED" strawman. **Replaced:** "GDC: context fused" marker, "standard protective policy" card copy, "UNPLANNED OUTCOME" for override path. **Tab order:** Discern (default) / Classify / Optimize / ⓘ Reference. The detection speed story is demoted to background context (XGBoost = the router that aims L3 fusion pre-threshold); L3 document fusion is the headline.
 
 ### 4.1 The Core Problem: Ambiguous Unloading Telemetry on an Intake-Only String
 
