@@ -2,6 +2,15 @@
 
 ---
 
+## Session AN (June 10, 2026) — *ISA-101 color/UX pass + scenario Batch 1 — deployed and verified*
+
+**Code committed:** `074d803` (fix(scenario): ISA-101 color/UX pass — P6 text bump, neutral SCADA cards, color-scoped action cards, Formation overflow, animation snap, y-axis labels, narration removed)
+**Cluster image digest:** `sha256:0a50d175` (Session AN) · 3 files changed, 61 insertions(+), 59 deletions(-)
+
+User reviewed the live Discern scenario and provided 8 visual feedback items. All were diagnosed in code before any changes were written. Batch 1 (all mechanical/no-new-content) fixes implemented in one batched `replace_in_file` call per file: (1) Panel 6 briefing text sizes bumped ~25–35% (kicker 0.58→0.68rem, h2 1.5→1.85rem, row body 0.6→0.70rem, quote 0.72→0.88rem, CTA 0.75→0.87rem). (2) ISA-101 card color compliance: `.h1-card-green{color:var(--green)}` was propagating saturated color to sub and desc text in action cards — fixed by moving color to `.h1-card-green .h1-card-header` only; same for red/amber/contraindicated; `.h1-card-sub` given explicit `color:var(--text2)`. (3) Zone-1 body text explicit inline `color:var(--green/red)` on VFD recommendation lines changed to `color:var(--text2)` — headlines stay colored (ISA-101: saturated color reserved for status tag only). (4) Narration sentence in evidence panel ("The answer was never in the sensors…") deleted — it was narration, not evidence, and violated the panel's role. (5) SCADA action cards neutralized: Card A's "Safe if Gas Lock · Catastrophic if Drawdown" guidance removed entirely (SCADA can't know the differential — internal contradiction with its own "cause unknown" banner); Card B's "Safe for both fault types" qualifier removed. (6) Formation box / zone-3 container: added `overflow:visible` to parent div so SVG perf labels/formation rect don't clip. (7) Animation opacity snap: bubble/sand particle opacity was 0→1 over the full trajectory (near-invisible at GDC detect); changed to snap to 0.55 at gdc_detect_idx and fade to 1.0 at end. (8) Y-axis labels: expanded from bare units ("PSI", "A", "°F", "mm/s") to descriptive labels ("Pump Intake Pressure (PSI)", "Motor Current (A)", "Winding Temp (°F)", "Vibration (mm/s)"). Deployed and verified in live pod. Batch 2 (OEM modal content + additional doc cards) deferred — requires user copy sign-off against G1–G6 realism gate before any pixels. Note: field_intel row count is 6 vs. expected 5 in NEXT_SESSION_PROMPT — non-blocking discrepancy flagged.
+
+---
+
 ## Session AM (June 10, 2026) — *Stage A: Flicker fixes + Field Link removal + briefing re-entry — deployed and verified*
 
 **Code committed:** `97f008c` (fix(stage-a): flicker fixes + Field Link removal + briefing re-entry button)
