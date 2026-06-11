@@ -97,6 +97,15 @@ execute_on_start:
 # 3. If anything doesn't match: ask the user to confirm the correct state before proceeding
 # 4. Do NOT write any code until all 4 commands have been run and their output reported
 #
+# GPU DISCIPLINE — READ BEFORE ACTING ON STARTUP OUTPUT:
+# ollama replicas=0 and ollama_online=False is the EXPECTED dev default.
+# Do NOT scale ollama up just because it is down.
+# ollama is brought up ONLY for an explicit LLM-test step, using:
+#   ./scripts/gpu-start.sh    (announce before running — starts ~$0.65/hr billing)
+#   ./scripts/gpu-stop.sh     (run immediately after test — always paired)
+# "ollama_online: False" on startup is NOT a health discrepancy — it is correct.
+# "ollama_online: True" on startup SHOULD be flagged: was it left running accidentally?
+#
 # Then read BOTH of the following documents before writing any code:
 # 1. gdc-pm/docs/NEXT_SESSION_PROMPT.md — operational state (cluster, git head, next 2-3 tasks)
 # 2. gdc-pm/docs/DEMO_MASTER.md — AUTHORITATIVE spec for what we are building

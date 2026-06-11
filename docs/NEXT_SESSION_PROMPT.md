@@ -15,7 +15,16 @@ curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=j
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
 
-**Expected:** 8 pods 1/1 · ollama_online: True · gemma4:latest · field_intel: 5-6 · rag_docs: 18
+**Expected (dev default — GPU OFF):**
+- 7 pods 1/1 Running + 3 prune CronJob Completed
+- ollama deployment: **replicas=0** (pod absent — this is CORRECT and expected during dev)
+- `ollama_online: False` — **this is NOT a problem**. Do NOT scale ollama up unless explicitly testing LLM output.
+- field_intel: 5–6 · rag_docs: 18
+
+**GPU discipline rule:** ollama is OFF by default. Scale up ONLY at an explicit LLM-test step:
+  `./scripts/gpu-start.sh`   ← start (10–15 min, ~$0.65/hr begins)
+  `./scripts/gpu-stop.sh`    ← stop immediately after test (billing stops ~10 min later)
+The wrap-session checklist must confirm ollama is at 0 before closing.
 
 ---
 
@@ -128,6 +137,7 @@ Apply Python date-templating to H1 static seed documents (sonic log, shift note,
 | H3 copy — Vizier framing | ⚠️ NEEDS COPY FIX | H3 tab may still say "no cloud dependency" — Priority 4 |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sonic log, shift note, GOR lab have hardcoded dates. Batch B remediation. |
 | MCP gdc-second-opinion | ✅ WORKING | gdc-pm/mcp/, gemini-3.5-flash, Vertex AI ADC, location=global, project=gdc-das-life-2026, max_output_tokens=8192 — upgraded Session AV |
+| Ollama GPU pod | ✅ SCALED TO 0 | Session AW — GPU-discipline rule in effect. ollama_online=False is expected during dev. gpu-start.sh only at LLM-test steps. |
 | DEMO_MASTER §5 | ✅ UPDATED Session AV | APM right symptom, wrong root cause (physics corrected) |
 | docs/H2_SYNTHETIC_DOCS.md | ✅ CREATED Session AV | All 5 docs approved, G1-G6 pass, Gemini SURVIVES |
 | CLAIM_LEDGER H2 rows | ✅ UPDATED Session AV | H2-P1 physics fix + H2-D1 + H2-D2 added |
