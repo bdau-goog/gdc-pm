@@ -172,3 +172,45 @@ Date / git head / image digest / branch
 ```
 
 - **Trigger phrase:** When the user says **"wrap session"**, immediately: (1) run the Pre-Handoff Checklist, (2) update NEXT_SESSION_PROMPT.md in compact format, (3) append to SESSION_LOG.md, (4) update DEMO_MASTER.md if design changed, (5) commit all three docs, (6) confirm with one-paragraph summary.
+
+---
+
+## Scenario Validation Gate — Mandatory Before Any H2/H3 Claim or Code (added Session AR)
+
+**Root cause of repeat drift:** H1 and H2 both shipped scenarios where the deciding variable was reachable from telemetry, making the L3 moat efficiency-only, not categorical. This gate stops that before code is written.
+
+**A scenario is pixel-eligible ONLY if it passes ALL 4 survival tests:**
+
+1. **Discrete past event** — the cause is a specific thing that happened (not a slow drift). Slow drifts are APM territory; GDC's moat is over contextual interpretation of events recorded in documents.
+2. **Categorically off-sensor** — the cause is architecturally impossible to measure with any sensor on the monitored asset. Test: "Can any sensor *on this machine* ever carry this variable?" If yes, it fails — even if not currently integrated.
+3. **APM mis-routes** — best-of-breed multivariate APM (SmartSignal/PRiSM/Mtell with a trained agent) would route it to the wrong, expensive action. If APM can correctly resolve it with sensor patterns alone, GDC's L3 fusion adds efficiency but not a categorical moat.
+4. **Common and material** — the failure class occurs often enough across the fleet that automated fleet-scale resolution has a defensible ROI. A once-in-a-career event is not a product feature.
+
+**Enforcement:** Before drafting ANY wireframe or Claim Ledger row for a new scenario, write a one-paragraph pass/fail on each of the 4 tests. If any test fails, **stop and propose a different scenario.** Do not "patch" a failing scenario — replace it.
+
+**Scenario candidates that have been eliminated:**
+- ❌ Slug flow / gas interference — telemetric signature (cyclic amps + PIP) is in the data; APM/engineer reads it without documents (H2-11, Session AR)
+- ❌ Generic "deferred maintenance" — provenance problem (work order may record the lie); mechanism must be specific; slow drift of degradation = APM territory (Session AR in-session red-team)
+
+**Current approved candidate:**
+- ✅ Offset-well frac-hit interference — deciding variable (neighbor's frac schedule/regulatory filing) is categorically off-sensor, truthfully third-party recorded, APM mis-attributes the interference signature to downhole trouble, and frac hits are a well-documented Permian production problem. **Pending dual-AI red-team validation before code.**
+
+---
+
+## In-Session Red-Team Discipline (added Session AR)
+
+**The problem:** When I run in Cline as a coding agent under the planning/deference system prompt, I do not naturally take an adversarial stance on domain claims. This caused multiple sessions of building on under-validated physics (H2 slug-flow, H1 lead-time framing). An external Opus/Gemini pass with a hostile-engineer persona caught what I missed.
+
+**The fix — mandatory for any claim that will appear on screen:**
+
+Before writing any wireframe or Claim Ledger row for a new scenario claim, I must run the following check **in-persona**:
+
+1. **Adopt the hostile-engineer persona:** "I am a 20-year production/ESP reliability engineer. I have run SmartSignal and Mtell. I will dismantle this claim in 5 minutes if it has a flaw."
+2. **Write the one-sentence attack** on the claim before defending it. If I cannot write a strong attack, I am not thinking hard enough.
+3. **Apply the FAILS-SURVIVES-IF-REWORDED-SURVIVES** verdict as Gemini/Opus did. Any FAILS verdict blocks the claim from the Claim Ledger.
+4. **Flag any claim tagged 🔴 NEEDS-EXPERT** to the user immediately — it cannot ship as a hard fact.
+
+**What the external passes (Gemini + Opus, Session AR) taught us:**
+- The thermal-path kill shot (RTD in motor, bearing in pump/protector, thermally separated) was NOT web-searched — it was domain reasoning. Same model, hostile persona, adversarial framing = qualitatively different output.
+- "Most of your unstructured data isn't unstructured" (choke position = SCADA tag; GOR = production DB) — a critical narrowing that I missed by not interrogating the claim from the inside.
+- The persona gap is the dominant driver of quality differences between Cline sessions and external chat sessions with the same model. Web access (citations) is the secondary gap, fixable with the MCP server planned for the next session.

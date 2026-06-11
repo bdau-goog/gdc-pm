@@ -405,7 +405,17 @@ Never raw `<digit` in template text. Never raw `{{ }}` in static strings.
 
 ## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP SLUG FLOW DISCRIMINATION)
 
-**Status: COMPLETE AND DEPLOYED (Session V)**
+**Status: ⚠️ SCENARIO INVALIDATED — under reframe (Session AR)**
+
+> **Design decision Session AR:** The H2 slug-flow scenario was dual-red-teamed by Gemini and Claude Opus with web search. Both independently rated the following as **FAILS:** (1) flat-temperature-as-discriminator (RTD is in motor, not pump/protector — thermally separated; in high-GOR wells gas at intake *reduces* cooling → temp trends up, not flat — discriminator runs backwards); (2) $150k-pull vs $1,500-truck-roll as false dichotomy (real baseline is choke/VFD adjustment first, same cheap action from the amp chart); (3) L3 moat on slug flow (deciding signal is telemetric — cyclic amps-with-recovery + cyclic PIP — documents only corroborate); (4) "APM stops at anomaly score" over-concedes (Mtell classifies trained failure modes + attaches canned SOP). **Committed reframe:** H2 → off-sensor missing-variable scenario, candidate = **offset-well frac-hit interference**. The deciding variable (neighbor's frac schedule/regulatory filing/partner notice) is categorically not on any sensor and is truthfully recorded only in a third-party document. Passes all 4 survival tests: discrete event / categorically off-sensor / APM mis-attributes / common+material in Permian. Open item: differentiate from H1's use of "offset-frac report" as corroborating evidence — H2 makes the offset event *the* hidden cause, not a supporting doc.
+>
+> **4 scenario survival tests (mandatory for any H2 candidate):**
+> 1. Cause is a **discrete past event** (not slow drift — drift = APM territory)
+> 2. Cause is **categorically not telemetric** (not "not yet integrated" — categorically off-sensor)
+> 3. APM would **mis-route** it to an expensive wrong action
+> 4. **Common and material** enough that fleet-scale automation pays
+>
+> **New H2 spec to be written, validated (dual-AI red-team), and approved before any code.**
 
 ### The Core Story (Session V corrected physics)
 - **The Problem:** In high-GOR ESP wells, intermittent gas/liquid slugs travel up the production tubing string. When alternating gas slugs and liquid slugs arrive at the pump intake, they cause cyclic cavitation and hydraulic imbalance at the impeller — measured directly at the downhole PDG gauge. On raw telemetry, slug flow looks alarming but is NOT a downhole failure.
@@ -432,7 +442,7 @@ Never raw `<digit` in template text. Never raw `{{ }}` in static strings.
 
 ### The Core Story
 - **The Goal:** Don't just protect—maximize. When oil prices spike, operators want to run ESPs faster (e.g. 50 Hz → 58 Hz).
-- **The Risk:** Running faster increases heat. If motor windings exceed 280°F (Class H limit), the pump burns out.
+- **The Risk:** Running faster increases heat. If motor windings exceed **280°F (derated operating setpoint; Class H insulation limit = 356°F / 180°C per IEC 60085)**, the pump burns out. *(Note: 280°F is the field operating threshold applied in the demo — not the insulation class limit. See RT-NEW-2 in RED_TEAM_LEDGER.)*
 - **The Collaboration:** Vertex AI Vizier runs in the cloud to drive the multi-step GP search space. Local GDC edge models enforce the physical safety constraint.
 
 ---

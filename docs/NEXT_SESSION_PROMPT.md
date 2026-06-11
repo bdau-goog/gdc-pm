@@ -1,15 +1,14 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 10, 2026 (Session AQ-wrap — pattern locked, ready to build H2/H3)
-**git head:** `81d3e40` (to be updated after this commit)
-**fault-trigger-ui image:** `sha256:2fd95932a9b8ae9ca0eb6c961cf9a031b264a97ad69705fb8197a05999414a9a`
+**Date:** June 11, 2026 (Session AR — H2 scenario invalidated, docs-only session, MCP setup queued)
+**git head:** to be set after commit
+**fault-trigger-ui image:** `sha256:2fd95932a9b8ae9ca0eb6c961cf9a031b264a97ad69705fb8197a05999414a9a` (unchanged — no code deployed this session)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
 
-## STEP 1: Run These Five Commands First
+## STEP 1: Run These Four Commands First
 
 ```bash
-source .env && echo "PROJECT=$GOOGLE_CLOUD_PROJECT KUBECONFIG=$KUBECONFIG"
 kubectl get pods -n gdc-pm --no-headers
 kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
 curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
@@ -20,7 +19,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ---
 
-## STEP 2: Read DEMO_MASTER.md (MANDATORY — especially §4.5 Briefing Pattern Spec)
+## STEP 2: Read DEMO_MASTER.md (MANDATORY — especially §5 H2 INVALIDATED notice + §3 L1/L2/L3 stack)
 
 ```bash
 cat ~/gdc-pm/docs/DEMO_MASTER.md
@@ -28,38 +27,23 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: SIGN-OFF FIRST (≤5 min) — then build
+## STEP 3: NEXT SESSION — Two Bounded Tasks (in order)
 
-Before writing a single line of HTML, get yes/no on these 5 questions:
+### Task 1 — Stand up web-search + Gemini second-opinion MCP server (~15 min)
+The MCP server closes the in-session citation gap that caused H2 to drift undetected.
+- Tool: `web_search` (Brave Search API — free tier) + `gemini_second_opinion` (Gemini API — free tier user has)
+- Both in one MCP server. User to have **Gemini API key** (Google AI Studio) ready.
+- Brave Search key optional; Gemini-only is acceptable for the red-team function.
+- After: verify both tools return results in-session.
 
-1. **Beat taxonomy** — H2: Setup/Hook/Decision · H3: Opportunity/Tradeoff/Optimization — OK?
-2. **H2 Panel-3 title** — "Do NOT Pull — It's a $1,500 Fix" — OK?
-3. **H3 framing** — optimization with the OEM thermal-limit doc as the "context guardrail" thread connecting it to L3 — OK?
-4. **CTA labels** — H2 `▶ Run the Scenario` · H3 `▶ Run the Optimization` — OK?
-5. **Palette toning** — apply toned-down chrome (§4.5 values) to H1 briefing **in the same pass** as building H2? Or H1 retrofit deferred?
+### Task 2 — Lock the new H2 scenario (frac-hit / offset-well interference)
+Sequence — DO NOT SKIP or COMBINE steps:
+1. **Hostile-engineer red-team** (in-persona, me, via MCP) on the frac-hit candidate. 4 survival-test pass/fail written out explicitly.
+2. If SURVIVES: write full H2 scenario spec (asset, trigger, docs, action, $ contrast) + CLAIM_LEDGER rows.
+3. Confirm H1/H2 doc-overlap differentiation (H1 uses offset-frac report as a corroborating doc; H2 makes the frac event the CAUSE — must be clearly distinct on screen).
+4. User approves spec, then Act mode to build.
 
----
-
-## STEP 4: TONIGHT'S BUILD SEQUENCE
-
-**Sprint 0 (optional, fold into Sprint 3):** Tone H1 briefing palette to §4.5 values — border 0.20–0.22, fill 0.04–0.07. One `replace_in_file` on `index.html`.
-
-**Sprint 3 — H2 Briefing (3 panels):**  
-Architecture: `h2BriefingMode: true`, `h2BriefingPanel: 1`, `h2P2Scrub: 0` in `app.js`. Add `v-if="h2BriefingMode"` briefing container before `<template v-else>` wrapping the existing H2 scenario. Add `← Briefing` button to H2 header. Reuse all H1 briefing CSS classes (no new keyframes).
-
-Panel wireframes — see §4.5 + NEXT_SESSION_PROMPT archive or PLAN MODE session AQ-continued:
-- **P1 of 3 — The Equipment:** "What is Slug Flow?" · Left: callout + WELL ESP-ALPHA-3 info box · Right: surface flowline SVG (slug pulses) + healthy pump/motor
-- **P2 of 3 — The Hook:** "Why It Looks Like a Failing Pump" · Scrubber (h2P2Scrub) · 2×2 tiles: VIB amber/rising, TEMP green/flat, PIP slate/dipping, AMPS slate/dipping · Blue callout: "Bearing failure raises BOTH. Here temp is flat."
-- **P3 of 3 — The Decision:** "Do NOT Pull — It's a $1,500 Fix" · SCADA-sees (slate) vs GDC-retrieves (amber/green) two-column layout · 3 docs revealed · Quote + CTA
-
-**Sprint 4 — H3 Briefing (3 panels) + H3 header rename:**  
-`h3BriefingMode: true`, `h3BriefingPanel: 1` in `app.js`. Same briefing wrapper pattern. Rename H3 header: `"Optimize — VFD Bayesian Optimization"`.
-- **P1 of 3 — The Opportunity:** "Oil Price Jumped 40%" · Left: callout + VFD tradeoff info box · Right: Hz-vs-revenue bar zones (CSS)
-- **P2 of 3 — The Tradeoff:** "Speed Makes Money — and Heat" · CSS table (4 Hz rows, temp, status, revenue) · Quote + IEC 60085 citation
-- **P3 of 3 — The Optimization:** "Find the Edge, Respect the Limit" · Left: how-it-works bullets · Right: CSS Pareto sketch · Quote + CTA
-
-**Sprint 5 — Video Script + Veo concepts:**  
-New `docs/VIDEO_SCRIPT.md` — 8 segments, ~5 min. Three Veo intro concepts.
+**Do NOT write any H2 wireframe or HTML until Steps 1–3 are done and approved.**
 
 ---
 
@@ -67,23 +51,30 @@ New `docs/VIDEO_SCRIPT.md` — 8 segments, ~5 min. Three Veo intro concepts.
 
 | Item | Status | Note |
 |------|--------|------|
-| H1 Briefing — all 6 panels | ✅ COMPLETE Session AQ | Batch 2 deployed |
-| H2 Briefing panels | ⚠️ SPRINT 3 | Zero infrastructure |
-| H3 Briefing panels | ⚠️ SPRINT 4 | Zero infrastructure |
-| DEMO_MASTER §4.5 | ✅ WRITTEN Session AQ-wrap | Briefing Pattern Spec — canonical |
-| H1 palette toning | ⚠️ SPRINT 0 | User confirmed "tone down 2 notches" — fold into Sprint 3 call |
+| H1 Briefing — all 6 panels | ✅ COMPLETE Session AQ | Deployed |
+| H2 Briefing panels | ❌ INVALIDATED Session AR | Slug-flow scenario fails H2-9/H2-10/H2-11/H2-12. New scenario (frac-hit) must be validated before build. |
+| H3 Briefing panels | ⚠️ QUEUED SPRINT 4 | Not started. H3 is sovereign-edge-optimization story, NOT L3 context-fusion — do not market as the moat. |
+| H2 scenario — slug flow | ❌ INVALIDATED | Telemetric signature; APM reads it; false-dichotomy cost; documents don't carry load |
+| H2 scenario — frac-hit | ⚠️ CANDIDATE | Passes 4 survival-test criteria structurally; pending dual-AI validation via MCP |
+| Vib units (H2 + H1) | ⚠️ INTEGRITY FINDING | Downhole ESP gauges report in **g** (0–5 g), not mm/s (surface ISO-10816 convention). H1 shows "0.41 in/s". Fix when rebuilding H2 scenario. |
+| ISA-18.2 alarm level framing | ⚠️ INTEGRITY FINDING | Standard governs alarm management/rationalization, NOT trip levels. Say "OEM limits, rationalized per ISA-18.2". |
+| 90% classifier confidence display | ⚠️ INTEGRITY FINDING | Single softmax number = overfit theater to this audience. Replace with evidence-chain + citation in new H2 build. |
+| H3 Class H temp label | ✅ FIXED Session AE (app) / FIXED Session AR (DEMO_MASTER §6) | 280°F is derated operating setpoint, not Class H limit (Class H = 356°F / 180°C per IEC 60085) |
+| DEMO_MASTER.md | ✅ UPDATED Session AR | §5 H2 invalidated + 4 survival tests; §6 temp label fixed; Scenario Gate + In-Session Red-Team rules added |
+| RED_TEAM_LEDGER.md | ✅ UPDATED Session AR | H2-9..12 + H2-C1..C3 added; process finding recorded |
+| .clinerules | ✅ UPDATED Session AR | Scenario Validation Gate + In-Session Red-Team Discipline sections added |
 | Video Script | ⚠️ SPRINT 5 | docs/VIDEO_SCRIPT.md does not exist |
-| OEM Troubleshooting Guide modal | ⚠️ BATCH 3 | H1 Doc 3 no click handler — low priority |
-| SPE-174536 in Zone-1 verdict | ⚠️ LOW | Acceptable in ⓘ context |
+| web-search + Gemini MCP | ⚠️ TASK 1 NEXT SESSION | Not set up. Closes in-session citation + dual-model cross-check gap. |
 
 ---
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
-- No browser on SSH remote — verify with `kubectl exec grep`
+- No browser on SSH remote — do NOT use `browser_action`
 - **Batch all edits to same file in ONE `replace_in_file` call**
-- **Deploy with explicit digest** — `kubectl rollout restart :latest` does NOT pull from registry
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,400 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first
+- `app.py` ~6,400 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first, read targeted sections only
 - **Wireframes → sign-off → HTML** (never write HTML without sign-off)
+- **Scenario gate: 4 survival tests must pass before any wireframe or code**
+- **In-session red-team (hostile-engineer persona) mandatory before any new claim ships**
 - H2 uses inference-api (not local esp_classifier.bst)

@@ -84,8 +84,26 @@ Trigger phrase **"red team"** re-runs this audit at any checkpoint.
 
 ---
 
-*Last updated: Session AE (June 10, 2026) — RT-NEW-2/3/5 + L2-drift lead-time banner fix*
-*Smoke test: pending Session AE build verification*
+*Last updated: Session AR (June 11, 2026) — H2 dual-AI red-team; scenario invalidated; frac-hit reframe committed*
+*Smoke test: N/A — no code written this session (correct — scenario invalid)*
+
+## Session AR — H2 Dual-AI Red-Team Findings (June 11, 2026)
+
+Both Gemini (web) and Claude Opus (web) ran the H2 slug-flow narrative through independent expert red-teams. Convergent verdicts:
+
+| # | Challenge | Target | Severity | Verdict | Action |
+|---|---|---|---|---|---|
+| H2-9 | "Flat winding temperature is not a bearing-vs-slug discriminator — RTD is in the motor, bearings are in pump/protector (thermally separated); early mechanical wear doesn't move the winding RTD. And in a high-GOR well, gas at the intake *reduces cooling* → temp trends up, not flat — the discriminator runs backwards." | H2 briefing P2 "temp is the discriminator" claim | 🔴 CRITICAL | **FAILS** (both) | **Cut "flat temp = categorical discriminator."** Demote to one weak corroborating signal. Lead diagnosis with the telemetric signature that actually separates cases: cyclic amps-with-recovery + cyclic PIP (APM also reads this). |
+| H2-10 | "$150k pull vs $1,500 truck roll is a false dichotomy — the real baseline for cyclic amps/vib is choke/VFD adjustment first. The same $1,500 action reached from the amp chart, not a reflexive workover." | H2 P3 cost comparison | 🔴 CRITICAL | **FAILS** (both) | **Kill the binary.** Reframe as "reduced diagnostic latency + avoided repeated HH trips + deferred production" OR reframe entire scenario (see H2-11). |
+| H2-11 | "The deciding signal (cyclic amps-with-recovery + cyclic PIP) is in the telemetry — APM already reads it. Documents only corroborate. L3 moat is not load-bearing here." | H2 L3 value proposition | 🔴 CRITICAL | **FAILS** (both) — same failure class as H1 pre-reframe | **Scenario must be replaced.** See committed reframe in DEMO_MASTER §5: offset-well frac-hit interference (cause is categorically off-sensor, recorded only in third-party document). |
+| H2-12 | "APM (SmartSignal/PRiSM/Mtell) stops at an anomaly score — over-concession." | H2 APM baseline claim | 🟠 HIGH | **FAILS** (both) — Mtell classifies trained failure modes + attaches canned SOP | Concede: Mtell can say "gas interference" *if trained*; cannot derive root cause or action by fusing this tour's choke log + separator test + shift note. Scope the moat to that narrower claim. |
+| H2-C1 | "Downhole ESP gauges report vibration in g (0–5 g), not mm/s velocity (that's the surface ISO-10816 convention). 4.0/5.0 mm/s signals the scenario was written by a surface-PdM engineer." | H2 vib units across UI + H1 "0.41 in/s" | 🔴 CRITICAL — SURVIVES-IF-FIXED | **Must convert to g or justify surface-mounted sensor.** Applies to H1 vib display too. Add to Known Integrity State. |
+| H2-C2 | "ISA-18.2 HI=4.0 / HH=5.0 misuses the standard — ISA-18.2 governs alarm management/rationalization, not trip levels. Numeric limits are from the OEM." | H2 alarm framing | 🟡 MEDIUM | **SURVIVES-IF-REWORDED** | Change to "OEM vibration limits, rationalized per ISA-18.2 alarm management" |
+| H2-C3 | "90% classifier confidence is a single softmax number — calibration is notoriously poor on rare-event, few-shot classification. Reads as overfit theater." | H2 GDC verdict confidence display | 🟠 HIGH | **SURVIVES-IF-REPLACED** | Replace bare % with the **evidence chain + citations** that produced the verdict. Confidence % alone is the weakest possible presentation to this audience. |
+
+**Process finding (Session AR — applies to all sessions):**
+- The slug-flow scenario and the H1 scenario share the same root failure: the deciding variable was reachable from telemetry, making the L3 moat efficiency-only, not categorical. A scenario gate (4 survival tests, see DEMO_MASTER §5) has been added to `.clinerules` and must be applied to *any* new H2 candidate before code.
+- Red-teaming persona and web access make a measurable difference in quality. The in-session hostile-engineer persona (same model, adversarial framing) caught both H2-10 and H2-11 without external search — which confirms the gap was primarily context/stance, not capability.
 
 ---
 
