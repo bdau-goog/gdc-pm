@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session BD — Sprint H3-C 3-panel briefing deployed)
-**git head:** `662166c` (feat(h3-briefing): Sprint H3-C — 3-panel H3 briefing + field optimization display)
-**fault-trigger-ui image:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b`
+**Date:** June 11, 2026 (Session BE — Sprint H3-D: DEMO_MASTER §6 field-level rewrite + STAKEHOLDER_BRIEF.md)
+**git head:** `[commit after session-be wrap]`
+**fault-trigger-ui image:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b` (UNCHANGED — docs-only session)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -20,7 +20,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
 - field_intel: **9–12** · rag_docs: **18**
 
-**Actual at session-BD close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
+**Actual at session-BE close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$0.65/hr). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -45,51 +45,41 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks (in order)
 
-### SPRINT H3-D: DEMO_MASTER §6 rewrite + new stakeholder briefing doc
-**Part A — DEMO_MASTER §6 field-level spec rewrite (docs only)**
-- Update §6 to reflect 6-well Pad Alpha joint optimization (N-well, gas ceiling, LP uplift)
-- Replace single-pump VFD story with field-level story: Discern→Classify→Optimize arc lands at the field
-
-**Part B — NEW: `docs/STAKEHOLDER_BRIEF.md`**
-A standalone ~2-page non-technical document for customer stakeholders. Sections:
-1. **What we built** — one paragraph per horizon: H1 (Discern), H2 (Classify), H3 (Optimize)
-2. **Value proposition per horizon** — what problem it solves, what it costs to not solve it, what GDC delivers
-3. **Honest relationship with SCADA** — GDC complements (not replaces) SCADA; the three tiers (tags / tag-patterns / documents); where GDC wins categorically
-4. **Use cases in other markets** — the STATE-vs-CONTEXT universal pattern; same capability in P&E (transformer diagnostics), manufacturing (bearing fault provenance), mining (haul-truck driveline); each with a 2-sentence worked example
-5. **The sovereign-edge differentiator** — why "inside the perimeter" matters; the three sovereignty pillars (IEC 62443 / data residency / governance & IP) in plain language
-
-Tone: executive-readable, no jargon, no LP/Bayesian/GP terminology on screen. All claims must have a SURVIVES row in CLAIM_LEDGER or be softened to a defensible range. DEMO_MASTER §3 is the authoritative source for the value proposition language — use its locked wording.
-
-### SPRINT P4 — H1 Batch B date-templating (small)
+### SPRINT P4 — H1 Batch B date-templating (small, code change)
 - Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dates
-- Template to `today − offset` at startup (same pattern as H2 docs)
+- Template to `today − offset` at startup (same pattern as H2 docs — `_H2_SCENARIO_DATE` pattern in app.py)
+- Find affected rows: `grep -n "2025" gke/fault-trigger-ui/app.py | grep -i "field_intel\|sonic\|shift\|gor\|lab"`
+- Scope: app.py only — no HTML change needed
+- Deploy after: docker build → push → rollout → smoke test H1 scenario
+
+### SPRINT STAKEHOLDER-REVIEW — user review of STAKEHOLDER_BRIEF.md
+- `docs/STAKEHOLDER_BRIEF.md` is written and committed (Session BE)
+- Read it with the user, confirm tone and claims are correct
+- Check any 🔴 NEEDS-EXPERT items against what's labeled on screen
 
 ---
 
-## H3-C Technical Notes (Session BD)
+## H3-D Technical Notes (Session BE)
 
-**What was built:**
-3-panel H3 briefing replacing the old "ⓘ Physics & Logic" toggle panel. All panels follow §4.5 Briefing Pattern Spec exactly.
+**What was written (docs only — no code, no deploy):**
 
-**Panel 1 — The Opportunity:**
-- 6-well GOR table (A-3 green/450 → A-5 amber/1350)
-- Associated gas explanation: "every oil well produces gas whether you want it or not"
-- Closing quote: "Not all barrels cost the same gas. A-3 produces 3× more oil per unit of gas budget than A-5."
+**DEMO_MASTER §6 rewrite:** Complete field-level spec replacing the old single-pump VFD story. Now covers:
+- 6-well Pad Alpha joint optimization narrative arc (Discern→Classify→Optimize lands at the field)
+- Three binding/tracked constraints per well (gas ceiling, thermal polynomial, RUL horizon)
+- Live Vizier result table (A-3/A-6 at 66.0 Hz, A-5 at 59.7 Hz, +77.9 bbl/d, +$369,225/90d)
+- LP-optimal vs. GP-Bandit role distinction (both shown, roles honest)
+- Edge-enforces safety explanation (outage-immune, no public-cloud dependency for decision)
+- 7 H3 Claim Ledger rows (all SURVIVES per Session BD red-team)
 
-**Panel 2 — The Tradeoff:**
-- Constraint stack: gas ceiling (amber/BINDING, 8.0 MMscfd), motor winding temp (slate/not binding, 280°F from AlloyDB RAG), RUL horizon (slate/not binding, 90d)
-- SCADA honest framing: "Without a cross-well optimizer, the safe default is uniform throttle — conservative, safe, but leaves 9,238 bbl/d short of what gas-efficient wells could carry."
-
-**Panel 3 — The Optimization:**
-- GOR-ranked setpoint table: A-3/A-6 run at 66.0 Hz, A-5 (highest GOR) gives way at 59.7 Hz (+9.7 from SCADA vs +16 for low-GOR wells)
-- Uplift card: +77.9 bbl/d / +$369,225/90d / gas 7.9999/8.0 MMscfd ✓
-- Closing: "Maximum production from the pad. No pump destroyed." / "Cloud searches. Edge enforces."
-- CTA: ▶ Run the Optimization → sets h3BriefingMode=false, fires runVizierOptimize()
-
-**Red-team (Gemini gdc-second-opinion, Session BD):**
-- "Vizier as optimizer for LP-trivial problem" → FAILS (engineer attack: "use a spreadsheet")
-- Fix: Vizier justified for FULL multi-constraint problem (gas+thermal+RUL non-linear). LP analytical handles gas-only subproblem; Vizier handles the full search where LP doesn't apply.
-- All 7 revised claims SURVIVE
+**STAKEHOLDER_BRIEF.md (new file):** ~1,800-word non-technical executive document. Sections:
+1. What we built (H1/H2/H3 — plain English, one paragraph each)
+2. The Problem Each Horizon Solves (table: problem / delivery / avoids)
+3. Honest relationship with SCADA (three tiers in plain language, no overclaiming)
+4. Same capability in other industries (P&E / Manufacturing / Mining table)
+5. Why "inside the perimeter" matters (IEC 62443 / data residency / governance & IP)
+- All cost figures from CLAIM_LEDGER; estimates labeled; no 🔴 NEEDS-EXPERT items displayed as hard facts
+- No LP/Bayesian/GP/pgvector terminology on screen
+- Closing quote from DEMO_MASTER §9 spine sentence (locked wording)
 
 ---
 
@@ -105,11 +95,12 @@ Tone: executive-readable, no jargon, no LP/Bayesian/GP terminology on screen. Al
 | Sprint F0: "GDC Operations Intelligence" header | ✅ DEPLOYED | `e85f9b9`+`81c3a5b` — session BB |
 | Sprint H3-A: thermal model 4-feature fix | ✅ DEPLOYED | `81c3a5b` — session BB |
 | Sprint H3-B: N-well field Vizier optimization | ✅ DEPLOYED | `84e1b5f` — session BC · 6-well LP-optimal, gas ceiling 8.0 MMscfd |
-| **Sprint H3-C: 3-panel H3 briefing** | **✅ DEPLOYED** | **`662166c` — session BD · "Maximum Production. Maximum Care." / "Cloud Searches. Edge Enforces."** |
-| DEMO_MASTER §6 field-level spec | ❌ NOT UPDATED | Sprint H3-D |
+| Sprint H3-C: 3-panel H3 briefing | ✅ DEPLOYED | `662166c` — session BD |
+| **Sprint H3-D: DEMO_MASTER §6 + STAKEHOLDER_BRIEF.md** | **✅ COMMITTED** | **Session BE — docs only, no deploy needed** |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
+| STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | Sprint STAKEHOLDER-REVIEW — confirm tone/claims |
 | **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly** |
-| H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Soft range only — labeled as estimate on screen |
+| H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Soft range only — labeled as estimate on screen and in STAKEHOLDER_BRIEF.md |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
 | MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |

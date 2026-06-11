@@ -2,6 +2,19 @@
 
 ---
 
+## Session BE (June 11, 2026) — *Sprint H3-D: DEMO_MASTER §6 field-level rewrite + STAKEHOLDER_BRIEF.md*
+
+**Code committed:** `[hash]` (docs(session-be): Sprint H3-D — DEMO_MASTER §6 field rewrite + STAKEHOLDER_BRIEF.md)
+**Cluster image digest:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b` (UNCHANGED — docs-only session, no deploy)
+
+**What was done:** Sprint H3-D completed in full (docs only). **Part A:** DEMO_MASTER §6 completely rewritten from the old single-pump VFD story to the full 6-well Pad Alpha joint optimization spec. The new §6 covers the Discern→Classify→Optimize narrative arc (H3 lands at the field level), three constraints per well (gas ceiling 8.0 MMscfd binding, thermal 280°F polynomial, RUL exponential decay), the live Vizier result table (A-3/A-6 at 66.0 Hz, A-5 at 59.7 Hz, +77.9 bbl/d / +$369,225/90d), the LP-optimal vs. GP-Bandit role distinction (both shown, both honest), the edge-enforces-safety framing (outage-immune, no public-cloud dependency for the decision), and 7 H3 Claim Ledger rows all carrying SURVIVES from the Session BD Gemini red-team. DEMO_MASTER version header updated to Session BE. **Part B:** New `docs/STAKEHOLDER_BRIEF.md` written — ~1,800-word non-technical executive document with five sections: what we built (H1/H2/H3 plain English), the problem each horizon solves (table), honest relationship with SCADA (three-tier plain language, no overclaiming, no competitor strawman), same capability in other industries (P&E / Manufacturing / Mining), and why "inside the perimeter" matters (IEC 62443 / data residency / governance & IP in plain language). All cost figures are from the CLAIM_LEDGER; 🔴 NEEDS-EXPERT ranges labeled as estimates; no LP/Bayesian/GP/pgvector jargon; closing quote uses locked DEMO_MASTER §9 wording.
+
+**Key decisions:** (1) SCADA section in STAKEHOLDER_BRIEF.md uses the DEMO_MASTER §3 "Tags vs. Tag-Patterns vs. Documents" framing translated to executive language — concedes L1 and L2 fully, wins only on L3 architectural gap. (2) H3 in STAKEHOLDER_BRIEF.md deliberately avoids "Bayesian" / "LP" / "Gaussian Process" terminology — describes the optimizer as "ranks wells by gas efficiency, allocates budget to most efficient wells first." (3) §3 in DEMO_MASTER remains LOCKED per Session AU ruling — STAKEHOLDER_BRIEF.md draws from it, does not replace it. (4) Sprint P4 (H1 date-templating) remains the next code task; STAKEHOLDER_BRIEF.md user review is the next non-code task.
+
+**Next task:** Sprint P4 — H1 Batch B date-templating in app.py (hardcoded 2025 dates in sonic log / shift note / GOR lab report field_intel seeds). Then user review of STAKEHOLDER_BRIEF.md.
+
+---
+
 ## Session BD (June 11, 2026) — *Sprint H3-C: 3-panel H3 briefing deployed*
 
 **Code committed:** `662166c` (feat(h3-briefing): Sprint H3-C — 3-panel H3 briefing + field optimization display)

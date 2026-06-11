@@ -1,5 +1,5 @@
 # GDC Operations Intelligence — Master Demo Specification & Blueprint
-**Version:** Session BB (June 11, 2026) — Sovereign-Edge of Industry-Validated Capability; H2 Maintenance-Provenance; Locked Strategy
+**Version:** Session BE (June 11, 2026) — §6 field-level rewrite (Sprint H3-D); STAKEHOLDER_BRIEF.md added; H2 Maintenance-Provenance; Locked Strategy
 **Status:** Authoritative Single Source of Truth  
 **Enforcement:** This document contains the complete visual specs, narrative blueprints, and the **Claims Ledger**. No claims may go on screen unless they have a `SURVIVES` row in the Ledger (Appendix).
 
@@ -498,13 +498,108 @@ Returns: efficiency[], vib[], t_min[], health_score[], gdc_detect_idx, scada_ala
 
 ---
 
-## 6. H3 SPECIFICATION — VFD BAYESIAN OPTIMIZATION
+## 6. H3 SPECIFICATION — THE OPTIMIZE TAB (PAD-LEVEL FIELD OPTIMIZATION)
+
+**Version:** Session BE (June 11, 2026) — Full field-level rewrite (Sprint H3-D). Replaces single-pump VFD story from Session BB.
+
+### The Narrative Arc: Discern → Classify → Optimize
+
+H1 and H2 each resolve a crisis on a single well. H3 asks the natural next question: *now that the system knows which wells are healthy, what is the most valuable way to run them?* The Optimize act takes the same GDC stack — edge models, sovereign boundary, cloud collaboration — and applies it to the **field as a whole**, not one pump at a time. The scale gap that §3 claims becomes literal: the decision is not about one asset; it is about the entire pad.
+
+---
 
 ### The Core Story
-- **The Goal:** Don't just protect—maximize. When oil prices spike, operators want to run ESPs faster (e.g. 50 Hz → 58 Hz).
-- **The Risk:** Running faster increases heat. If motor windings exceed **280°F (derated operating setpoint; Class H insulation limit = 356°F / 180°C per IEC 60085)**, the pump burns out. *(Note: 280°F is the field operating threshold applied in the demo — not the insulation class limit. See RT-NEW-2 in RED_TEAM_LEDGER.)*
-- **The Collaboration (honest hybrid — NOT air-gap):** Vertex AI Vizier runs in the cloud to drive the multi-step GP search space using Gaussian process math — only parameter-level data goes to cloud, never raw operational telemetry. The local XGBoost thermal model (`esp_thermal.ubj`) evaluates every candidate setpoint against the 280°F derated safety constraint and holds it — **even if the WAN link drops mid-search**. The decision and the safety constraint both remain on-premise. This is the novel piece: not the cloud optimization (Bayesian search is common), but the edge safety constraint that holds at precisely the wrong moment (process upset, storm, satellite outage during a price spike). The edge is the safety system.
-  - ❌ **Retired language:** "no cloud dependency for the decision" — too absolute. Replace with: "no public-cloud dependency for the decision — the safety constraint and the final approved setpoint both run on-premise."
+
+**The Problem:** Pad Alpha has 6 active ESP producers (A-1 through A-6) running inside a single gas-compression takeaway contract. The binding constraint is the **gas ceiling: 8.0 MMscfd** — a hard midstream contract limit that, if exceeded, triggers curtailment or flaring violations (RRC of Texas). Every barrel of oil produced is accompanied by associated gas. Wells differ in their Gas-Oil Ratio (GOR): A-3 produces 450 scf per barrel; A-5 produces 1,350 scf/bbl. When the gas budget is scarce, **not all barrels cost the same gas.**
+
+**Without GDC:** The safe SCADA default is **uniform throttle** — scale every well back proportionally to stay below the ceiling. Conservative, safe, but it wastes gas budget on high-GOR wells that could be partially throttled while low-GOR wells run at full speed. That inefficiency costs approximately **78 bbl/d** — production the pad is physically capable of delivering, left deferred by the absence of a cross-well optimizer.
+
+**With GDC:** A joint optimizer runs across all 6 wells simultaneously, respecting three real constraints per well:
+
+1. **Gas ceiling** (field-level, binding this run): 8.0 MMscfd. Tagged 🟡 OUR-CODE — representative of real Permian midstream contract constraints; scenario parameter, not a measured field value.
+2. **Motor winding temperature** (per-well, 280°F derated operating setpoint): evaluated on-premise by the 4-feature physics polynomial `T = f(vfd_hz, motor_amps, intake_fluid_temp, water_cut_pct)` per API RP 11S3/S5 and IEEE 112. The 280°F threshold is the derated field operating limit — not the Class H insulation limit of 356°F / 180°C (IEC 60085). See RT-NEW-2 in RED_TEAM_LEDGER.
+3. **RUL horizon** (per-well, tracked but not binding this run): modeled as `rul_base × exp(−0.11 × max(0, hz−50))`. Decay begins above 50 Hz (SCADA nominal). RUL bases 590–820 days reflect realistic Permian ESP lifecycle.
+
+**The Result (live Vizier API verification, 2026-06-11):**
+
+| Well | GOR (scf/bbl) | SCADA uniform (Hz) | GDC optimal (Hz) | Role |
+|------|--------------|-------------------|-----------------|------|
+| A-1 | 520 | ~63.0 | 65.5 | Low-GOR — run near max |
+| A-2 | 680 | ~63.0 | 65.5 | Low-GOR — run near max |
+| A-3 | 450 | ~63.0 | **66.0** | Lowest GOR — full speed |
+| A-4 | 890 | ~63.0 | 64.2 | Mid-GOR — modest trim |
+| A-5 | 1,350 | ~63.0 | **59.7** | Highest GOR — throttled |
+| A-6 | 450 | ~63.0 | **66.0** | Lowest GOR — full speed |
+
+**Uplift: +77.9 bbl/d · +$369,225 over 90 days · gas 7.9999 / 8.0 MMscfd ✓**
+
+A-5 gives way so A-3 and A-6 can run at maximum. Maximum production from the pad. No constraint violated. No pump destroyed.
+
+⚠️ **Integrity note:** Hz values and uplift figures are hardcoded in the H3 briefing panels from the live API call of 2026-06-11. If `_PAD_ALPHA_WELL_PARAMS`, `_GAS_CEILING_MMSCFD`, or `_PUMP_FLOW_COEFF` in app.py change, the briefing table must be updated to match.
+
+---
+
+### The Collaboration: Cloud Searches, Edge Enforces
+
+This is an **honest hybrid** — not an air-gap and not cloud-dependent for the safety decision:
+
+- **Vertex AI Vizier** (cloud) runs as a **Gaussian Process Bandit** — 6-dimensional search (one Hz setpoint per well). It drives the multi-step Bayesian exploration. Only parameter-level data (Hz vectors and their objective scores) goes to cloud. **Raw operational telemetry, production rates, and well identities never leave the sovereign boundary.**
+
+- **The edge** (local Python, physics polynomial) evaluates every candidate Hz vector from Vizier against all three constraints and rejects any violation before the setpoint reaches the control layer. The LP-optimal analytical allocation — the correct closed-form solution for the gas-only linear sub-problem — is also computed locally as both the initialization and the fallback.
+
+- **Edge is the safety system:** If the WAN link drops mid-search during a price spike, storm, or process upset, the LP-optimal local result is the approved output. The constraint holds. The decision does not require a cloud round-trip.
+
+❌ **Retired language:** *"no cloud dependency for the decision"* — too absolute.
+✅ **Use:** *"No public-cloud dependency for the decision — the safety constraint and the final approved setpoint both run on-premise."*
+
+---
+
+### Vizier Justification (red-teamed and SURVIVES — Session BD Gemini gdc-second-opinion)
+
+**Attack:** *"A GP Bandit for a problem you can solve with a spreadsheet — that's credentialing theater."*
+
+**Defense — SURVIVES:** The gas-only sub-problem IS LP-solvable (linear objective, linear constraint → bang-bang: allocate to lowest-GOR wells first). We solve it analytically and show it as the LP-optimal baseline — transparent, auditable, no black box. Vizier's role is the **full multi-constraint problem**: gas ceiling + 4-feature nonlinear thermal polynomial + per-well exponential RUL decay, simultaneously, over 6 continuous variables. That is not LP-solvable. That is the search space where GP Bandit adds value over grid enumeration. The demo shows both solvers, distinguishes their roles, and explains why the non-linear full problem is Vizier's domain. An engineer watching this demo sees two honest solvers, not one over-engineered one.
+
+---
+
+### Screen Architecture
+
+```
+OPTIMIZE tab
+├── H3 Briefing (3 panels — §4.5 Briefing Pattern Spec) — h3BriefingMode: true
+│   ├── Panel 1: The Opportunity
+│   │   (6-well GOR table · associated gas explanation · "3× more oil per unit of gas budget")
+│   ├── Panel 2: The Tradeoff
+│   │   (constraint stack: gas ceiling AMBER/BINDING · thermal SLATE/not binding · RUL SLATE)
+│   │   (SCADA honest framing: "uniform throttle — conservative, safe, leaves 9,238 bbl/d short")
+│   └── Panel 3: The Optimization
+│       (GOR-ranked Hz table · uplift card · "Maximum production. No pump destroyed.")
+│       (closing: "Cloud searches. Edge enforces.")
+│       CTA: ▶ Run the Optimization → sets h3BriefingMode=false, fires runVizierOptimize()
+└── H3 Dashboard — h3BriefingMode: false
+    ├── Vizier Pareto chart (trials[] — 15 GP-Bandit iterations, exploration progress)
+    ├── Per-well setpoint table (SCADA baseline vs GDC optimal Hz + gas consumed per well)
+    ├── Field uplift card (+77.9 bbl/d / +$369,225/90d / gas ✓ 7.9999/8.0 MMscfd)
+    └── ← Briefing button (returns to h3BriefingMode=true, h3BriefingPanel=1)
+```
+
+**Backend endpoint:** `POST /api/vizier/optimize` (or existing GET with asset param — see app.py).
+
+Returns: `trials[]`, `scada_nominal`, `vizier_optimal`, `optimal_hz`, per-well breakdown (gas_consumed, thermal_ok, rul_remaining), `lp_baseline`, `gas_ceiling_mmscfd`, `constraint_binding`.
+
+---
+
+### Claim Ledger Rows — H3 (all SURVIVES, Session BD Gemini red-team)
+
+| ID | Claim | Tag | Source | Status |
+|---|---|---|---|---|
+| H3-P1 | Gas ceiling 8.0 MMscfd is a real class of binding Permian production constraint | 🟡 OUR-CODE | `_GAS_CEILING_MMSCFD=8.0` in app.py; scenario parameter representative of RRC/midstream contract limits (Gemini-confirmed); labeled as scenario parameter | SURVIVES |
+| H3-P2 | GOR heterogeneity across wells makes joint optimization > sum of independent optimizations | 🟢 TEXTBOOK | Standard reservoir engineering; Permian GOR variation well-documented; "classic resource-allocation problem" (Gemini Session AZ) | SURVIVES |
+| H3-P3 | Motor winding temp evaluated by 4-feature polynomial T = f(hz, amps, fluid_temp, water_cut) | 🟢 TEXTBOOK | API RP 11S3/S5 §5; IEEE 112; physics polynomial is PRIMARY evaluator since Session BB — esp_thermal.ubj intentionally not loaded | SURVIVES |
+| H3-P4 | 280°F is the derated operating setpoint (not the Class H insulation limit of 356°F / 180°C per IEC 60085) | 🟡 OUR-CODE | `_WINDING_TEMP_LIMIT_F=280` in app.py; labeled as derated operating threshold on screen; IEC 60085 Class H cited for context only | SURVIVES (scoped) |
+| H3-P5 | Vizier GP Bandit justified for full multi-constraint non-linear search; LP analytical handles gas-only sub-problem | 🟡 OUR-CODE | LP-optimal baseline computed locally and shown; Vizier handles (gas + thermal polynomial + RUL) non-linear joint search; both roles shown transparently | SURVIVES |
+| H3-P6 | +77.9 bbl/d / +$369,225/90d at gas ceiling 7.9999/8.0 MMscfd | 🟡 OUR-CODE | Live Vizier API result 2026-06-11; `_PAD_ALPHA_WELL_PARAMS`, `_GAS_CEILING_MMSCFD`, `_PUMP_FLOW_COEFF=24.0` in app.py — grep-verifiable. Update if params change. | SURVIVES (update if params change) |
+| H3-P7 | Edge enforces safety constraint even when WAN drops (outage-immune) | 🟡 OUR-CODE | Physics polynomial runs on-premise; LP-optimal fallback computed locally; WAN only carries Hz vectors and scores | SURVIVES |
 
 ---
 
