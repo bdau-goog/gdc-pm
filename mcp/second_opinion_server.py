@@ -47,8 +47,11 @@ from mcp.server.stdio import stdio_server
 from mcp import types
 
 # ── Config ────────────────────────────────────────────────────────────────────
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = "gemini-2.5-flash"   # fast + grounding-capable; swap to 2.5-pro for deeper red-team
+# Auth: Vertex AI + ADC (same path as Cline) — project gdc-das-life-2026
+# No API key needed. Requires: gcloud auth application-default login
+VERTEX_PROJECT = "gdc-das-life-2026"
+VERTEX_LOCATION = "global"
+GEMINI_MODEL = "gemini-3.5-flash"   # upgraded Session AV — faster + better than 2.5-flash
 
 # ── MCP server setup ──────────────────────────────────────────────────────────
 server = Server("gdc-second-opinion")
@@ -118,12 +121,6 @@ async def list_tools() -> list[types.Tool]:
 
 @server.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
-    if not GEMINI_API_KEY:
-        return [types.TextContent(
-            type="text",
-            text="ERROR: GEMINI_API_KEY is not set. Add it to ~/gdc-pm/.env and restart VS Code."
-        )]
-
     try:
         from google import genai
         from google.genai import types as gtypes
@@ -133,7 +130,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             text="ERROR: google-genai not installed. Run: pip install --break-system-packages google-genai"
         )]
 
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    client = genai.Client(vertexai=True, project=VERTEX_PROJECT, location=VERTEX_LOCATION)
 
     if name == "gemini_second_opinion":
         user_text = arguments.get("claim_or_plan", "")
@@ -143,7 +140,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             contents=prompt,
             config=gtypes.GenerateContentConfig(
                 temperature=0.4,
-                max_output_tokens=2048,
+                max_output_tokens=8192,  # thinking model needs headroom
             )
         )
         return [types.TextContent(type="text", text=response.text)]
@@ -157,7 +154,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             config=gtypes.GenerateContentConfig(
                 tools=[gtypes.Tool(google_search=gtypes.GoogleSearch())],
                 temperature=0.1,
-                max_output_tokens=1024,
+                max_output_tokens=4096,  # thinking model needs headroom
             )
         )
         # Extract grounding metadata if available
