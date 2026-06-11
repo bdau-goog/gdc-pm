@@ -3,6 +3,19 @@
 ---
 ---
 
+## Session AV (June 11, 2026) — *H2 synthetic documents approved + DEMO_MASTER §5 physics correction*
+
+**Code committed:** `dea71be` (docs(session-av): H2 synthetic docs approved + DEMO_MASTER physics fix + CLAIM_LEDGER H2-P1/D1/D2)
+**Cluster image digest:** unchanged (`sha256:2fd95932`) — no app code deployed this session.
+
+**What was done:** All 5 H2 synthetic documents were drafted, G1–G6 gated, and passed Gemini hostile-engineer red-team (all claims SURVIVES after revision). Documents 1 and 4 (workover completion report + lease operator tour note) are DYNAMIC — Gemma prompt templates with randomized parameters per run. Documents 2, 3, and 5 (OEM fluid compatibility matrix, prior pull record, well history) are STATIC SEEDS — Python date-templated at startup, anchored to `today - 8 weeks` so dates never drift. Full spec committed in `docs/H2_SYNTHETIC_DOCS.md`. A significant physics correction was made to DEMO_MASTER §5: the bearing wear is REAL (not "ambiguous with seal degradation") — it is caused by well fluid contaminating the bearings through the degraded seal. APM correctly identifies the bearing wear symptom but routes to the wrong fix (pump pull) because it cannot access the workover history. This strengthens the APM moat claim: APM gets the symptom right but the root cause wrong. CLAIM_LEDGER H2-P1 updated to reflect corrected physics; H2-D1 and H2-D2 rows added for document chain claims. Date-templating architecture approved across all H1/H2/H3 static seeds (H1 Batch B remediation is a carry-forward item).
+
+**Decisions made:** (a) Inline questions preferred over ask_followup_question with options — display issue noted and fixed. (b) Large text blocks before tool calls may not render in VS Code interface — keep pre-tool-call text short, key content in question parameter. (c) Date-templating applies to all static seed documents across all three horizons. (d) H2 scenario realism guardrail: cannot cite standalone frequency for wrong-fluid fills, but OEM manual Note 2 warning exists precisely because it is a real field problem; claim scoped to "documented class of operational failure" within 51% human-factors bucket (SPE 185275-MS). (e) H2-C1 flush+reseal cost remains 🔴 NEEDS-EXPERT — two Gemini searches confirm no hard public figure.
+
+**Next task:** H2 backend endpoint (`GET /api/h2/scenario-replay`) → H2 Briefing wireframe → sign-off → HTML. Gate is cleared; documents are approved. See NEXT_SESSION_PROMPT §STEP 4 for full implementation spec.
+
+---
+
 ## Session AU (June 11, 2026) — *Docs sprint: DEMO_STORY_AND_PATH + VIDEO_SCRIPT + DEMO_MASTER §3/§5/§6 rewrite + CLAIM_LEDGER H2 rows*
 
 **Code committed:** docs only — DEMO_MASTER, CLAIM_LEDGER, DEMO_STORY_AND_PATH (new), VIDEO_SCRIPT (new), NEXT_SESSION_PROMPT, SESSION_LOG
