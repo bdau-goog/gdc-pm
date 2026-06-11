@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** June 11, 2026 (Session AR — H2 scenario invalidated, docs-only session, MCP setup queued)
-**git head:** to be set after commit
+**git head:** `4610d79`
 **fault-trigger-ui image:** `sha256:2fd95932a9b8ae9ca0eb6c961cf9a031b264a97ad69705fb8197a05999414a9a` (unchanged — no code deployed this session)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
