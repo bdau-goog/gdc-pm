@@ -646,6 +646,172 @@ threading.Thread(target=_intel_generator, daemon=True, name="intel-generator").s
 log.info("🧠 Intel generator thread started")
 
 
+# ── H2 Date Anchors & Static Document Helpers ─────────────────────────────────
+# Computed once at startup. Used by both the static seed function and the endpoint.
+
+_H2_SCENARIO_DATE   = datetime.now()
+_H2_WORKOVER_DATE   = _H2_SCENARIO_DATE - timedelta(weeks=8)
+_H2_PRIOR_PULL_DATE = _H2_WORKOVER_DATE  - timedelta(weeks=78)
+
+def _h2_fmt(dt: datetime) -> str:
+    return dt.strftime("%B %d, %Y")
+
+# Document 2 — OEM Fluid Compatibility Matrix (static, no dates, seed once)
+_H2_OEM_MATRIX_TEXT = (
+    "PermPump Systems\n"
+    "ESP Series 4000 Service Manual — Rev. 3\n"
+    "Section 8.4: Hydraulic Fluid Compatibility — Protector/Seal Section\n\n"
+    "Table 8-2: Approved Hydraulic Fill Fluids — Protector Section\n"
+    "Seal material (Series 4000 standard configuration): Buna-N / NBR elastomer shaft seals\n\n"
+    "INSTRUCTIONS: Confirm hydraulic fill product fluid class against Table 8-2 BEFORE\n"
+    "filling. Use of an INCOMPATIBLE fluid class voids the protector warranty.\n\n"
+    "FLUID CLASS                                        | Buna-N/NBR  | Viton/FKM | HNBR\n"
+    "---------------------------------------------------+-------------+-----------+------\n"
+    "Petroleum-based mineral oil (ISO VG 100-460)       | COMPATIBLE  | COMPATIBLE| COMP\n"
+    "Synthetic hydrocarbon - PAO (ISO VG 100-460)       | COMPATIBLE  | COMPATIBLE| COMP\n"
+    "Synthetic ester-based fluid (polyol ester,         |             |           |\n"
+    "  diester, trimethylolpropane ester)               | INCOMPATIBLE| COMPATIBLE| COND*\n"
+    "Phosphate ester hydraulic fluid                    | INCOMPATIBLE| COMPATIBLE| COMP\n"
+    "Water-glycol hydraulic fluid (<=50% glycol)        | COND+       | COND+     | COMP\n\n"
+    "INCOMPATIBLE = Failure expected within days to weeks of continuous service.\n"
+    "COMPATIBLE   = Approved for use within nameplate temperature limits.\n"
+    "COND         = Conditionally compatible - see footnote.\n\n"
+    "*HNBR / synthetic ester: Maximum 120 deg C continuous. Consult factory if >80% ester.\n"
+    "+Water-glycol: Non-Arctic use only. Monitor for seal dimensional change above 60 deg C.\n\n"
+    "NOTES:\n"
+    "1. The Series 4000 protector ships with Buna-N (NBR) shaft seals as standard.\n"
+    "2. WARNING: 'Synthetic' or 'Synthetic Blend' on a product label does NOT distinguish\n"
+    "   PAO (COMPATIBLE) from ester-based (INCOMPATIBLE). Confirm base-stock fluid class\n"
+    "   with the supplier before use. Do not rely on label language or product name alone.\n"
+    "3. Initial symptoms of INCOMPATIBLE fluid exposure: seal dimensional instability,\n"
+    "   hardening. Observable operating symptoms (vibration anomaly, temperature rise)\n"
+    "   typically develop over 3-8 weeks of continuous service.\n\n"
+    "Document ID: PPS-4000-SVC-003-R3"
+)
+
+
+def _build_h2_doc3() -> str:
+    """Document 3 — Prior Pull Record (date-templated, re-generated each call)."""
+    wo = f"WO-{_H2_PRIOR_PULL_DATE.strftime('%Y-%m%d')}-A3"
+    return (
+        f"BASIN LIFT SERVICES LLC — ESP TEARDOWN / COMPLETION REPORT\n"
+        f"Well: ESP-ALPHA-3 | Block 7 Pad | Andrews County, WTX\n"
+        f"Pull Date: {_h2_fmt(_H2_PRIOR_PULL_DATE)} | WO: {wo}\n"
+        f"Purpose: Scheduled replacement — production efficiency below operator target after\n"
+        f"18-month run (moderate-sand well; operator performance-based lifecycle program).\n\n"
+        f"MOTOR: Winding resistance (post-pull): 8.4 MΩ (above 2.2 MΩ minimum per IEEE 43-2000\n"
+        f"for 1200V class). External: housing abrasion lower section — normal. Internal: windings\n"
+        f"intact, no fluid ingress, no contamination. Disposition: returned to OEM for rewind\n"
+        f"evaluation (standard for used motors in good condition).\n\n"
+        f"PUMP: 30 stages. Stages 1-4 elevated wear consistent with intake position and sand\n"
+        f"exposure. Remaining stages within limits. Condemned per performance-based lifecycle —\n"
+        f"not anomalous failure. Replaced with new 7-stage AR-trim.\n\n"
+        f"PROTECTOR: Shaft seal — slight weeping, lower bag (expected wear at run life).\n"
+        f"Bearing condition: thrust washer 0.122 in (OEM tolerance 0.110-0.135 in); radial\n"
+        f"clearances within spec; races show light polish, no scoring, no pitting, no\n"
+        f"contamination. Internal oil: dark-brown (normal oxidation). No wellbore fluid ingress.\n"
+        f"Condemned per performance-based lifecycle — not anomalous failure.\n\n"
+        f"SUMMARY: All components within wear parameters for 18-month service interval. No\n"
+        f"components condemned for cause (no anomalous failure). Bearings in good condition at\n"
+        f"pull — no wear beyond light polishing. Cause of pull: scheduled replacement per\n"
+        f"operator efficiency monitoring program.\n\n"
+        f"Service Engineer: [Basin Lift Services LLC field record]"
+    )
+
+
+def _build_h2_doc5() -> str:
+    """Document 5 — Well History Extract (date-templated, randomized SCADA events)."""
+    window_days = (_H2_SCENARIO_DATE - _H2_PRIOR_PULL_DATE).days
+    event_days  = sorted(random.sample(range(30, max(31, window_days - 30)), 7))
+    event_dates = [_H2_PRIOR_PULL_DATE + timedelta(days=d) for d in event_days]
+    event_types = [
+        "Brief underload trip — auto-restart OK, no follow-up",
+        "High-temp transient — cleared within 4 min, no intervention",
+        "Underload trip — auto-restart, normal",
+        "Brief overload (voltage surge) — cleared 3 min",
+        "Underload trip — restart normal",
+        "High-temp transient — cleared, normal",
+        "Brief communication loss — restored automatically",
+    ]
+    scada_events = "\n".join(
+        f"  {_h2_fmt(d)}   {t}"
+        for d, t in zip(event_dates, event_types)
+    )
+    wo_cur = f"WO-{_H2_WORKOVER_DATE.strftime('%Y-%m%d')}-A3"
+    wo_pri = f"WO-{_H2_PRIOR_PULL_DATE.strftime('%Y-%m%d')}-A3"
+    return (
+        f"WELL HISTORY SUMMARY — ESP-ALPHA-3\n"
+        f"Generated: {_h2_fmt(_H2_SCENARIO_DATE)} | Source: RTOC Well File / SCADA Historian\n"
+        f"Period covered: 24 months ({_h2_fmt(_H2_PRIOR_PULL_DATE)} – {_h2_fmt(_H2_SCENARIO_DATE)})\n\n"
+        f"EVENT LOG (most recent first):\n"
+        f"  {_h2_fmt(_H2_WORKOVER_DATE)}   ESP REPLACEMENT — {wo_cur}\n"
+        f"                    Scope: Motor/pump/protector replacement (unscheduled —\n"
+        f"                    vibration/amp anomaly, operator-flagged). Duration: 1 day.\n"
+        f"                    No complications. Well returned to production 14:35 same day.\n\n"
+        f"  {_h2_fmt(_H2_PRIOR_PULL_DATE)}   ESP REPLACEMENT — {wo_pri}\n"
+        f"                    Scope: Scheduled replacement per production efficiency\n"
+        f"                    monitoring (18-month run, efficiency below operator threshold —\n"
+        f"                    moderate-sand lifecycle program). Duration: 1 day. No complications.\n\n"
+        f"SCADA ALARM HISTORY (last 24 months — notable events):\n"
+        f"  {_h2_fmt(_H2_SCENARIO_DATE - timedelta(days=2))}   Amp/vibration deviation — operator flagged, monitoring only\n"
+        f"{scada_events}\n\n"
+        f"PRODUCTION TREND: Post-{_h2_fmt(_H2_PRIOR_PULL_DATE)} workover through {_h2_fmt(_H2_WORKOVER_DATE)} —\n"
+        f"normal production, consistent with expected decline curve. No anomalies flagged by\n"
+        f"SCADA or production monitoring in this interval. Post-{_h2_fmt(_H2_WORKOVER_DATE)} workover\n"
+        f"through {_h2_fmt(_H2_SCENARIO_DATE)}: normal initial production.\n\n"
+        f"Note: Extract covers 24-month window. Full well history in RTOC well file."
+    )
+
+
+def _seed_h2_static_docs_bg() -> None:
+    """Seed H2 static field_intel docs at startup (idempotent). Runs in daemon thread."""
+    time.sleep(20)   # wait for DB and field_intel table to be ready
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM field_intel "
+                "WHERE asset_id='ESP-ALPHA-3' AND doc_type='oem_manual' "
+                "  AND fault_context='workover_fluid_incompatibility'"
+            )
+            if cur.fetchone()[0] > 0:
+                log.info("H2 static docs already seeded — skipping re-seed")
+                conn.close()
+                return
+            _static_docs = [
+                ("oem_manual",
+                 "PermPump Systems ESP-4000 — Sec 8.4: Hydraulic Fluid Compatibility",
+                 _H2_OEM_MATRIX_TEXT,
+                 "Fluid compatibility matrix: synthetic ester = INCOMPATIBLE with Buna-N. "
+                 "3-8 week symptom onset post-fill. Decisive when crossed with workover report."),
+                ("pull_record",
+                 f"Prior ESP Pull Record — {_h2_fmt(_H2_PRIOR_PULL_DATE)} — Bearings NORMAL",
+                 _build_h2_doc3(),
+                 "Bearings in good condition at last pull (18 months prior to workover). "
+                 "No pre-existing wear. Eliminates normal bearing-age hypothesis."),
+                ("well_history",
+                 f"Well History ESP-ALPHA-3 — Workover {_h2_fmt(_H2_WORKOVER_DATE)} confirmed",
+                 _build_h2_doc5(),
+                 "Current workover 8 weeks ago confirmed. No anomalies in 24-month history "
+                 "pre-workover. Symptom onset timing aligns with OEM swell timeline."),
+            ]
+            for doc_type, headline, detail, ai_rel in _static_docs:
+                cur.execute("""
+                    INSERT INTO field_intel
+                      (asset_id, asset_class, fault_context, doc_type,
+                       headline, detail, ai_relevance, icon, lbl, lbl_type)
+                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                    ("ESP-ALPHA-3", "esp", "workover_fluid_incompatibility",
+                     doc_type, headline, detail, ai_rel, "\U0001f4c4", "H2", "h2"))
+        conn.commit()
+        conn.close()
+        log.info("✅ H2 static docs seeded (OEM matrix, prior pull, well history)")
+    except Exception as _se:
+        log.warning(f"H2 static doc seeding failed (non-fatal): {_se}")
+
+threading.Thread(target=_seed_h2_static_docs_bg, daemon=True, name="h2-seed").start()
+
+
 # ── Asset Fleet ────────────────────────────────────────────────────────────────
 # Pure-pad architecture: each pad uses a single artificial lift method.
 #   Pad Alpha   — 6 ESPs (ESP production pad)
@@ -6156,207 +6322,300 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
 
 # ── H2 Scenario Replay ─────────────────────────────────────────────────────────
 
-_INFERENCE_API_URL = os.environ.get(
-    "INFERENCE_API_URL",
-    "http://inference-api.gdc-pm.svc.cluster.local:8080/predict"
-)
-
 @app.get("/api/h2/scenario-replay")
 async def h2_scenario_replay():
     """
-    Pre-computes a 120-step ESP slug-flow discrimination trajectory and runs:
-      - esp_health.ubj (local, sliding window) → health_score per step
-      - inference-api esp_classifier.ubj → slug_flow probability per step (async parallel)
+    H2 Classify — Workover Fluid Incompatibility (Maintenance Provenance Scenario).
+    DEMO_MASTER §5 (Session AU). Passes all 4 Scenario Survival Tests.
 
-    Physics: in-string multiphase slug loading at the pump intake (Session V corrected).
-    Gas/liquid slugs arrive alternately at the pump intake, causing cyclic cavitation and
-    hydraulic imbalance at the impeller. Motor temp stays FLAT — no added friction.
-    References: Baker Hughes Centrilift Gas Handling Guide; SPE-174536-MS §3.4;
-                API RP 11S §4.2 (pump vibration from unsteady inflow).
+    A Permian ESP (ESP-ALPHA-3) 8 weeks post-workover shows progressive bearing wear
+    signature: motor efficiency declining + vibration rising over 3-4 weeks.
+    On the standard 4-sensor string, this pattern matches early bearing wear — the most
+    common cause APM routes to (pump-pull investigation ~$70k-$100k).
 
-    Detection logic:
-      - GDC:      inference-api esp_classifier slug_flow prob >= 0.70
-      - SCADA HI: ISA-18.2 High alarm — rolling-avg vib >= 4.0 mm/s (demands decision)
-      - SCADA HH: ISA-18.2 High-High trip — rolling-avg vib >= 5.0 mm/s (auto shutdown)
+    Hidden cause: wrong hydraulic fill fluid used at workover (synthetic ester class,
+    incompatible with Buna-N seals per OEM matrix). Documented only in the workover
+    completion report. No online sensor can carry this information (Test 2 PASS).
 
-    Discriminating signal: vibration rises cyclically + motor temp FLAT = surface flow regime.
-    Bearing wear (real pull justified): vibration rises + motor temp ALSO rises.
+    GDC fuses 5 documents → correct action: flush + reseal protector (~$8k-$15k estimate).
+    Physics: API RP 11S3/11S5 — elastomer/bearing genuinely ambiguous on 4-sensor string.
+    Bearing wear is REAL (caused by well fluid ingress through degraded seal) — APM gets
+    the symptom right but the root cause wrong.
+
+    Timeline: N=80 steps at 0.1 weeks/step = 8-week window post-workover.
+    Sensors: efficiency[] (%), vib[] (mm/s), amps[] (A), t_min[] (weeks).
+
     """
-    N      = 120
-    W      = 20          # sliding window width
-    t_step = 0.25        # minutes per step → 30-minute total
+    N      = 80     # steps — 0.1 weeks/step = 8 weeks post-workover
+    W      = 15     # sliding window width for health model
+    t_step = 0.1    # weeks per step
 
-    # Slug periodicity: ~14-min cycle at the surface flowline
-    # Converted to steps: 14 min / 0.25 min = 56 steps per cycle
-    SLUG_PERIOD_STEPS = 56
+    # Randomized onset and ramp — each run looks different (defensible live model)
+    onset_idx = random.randint(22, 30)       # symptom onset ~2.2–3.0 weeks post-workover
+    k         = random.uniform(1.3, 2.2)     # ramp exponent
 
-    # Nominal operating point
-    psi_nom  = random.uniform(1360, 1440)
-    amps_nom = random.uniform(72, 78)
-    temp_nom = random.uniform(196, 200)
-    vib_nom  = random.uniform(1.0, 1.4)
-    # Vibration ramps toward 4.2–4.8 mm/s peak (ISA-18.2 HI at 4.0; FAULT_PROFILES 4.0–6.5)
-    vib_end  = random.uniform(4.2, 4.8)
+    # Nominal baselines (fresh pump, 8 weeks post-workover)
+    eff_nom  = random.uniform(74.5, 77.5)    # motor efficiency %
+    vib_nom  = random.uniform(0.9,  1.2)     # vibration mm/s (wellhead sensor)
+    amps_nom = random.uniform(82.0, 85.0)    # motor amps (baseline ~83A per Doc 4)
+    psi_nom  = random.uniform(1280, 1380)    # PIP PSI (stable — pump still pumping)
+    temp_nom = random.uniform(196.0, 202.0)  # winding temp degF
 
-    psi_arr, amps_arr, temp_arr, vib_arr, t_min_arr = [], [], [], [], []
+    # Fault-end targets (week 8 — active alarm state)
+    eff_end  = random.uniform(63.5, 67.5)    # efficiency % (bearing friction + seal bypass)
+    vib_end  = random.uniform(4.3,  5.1)     # vibration mm/s — above ISA-18.2 HI (4.0)
+    amps_end = random.uniform(87.0, 90.0)    # amps elevated (bearing contamination load)
+    temp_end = random.uniform(204.0, 210.0)  # temp slightly elevated (sub-alarm)
 
+    eff_arr, vib_arr, amps_arr, psi_arr, temp_arr, t_wk_arr = [], [], [], [], [], []
     for i in range(N):
-        frac        = (i + 1) / N
-        cycle_phase = 2 * math.pi * i / SLUG_PERIOD_STEPS
-
-        # Vibration: monotone rise (slug flow intensifying) + growing cyclic overlay
-        # The cyclic overlay amplitude grows with frac — slugging worsens over time.
-        vib_cycle_amp = 0.30 * frac
-        vib_val = (vib_nom + (vib_end - vib_nom) * frac
-                   + vib_cycle_amp * math.sin(cycle_phase)
-                   + random.gauss(0, 0.06))
-        vib_arr.append(round(max(0.5, vib_val), 3))
-
-        # Temperature: FLAT — the categorical discriminator vs. bearing wear
-        temp_arr.append(round(temp_nom + random.gauss(0, 1.2), 1))
-
-        # PIP: nominally stable with mild cyclic dip as gas slugs reduce hydraulic head
-        psi_cycle = 20.0 * frac * math.sin(cycle_phase)
-        psi_arr.append(round(psi_nom + psi_cycle + random.gauss(0, 14), 1))
-
-        # Amps: small cyclic swing as gas/liquid slugs alternate load at impeller
-        amps_cycle = 3.5 * frac * math.sin(cycle_phase)
-        amps_arr.append(round(amps_nom + amps_cycle + random.gauss(0, 0.8), 2))
-
-        t_min_arr.append(round(i * t_step, 2))
+        frac = 0.0 if i < onset_idx else ((i - onset_idx + 1) / max(1, N - onset_idx)) ** k
+        eff_arr.append( round(eff_nom  + (eff_end  - eff_nom)  * frac + random.gauss(0, 0.4),  2))
+        vib_arr.append( round(vib_nom  + (vib_end  - vib_nom)  * frac + random.gauss(0, 0.08), 3))
+        amps_arr.append(round(amps_nom + (amps_end - amps_nom) * frac + random.gauss(0, 0.5),  2))
+        psi_arr.append( round(psi_nom                                 + random.gauss(0, 14),    1))
+        temp_arr.append(round(temp_nom + (temp_end - temp_nom) * frac + random.gauss(0, 0.8),  1))
+        t_wk_arr.append(round(i * t_step, 2))
 
     # ── Health score from esp_health.ubj (sliding window) ────────────────────
-    # NOTE: health score WILL dip on this trajectory due to rising dvib_dt.
-    # The pump is hydraulically healthy (nominal PSI, nominal amps, flat temp),
-    # but the health model is sensitive to vibration rate-of-change.
-    # DISPLAY NOTE: Show health score with explanatory label:
-    # "Health model reacts to rising vib rate — use classifier for fault type."
-    health_scores  = [1.0] * N
-    health_ok      = False
+    # Features: psi, temp_f, vibration, motor_amps, dpsi_dt, dtemp_dt, dvib_dt, damps_dt
+    # dvib_dt is the primary driver (rising vibration rate). Efficiency is a derived
+    # display metric — not a direct model input (model takes raw sensor values).
+    health_scores = []
+    health_ok     = False
     try:
         import xgboost as xgb
         import numpy as np
-        _feat  = ["psi", "temp_f", "vibration", "motor_amps",
-                  "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
+        _feat = ["psi", "temp_f", "vibration", "motor_amps",
+                 "dpsi_dt", "dtemp_dt", "dvib_dt", "damps_dt"]
         _hm = xgb.Booster()
         _hm.load_model("models/esp_health.ubj")
-        for i in range(W, N):
-            wp = psi_arr[i-W:i]; wa = amps_arr[i-W:i]
+        for i in range(N):
+            if i < W:
+                health_scores.append(1.0)
+                continue
+            wp = psi_arr[i-W:i];  wa = amps_arr[i-W:i]
             wt = temp_arr[i-W:i]; wv = vib_arr[i-W:i]
-            f = np.array([[
+            feats = np.array([[
                 psi_arr[i],  temp_arr[i],  vib_arr[i],  amps_arr[i],
                 (wp[-1]-wp[0])/(W*t_step), (wt[-1]-wt[0])/(W*t_step),
                 (wv[-1]-wv[0])/(W*t_step), (wa[-1]-wa[0])/(W*t_step),
             ]])
-            health_scores[i] = round(float(_hm.predict(xgb.DMatrix(f, feature_names=_feat))[0]), 4)
+            health_scores.append(round(
+                float(_hm.predict(xgb.DMatrix(feats, feature_names=_feat))[0]), 4))
         health_ok = True
     except Exception as _e:
         log.warning(f"esp_health.ubj unavailable in H2 replay: {_e}")
-
-    # ── Classifier probability from inference-api (async parallel) ──────────
-    # esp_classifier.ubj (5-class) on inference-api correctly classifies slug_flow.
-    # The local esp_classifier.bst is a 4-class model without slug_flow — do NOT use it.
-    slug_probs    = [0.0] * N
-    classifier_ok = False
-    SLUG_DETECT_THRESHOLD = 0.70
-
-    async def _get_slug_prob(client: "httpx.AsyncClient", idx: int, features: list) -> tuple:
-        try:
-            payload = {
-                "asset_id":   "ESP-ALPHA-3",
-                "asset_type": "esp",
-                "psi":        features[0],  "temp_f":    features[1],
-                "vibration":  features[2],  "motor_amps": features[3],
-                "dpsi_dt":    features[4],  "dtemp_dt":  features[5],
-                "dvib_dt":    features[6],  "damps_dt":  features[7],
-            }
-            r = await client.post(_INFERENCE_API_URL, json=payload, timeout=5.0)
-            if r.status_code == 200:
-                probs = r.json().get("probabilities", {})
-                return idx, float(probs.get("slug_flow", 0.0))
-        except Exception:
-            pass
-        return idx, 0.0
-
-    try:
-        import httpx
-        import numpy as np
-        tasks = []
-        for i in range(W, N):
-            wp = psi_arr[i-W:i]; wa = amps_arr[i-W:i]
-            wt = temp_arr[i-W:i]; wv = vib_arr[i-W:i]
-            feats = [
-                float(psi_arr[i]),  float(temp_arr[i]),  float(vib_arr[i]),  float(amps_arr[i]),
-                round((wp[-1]-wp[0])/(W*t_step), 4),
-                round((wt[-1]-wt[0])/(W*t_step), 4),
-                round((wv[-1]-wv[0])/(W*t_step), 4),
-                round((wa[-1]-wa[0])/(W*t_step), 4),
-            ]
-            tasks.append((i, feats))
-
-        async with httpx.AsyncClient() as _client:
-            results = await asyncio.gather(*[_get_slug_prob(_client, i, f) for i, f in tasks])
-
-        for idx, prob in results:
-            slug_probs[idx] = round(prob, 4)
-        classifier_ok = True
-
-    except Exception as _ce:
-        log.warning(f"inference-api classifier unavailable in H2 replay: {_ce}")
-        # Synthetic fallback: sigmoid ramp starting at W, reaching ~0.88 at N-1
-        for i in range(W, N):
-            x = (i - W) / max(1, N - W - 1)
-            slug_probs[i] = round(0.05 + 0.83 / (1.0 + math.exp(-10.0 * (x - 0.5))), 4)
+        health_scores = [
+            round(1.0 - 0.45 * max(0, (i - onset_idx)) / max(1, N - onset_idx), 4)
+            for i in range(N)
+        ]
 
     # ── Detection indices ─────────────────────────────────────────────────────
-    # GDC detects when slug_flow probability reaches SLUG_DETECT_THRESHOLD
-    gdc_detect_idx = next(
-        (i for i, p in enumerate(slug_probs) if p >= SLUG_DETECT_THRESHOLD),
-        N - 1
-    )
-
-    # SCADA ISA-18.2 alarm levels — rolling-average vibration
-    SCADA_WINDOW       = 10    # steps (10 × 0.25 min = 2.5-min rolling window)
-    SCADA_HI_THRESHOLD = 4.0   # mm/s — ISA-18.2 High: demands operator attention
-    SCADA_HH_THRESHOLD = 5.0   # mm/s — ISA-18.2 High-High: automatic shutdown trip
+    HEALTH_THRESHOLD  = 0.65
+    VIB_SCADA_HI      = 4.0   # mm/s — ISA-18.2 High alarm
+    SCADA_ROLL_WINDOW = 8     # steps (8 × 0.1 wk ≈ 5.6 day rolling avg)
 
     roll_vib = [
-        sum(vib_arr[max(0, i - SCADA_WINDOW):i + 1]) /
-        len(vib_arr[max(0, i - SCADA_WINDOW):i + 1])
+        sum(vib_arr[max(0, i - SCADA_ROLL_WINDOW):i + 1]) /
+        len(vib_arr[max(0, i - SCADA_ROLL_WINDOW):i + 1])
         for i in range(N)
     ]
-    scada_hi_idx = next(
-        (i for i, rv in enumerate(roll_vib) if i >= SCADA_WINDOW and rv >= SCADA_HI_THRESHOLD),
+    scada_alarm_idx = next(
+        (i for i, rv in enumerate(roll_vib)
+         if i >= SCADA_ROLL_WINDOW and rv >= VIB_SCADA_HI),
         N - 1
     )
-    scada_hh_idx = next(
-        (i for i, rv in enumerate(roll_vib) if i >= SCADA_WINDOW and rv >= SCADA_HH_THRESHOLD),
-        None   # None = HH trip never fires in this scenario (vib peaks at ~4.5 mm/s < 5.0)
+    gdc_detect_idx = next(
+        (i for i, s in enumerate(health_scores) if s < HEALTH_THRESHOLD),
+        N - 1
     )
 
-    lead_time_minutes = round(
-        t_min_arr[scada_hi_idx] - t_min_arr[gdc_detect_idx], 1
-    ) if gdc_detect_idx < scada_hi_idx else 0.0
+    # ── Randomized document parameters ───────────────────────────────────────
+    _vendor    = random.choice([
+        "TexPlex Industrial Fluids", "Delta Basin Supply Co.", "Corsair Oilfield Products"])
+    _prod_code = {"TexPlex Industrial Fluids": "TP-450HD",
+                  "Delta Basin Supply Co.":    "DB-460GS",
+                  "Corsair Oilfield Products": "CP-HF460"}[_vendor]
+    _fill_vol   = round(random.uniform(2.9, 3.3), 1)
+    _set_depth  = random.randint(7750, 8100)
+    _tech       = random.choice(["R.M.", "J.V.", "T.K."])
+    _startup_a  = round(random.uniform(82, 88), 1)
+    _wo_year    = _H2_WORKOVER_DATE.strftime("%Y")
+    _wo_seq     = random.randint(1840, 2150)
+    _wo_num     = f"WO-{_wo_year}-{_wo_seq}-A3"
+    _whp_tp     = random.randint(290, 350)
+    _whp_cp     = random.randint(165, 200)
+    _s_rate     = random.randint(165, 215)
+    _s_water    = random.randint(85,  145)
+    _note_date  = _H2_SCENARIO_DATE - timedelta(days=random.randint(1, 4))
+    _tour_shift = random.choice(["Day shift (06:00-18:00)", "Night shift (18:00-06:00)"])
+    _op_init    = random.choice(["T.K.", "R.M.", "J.V."])
+    _tour_amps  = round(random.uniform(86, 89), 1)
+    _whp_tp4    = random.randint(315, 345)
+    _whp_cp4    = random.randint(180, 200)
+
+    # ── Fallback document templates (used when Gemma offline) ────────────────
+    _doc1_fallback = (
+        f"WORKOVER COMPLETION REPORT\n"
+        f"Well: ESP-ALPHA-3 | Andrews County, WTX\n"
+        f"WO Number: {_wo_num} | Date: {_h2_fmt(_H2_WORKOVER_DATE)}\n"
+        f"Service Company: Basin Lift Services LLC | Crew Supervisor: {_tech}\n"
+        f"Motor: 150 hp / 1200 V / 100 A nameplate | Set depth: {_set_depth} ft MD\n\n"
+        f"SCOPE: Motor/pump/protector replacement (vibration/amp anomaly, operator-flagged).\n\n"
+        f"PULL CONDITIONS: Motor IR 9.1 MOhm (above IEEE 43-2000 minimum). "
+        f"Pump: stages 1-3 wear consistent with sand exposure — no unexpected damage. "
+        f"Protector: shaft seal weeping lower bag (expected wear). "
+        f"Bearings: light polish, no pitting.\n\n"
+        f"NEW ASSEMBLY: New 150 hp motor, 7-stage AR-trim pump, Series 4000 protector.\n\n"
+        f"HYDRAULIC FILL: Product {_vendor} {_prod_code}. Procedure per SPC-ESP-003. "
+        f"Fill volume: {_fill_vol} gal. System capacity: 3.1 gal. No leakage detected.\n\n"
+        f"STARTUP: Amps at panel: {_startup_a} A. WHP tubing: {_whp_tp} psi. "
+        f"WHP casing: {_whp_cp} psi. Rate approx. {_s_rate} BOPD / {_s_water} BWPD.\n\n"
+        f"Signed: {_tech}\n"
+        f"Company Rep sign-off: [Pending RTOC review — field copy]"
+    )
+    _doc4_fallback = (
+        f"FIELD TOUR NOTE — ESP-ALPHA-3\n"
+        f"Date: {_h2_fmt(_note_date)} | {_tour_shift} | Stop time: approx. 09:45\n"
+        f"Operator: {_op_init}\n\n"
+        f"WHP tubing: {_whp_tp4} psi. WHP casing: {_whp_cp4} psi.\n"
+        f"Motor amps at panel: {_tour_amps} A (SCADA historian baseline ~83 A post-workover; "
+        f"motor nameplate 100 A; SCADA overload setpoint 102 A — no alarm).\n"
+        f"Slight wellhead vibration above typical noted on walkdown — below SCADA threshold.\n"
+        f"No surface anomalies. No leaks.\n"
+        f"Action: Flagged for monitoring next tour. No immediate action taken.\n\n"
+        f"Signed: {_op_init}"
+    )
+
+    doc1_text    = _doc1_fallback
+    doc4_text    = _doc4_fallback
+    doc_gen_mode = "FALLBACK_TEMPLATE"
+
+    # ── Gemma dynamic doc generation (best-effort; gracefully degrades when GPU down) ─
+    _doc1_prompt = (
+        f"Generate a realistic Permian Basin ESP workover completion report for a field "
+        f"technician. Use ONLY these exact parameters and do not add diagnosis or recommendation:\n\n"
+        f"Well: ESP-ALPHA-3 | Andrews County WTX\n"
+        f"Workover Date: {_h2_fmt(_H2_WORKOVER_DATE)}\n"
+        f"WO Number: {_wo_num}\n"
+        f"Service Company: Basin Lift Services LLC\n"
+        f"Crew Supervisor: {_tech}\n"
+        f"Motor nameplate: 150 hp / 1200 V / 100 A\n"
+        f"Set depth: {_set_depth} ft MD\n"
+        f"Hydraulic fill product: {_vendor} {_prod_code}\n"
+        f"Hydraulic fill volume: {_fill_vol} gal\n"
+        f"Startup amps: {_startup_a} A\n"
+        f"WHP tubing at startup: {_whp_tp} psi\n"
+        f"WHP casing at startup: {_whp_cp} psi\n"
+        f"Startup rate: approx. {_s_rate} BOPD / {_s_water} BWPD\n\n"
+        f"Format as a terse field report. Include: scope of work, pull conditions (motor IR, "
+        f"pump wear, protector weeping — give plausible values), new assembly installation, "
+        f"hydraulic fill procedure reference (SPC-ESP-003), fill completion without leakage, "
+        f"startup readings. No diagnosis. No recommendation. Sign with {_tech}. "
+        f"End with: 'Company Rep sign-off: [Pending RTOC review — field copy]'"
+    )
+    _doc4_prompt = (
+        f"Generate a brief Permian Basin lease operator field tour note for a well stop. "
+        f"Use ONLY these exact parameters. Record observations only — no diagnosis.\n\n"
+        f"Well: ESP-ALPHA-3\n"
+        f"Tour date: {_h2_fmt(_note_date)}\n"
+        f"Tour shift: {_tour_shift}\n"
+        f"Operator initials: {_op_init}\n"
+        f"WHP tubing: {_whp_tp4} psi\n"
+        f"WHP casing: {_whp_cp4} psi\n"
+        f"Motor amps at panel display: {_tour_amps} A\n"
+        f"SCADA baseline (historian): ~83 A post-workover average\n"
+        f"Motor nameplate: 100 A | SCADA overload setpoint: 102 A\n\n"
+        f"Observations to include:\n"
+        f"- Amps slightly above recent baseline — within normal operating band, no alarm\n"
+        f"- Slight wellhead vibration above typical noted on walkdown — below SCADA threshold\n"
+        f"- No surface anomalies, no leaks\n"
+        f"- Action: flagged for monitoring next tour, no immediate action\n\n"
+        f"Terse field note style. Sign with {_op_init}."
+    )
+    try:
+        import httpx
+        async with httpx.AsyncClient() as _gc:
+            _r1, _r4 = await asyncio.gather(
+                _gc.post(f"{OLLAMA_URL}/api/generate",
+                    json={"model": OLLAMA_MODEL, "prompt": _doc1_prompt,
+                          "stream": False, "options": {"num_predict": 450, "temperature": 0.4}},
+                    timeout=20.0),
+                _gc.post(f"{OLLAMA_URL}/api/generate",
+                    json={"model": OLLAMA_MODEL, "prompt": _doc4_prompt,
+                          "stream": False, "options": {"num_predict": 220, "temperature": 0.3}},
+                    timeout=15.0),
+                return_exceptions=True,
+            )
+        _t1 = (_r1.json().get("response", "").strip()
+               if not isinstance(_r1, Exception) and _r1.status_code == 200 else "")
+        _t4 = (_r4.json().get("response", "").strip()
+               if not isinstance(_r4, Exception) and _r4.status_code == 200 else "")
+        if len(_t1) > 100:
+            doc1_text    = _t1
+            doc_gen_mode = "GEMMA_LIVE"
+        if len(_t4) > 50:
+            doc4_text = _t4
+    except Exception as _ge:
+        log.info(f"H2 Gemma doc generation unavailable — fallback templates active: {_ge}")
+
+    # ── GDC verdict string ────────────────────────────────────────────────────
+    gdc_verdict = (
+        f"Elastomer seal degradation from workover fluid incompatibility — NOT bearing wear. "
+        f"Root cause: {_vendor} {_prod_code} (synthetic ester class) incompatible with "
+        f"Buna-N seals per OEM matrix PPS-4000-SVC-003-R3 (INCOMPATIBLE — failure expected "
+        f"within days to weeks of continuous service). Seal degradation onset 3-8 weeks "
+        f"post-fill (Doc 2 Note 3) aligns with observed symptom onset at "
+        f"~{round(onset_idx * t_step, 1)} weeks post-workover. Prior pull record "
+        f"({_h2_fmt(_H2_PRIOR_PULL_DATE)}) confirms bearings in good condition — "
+        f"bearing-age hypothesis eliminated. Well fluid ingress through degraded seal is "
+        f"contaminating bearing assembly (bearing wear is real, but caused by ingress "
+        f"pathway — not mechanical age). Correct action: controlled flush + reseal "
+        f"(~$8k-$15k estimate [NEEDS-EXPERT]) — NOT pump-pull investigation (~$70k-$100k)."
+    )
+
+    # ── doc_reveals payload (5 docs, staggered reveal timing) ────────────────
+    doc_reveals = [
+        {"doc_id": 1, "title": "Workover Completion Report",
+         "type": "workover_report", "source": doc_gen_mode,
+         "vendor": _vendor, "product_code": _prod_code,
+         "text": doc1_text, "reveal_delay_ms": 0},
+        {"doc_id": 2, "title": "OEM Fluid Compatibility Matrix",
+         "type": "oem_manual", "source": "STATIC_SEED",
+         "text": _H2_OEM_MATRIX_TEXT, "reveal_delay_ms": 2000},
+        {"doc_id": 3, "title": f"Prior Pull Record — {_h2_fmt(_H2_PRIOR_PULL_DATE)}",
+         "type": "pull_record", "source": "STATIC_SEED",
+         "text": _build_h2_doc3(), "reveal_delay_ms": 3500},
+        {"doc_id": 4, "title": "Lease Operator Field Tour Note",
+         "type": "shift_note", "source": doc_gen_mode,
+         "text": doc4_text, "reveal_delay_ms": 5000},
+        {"doc_id": 5, "title": "Well History Extract",
+         "type": "well_history", "source": "STATIC_SEED",
+         "text": _build_h2_doc5(), "reveal_delay_ms": 6500},
+    ]
 
     return {
-        "fault_type":            "slug_flow",
-        "n":                     N,
-        "psi":                   psi_arr,
-        "amps":                  amps_arr,
-        "temp":                  temp_arr,
-        "vib":                   vib_arr,
-        "t_min":                 t_min_arr,
-        "health_score":          health_scores,
-        "slug_flow_prob":        slug_probs,
-        "gdc_detect_idx":        gdc_detect_idx,
-        "scada_hi_idx":          scada_hi_idx,
-        "scada_hh_idx":          scada_hh_idx,
-        "scada_hi_threshold":    SCADA_HI_THRESHOLD,
-        "scada_hh_threshold":    SCADA_HH_THRESHOLD,
-        "lead_time_minutes":     lead_time_minutes,
-        "health_ok":             health_ok,
-        "classifier_ok":         classifier_ok,
-        "model_used":            "esp_health.ubj (health) + inference-api:esp_classifier.ubj (fault type)",
+        "scenario":         "workover_fluid_incompatibility",
+        "asset_id":         "ESP-ALPHA-3",
+        "n":                N,
+        "efficiency":       eff_arr,
+        "vib":              vib_arr,
+        "amps":             amps_arr,
+        "t_min":            t_wk_arr,   # weeks post-workover (t_min name kept for JS parity)
+        "health_score":     health_scores,
+        "onset_idx":        onset_idx,
+        "gdc_detect_idx":   gdc_detect_idx,
+        "scada_alarm_idx":  scada_alarm_idx,
+        "scada_alarm_rule": f"Rolling-avg vibration >= {VIB_SCADA_HI} mm/s (ISA-18.2 High alarm)",
+        "gdc_verdict":      gdc_verdict,
+        "doc_reveals":      doc_reveals,
+        "doc_gen_mode":     doc_gen_mode,
+        "workover_date":    _h2_fmt(_H2_WORKOVER_DATE),
+        "workover_vendor":  _vendor,
+        "workover_product": _prod_code,
+        "health_ok":        health_ok,
+        "model_used":       "esp_health.ubj" if health_ok else "FALLBACK_SYNTHETIC",
     }
 
 
