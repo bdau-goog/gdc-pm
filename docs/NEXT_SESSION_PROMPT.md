@@ -66,13 +66,17 @@ All 8 NEXT_SESSION_PROMPT priorities from Session AT were executed:
 
 ### PRIORITY 1: H2 Synthetic Documents (must precede any H2 code)
 
-Sign off the three H2 documents per G1–G6 gate before any pixel is drawn:
+**Five documents total — 2 dynamic (Gemma-generated per run), 3 static seeds.** Sign off all five per G1–G6 gate before any pixel is drawn. See DEMO_MASTER §5 for full dynamic generation architecture.
 
-1. **Workover completion report** — fictional vendor, fluid product code, fill volume. No diagnosis. Pass G1–G6.
-2. **OEM fluid compatibility matrix** — fictional OEM name. Buna-N + synthetic ester = INCOMPATIBLE. Pure facts. Pass G1–G6.
-3. **Shift note** — "pumping rougher than usual, vibration uptick, monitoring." Concerning-in-hindsight only. Pass G1–G6.
+| # | Document | Generation | Sign-off status |
+|---|---|---|---|
+| 1 | **Workover completion report** | 🔄 DYNAMIC — Gemma prompt template, randomized per run (vendor, date, fill volume) | ❌ Not yet drafted |
+| 2 | **OEM fluid compatibility matrix** | 📌 STATIC SEED — Buna-N + synthetic ester = INCOMPATIBLE (Gemini confirmed chemistry) | ❌ Not yet drafted |
+| 3 | **Prior pull record** | 📌 STATIC SEED — bearings: NORMAL at last pull (eliminates bearing-wear hypothesis) | ❌ Not yet drafted |
+| 4 | **Shift note (recent tour)** | 🔄 DYNAMIC — Gemma prompt template, randomized operator initials/timestamps | ❌ Not yet drafted |
+| 5 | **Well history extract** | 📌 STATIC SEED — workover date list, normal history pre-current-workover | ❌ Not yet drafted |
 
-Draft the text in session, run G1–G6 gate check explicitly, get user sign-off → then seed into `field_intel`.
+**Draft each doc text in session → run G1–G6 gate check explicitly (table format) → get user sign-off → then wire into backend.**
 
 ### PRIORITY 2: H2 Backend Endpoint (`GET /api/h2/scenario-replay`)
 
@@ -118,10 +122,20 @@ Fix H3 Optimize tab copy: replace any "no cloud dependency" language with honest
 | docs/DEMO_STORY_AND_PATH.md | ✅ CREATED Session AU | Stakeholder narrative + all 3 horizon stories |
 | docs/VIDEO_SCRIPT.md | ✅ CREATED Session AU | 4 narration scripts |
 | CLAIM_LEDGER H2 rows | ✅ UPDATED Session AU | H2-P1–H2-C2 added; slug-flow archived |
-| H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Estimate — SME verify before hard display; Gemini confirmed "substantially less than full workover" but no hard number |
-| H2-P4 3-week swell timeline | ⚠️ 🔴 NEEDS-EXPERT | Plausible, display as "weeks, not months"; SME verify swell kinetics |
+| H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Two Gemini searches — no hard public figure found. Display as soft range only. Cannot harden without field service quote from ESP OEM. |
+| H2-P4 symptom onset "within weeks" | ✅ SURVIVES (softened) | Gemini search Session AV: Buna-N + phosphate ester → "days to a few weeks" for initial symptoms. 3-month documented case. Display as "within weeks of fluid fill" not a hard number. |
 
 ---
+
+## MCP / Gemini Protocol for 🔴 NEEDS-EXPERT Items
+
+**Rule:** Any 🔴 NEEDS-EXPERT claim MUST get a `gemini_search` pass before next session ends.
+- If Gemini finds a hard number or citeable range → promote to 🟡 OUR-CODE or 🟢 TEXTBOOK with citation, update CLAIM_LEDGER
+- If Gemini cannot source it (2 searches tried) → display must be softened to a range or cut; note this explicitly in CLAIM_LEDGER
+- **Never ship a hard figure that has only a 🔴 tag.** Soft ranges ("a fraction of the pull cost") are acceptable display states.
+- H2-C1 is the only remaining open 🔴 item. It requires a real field service quote to harden. Until then: soft range only.
+
+**MCP server status:** `~/mcp/start.sh` is active in this workspace (autoApprove). Tools: `gemini_search` (Google Search grounded) + `gemini_second_opinion` (hostile red-team). Results saved to `/tmp/mcp-results/` — use `read_file` on the path if output truncated in Cline display.
 
 ## Constraints (Permanent)
 
