@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session BC — Sprint H3-B N-well field Vizier optimization)
-**git head:** `84e1b5f` (feat(h3-b): N-well field Vizier optimization)
-**fault-trigger-ui image:** `sha256:21bb97c56f052119b68d5a4736a1220290855cbb6fadfaa1337277cdcdc98942`
+**Date:** June 11, 2026 (Session BD — Sprint H3-C 3-panel briefing deployed)
+**git head:** `662166c` (feat(h3-briefing): Sprint H3-C — 3-panel H3 briefing + field optimization display)
+**fault-trigger-ui image:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -20,7 +20,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
 - field_intel: **9–12** · rag_docs: **18**
 
-**Actual at session-BC close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
+**Actual at session-BD close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$0.65/hr). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -45,52 +45,41 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks (in order)
 
-### SPRINT H3-C: H3 UI — 3-panel briefing + field optimization display
-- **Wireframe sign-off required before any HTML** (per §4.5 Briefing Pattern Spec)
-- Panel 1: The Opportunity (oil-price spike + well heterogeneity setup)
-- Panel 2: The Tradeoff (gas ceiling binding → constraint-stack panel: gas BOLD, others muted)
-- Panel 3: The Optimization (field-wide setpoint vector + joint-vs-independent uplift card)
-- Key data available from `/api/vizier/optimize`:
-  - `wells[]` — per-well GOR, max_hz, independent_hz, joint_hz
-  - `independent_baseline` / `joint_optimal` — oil, gas, cash_flow, uplift_bbl_d, uplift_cash_90d
-  - `constraint_stack` — gas binding=True, thermal/RUL binding=False
-- Replace existing H3 "ⓘ Physics & Logic" toggle panel with proper 3-panel briefing
-
-### SPRINT H3-D: DEMO_MASTER §6 rewrite (field-level spec)
+### SPRINT H3-D: DEMO_MASTER §6 field-level spec rewrite
 - Update §6 to reflect 6-well Pad Alpha joint optimization (N-well, gas ceiling, LP uplift)
+- Replace single-pump VFD story with field-level story: Discern→Classify→Optimize arc lands at the field
+- No code changes — docs only
 
 ### SPRINT P4 — H1 Batch B date-templating (small)
-Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dates. Template to `today − offset`.
+- Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dates
+- Template to `today − offset` at startup (same pattern as H2 docs)
 
 ---
 
-## H3-B Technical Notes (for next session context)
+## H3-C Technical Notes (Session BD)
 
-**What was built (Session BC):**
-`vizier_optimize()` rewritten for N-well field optimization. Key results on live cluster:
-```
-n_wells: 6 | gas_ceiling: 8.0 MMscfd
-A-1 GOR=650  max=65.5 indep=63.99 joint=65.50
-A-2 GOR=1100 max=65.5 indep=63.99 joint=65.50
-A-3 GOR=450  max=66.0 indep=64.48 joint=66.00  ← lowest GOR, highest priority
-A-4 GOR=900  max=65.5 indep=63.99 joint=65.50
-A-5 GOR=1350 max=65.5 indep=63.99 joint=59.67  ← marginal well (highest GOR, throttled)
-A-6 GOR=750  max=66.0 indep=64.48 joint=66.00
+**What was built:**
+3-panel H3 briefing replacing the old "ⓘ Physics & Logic" toggle panel. All panels follow §4.5 Briefing Pattern Spec exactly.
 
-Independent baseline: 9,238 bbl/d @ $78.9M / 90d
-Joint LP-optimal:     9,316 bbl/d @ $79.2M / 90d
-Uplift: +77.9 bbl/d / +$369,225 over 90d ✅ ceiling respected at 7.9999 MMscfd
-```
+**Panel 1 — The Opportunity:**
+- 6-well GOR table (A-3 green/450 → A-5 amber/1350)
+- Associated gas explanation: "every oil well produces gas whether you want it or not"
+- Closing quote: "Not all barrels cost the same gas. A-3 produces 3× more oil per unit of gas budget than A-5."
 
-**LP algorithm:** Sort wells by GOR ascending → allocate gas ceiling to lowest-GOR wells first → marginal well fills remaining budget. Analytically optimal for linear objective (maximize Σ oil subject to gas budget).
+**Panel 2 — The Tradeoff:**
+- Constraint stack: gas ceiling (amber/BINDING, 8.0 MMscfd), motor winding temp (slate/not binding, 280°F from AlloyDB RAG), RUL horizon (slate/not binding, 90d)
+- SCADA honest framing: "Without a cross-well optimizer, the safe default is uniform throttle — conservative, safe, but leaves 9,238 bbl/d short of what gas-efficient wells could carry."
 
-**Vizier ran live (GAUSSIAN_PROCESS_BANDIT):** 15 trials, 6D parameter space. Vizier's best trial (T3, uniform ~60Hz) was sub-optimal vs LP analytical — expected with 15 trials in 6D. H3-C UI should show BOTH: Vizier exploration (existing pareto chart) + LP analytical field allocation (new panel).
+**Panel 3 — The Optimization:**
+- GOR-ranked setpoint table: A-3/A-6 run at 66.0 Hz, A-5 (highest GOR) gives way at 59.7 Hz (+9.7 from SCADA vs +16 for low-GOR wells)
+- Uplift card: +77.9 bbl/d / +$369,225/90d / gas 7.9999/8.0 MMscfd ✓
+- Closing: "Maximum production from the pad. No pump destroyed." / "Cloud searches. Edge enforces."
+- CTA: ▶ Run the Optimization → sets h3BriefingMode=false, fires runVizierOptimize()
 
-**New response keys for H3-C UI:**
-- `wells[i].{id, name, gor_scf_bbl, rul_base_days, max_hz, independent_hz, joint_hz}`
-- `independent_baseline.{hz_setpoints[], total_oil_bbl_d, total_gas_mmscfd, total_cash_flow}`
-- `joint_optimal.{hz_setpoints[], total_oil_bbl_d, total_gas_mmscfd, total_cash_flow, uplift_bbl_d, uplift_cash_90d}`
-- `constraint_stack.{gas_ceiling.{binding:true, value_mmscfd, scada_mmscfd, indep_mmscfd, joint_mmscfd}, thermal_derated, rul_horizon}`
+**Red-team (Gemini gdc-second-opinion, Session BD):**
+- "Vizier as optimizer for LP-trivial problem" → FAILS (engineer attack: "use a spreadsheet")
+- Fix: Vizier justified for FULL multi-constraint problem (gas+thermal+RUL non-linear). LP analytical handles gas-only subproblem; Vizier handles the full search where LP doesn't apply.
+- All 7 revised claims SURVIVE
 
 ---
 
@@ -105,8 +94,8 @@ Uplift: +77.9 bbl/d / +$369,225 over 90d ✅ ceiling respected at 7.9999 MMscfd
 | H2 Scenario Replay UI | ✅ DEPLOYED | `866522f` — session BA |
 | Sprint F0: "GDC Operations Intelligence" header | ✅ DEPLOYED | `e85f9b9`+`81c3a5b` — session BB |
 | Sprint H3-A: thermal model 4-feature fix | ✅ DEPLOYED | `81c3a5b` — session BB |
-| **Sprint H3-B: N-well field Vizier optimization** | **✅ DEPLOYED** | **`84e1b5f` — session BC · 6-well LP-optimal, gas ceiling 8.0 MMscfd** |
-| H3 UI — 3-panel briefing + field display | ❌ NOT BUILT | Sprint H3-C (wireframe sign-off first) |
+| Sprint H3-B: N-well field Vizier optimization | ✅ DEPLOYED | `84e1b5f` — session BC · 6-well LP-optimal, gas ceiling 8.0 MMscfd |
+| **Sprint H3-C: 3-panel H3 briefing** | **✅ DEPLOYED** | **`662166c` — session BD · "Maximum Production. Maximum Care." / "Cloud Searches. Edge Enforces."** |
 | DEMO_MASTER §6 field-level spec | ❌ NOT UPDATED | Sprint H3-D |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
 | **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly** |
@@ -114,6 +103,7 @@ Uplift: +77.9 bbl/d / +$369,225 over 90d ✅ ceiling respected at 7.9999 MMscfd
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
 | MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |
+| H3 briefing panel Hz values (66.0, 65.5, 59.7) | ⚠️ HARDCODED | From live API 2026-06-11 — update if _PAD_ALPHA_WELL_PARAMS changes |
 
 ---
 
@@ -123,8 +113,8 @@ Uplift: +77.9 bbl/d / +$369,225 over 90d ✅ ceiling respected at 7.9999 MMscfd
 - No `browser_action` (SSH remote, no browser)
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,900 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first, targeted reads only
-- **Wireframes → sign-off → HTML** (Sprint H3-C briefing panels need sign-off per panel spec in DEMO_MASTER)
+- `app.py` ~6,900 lines · `index.html` ~3,400 lines · `app.js` ~2,300 lines — grep first, targeted reads only
+- **Wireframes → sign-off → HTML** (always)
 - **No build/push/deploy without user walkthrough and verification**
 - Gemini tools (gemini_search, gemini_second_opinion) on autoApprove — use freely for fact-checking
 - **Ask inline questions — no option lists** (ask_followup_question options array causes display issues)

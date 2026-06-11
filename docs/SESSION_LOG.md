@@ -2,6 +2,21 @@
 
 ---
 
+## Session BD (June 11, 2026) — *Sprint H3-C: 3-panel H3 briefing deployed*
+
+**Code committed:** `662166c` (feat(h3-briefing): Sprint H3-C — 3-panel H3 briefing + field optimization display)
+**Cluster image digest:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b`
+
+**What was built:** Full 3-panel H3 briefing replacing the old "ⓘ Physics & Logic" toggle panel. Panel 1 (The Opportunity): 6-well GOR table with associated gas explanation — "every oil well produces gas, GOR tells you how much per barrel, you can choose which wells get the gas budget." Panel 2 (The Tradeoff): constraint-stack panel with gas ceiling (amber/BINDING at 8.0 MMscfd), motor winding temp and RUL horizon (slate/not binding). Honest SCADA framing: "without a cross-well optimizer, the safe default is uniform throttle." Panel 3 (The Optimization): GOR-ranked setpoint table showing A-5 (GOR 1350) giving way at 59.7 Hz while low-GOR wells run at 65.5–66.0 Hz; uplift card (+77.9 bbl/d, +$369,225/90d, ceiling held at 7.9999/8.0 MMscfd); closing quote "Maximum production from the pad. No pump destroyed. / Cloud searches. Edge enforces." Navigation follows §4.5 Briefing Pattern Spec exactly (progress strip, Back/Next, Skip, ← Briefing button on dashboard). `h3BriefingMode: true` and `h3BriefingPanel: 1` added to app.js data().
+
+**Key decisions and red-team findings:** (1) User questioned "why 6 wells not 24" — confirmed 6 is correct (realistic Permian pad size, legible table, principle scales). (2) User didn't understand GOR/gas budget relationship — briefing redesigned to explain associated gas explicitly before showing the table. (3) Vizier framing red-teamed via Gemini `gdc-second-opinion`: "Vizier as optimizer for an LP-trivial problem" FAILS (engineer attack: "just use a spreadsheet"). Fix: Vizier justified for the FULL multi-constraint problem (gas ceiling + thermal polynomial + RUL exponential decay simultaneously) — that's non-linear and not LP-solvable. All 7 revised claims SURVIVE. (4) Gas ceiling SCADA callout: 8.0 MMscfd labeled as "scenario parameter" (contractual + compression limit) with ~6.2 MMscfd as "at current SCADA setpoints" — correctly tagged 🟡 OUR-CODE, not presented as measured field value.
+
+**Integrity notes:** Briefing panel Hz values (66.0, 65.5, 59.7 for A-5) are hardcoded from live API call on 2026-06-11. If `_PAD_ALPHA_WELL_PARAMS` changes, briefing table must be updated. Added to Known Integrity State in NEXT_SESSION_PROMPT.
+
+**Next task:** Sprint H3-D — DEMO_MASTER §6 field-level spec rewrite (docs only, no code). Then Sprint P4 — H1 date-templating.
+
+---
+
 ## Session BC (June 11, 2026) — *Sprint H3-B: N-well field Vizier optimization deployed*
 
 **Code committed:** `84e1b5f` (feat(h3-b): N-well field Vizier optimization — 6-well Pad Alpha, gas ceiling 8.0 MMscfd, LP-optimal joint allocation)
