@@ -1,6 +1,20 @@
 # GDC-PM Session Log — Append-Only History
 
 ---
+
+## Session AX (June 11, 2026) — *H2 backend deploy + domain terminology audit*
+
+**Code committed:** `306ef60` (fix: protector fill oil), `2d0035a` (fix: Ariel JGP temps)
+**Cluster image digest:** `sha256:cd46caa8` (fault-trigger-ui)
+
+**What was deployed:** (1) H2 backend endpoint (`/api/h2/scenario-replay`) — committed last session as `b61d6f7`, deployed this session. Smoke test passes: `scenario=workover_fluid_incompatibility`, `n=80`, `doc_gen_mode=FALLBACK_TEMPLATE`, 5 doc_reveals, `health_ok=True`, workover_date correct. Also diagnosed why NEXT_SESSION_PROMPT had `gcr.io` deploy commands — cluster uses **Artifact Registry** (`us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models`); corrected in NEXT_SESSION_PROMPT. (2) **Terminology fix** (`306ef60`): "hydraulic fluid/fill" replaced with "protector fill oil" throughout H2 scenario — 7 app.py locations, 3 DEMO_MASTER.md lines, AlloyDB OEM matrix seed deleted and re-seeded with correct terminology on deploy. Root cause: hydraulic fluid is power-transmission fluid (correct for top drive circuits); ESP protectors use dielectric oil / protector fill oil. (3) **Ariel temperature fix** (`2d0035a`): "250°F Ariel JGP cylinder design limit" does not exist as a published specification — replaced with real limits: 330°F application guideline (blue flag) / 350°F shutdown (red flag), per Gemini search. Also corrected ESP winding alarm from 250°F → 280°F derated (consistent with DEMO_MASTER §6 and ASSET_REGISTRY).
+
+**Domain audit conducted:** Full review of real vs. fictional names across the codebase. Places (Andrews County TX, Permian Basin) are real and correct. Standards (API RP 11S, ISA-18.2, ISO 10816) are real and correctly cited. Buna-N + synthetic ester incompatibility chemistry is confirmed real (Gemini). Real equipment OEMs (Ariel JGP, NOV TWS 7500) are now correctly cited after the temperature fix. Fictional vendor names (TexPlex, PermPump Systems, Basin Lift Services LLC) correctly comply with G1 gate. BH Centrilift pricing in financial justifications is labeled as estimates (defensible). SPE paper citations remain unverified — flagged in integrity table. Ariel fin-fan 6-month PM interval is plausible but unconfirmed.
+
+**H2 Briefing wireframe designed:** 3 panels per §4.5 spec, with key structural decision: document stack removed from Panel 2 (overtelling — audience would know the answer before scenario plays). Panel 1 callout revised: "8 weeks ago: fresh motor, startup normal" (NOT "something went wrong" which was Panel 3's reveal). Panel 3 subtitle: "The completion report says what fluid was used. The OEM manual says that fluid destroys Buna-N seals. GDC connected them." Session ended before sign-off — wireframe is PRIORITY 1 for next session.
+
+**Key rejections / design decisions:** Rejected "hydraulic fluid" as ESP protector terminology (domain error). Rejected "250°F Ariel design limit" (doesn't exist). Confirmed vibration units: mm/s for ESP wellhead (velocity, overall), g for gas lift/top drive spectral bearing diagnostics (acceleration, frequency-domain) — both correct for their respective measurement types. Confirmed H2 scenario resonance: 51% of ESP failures = human factors (SPE 2014 AI Conference) — the umbrella that covers the wrong-protector-oil scenario. Ariel JGP: no specific confirmation of 250°F limit from Gemini search.
+
 ---
 
 ## Session AW (June 11, 2026) — *GPU discipline enforced + H2 backend endpoint committed*
