@@ -11,31 +11,26 @@ Exposes two tools to Cline:
 Setup (run once before starting the server):
   pip install --break-system-packages mcp google-genai
 
-API key:
-  Set GEMINI_API_KEY in ~/gdc-pm/.env BEFORE sourcing it:
-    echo "GEMINI_API_KEY=your-key-here" >> ~/gdc-pm/.env
-  The .env file is gitignored. The key never enters git or this chat.
+Auth: Vertex AI + Application Default Credentials (ADC) — same as Cline Plan Mode.
+  No API key needed. Requires active ADC:
+    gcloud auth application-default login --no-browser
+    gcloud auth application-default set-quota-project gdc-das-life-2026
+  Project: gdc-das-life-2026 | Location: global | Model: gemini-3.5-flash
 
-Registration in Cline MCP settings (~/Library/Application Support/Code/User/globalStorage/
-saoudrizwan.claude-dev/settings/cline_mcp_settings.json):
-
+Registration in Cline MCP settings:
   {
     "mcpServers": {
       "gdc-second-opinion": {
         "command": "python3",
         "args": ["/home/brian/gdc-pm/mcp/second_opinion_server.py"],
-        "env": {
-          "GEMINI_API_KEY": "${GEMINI_API_KEY}"
-        },
         "disabled": false,
         "autoApprove": ["gemini_second_opinion", "gemini_search"]
       }
     }
   }
 
-  Note: Cline will inherit the env var from the shell that launched VS Code.
-  Run `source ~/gdc-pm/.env` in the terminal that opens VS Code to ensure
-  GEMINI_API_KEY is available to subprocesses.
+  Note: No env vars needed — uses ADC from the shell that launched VS Code.
+  If calls fail with auth errors: gcloud auth application-default login --no-browser
 """
 
 import os
