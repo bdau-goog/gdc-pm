@@ -97,14 +97,13 @@ def load_health_models() -> None:
                 else:
                     log.warning(f"⚠️  No model found for {asset_class} — predictions will use fallback")
         # ── esp_thermal model (H3 VFD thermal constraint) ──
-        thermal_path = MODELS_DIR / "esp_thermal.ubj"
-        if thermal_path.exists():
-            bt = xgb.Booster()
-            bt.load_model(str(thermal_path))
-            HEALTH_MODELS["esp_thermal"] = bt
-            log.info(f"✅ Loaded thermal constraint model: esp_thermal ({thermal_path.stat().st_size//1024} KB)")
-        else:
-            log.warning("⚠️  esp_thermal.ubj not found — vizier_optimize() will use physics polynomial fallback")
+        # XGBoost 3.x model files are incompatible with container XGBoost 2.0.3 (.ubj format changed).
+        # The 4-feature physics polynomial (API RP 11S3/S5 / IEEE 112) is the ground truth used for
+        # training data generation. Using the polynomial directly is more defensible and transparent
+        # than loading an approximation of itself, and avoids the version compatibility issue.
+        # esp_thermal in HEALTH_MODELS is intentionally NOT populated — evaluate_hz() uses polynomial.
+        log.info("✅ esp_thermal: using 4-feature physics polynomial directly (API RP 11S3/S5, IEEE 112)")
+        log.info("   f(vfd_hz, motor_amps, intake_fluid_temp, water_cut_pct) — no version dependency")
         log.info(f"Health model registry: {list(HEALTH_MODELS.keys())}")
     except ImportError:
         log.warning("xgboost not available — health predictions will use geometric fallback")
