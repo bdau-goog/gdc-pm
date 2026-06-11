@@ -2,6 +2,15 @@
 
 ---
 
+## Session BG (June 11, 2026) — *H2 paraffin/wax scenario — hostile pass + docs rewrite + briefing deployed*
+
+**Code committed:** `dad8c71` (docs: H2 paraffin scenario rewrite) · `f5f30b6` (feat(h2-briefing): paraffin scenario 3-panel rewrite + v-else layout fix)
+**Cluster image digest:** `sha256:1be9477f39daa975bc8a320c9e7164d9962d669666e54e950dce28c75cff6569` (H2 paraffin briefing deployed)
+
+Planning session + H2-REFRAME sprint executed. The session opened by reading DEMO_MASTER, NEXT_SESSION_PROMPT, and SESSION_LOG (last 3 entries) to re-establish context. User confirmed H2 was the blocking priority (physics error live on screen). Ran `gdc-second-opinion` hostile-engineer pass on the paraffin/wax deposition scenario — 3 FAILS verdicts were issued by the hostile agent, all overturned: the hostile engineer inverted centrifugal pump intake-pressure hydraulics ("restriction above pump → PIP decreases"). Gemini search confirmed the opposite (API RP 11S, ResearchGate, production-technology.org: restriction steepens system curve → lower flow → less drawdown → PIP rises). 4 SURVIVES-IF-REWORDED fixes applied (remove "textbook"/"indistinguishable", WAT citation to PVT report, remove 60-70% figure). Scenario declared pixel-eligible. DEMO_MASTER §2 and §5 completely rewritten to paraffin scenario (5-gate survival tests, two-tier SCADA/APM framing per Session BF §3 calibration). CLAIM_LEDGER: workover-fluid H2 rows archived; H2-PAR-1 through H2-PAR-7 added including PIP-rebuttal row pre-loaded. STAKEHOLDER_BRIEF §H2 physics-error paragraph and table row corrected. User flagged H2 UI "hot mess" (briefing and replay stacked simultaneously — missing `v-else` wrapper) and requested H3 multi-well expansion with selectable constraints and RAG provenance. H3 scoped as 3-part sprint (H3-E: pad dashboard table, H3-F: selectable constraint + RAG provenance, H3-G: seed 10-12 doc corpus). H2 first (blocking). index.html: 3 briefing panels rewritten (Panel 1: "Waxy Crude. Routine PM. Then Nothing." + PVT chemistry card; Panel 2: 4-node timeline + two-tier SCADA/APM callout; Panel 3: "Three Documents. One Truck. No Pull." + doc stack); `<template v-else>` wrapper added to fix stacked layout. Built, pushed, deployed. Pod 1/1 Running, API responding 200 OK. H2 scenario replay backend (verdict text still old scenario) deferred to H2-REPLAY sprint. Session also surfaced H3 user requirement for selectable binding constraint and RAG constraint provenance — documented in NEXT_SESSION_PROMPT SPRINT H3-F.
+
+---
+
 ## Session BF (June 11, 2026) — *APM market calibration + Lift IQ hostile-pass + §3 two-tier reframe*
 
 **Code committed:** `d000c52` (docs(session-bf): §3 APM two-tier calibration; Lift IQ/sovereignty hostile-pass rewording)
