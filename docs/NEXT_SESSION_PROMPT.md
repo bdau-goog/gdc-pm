@@ -45,10 +45,20 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks (in order)
 
-### SPRINT H3-D: DEMO_MASTER §6 field-level spec rewrite
+### SPRINT H3-D: DEMO_MASTER §6 rewrite + new stakeholder briefing doc
+**Part A — DEMO_MASTER §6 field-level spec rewrite (docs only)**
 - Update §6 to reflect 6-well Pad Alpha joint optimization (N-well, gas ceiling, LP uplift)
 - Replace single-pump VFD story with field-level story: Discern→Classify→Optimize arc lands at the field
-- No code changes — docs only
+
+**Part B — NEW: `docs/STAKEHOLDER_BRIEF.md`**
+A standalone ~2-page non-technical document for customer stakeholders. Sections:
+1. **What we built** — one paragraph per horizon: H1 (Discern), H2 (Classify), H3 (Optimize)
+2. **Value proposition per horizon** — what problem it solves, what it costs to not solve it, what GDC delivers
+3. **Honest relationship with SCADA** — GDC complements (not replaces) SCADA; the three tiers (tags / tag-patterns / documents); where GDC wins categorically
+4. **Use cases in other markets** — the STATE-vs-CONTEXT universal pattern; same capability in P&E (transformer diagnostics), manufacturing (bearing fault provenance), mining (haul-truck driveline); each with a 2-sentence worked example
+5. **The sovereign-edge differentiator** — why "inside the perimeter" matters; the three sovereignty pillars (IEC 62443 / data residency / governance & IP) in plain language
+
+Tone: executive-readable, no jargon, no LP/Bayesian/GP terminology on screen. All claims must have a SURVIVES row in CLAIM_LEDGER or be softened to a defensible range. DEMO_MASTER §3 is the authoritative source for the value proposition language — use its locked wording.
 
 ### SPRINT P4 — H1 Batch B date-templating (small)
 - Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dates
