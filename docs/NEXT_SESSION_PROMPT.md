@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** June 11, 2026 (Session AU — docs sprint: DEMO_STORY_AND_PATH + VIDEO_SCRIPT + DEMO_MASTER §3/§5/§6 + CLAIM_LEDGER H2 rows)
-**git head:** `[post-AU commit — run git log -1 --oneline to confirm]`
+**git head:** `16667c4` (docs(session-au): DEMO_STORY_AND_PATH + VIDEO_SCRIPT + DEMO_MASTER §3/§5/§6 rewrite + CLAIM_LEDGER H2 rows)
 **fault-trigger-ui image:** `sha256:2fd95932...` (unchanged — no app code deployed)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
