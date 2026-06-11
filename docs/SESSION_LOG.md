@@ -1,6 +1,15 @@
 # GDC-PM Session Log — Append-Only History
 
 ---
+---
+
+## Session AS (June 11, 2026) — *MCP server migrated to ~/mcp/; frac-hit scenario FAILS T1; maintenance-provenance H2 candidate proposed; L2 over-concession identified — docs only, no app code*
+
+**Code committed:** docs only — NEXT_SESSION_PROMPT, SESSION_LOG; ~/mcp/ files outside git repo
+**Cluster image digest:** unchanged (sha256:2fd95932...) — no app code deployed (H2 scenario still unvalidated)
+
+Session AS produced no application code — correctly, because the H2 scenario work is still in the scenario-gate phase. Startup clean (8/8 pods, gemma4 online, field_intel=6, rag_docs=18). Session work in three areas: (1) MCP server migrated from gdc-pm/mcp/ to ~/mcp/ (cross-project home, outside all git repos). Server updated to gemini-2.5-flash + gdc-pm-v2 + file-save to /tmp/mcp-results/ (truncation fix — Cline display caps tool output; file contains full response for read_file retrieval) + timeout 120000ms. Intermediate attempt at gemini-3.5-flash + gdc-das-life-2026 introduced timeout and ADC-expiry issues (3.5-flash thinking model takes ~28s with Google Search grounding, exceeding Cline default timeout); reverted to working config. MCP confirmed working with gemini_search returning full cited responses with file-save path. (2) H2 scenario validation: ran in-persona hostile-engineer red-team + gemini_second_opinion MCP call on the frac-hit interference candidate. Both passes converged on Test 1 FAILS — frac hits have distinct well-documented signatures that experienced Permian operators recognize; the ambiguity claim is the same failure class as slug flow. Frac-hit pre-alert reframe (proactive RRC filing monitoring) proposed but user correctly identified as too O&G-specific for a broad value story. (3) Strategic reframe: user surfaced the root problem — prior sessions over-conceded the L2 layer (trying to prove L3 document-fusion alone carries the moat), producing weak scenarios. The honest GDC value is the sovereign AI stack: L2 (ML models trained on YOUR fleet data, running locally) + L3 (document fusion). New H2 candidate: maintenance-provenance — wrong-fluid fill during workover (fill record only in workover completion report); vibration/efficiency degradation APM routes to bearing wear (0k pull); GDC reads completion report + OEM compatibility matrix -> reclassifies elastomer degradation -> correct fix (k). Cross-industry analog (wrong lube/coolant/hydraulic fluid). SPE research via MCP confirms: 51% of ESP failures attributed to human factors/operational problems (2014 SPE AI Conference survey, SPE 185275-MS, 194398-MS, 144562-MS). Next: run 4 survival tests on maintenance-provenance candidate.
+
 
 ## Session AR (June 11, 2026) — *H2 dual-AI red-team; scenario invalidated; scenario gate + in-session red-team discipline established — docs only, no code*
 
