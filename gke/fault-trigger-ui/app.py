@@ -5777,14 +5777,36 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     def evaluate_hz(hz: float) -> dict:
         flow_rate = round(24.0 * hz, 1)
         # ── Thermal constraint: esp_thermal.ubj XGBoost model (H3 integrity fix) ──
-        # Replaces the hardcoded polynomial. If model not loaded, falls back honestly.
+        # Multi-feature model: f(vfd_hz, motor_amps, intake_fluid_temp, water_cut_pct)
+        # Physics: API RP 11S3/S5, IEEE 112 — winding temp driven by I²R losses + cooling.
+        #
+        # Representative Pad Alpha ESP-ALPHA-1 operating conditions:
+        #   motor_amps:       scales with VFD load (65A nominal @50Hz; +0.65A/Hz)
+        #   intake_fluid_temp: 87°F — Permian Basin avg at ~9,800 ft pump intake depth
+        #   water_cut_pct:    35% — mature Permian well typical water cut
+        _motor_amps_est   = round(65.0 + 0.65 * (hz - 50.0), 1)  # correlated with Hz
+        _intake_temp_est  = 87.0   # °F — representative Pad Alpha intake fluid temp
+        _water_cut_est    = 35.0   # %  — representative Pad Alpha water cut
         _thermal_model = HEALTH_MODELS.get("esp_thermal")
         if _thermal_model:
             import xgboost as _xgb_t
             temp_f = round(float(_thermal_model.predict(
-                _xgb_t.DMatrix([[hz]], feature_names=["vfd_hz"]))[0]), 1)
+                _xgb_t.DMatrix(
+                    [[hz, _motor_amps_est, _intake_temp_est, _water_cut_est]],
+                    feature_names=["vfd_hz", "motor_amps", "intake_fluid_temp", "water_cut_pct"]
+                ))[0]), 1)
         else:
-            temp_f = round(180.0 + 1.5 * (hz - 45.0) + 0.15 * max(0.0, hz - 58.0) ** 3, 1)
+            # Physics polynomial fallback — same coefficients as training script
+            # (API RP 11S3/S5 / IEEE 112 multi-feature polynomial)
+            _overfreq = 0.12 * max(0.0, hz - 58.0) ** 3
+            temp_f = round(
+                _intake_temp_est + 95.0
+                + 1.5 * (hz - 45.0)
+                + 0.9 * (_motor_amps_est - 65.0)
+                + _overfreq
+                - 0.25 * (_water_cut_est - 30.0),
+                1
+            )
         rul_days = round(300.0 * math.exp(-0.11 * (hz - 45.0)), 1)
         power_cost = round(0.1 * (hz ** 3), 1)
         is_temp_burnout = temp_f >= burnout_threshold_f
