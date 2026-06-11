@@ -5722,6 +5722,22 @@ def get_fault_sessions(limit: int = 50):
         return {"sessions": [], "count": 0, "error": str(e)}
 
 
+# ── Pad Alpha Field-Level Well Parameters (H3-B: N-well joint optimization) ──────
+# Per-well GOR ∈ [400–1400 scf/bbl] — Permian Basin ESP range (well test separator reports)
+# RUL base at SCADA nominal (50 Hz): Permian ESP replacement cycle 18 mo–3 yr (500–1000 d)
+# Sources: API RP 11S / SPE-174536 / FAULT_PROFILES calibration
+_PAD_ALPHA_WELL_PARAMS = [
+    # (asset_id,      short_name, gor_scf_bbl, rul_base_days, intake_temp_f, water_cut_pct, nominal_amps_50hz)
+    ("ESP-ALPHA-1", "A-1",  650, 680, 87.0, 35.0, 65.0),  # CRITICAL — low GOR, healthy
+    ("ESP-ALPHA-2", "A-2", 1100, 760, 89.0, 38.0, 67.0),  # CRITICAL — high GOR, healthy
+    ("ESP-ALPHA-3", "A-3",  450, 590, 85.0, 42.0, 64.0),  # HIGH     — lowest GOR, recently worked over
+    ("ESP-ALPHA-4", "A-4",  900, 720, 91.0, 32.0, 66.0),  # HIGH     — moderate GOR
+    ("ESP-ALPHA-5", "A-5", 1350, 640, 88.0, 29.0, 68.0),  # HIGH     — highest GOR, least water cooling
+    ("ESP-ALPHA-6", "A-6",  750, 820, 86.0, 44.0, 65.0),  # MEDIUM   — low GOR, high water cut (best cooling)
+]
+_GAS_CEILING_MMSCFD = 8.0   # Pad Alpha midstream takeaway cap (contractual + compression limit)
+_PUMP_FLOW_COEFF    = 24.0  # bbl/d per Hz (pump curve coefficient — calibrated to H3-A single-well model)
+
 # ── Bayesian Optimization & Truck Roll Endpoints (3-Horizon Demo Overhaul) ──────
 class OptimizeRequest(BaseModel):
     oil_price: float = 112.0
@@ -5730,25 +5746,38 @@ class OptimizeRequest(BaseModel):
 @app.get("/api/vizier/optimize")
 def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
     """
-    Google Vertex AI Vizier Bayesian Optimization — real API call.
-    Creates a Gaussian Process Bandit study, requests 15 trial suggestions,
-    evaluates each against the ESP physics + XGBoost RUL model, reports
-    measurements back to Vertex AI, and returns the optimal VFD Hz.
+    Vertex AI Vizier Bayesian Optimization — N-well field optimization (Sprint H3-B).
 
-    Fix 15: Class H insulation burnout threshold retrieved from AlloyDB rag_documents
-    at call time via SQL ILIKE (<10ms). Default fallback: 284°F (API RP 11S).
+    Jointly optimizes VFD Hz setpoints across all 6 Pad Alpha ESPs subject to:
+      • Per-well: motor winding temp < burnout_threshold_f (API RP 11S, Class H insulation)
+      • Per-well: RUL >= horizon_days (per-well replacement budget horizon)
+      • Field-level: Σ associated_gas_i <= 8.0 MMscfd (midstream takeaway ceiling —
+                     binding when oil price spike drives all wells toward max Hz)
+
+    Baseline comparison: independent per-pump optimization (uniform proportional throttle)
+    vs. joint LP-optimal allocation (lowest-GOR wells get Hz priority — more oil per unit gas).
+
+    Returns both new field-level keys (for H3-C UI sprint) and backward-compat single-well
+    keys for the existing pareto chart (trials[].vfd_hz = avg Hz; trials[].cash_flow = total).
     """
     import math
     import re
     import time as _time
     from google.cloud import aiplatform_v1
 
-    GCP_PROJECT = "gdc-pm-v2"
+    GCP_PROJECT  = "gdc-pm-v2"
     GCP_LOCATION = "us-central1"
-    parent = f"projects/{GCP_PROJECT}/locations/{GCP_LOCATION}"
+    parent       = f"projects/{GCP_PROJECT}/locations/{GCP_LOCATION}"
 
-    # ── Retrieve Class H insulation temperature limit from AlloyDB (Fix 15) ──
-    burnout_threshold_f = 284.0   # API RP 11S Class H default
+    # ── Build per-well parameter dicts ────────────────────────────────────────
+    well_params = [
+        {"id": wid, "name": nm, "gor_scf_bbl": gor, "rul_base_days": rul,
+         "intake_temp_f": it, "water_cut_pct": wc, "nominal_amps_50hz": na}
+        for wid, nm, gor, rul, it, wc, na in _PAD_ALPHA_WELL_PARAMS
+    ]
+
+    # ── Retrieve Class H burnout threshold from AlloyDB RAG (same as H3-A) ───
+    burnout_threshold_f   = 284.0
     rag_constraint_source = "default (API RP 11S)"
     try:
         _rag_conn = get_db()
@@ -5767,187 +5796,336 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
             if _m:
                 _cand = float(_m.group(1))
                 if 200.0 <= _cand <= 380.0:
-                    burnout_threshold_f = _cand
+                    burnout_threshold_f   = _cand
                     rag_constraint_source = "AlloyDB rag_documents (SQL)"
     except Exception as e:
         log.debug(f"Vizier RAG constraint DB query skipped (non-fatal): {e}")
 
-    # ── Physics evaluation helper (same model as before) ──
-    def evaluate_hz(hz: float) -> dict:
-        flow_rate = round(24.0 * hz, 1)
-        # ── Thermal constraint: esp_thermal.ubj XGBoost model (H3 integrity fix) ──
-        # Multi-feature model: f(vfd_hz, motor_amps, intake_fluid_temp, water_cut_pct)
-        # Physics: API RP 11S3/S5, IEEE 112 — winding temp driven by I²R losses + cooling.
-        #
-        # Representative Pad Alpha ESP-ALPHA-1 operating conditions:
-        #   motor_amps:       scales with VFD load (65A nominal @50Hz; +0.65A/Hz)
-        #   intake_fluid_temp: 87°F — Permian Basin avg at ~9,800 ft pump intake depth
-        #   water_cut_pct:    35% — mature Permian well typical water cut
-        _motor_amps_est   = round(65.0 + 0.65 * (hz - 50.0), 1)  # correlated with Hz
-        _intake_temp_est  = 87.0   # °F — representative Pad Alpha intake fluid temp
-        _water_cut_est    = 35.0   # %  — representative Pad Alpha water cut
-        _thermal_model = HEALTH_MODELS.get("esp_thermal")
-        if _thermal_model:
+    # ── Per-well physics evaluator ────────────────────────────────────────────
+    def evaluate_well(hz: float, w: dict) -> dict:
+        """Evaluate one ESP at the given VFD Hz — 4-feature thermal polynomial (API RP 11S3/S5)."""
+        motor_amps = round(w["nominal_amps_50hz"] + 0.65 * (hz - 50.0), 1)
+        it         = w["intake_temp_f"]
+        wc         = w["water_cut_pct"]
+        # Thermal — 4-feature physics polynomial PRIMARY (esp_thermal.ubj not loaded; version mismatch, Session BB)
+        _tm = HEALTH_MODELS.get("esp_thermal")
+        if _tm:
             import xgboost as _xgb_t
-            temp_f = round(float(_thermal_model.predict(
-                _xgb_t.DMatrix(
-                    [[hz, _motor_amps_est, _intake_temp_est, _water_cut_est]],
-                    feature_names=["vfd_hz", "motor_amps", "intake_fluid_temp", "water_cut_pct"]
-                ))[0]), 1)
+            temp_f = round(float(_tm.predict(_xgb_t.DMatrix(
+                [[hz, motor_amps, it, wc]],
+                feature_names=["vfd_hz", "motor_amps", "intake_fluid_temp", "water_cut_pct"]
+            ))[0]), 1)
         else:
-            # Physics polynomial fallback — same coefficients as training script
-            # (API RP 11S3/S5 / IEEE 112 multi-feature polynomial)
-            _overfreq = 0.12 * max(0.0, hz - 58.0) ** 3
-            temp_f = round(
-                _intake_temp_est + 95.0
-                + 1.5 * (hz - 45.0)
-                + 0.9 * (_motor_amps_est - 65.0)
-                + _overfreq
-                - 0.25 * (_water_cut_est - 30.0),
-                1
-            )
-        rul_days = round(300.0 * math.exp(-0.11 * (hz - 45.0)), 1)
-        power_cost = round(0.1 * (hz ** 3), 1)
-        is_temp_burnout = temp_f >= burnout_threshold_f
-        is_failure = (rul_days < horizon_days) or is_temp_burnout
+            _ov    = 0.12 * max(0.0, hz - 58.0) ** 3
+            temp_f = round(it + 95.0 + 1.5*(hz - 45.0) + 0.9*(motor_amps - 65.0)
+                           + _ov - 0.25*(wc - 30.0), 1)
+        # RUL — exponential decay above SCADA nominal (50 Hz); rul_base reflects current health state
+        rul_days   = round(w["rul_base_days"] * math.exp(-0.11 * max(0.0, hz - 50.0)), 1)
+        # Flow, gas, power
+        flow_bbl_d = round(_PUMP_FLOW_COEFF * hz, 1)
+        gas_mmscfd = round(w["gor_scf_bbl"] * flow_bbl_d / 1_000_000.0, 4)
+        power_cost = round(0.1 * hz ** 3, 1)
+        # Constraints
+        is_burnout  = temp_f >= burnout_threshold_f
+        is_rul_fail = rul_days < horizon_days
+        is_failure  = is_burnout or is_rul_fail
         if not is_failure:
-            prod_days = horizon_days
-            net_cash_flow = round((oil_price * flow_rate - power_cost) * horizon_days, 1)
+            prod_days = float(horizon_days)
+            cash_flow = round((oil_price * flow_bbl_d - power_cost) * horizon_days, 1)
         else:
-            prod_days = rul_days if not is_temp_burnout else round(max(1.0, rul_days * 0.6), 1)
-            net_cash_flow = round((oil_price * flow_rate - power_cost) * prod_days - 150000.0, 1)
+            prod_days = rul_days if not is_burnout else round(max(1.0, rul_days * 0.6), 1)
+            cash_flow = round((oil_price * flow_bbl_d - power_cost) * prod_days - 150_000.0, 1)
         return {
-            "vfd_hz": hz, "flow_rate": flow_rate, "motor_temp_f": temp_f,
-            "rul_days": rul_days, "cash_flow": net_cash_flow, "prod_days": prod_days,
-            "is_failure": is_failure,
+            "well_id": w["id"], "well_name": w["name"], "gor_scf_bbl": w["gor_scf_bbl"],
+            "vfd_hz": round(hz, 2), "motor_amps": motor_amps, "motor_temp_f": temp_f,
+            "rul_days": rul_days, "flow_bbl_d": flow_bbl_d, "gas_mmscfd": gas_mmscfd,
+            "cash_flow": cash_flow, "prod_days": prod_days,
+            "is_failure": is_failure, "is_burnout": is_burnout, "is_rul_fail": is_rul_fail,
         }
 
-    # ── Vertex AI Vizier — Gaussian Process Bandit ──
-    trials_out = []
-    best_cash_flow = -999999999.0
+    # ── Field-vector evaluator (6-well, gas ceiling applied) ─────────────────
+    def evaluate_field(hz_vec: list) -> dict:
+        """Evaluate all 6 Pad Alpha ESPs at the given Hz vector; check gas ceiling."""
+        wrs       = [evaluate_well(hz, w) for hz, w in zip(hz_vec, well_params)]
+        total_gas = round(sum(wr["gas_mmscfd"] for wr in wrs), 4)
+        total_oil = round(sum(wr["flow_bbl_d"] for wr in wrs), 1)
+        total_cf  = round(sum(wr["cash_flow"]  for wr in wrs), 1)
+        min_rul   = round(min(wr["rul_days"]   for wr in wrs), 1)
+        avg_hz    = round(sum(hz_vec) / len(hz_vec), 2)
+        gas_over  = total_gas > _GAS_CEILING_MMSCFD
+        any_fail  = any(wr["is_failure"] for wr in wrs)
+        return {
+            "hz_vector": [round(h, 2) for h in hz_vec],
+            "avg_hz": avg_hz,
+            "well_results": wrs,
+            "total_gas_mmscfd": total_gas,
+            "total_oil_bbl_d":  total_oil,
+            "total_cash_flow":  total_cf,
+            "min_rul_days":     min_rul,
+            "gas_ceiling_violated": gas_over,
+            "any_well_fail":    any_fail,
+            "is_infeasible":    gas_over or any_fail,
+        }
+
+    # ── Per-well maximum feasible Hz (thermal + RUL upper bound) ─────────────
+    well_max_hz = []
+    for _w in well_params:
+        _mhz = 45.0
+        for _ht in [x * 0.5 for x in range(140, 89, -1)]:   # 70.0 → 45.0 step 0.5
+            if not evaluate_well(_ht, _w)["is_failure"]:
+                _mhz = _ht
+                break
+        well_max_hz.append(_mhz)
+
+    # ── Independent baseline: each well at its own max Hz, uniformly throttled ──
+    # "Independent" = each pump's local optimizer wants max Hz; no awareness of gas ceiling.
+    # RTOC back-calculates a uniform scale factor to hit the ceiling — no cross-well intelligence.
+    _indep_gas_raw = sum(
+        well_params[i]["gor_scf_bbl"] * _PUMP_FLOW_COEFF * well_max_hz[i] / 1_000_000.0
+        for i in range(len(well_params))
+    )
+    if _indep_gas_raw > _GAS_CEILING_MMSCFD:
+        _scale       = _GAS_CEILING_MMSCFD / _indep_gas_raw
+        indep_hz_vec = [round(well_max_hz[i] * _scale, 2) for i in range(len(well_params))]
+    else:
+        indep_hz_vec = [round(h, 2) for h in well_max_hz]
+    indep_eval = evaluate_field(indep_hz_vec)
+
+    # ── Joint optimal: LP allocation — lowest-GOR wells get Hz priority ───────
+    # Rationale: oil/gas ratio is maximised by running low-GOR wells at max Hz first.
+    # Equivalent to a 1D LP where the gas ceiling is the binding resource constraint.
+    _wells_by_gor = sorted(range(len(well_params)), key=lambda i: well_params[i]["gor_scf_bbl"])
+    joint_hz_vec  = [45.0] * len(well_params)
+    _remaining    = _GAS_CEILING_MMSCFD
+    for _idx in _wells_by_gor:
+        _w           = well_params[_idx]
+        _mhz         = well_max_hz[_idx]
+        _gas_at_max  = _w["gor_scf_bbl"] * _PUMP_FLOW_COEFF * _mhz / 1_000_000.0
+        if _gas_at_max <= _remaining:
+            joint_hz_vec[_idx] = _mhz
+            _remaining        -= _gas_at_max
+        elif _remaining > 0.0:
+            _hz_m              = _remaining * 1_000_000.0 / (_w["gor_scf_bbl"] * _PUMP_FLOW_COEFF)
+            joint_hz_vec[_idx] = max(45.0, round(min(_hz_m, _mhz), 2))
+            _remaining         = 0.0
+        # else: stays at 45.0 (gas budget exhausted)
+    joint_eval = evaluate_field(joint_hz_vec)
+
+    # ── Vertex AI Vizier — 6-parameter Gaussian Process Bandit ───────────────
+    trials_out  = []
+    best_cf     = -999_999_999.0
+    vizier_used = False
 
     try:
         client = aiplatform_v1.VizierServiceClient(
             client_options={"api_endpoint": f"{GCP_LOCATION}-aiplatform.googleapis.com"}
         )
-
-        # Create a new study for each call — Gaussian Process Bandit algorithm
+        # 6-parameter study: one VFD Hz per well (Pad Alpha A-1 through A-6)
         study = client.create_study(
             parent=parent,
             study=aiplatform_v1.Study(
-                display_name=f"gdc_vfd_opt_{int(_time.time())}",
+                display_name=f"gdc_pad_alpha_field_opt_{int(_time.time())}",
                 study_spec=aiplatform_v1.StudySpec(
-                    algorithm=1,  # GAUSSIAN_PROCESS_BANDIT — value 1 per Vertex AI proto spec
-                                  # (not exported by name in google-cloud-aiplatform>=1.38.0)
+                    algorithm=1,  # GAUSSIAN_PROCESS_BANDIT
                     metrics=[aiplatform_v1.StudySpec.MetricSpec(
-                        metric_id="cash_flow",
+                        metric_id="field_cash_flow",
                         goal=aiplatform_v1.StudySpec.MetricSpec.GoalType.MAXIMIZE,
                     )],
-                    parameters=[aiplatform_v1.StudySpec.ParameterSpec(
-                        parameter_id="vfd_hz",
-                        double_value_spec=aiplatform_v1.StudySpec.ParameterSpec.DoubleValueSpec(
-                            min_value=45.0,
-                            max_value=70.0,
-                        ),
-                    )],
+                    parameters=[
+                        aiplatform_v1.StudySpec.ParameterSpec(
+                            parameter_id=f"vfd_hz_{well_params[i]['name'].replace('-', '')}",
+                            double_value_spec=aiplatform_v1.StudySpec.ParameterSpec.DoubleValueSpec(
+                                min_value=45.0, max_value=70.0,
+                            ),
+                        )
+                        for i in range(len(well_params))
+                    ],
                 ),
             ),
         )
-        log.info(f"Vertex AI Vizier study created: {study.name}")
-
-        # Request 15 suggestions (batch Bayesian exploration over Hz search space)
-        operation = client.suggest_trials(
-            request=aiplatform_v1.SuggestTrialsRequest(
-                parent=study.name,
-                suggestion_count=15,
-                client_id="gdc-edge-fault-trigger",
-            )
-        )
+        log.info(f"Vertex AI Vizier field study created: {study.name}")
+        operation = client.suggest_trials(request=aiplatform_v1.SuggestTrialsRequest(
+            parent=study.name, suggestion_count=15, client_id="gdc-edge-fault-trigger",
+        ))
         suggested = operation.result(timeout=60).trials
-        log.info(f"Vertex AI Vizier returned {len(suggested)} trial suggestions")
+        log.info(f"Vertex AI Vizier returned {len(suggested)} field trial suggestions")
 
         for i, trial in enumerate(suggested):
-            # Extract Hz from Vizier suggestion
-            param = next(p for p in trial.parameters if p.parameter_id == "vfd_hz")
-            hz = float(param.value)
-            result = evaluate_hz(hz)
-            result["trial_num"] = i + 1
-            result["is_optimal"] = False
-
-            # Report result back to Vizier and close the trial
-            if not result["is_failure"]:
-                client.complete_trial(
-                    request=aiplatform_v1.CompleteTrialRequest(
-                        name=trial.name,
-                        final_measurement=aiplatform_v1.Measurement(
-                            metrics=[aiplatform_v1.Measurement.Metric(
-                                metric_id="cash_flow",
-                                value=result["cash_flow"],
-                            )]
-                        ),
-                    )
-                )
+            _pmap  = {p.parameter_id: float(p.value) for p in trial.parameters}
+            hz_vec = [_pmap.get(f"vfd_hz_{well_params[j]['name'].replace('-', '')}", 50.0)
+                      for j in range(len(well_params))]
+            fr = evaluate_field(hz_vec)
+            t_result = {
+                "trial_num": i + 1,
+                "hz_vector": fr["hz_vector"],
+                "vfd_hz":    fr["avg_hz"],           # backward compat: avg Hz for pareto chart
+                "cash_flow": fr["total_cash_flow"],
+                "rul_days":  fr["min_rul_days"],
+                "flow_rate": fr["total_oil_bbl_d"],
+                "motor_temp_f": max(wr["motor_temp_f"] for wr in fr["well_results"]),
+                "total_gas_mmscfd": fr["total_gas_mmscfd"],
+                "is_failure":  fr["is_infeasible"],
+                "is_optimal":  False,
+            }
+            if not fr["is_infeasible"]:
+                client.complete_trial(request=aiplatform_v1.CompleteTrialRequest(
+                    name=trial.name,
+                    final_measurement=aiplatform_v1.Measurement(metrics=[
+                        aiplatform_v1.Measurement.Metric(
+                            metric_id="field_cash_flow", value=fr["total_cash_flow"]
+                        )
+                    ]),
+                ))
             else:
-                client.complete_trial(
-                    request=aiplatform_v1.CompleteTrialRequest(
-                        name=trial.name,
-                        trial_infeasible=True,
-                        infeasible_reason="burnout or RUL exhausted",
-                    )
-                )
-
-            trials_out.append(result)
-            if result["cash_flow"] > best_cash_flow:
-                best_cash_flow = result["cash_flow"]
+                client.complete_trial(request=aiplatform_v1.CompleteTrialRequest(
+                    name=trial.name, trial_infeasible=True,
+                    infeasible_reason="gas ceiling or per-well burnout/RUL constraint violated",
+                ))
+            trials_out.append(t_result)
+            if fr["total_cash_flow"] > best_cf:
+                best_cf = fr["total_cash_flow"]
+        vizier_used = True
 
     except Exception as vizier_err:
-        log.warning(f"Vertex AI Vizier call failed — falling back to deterministic trials: {vizier_err}")
-        # Fallback: same physics, fixed Hz sequence. Clearly logged as fallback.
-        for i, hz in enumerate([48.0, 64.0, 52.0, 61.5, 54.5, 59.0, 56.5, 58.0,
-                                 57.2, 57.8, 57.5, 57.6, 57.4, 57.7, 57.5]):
-            result = evaluate_hz(hz)
-            result["trial_num"] = i + 1
-            result["is_optimal"] = False
-            trials_out.append(result)
-            if result["cash_flow"] > best_cash_flow:
-                best_cash_flow = result["cash_flow"]
+        log.warning(f"Vertex AI Vizier field opt failed — deterministic fallback: {vizier_err}")
+        # 15 field Hz vectors (order: A-1, A-2, A-3, A-4, A-5, A-6)
+        # Arc: gas-ceiling violation → uniform throttle (independent baseline) → joint LP-optimal
+        _FALLBACK_VECS = [
+            (65.0, 65.0, 65.0, 65.0, 65.0, 65.0),   # T01: all at 65 Hz → gas over ceiling (infeasible)
+            (64.0, 64.0, 64.0, 64.0, 64.0, 64.0),   # T02: uniform 64 Hz — near independent baseline
+            (60.0, 60.0, 60.0, 60.0, 60.0, 60.0),   # T03: conservative uniform
+            (66.0, 60.0, 66.0, 62.0, 55.0, 66.0),   # T04: partial allocation (low-GOR wells higher)
+            (66.0, 62.0, 66.0, 64.0, 56.0, 66.0),   # T05: more Hz to A-3 / A-1 / A-6
+            (66.0, 65.0, 66.0, 64.0, 57.0, 64.0),   # T06: approaching optimal
+            (66.0, 66.0, 66.0, 62.0, 56.5, 64.0),   # T07: A-2 up, A-5 throttled more
+            (66.0, 63.0, 66.0, 65.0, 57.5, 66.0),   # T08: near-optimal variant
+            (66.0, 65.0, 66.0, 65.5, 57.0, 65.0),   # T09: converging
+            (66.0, 66.0, 66.0, 64.0, 58.0, 66.0),   # T10: very close to LP optimal
+            (66.0, 66.0, 66.0, 66.0, 59.0, 65.0),   # T11: marginal well identified as A-5
+            (66.0, 66.0, 66.0, 65.5, 58.5, 66.0),   # T12: fine-tuning A-4 and A-5
+            (66.0, 66.0, 66.0, 66.0, 58.7, 66.0),   # T13: approx LP optimal
+            list(joint_hz_vec),                       # T14: LP-optimal (computed analytically above)
+            list(joint_hz_vec),                       # T15: LP-optimal (confirm — Vizier would converge here)
+        ]
+        for i, hz_tuple in enumerate(_FALLBACK_VECS):
+            fr = evaluate_field(list(hz_tuple))
+            trials_out.append({
+                "trial_num": i + 1,
+                "hz_vector": fr["hz_vector"],
+                "vfd_hz":    fr["avg_hz"],
+                "cash_flow": fr["total_cash_flow"],
+                "rul_days":  fr["min_rul_days"],
+                "flow_rate": fr["total_oil_bbl_d"],
+                "motor_temp_f": max(wr["motor_temp_f"] for wr in fr["well_results"]),
+                "total_gas_mmscfd": fr["total_gas_mmscfd"],
+                "is_failure":  fr["is_infeasible"],
+                "is_optimal":  False,
+            })
+            if fr["total_cash_flow"] > best_cf:
+                best_cf = fr["total_cash_flow"]
 
-    # Mark the single best trial as optimal
-    best_idx = max(range(len(trials_out)), key=lambda idx: trials_out[idx]["cash_flow"])
+    # ── Mark best trial as optimal ────────────────────────────────────────────
+    best_idx = max(range(len(trials_out)), key=lambda i: trials_out[i]["cash_flow"])
     trials_out[best_idx]["is_optimal"] = True
-    optimal_trial = trials_out[best_idx]
+    opt_trial = trials_out[best_idx]
 
-    # SCADA nominal and run-to-failure comparisons
-    scada = evaluate_hz(50.0)
-    rtf = evaluate_hz(65.0)
+    # ── Uplift: joint vs. independent ─────────────────────────────────────────
+    joint_uplift_bbl_d = round(joint_eval["total_oil_bbl_d"] - indep_eval["total_oil_bbl_d"], 1)
+    joint_uplift_cash  = round(joint_eval["total_cash_flow"]  - indep_eval["total_cash_flow"],  1)
+
+    # ── Backward-compat baselines (existing pareto chart expects scalar vfd_hz) ──
+    scada_all50 = evaluate_field([50.0] * len(well_params))
+    rtf_all65   = evaluate_field([65.0] * len(well_params))
+
+    # ── Constraint stack (for H3-C UI Panel 2) ────────────────────────────────
+    constraint_stack = {
+        "gas_ceiling": {
+            "label":         "Gas takeaway ceiling",
+            "value_mmscfd":  _GAS_CEILING_MMSCFD,
+            "scada_mmscfd":  scada_all50["total_gas_mmscfd"],
+            "indep_mmscfd":  indep_eval["total_gas_mmscfd"],
+            "joint_mmscfd":  joint_eval["total_gas_mmscfd"],
+            "binding":       True,
+            "note":          "Midstream takeaway capacity — contractual + compression limit",
+        },
+        "thermal_derated": {
+            "label":    "Motor winding temp limit",
+            "value_f":  burnout_threshold_f,
+            "source":   rag_constraint_source,
+            "binding":  False,
+            "note":     "Class H insulation derated operating threshold (API RP 11S); retrieved from AlloyDB RAG",
+        },
+        "rul_horizon": {
+            "label":      "RUL horizon constraint",
+            "value_days": horizon_days,
+            "binding":    False,
+            "note":       "Per-well: RUL must cover full optimization horizon before setpoint is approved",
+        },
+    }
 
     return {
-        "trials": trials_out,
-        "optimal_hz": optimal_trial["vfd_hz"],
-        "optimal_cash_flow": best_cash_flow,
+        # ── Field-level results (H3-B new keys — for H3-C UI sprint) ──────────
+        "n_wells":             len(well_params),
+        "gas_ceiling_mmscfd":  _GAS_CEILING_MMSCFD,
+        "wells": [
+            {
+                "id":             well_params[i]["id"],
+                "name":           well_params[i]["name"],
+                "gor_scf_bbl":    well_params[i]["gor_scf_bbl"],
+                "rul_base_days":  well_params[i]["rul_base_days"],
+                "max_hz":         well_max_hz[i],
+                "independent_hz": indep_hz_vec[i],
+                "joint_hz":       joint_hz_vec[i],
+            }
+            for i in range(len(well_params))
+        ],
+        "independent_baseline": {
+            "hz_setpoints":     indep_hz_vec,
+            "total_oil_bbl_d":  indep_eval["total_oil_bbl_d"],
+            "total_gas_mmscfd": indep_eval["total_gas_mmscfd"],
+            "total_cash_flow":  indep_eval["total_cash_flow"],
+            "description":      "Per-pump max Hz uniformly throttled to hit gas ceiling — no cross-well coordination",
+        },
+        "joint_optimal": {
+            "hz_setpoints":     joint_hz_vec,
+            "total_oil_bbl_d":  joint_eval["total_oil_bbl_d"],
+            "total_gas_mmscfd": joint_eval["total_gas_mmscfd"],
+            "total_cash_flow":  joint_eval["total_cash_flow"],
+            "uplift_bbl_d":     joint_uplift_bbl_d,
+            "uplift_cash_90d":  joint_uplift_cash,
+            "description":      "LP-optimal: lowest-GOR wells run at max Hz; gas budget allocated by oil/gas efficiency",
+        },
+        "constraint_stack":     constraint_stack,
+        "burnout_threshold_f":  burnout_threshold_f,
+        "rag_constraint_source": rag_constraint_source,
+        "vizier_algorithm":     "GAUSSIAN_PROCESS_BANDIT" if vizier_used else "deterministic_fallback",
+        # ── Backward-compat keys (existing app.js pareto chart) ──────────────
+        "trials":          trials_out,
+        "optimal_hz":      opt_trial["vfd_hz"],
+        "optimal_cash_flow": best_cf,
         "scada_nominal": {
-            "vfd_hz": scada["vfd_hz"],
-            "flow_rate": scada["flow_rate"],
-            "motor_temp_f": scada["motor_temp_f"],
-            "rul_days": scada["rul_days"],
-            "cash_flow": scada["cash_flow"],
-            "is_failure": scada["is_failure"],
+            "vfd_hz":       50.0,
+            "flow_rate":    scada_all50["total_oil_bbl_d"],
+            "motor_temp_f": max(wr["motor_temp_f"] for wr in scada_all50["well_results"]),
+            "rul_days":     scada_all50["min_rul_days"],
+            "cash_flow":    scada_all50["total_cash_flow"],
+            "is_failure":   scada_all50["is_infeasible"],
         },
         "run_to_failure": {
-            "vfd_hz": rtf["vfd_hz"],
-            "flow_rate": rtf["flow_rate"],
-            "motor_temp_f": rtf["motor_temp_f"],
-            "rul_days": rtf["rul_days"],
-            "cash_flow": rtf["cash_flow"],
-            "is_failure": rtf["is_failure"],
+            "vfd_hz":       65.0,
+            "flow_rate":    rtf_all65["total_oil_bbl_d"],
+            "motor_temp_f": max(wr["motor_temp_f"] for wr in rtf_all65["well_results"]),
+            "rul_days":     rtf_all65["min_rul_days"],
+            "cash_flow":    rtf_all65["total_cash_flow"],
+            "is_failure":   rtf_all65["is_infeasible"],
         },
         "vizier_optimal": {
-            "vfd_hz": optimal_trial["vfd_hz"],
-            "flow_rate": optimal_trial["flow_rate"],
-            "motor_temp_f": optimal_trial["motor_temp_f"],
-            "rul_days": optimal_trial["rul_days"],
-            "cash_flow": optimal_trial["cash_flow"],
-            "is_failure": optimal_trial["is_failure"],
+            "vfd_hz":       opt_trial["vfd_hz"],
+            "flow_rate":    opt_trial.get("flow_rate", 0),
+            "motor_temp_f": opt_trial.get("motor_temp_f", 0),
+            "rul_days":     opt_trial["rul_days"],
+            "cash_flow":    opt_trial["cash_flow"],
+            "is_failure":   opt_trial["is_failure"],
         },
     }
 
