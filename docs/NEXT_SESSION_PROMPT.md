@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session AR — H2 scenario invalidated, docs-only session, MCP setup queued)
-**git head:** `4610d79`
-**fault-trigger-ui image:** `sha256:2fd95932a9b8ae9ca0eb6c961cf9a031b264a97ad69705fb8197a05999414a9a` (unchanged — no code deployed this session)
+**Date:** June 11, 2026 (Session AS)
+**git head:** `62741f6` (last commit — MCP + docs; no app code this session)
+**fault-trigger-ui image:** `sha256:2fd95932...` (unchanged)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -19,7 +19,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ---
 
-## STEP 2: Read DEMO_MASTER.md (MANDATORY — especially §5 H2 INVALIDATED notice + §3 L1/L2/L3 stack)
+## STEP 2: Read DEMO_MASTER.md (MANDATORY)
 
 ```bash
 cat ~/gdc-pm/docs/DEMO_MASTER.md
@@ -27,35 +27,60 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: NEXT SESSION — Two Bounded Tasks (in order)
+## STEP 3: MCP Server Status (verify before use)
 
-### Task 1 — Activate the MCP server (5 min — server is already installed)
+MCP server lives at `~/mcp/` (cross-project, outside all git repos).
 
-**The MCP server (`gdc-second-opinion`) is built, registered, and deps installed.**
-`mcp/second_opinion_server.py` + `mcp/start.sh` on disk; registered in Cline settings; `mcp 1.27.2` + `google-genai 1.73.0` installed. **The only missing piece is your Gemini API key.**
-
-**Step 1 (do once, before opening VS Code):**
+**Quick verify:**
 ```bash
-echo "GEMINI_API_KEY=your-key-here" >> ~/gdc-pm/.env
+python3 -c "
+from google import genai
+from google.genai import types as gtypes
+client = genai.Client(vertexai=True, project='gdc-pm-v2', location='us-central1')
+r = client.models.generate_content(model='gemini-2.5-flash', contents='Reply: OK',
+    config=gtypes.GenerateContentConfig(max_output_tokens=8192))
+print(r.text)
+"
 ```
-The `.env` file is gitignored. The key never enters git or this chat.
 
-**Step 2:** Reload VS Code (or Cline extension) to pick up the new MCP server entry.
-
-**Step 3:** Verify the tools appear in Cline — look for `gemini_second_opinion` and `gemini_search` in the MCP tools panel, or call one:
+**If "Reauthentication needed":**
+```bash
+gcloud auth application-default login --no-browser
+gcloud auth application-default set-quota-project gdc-pm-v2
+# Then: Ctrl+Shift+P → Developer: Reload Window
 ```
-gemini_search("what is the ISA-18.2 HH alarm level for ESP vibration on downhole gauges?")
-```
-Should return a cited answer. If it returns "GEMINI_API_KEY is not set", the .env wasn't sourced — re-open VS Code from a terminal that has sourced .env.
 
-### Task 2 — Lock the new H2 scenario (frac-hit / offset-well interference)
-Sequence — DO NOT SKIP or COMBINE steps:
-1. **Hostile-engineer red-team** (in-persona, me, via MCP) on the frac-hit candidate. 4 survival-test pass/fail written out explicitly.
-2. If SURVIVES: write full H2 scenario spec (asset, trigger, docs, action, $ contrast) + CLAIM_LEDGER rows.
-3. Confirm H1/H2 doc-overlap differentiation (H1 uses offset-frac report as a corroborating doc; H2 makes the frac event the CAUSE — must be clearly distinct on screen).
-4. User approves spec, then Act mode to build.
+**MCP config:** `~/mcp/second_opinion_server.py` · `~/mcp/start.sh` · Cline settings: `timeout: 120000`
+**Model:** `gemini-2.5-flash` · **Project:** `gdc-pm-v2` · **Full responses:** `/tmp/mcp-results/`
 
-**Do NOT write any H2 wireframe or HTML until Steps 1–3 are done and approved.**
+---
+
+## STEP 4: NEXT SESSION — H2 Scenario
+
+### Strategic finding (Session AS)
+We over-conceded L2 in prior sessions. The full GDC value is the **sovereign AI stack (L1+L2+L3)**, not L3 alone:
+- L2 (ML models trained on YOUR fleet data, running locally) is genuinely better than cloud APM for sovereignty-constrained operators
+- L3 (Gemma + pgvector RAG document fusion) is the new categorical moat
+- Trying to prove L3 alone carries the moat → weak scenarios (slug flow, frac hit all failed T1)
+
+### H2 candidate: Maintenance-provenance (wrong-fluid fill / non-spec workover)
+- Asset: ESP in a Permian well
+- Event: During workover, pump was filled with an incompatible fluid (documented only in the workover completion report)
+- Sensor: Vibration increasing + efficiency dropping → APM routes to "bearing wear → pull pump ($80k)"
+- GDC: Reads workover completion report + OEM fluid compatibility matrix → reclassifies as elastomer degradation from wrong fill → correct action: acid wash + correct fluid refill ($8k)
+- Cross-industry: wrong lube (manufacturing), wrong coolant (power), wrong hydraulic fluid (aviation MRO) — same structure
+
+**4 survival tests (to run next session):**
+1. Discrete event: ✅ Wrong fluid fill during specific workover
+2. Categorically off-sensor: ✅ Fill record is in workover completion report only
+3. APM mis-routes: Likely ✅ (bearing wear and elastomer degradation produce similar vibration/efficiency patterns)
+4. Common and material: Likely ✅ (51% of ESP failures = human factors per 2014 SPE AI Conf survey; SPE 185275-MS, 194398-MS, 144562-MS)
+
+**Next session sequence (DO NOT SKIP):**
+1. Run 4 survival tests explicitly (in-persona + `gemini_second_opinion` MCP call)
+2. Read full file from `/tmp/mcp-results/` for complete response
+3. If SURVIVES: write H2 spec + Claim Ledger rows
+4. User approval → Act mode → build
 
 ---
 
@@ -64,29 +89,20 @@ Sequence — DO NOT SKIP or COMBINE steps:
 | Item | Status | Note |
 |------|--------|------|
 | H1 Briefing — all 6 panels | ✅ COMPLETE Session AQ | Deployed |
-| H2 Briefing panels | ❌ INVALIDATED Session AR | Slug-flow scenario fails H2-9/H2-10/H2-11/H2-12. New scenario (frac-hit) must be validated before build. |
-| H3 Briefing panels | ⚠️ QUEUED SPRINT 4 | Not started. H3 is sovereign-edge-optimization story, NOT L3 context-fusion — do not market as the moat. |
-| H2 scenario — slug flow | ❌ INVALIDATED | Telemetric signature; APM reads it; false-dichotomy cost; documents don't carry load |
-| H2 scenario — frac-hit | ⚠️ CANDIDATE | Passes 4 survival-test criteria structurally; pending dual-AI validation via MCP |
-| Vib units (H2 + H1) | ⚠️ INTEGRITY FINDING | Downhole ESP gauges report in **g** (0–5 g), not mm/s (surface ISO-10816 convention). H1 shows "0.41 in/s". Fix when rebuilding H2 scenario. |
-| ISA-18.2 alarm level framing | ⚠️ INTEGRITY FINDING | Standard governs alarm management/rationalization, NOT trip levels. Say "OEM limits, rationalized per ISA-18.2". |
-| 90% classifier confidence display | ⚠️ INTEGRITY FINDING | Single softmax number = overfit theater to this audience. Replace with evidence-chain + citation in new H2 build. |
-| H3 Class H temp label | ✅ FIXED Session AE (app) / FIXED Session AR (DEMO_MASTER §6) | 280°F is derated operating setpoint, not Class H limit (Class H = 356°F / 180°C per IEC 60085) |
-| DEMO_MASTER.md | ✅ UPDATED Session AR | §5 H2 invalidated + 4 survival tests; §6 temp label fixed; Scenario Gate + In-Session Red-Team rules added |
-| RED_TEAM_LEDGER.md | ✅ UPDATED Session AR | H2-9..12 + H2-C1..C3 added; process finding recorded |
-| .clinerules | ✅ UPDATED Session AR | Scenario Validation Gate + In-Session Red-Team Discipline sections added |
-| Video Script | ⚠️ SPRINT 5 | docs/VIDEO_SCRIPT.md does not exist |
-| web-search + Gemini MCP | ⚠️ KEY ONLY NEEDED | Server built + registered + deps installed (Session AR). Add `GEMINI_API_KEY` to `.env` + reload VS Code. See Task 1. |
+| H2 Briefing panels | ❌ INVALIDATED Session AR / AS | Frac-hit scenario FAILS T1. New candidate: maintenance-provenance. Pending survival tests. |
+| H3 Briefing panels | ⚠️ QUEUED SPRINT 4 | Not started |
+| MCP gdc-second-opinion | ✅ WORKING Session AS | ~/mcp/, gemini-2.5-flash, gdc-pm-v2, timeout=120000, file-save |
+| Vib units (H2 + H1) | ⚠️ INTEGRITY FINDING | Downhole ESP: g (0–5 g), not mm/s. Fix when rebuilding H2. |
+| ISA-18.2 alarm framing | ⚠️ INTEGRITY FINDING | Governs alarm management, NOT trip levels. Say "OEM limits, rationalized per ISA-18.2". |
 
 ---
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
-- No browser on SSH remote — do NOT use `browser_action`
+- No browser on SSH remote
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,400 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first, read targeted sections only
+- `app.py` ~6,400 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first
 - **Wireframes → sign-off → HTML** (never write HTML without sign-off)
 - **Scenario gate: 4 survival tests must pass before any wireframe or code**
-- **In-session red-team (hostile-engineer persona) mandatory before any new claim ships**
 - H2 uses inference-api (not local esp_classifier.bst)
