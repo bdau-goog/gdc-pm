@@ -127,7 +127,7 @@ Apply Python date-templating to H1 static seed documents (sonic log, shift note,
 | H2 Scenario replay | ❌ NOT BUILT | After briefing panels |
 | H3 copy — Vizier framing | ⚠️ NEEDS COPY FIX | H3 tab may still say "no cloud dependency" — Priority 4 |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sonic log, shift note, GOR lab have hardcoded dates. Batch B remediation. |
-| MCP gdc-second-opinion | ✅ WORKING | ~/mcp/, gemini-2.5-flash, gdc-pm-v2, timeout=120000 |
+| MCP gdc-second-opinion | ✅ WORKING | gdc-pm/mcp/, gemini-3.5-flash, Vertex AI ADC, location=global, project=gdc-das-life-2026, max_output_tokens=8192 — upgraded Session AV |
 | DEMO_MASTER §5 | ✅ UPDATED Session AV | APM right symptom, wrong root cause (physics corrected) |
 | docs/H2_SYNTHETIC_DOCS.md | ✅ CREATED Session AV | All 5 docs approved, G1-G6 pass, Gemini SURVIVES |
 | CLAIM_LEDGER H2 rows | ✅ UPDATED Session AV | H2-P1 physics fix + H2-D1 + H2-D2 added |
