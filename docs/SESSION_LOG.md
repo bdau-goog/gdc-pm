@@ -3,6 +3,17 @@
 ---
 ---
 
+## Session AW (June 11, 2026) — *GPU discipline enforced + H2 backend endpoint committed*
+
+**Code committed:** `3e4d5d7` (ops(gpu-discipline): GPU-off by default) · `b61d6f7` (feat(h2-backend): H2 scenario-replay endpoint) · `a1f60a0` (docs(session-aw): NEXT_SESSION_PROMPT wrap)
+**Cluster image digest:** unchanged (`sha256:2fd95932...`) — H2 backend committed but NOT YET DEPLOYED.
+
+Session AW had two distinct workstreams. (1) GPU cost discipline: the ollama pod had been running continuously for 6 days at ~$0.65/hr (~$94 idle billing) because the `ollama-scheduler.yaml` CronJobs had never been applied to the cluster. Ollama was scaled to 0; `.clinerules` startup section and `NEXT_SESSION_PROMPT.md` expected-state were updated so that `ollama_online: False` is the documented dev default — preventing future sessions from reflexively scaling it back up. (2) H2 backend endpoint: the full `GET /api/h2/scenario-replay` implementation was written replacing the invalidated slug-flow stub (Session AR). The new endpoint follows the DEMO_MASTER §5 maintenance-provenance spec: 80-step / 8-week trajectory (motor efficiency declining, vibration rising, amps slightly elevated, temp sub-alarm); `esp_health.ubj` sliding-window health score; ISA-18.2 HI rolling-avg vibration alarm; module-level Python date anchors (`_H2_SCENARIO_DATE`, `_H2_WORKOVER_DATE`, `_H2_PRIOR_PULL_DATE`) computed at startup; all 5 document texts built inline (`_H2_OEM_MATRIX_TEXT`, `_build_h2_doc3()`, `_build_h2_doc5()`); Gemma async concurrent calls for Docs 1+4 with fallback to pre-templated text when GPU is down; idempotent `_seed_h2_static_docs_bg()` daemon thread; GDC verdict string. Session also confirmed the H3 gap: H3 has a toggle "ⓘ Physics & Logic" inline panel (index.html line 2011) that does NOT meet the §4.5 3-panel briefing spec — this is now documented as Priority 4 in NEXT_SESSION_PROMPT. Endpoint is committed but not deployed; PRIORITY 1 next session is docker build+push+kubectl rollout + smoke-test.
+
+**Next task:** PRIORITY 1 — deploy H2 backend (`b61d6f7`) and smoke-test. PRIORITY 2 — H2 Briefing wireframe → sign-off → HTML. PRIORITY 3 — H2 Scenario Replay UI. PRIORITY 4 — H3 Briefing 3 panels (replaces toggle info panel). PRIORITY 5 — H3 copy fix. PRIORITY 6 — H1 Batch B date-templating.
+
+---
+
 ## Session AV (June 11, 2026) — *H2 synthetic documents approved + DEMO_MASTER §5 physics correction*
 
 **Code committed:** `dea71be` (docs(session-av): H2 synthetic docs approved + DEMO_MASTER physics fix + CLAIM_LEDGER H2-P1/D1/D2)
