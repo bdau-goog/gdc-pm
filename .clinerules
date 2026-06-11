@@ -188,21 +188,25 @@ Date / git head / image digest / branch
 
 **Root cause of repeat drift:** H1 and H2 both shipped scenarios where the deciding variable was reachable from telemetry, making the L3 moat efficiency-only, not categorical. This gate stops that before code is written.
 
-**A scenario is pixel-eligible ONLY if it passes ALL 4 survival tests:**
+**A scenario is pixel-eligible ONLY if it passes ALL 5 survival tests:**
 
 1. **Discrete past event** — the cause is a specific thing that happened (not a slow drift). Slow drifts are APM territory; GDC's moat is over contextual interpretation of events recorded in documents.
 2. **Categorically off-sensor** — the cause is architecturally impossible to measure with any sensor on the monitored asset. Test: "Can any sensor *on this machine* ever carry this variable?" If yes, it fails — even if not currently integrated.
 3. **APM mis-routes** — best-of-breed multivariate APM (SmartSignal/PRiSM/Mtell with a trained agent) would route it to the wrong, expensive action. If APM can correctly resolve it with sensor patterns alone, GDC's L3 fusion adds efficiency but not a categorical moat.
 4. **Common and material** — the failure class occurs often enough across the fleet that automated fleet-scale resolution has a defensible ROI. A once-in-a-career event is not a product feature.
+5. **Remedy feasibility** *(added Session BE — previously missing gate)* — The GDC-prescribed corrective action must be **physically executable as described**, without any implicit assumption about downhole or restricted access. Test: "Can an operator or contractor carry out this action without pulling the completion, running wireline, or requiring access to the downhole assembly?" If the action requires a workover rig, it is NOT cheap relative to the baseline. Specifically for ESP scenarios: **any action that requires correcting a downhole component (motor, protector, seal, pump) requires pulling the completion.** Surface truck rolls (hot-oiling, chemical squeeze, solvent flush) and control-system parameter changes are the only genuinely low-cost alternatives to a workover pull. If you cannot name a physically executable surface-only remedy, the scenario does not have a defensible cost dichotomy.
 
-**Enforcement:** Before drafting ANY wireframe or Claim Ledger row for a new scenario, write a one-paragraph pass/fail on each of the 4 tests. If any test fails, **stop and propose a different scenario.** Do not "patch" a failing scenario — replace it.
+**Root cause of the Session BE physics failure:** The H2 workover-fluid-incompatibility scenario passed gates 1–4 perfectly but was never asked gate 5. "Flush + reseal" sounds like a maintenance action (like a filter change), but an ESP protector is integral to the downhole string at depth — it cannot be resealed in place. The 🔴 NEEDS-EXPERT cost tag masked the deeper problem (the action is physically impossible, not just unpriced). Gate 5 closes this permanently.
+
+**Enforcement:** Before drafting ANY wireframe or Claim Ledger row for a new scenario, write a one-paragraph pass/fail on each of the 5 tests. If any test fails, **stop and propose a different scenario.** Do not "patch" a failing scenario — replace it.
 
 **Scenario candidates that have been eliminated:**
 - ❌ Slug flow / gas interference — telemetric signature (cyclic amps + PIP) is in the data; APM/engineer reads it without documents (H2-11, Session AR)
 - ❌ Generic "deferred maintenance" — provenance problem (work order may record the lie); mechanism must be specific; slow drift of degradation = APM territory (Session AR in-session red-team)
+- ❌ ESP protector fill oil / Buna-N seal degradation — gate 5 FAILS: "flush + reseal in place" is physically impossible for a downhole ESP assembly. Correcting a protector seal always requires pulling the completion. The "$8k–$15k vs $70k–$100k" cost dichotomy is incoherent — both require a pull. (Session BE)
 
-**Current approved candidate:**
-- ✅ Offset-well frac-hit interference — deciding variable (neighbor's frac schedule/regulatory filing) is categorically off-sensor, truthfully third-party recorded, APM mis-attributes the interference signature to downhole trouble, and frac hits are a well-documented Permian production problem. **Pending dual-AI red-team validation before code.**
+**Current approved H2 candidate (pending gdc-second-opinion hostile pass next session):**
+- ✅ Paraffin/Wax deposition mimicking bearing wear — (1) Discrete event: specific overdue PM date (90-day hot-oil treatment 52 days overdue, delayed by third-party vendor); (2) Off-sensor: wax thickness in tubing is unmeasured; (3) APM mis-routes: vibration/efficiency pattern matches bearing wear, routes to pump pull; (4) Common/material: paraffin endemic to Permian carbonate producers (WAT 110–122°F, Gemini-confirmed); (5) Remedy feasible: surface hot-oil truck roll or chemical annulus flush (~$3k–$6k, no downhole access, no pull). SME grounding: Bill Barna (Permian production engineer): *"Many operators have poor programs. Often, there are so many false positives, nobody believes the system. All of the problems you listed happen."* — confirms alarm-fatigue + missed/deferred PM as real operational gap. **Requires gdc-second-opinion hostile pass before rewriting DEMO_MASTER §5.**
 
 ---
 

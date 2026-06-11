@@ -2,16 +2,38 @@
 
 ---
 
-## Session BE (June 11, 2026) — *Sprint H3-D: DEMO_MASTER §6 field-level rewrite + STAKEHOLDER_BRIEF.md*
+## Session BE (June 11, 2026) — *Sprint H3-D docs + Panel 1 layout fixes + H2 physics invalidation + paraffin reframe decision*
 
-**Code committed:** `d2010c6` (docs(session-be): Sprint H3-D — DEMO_MASTER §6 field rewrite + STAKEHOLDER_BRIEF.md)
-**Cluster image digest:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b` (UNCHANGED — docs-only session, no deploy)
+**Code committed:** `d2010c6` (docs: H3-D) · `412c6f3` (fix: Panel 1 layout) · `388b716` (docs: digest patch)
+**Cluster image digest:** `sha256:0aca289c78726f784fb8384e5866c18065c0ade08981b5b56300901e19c8693e` (Panel 1 fix deployed)
 
-**What was done:** Sprint H3-D completed in full (docs only). **Part A:** DEMO_MASTER §6 completely rewritten from the old single-pump VFD story to the full 6-well Pad Alpha joint optimization spec. The new §6 covers the Discern→Classify→Optimize narrative arc (H3 lands at the field level), three constraints per well (gas ceiling 8.0 MMscfd binding, thermal 280°F polynomial, RUL exponential decay), the live Vizier result table (A-3/A-6 at 66.0 Hz, A-5 at 59.7 Hz, +77.9 bbl/d / +$369,225/90d), the LP-optimal vs. GP-Bandit role distinction (both shown, both honest), the edge-enforces-safety framing (outage-immune, no public-cloud dependency for the decision), and 7 H3 Claim Ledger rows all carrying SURVIVES from the Session BD Gemini red-team. DEMO_MASTER version header updated to Session BE. **Part B:** New `docs/STAKEHOLDER_BRIEF.md` written — ~1,800-word non-technical executive document with five sections: what we built (H1/H2/H3 plain English), the problem each horizon solves (table), honest relationship with SCADA (three-tier plain language, no overclaiming, no competitor strawman), same capability in other industries (P&E / Manufacturing / Mining), and why "inside the perimeter" matters (IEC 62443 / data residency / governance & IP in plain language). All cost figures are from the CLAIM_LEDGER; 🔴 NEEDS-EXPERT ranges labeled as estimates; no LP/Bayesian/GP/pgvector jargon; closing quote uses locked DEMO_MASTER §9 wording.
+**What was built/deployed:**
+- **Sprint H3-D Part A:** DEMO_MASTER §6 completely rewritten to 6-well Pad Alpha joint optimization spec (Discern→Classify→Optimize arc, three per-well constraints, live Vizier table, LP-vs-GP distinction, edge-enforces-safety framing, 7 H3 Claim Ledger rows SURVIVES).
+- **Sprint H3-D Part B:** New `docs/STAKEHOLDER_BRIEF.md` — ~1,800-word non-technical executive document (5 sections: what we built, horizon value props, SCADA relationship, cross-industry use cases, sovereign-edge differentiator). H2 paragraph in this brief contains the physics error discovered later this session — must be corrected before sharing with any customer.
+- **Panel 1 layout fix (H1 + H2 Briefing):** Both Panel 1 outer containers had `flex:1` left columns with no max-width, causing the spec table to stretch ~1260px on wide viewports while the wellbore SVG was crammed into a narrow strip at the far right. Fixed by capping H1 left column at `flex:0 1 660px` and H2 at `flex:0 1 620px` with `justify-content:center` on the outer row to center the pair. Deployed `412c6f3`, verified live (`sha256:0aca289c`).
 
-**Key decisions:** (1) SCADA section in STAKEHOLDER_BRIEF.md uses the DEMO_MASTER §3 "Tags vs. Tag-Patterns vs. Documents" framing translated to executive language — concedes L1 and L2 fully, wins only on L3 architectural gap. (2) H3 in STAKEHOLDER_BRIEF.md deliberately avoids "Bayesian" / "LP" / "Gaussian Process" terminology — describes the optimizer as "ranks wells by gas efficiency, allocates budget to most efficient wells first." (3) §3 in DEMO_MASTER remains LOCKED per Session AU ruling — STAKEHOLDER_BRIEF.md draws from it, does not replace it. (4) Sprint P4 (H1 date-templating) remains the next code task; STAKEHOLDER_BRIEF.md user review is the next non-code task.
+**Critical strategic findings (no code written):**
 
-**Next task:** Sprint P4 — H1 Batch B date-templating in app.py (hardcoded 2025 dates in sonic log / shift note / GOR lab report field_intel seeds). Then user review of STAKEHOLDER_BRIEF.md.
+**1. H3 dashboard pad-vs-well gap:** The H3 briefing (3 panels) correctly tells the 6-well Pad Alpha story. But the post-briefing dashboard (`h3BriefingMode=false`) drops to the legacy single-well VFD UI — three scalar Hz cards, avg-Hz pareto chart x-axis, single-Hz trial table. The backend (`vizier_optimize`, Session H3-B) is already fully pad-level (returns `wells[]`, `joint_optimal`, `constraint_stack`). The dashboard is the only piece still on the old single-pump story. Fix is frontend-only (Sprint H3-E — medium priority after H2-REFRAME).
+
+**2. H2 SCENARIO PHYSICS ERROR — blocking:** User asked: "How do you reseal a pump without pulling it?" — and that question exposed a fundamental physics failure: **an ESP protector/seal section cannot be resealed in place.** It is integral to the downhole string at depth. Any protector/seal correction requires pulling the completion with a workover rig. Gemini search confirmed this unambiguously. Therefore, the current H2 economic narrative ("GDC recommends ~$8k–$15k flush + reseal instead of ~$70k–$100k pump pull") is physically incoherent — both actions require a pull. The "$8k–$15k" cost number is fictitious. Full scenario replacement required.
+
+**Root-cause post-mortem:** The 4-gate survival tests validated the *diagnosis* (root cause is off-sensor, APM mis-routes) but never interrogated the *remedy*. "Flush + reseal" was assumed without checking physical feasibility. The cost was tagged 🔴 NEEDS-EXPERT which masked the deeper problem (the action is impossible, not just unpriced). Going forward: a 5th gate is required — **Remedy-Feasibility Gate** ("Is the prescribed corrective action physically executable as described, without assumptions about access that don't hold?"). Added to `.clinerules`.
+
+**3. Approved replacement scenario — H2-NEW: Paraffin/Wax deposition mimicking bearing wear:**
+- **Physics:** Permian Basin crude is paraffin-rich (WAT 110–122°F, Gemini-confirmed). As waxy oil rises up the tubing and cools below WAT, paraffin deposits on tubing walls. The pump works harder against the restriction → backpressure → Amps rise, vibration rises, efficiency declines. On a 4-sensor string this is indistinguishable from mechanical bearing wear.
+- **APM routes to:** Bearing wear → pump pull → full investigation (~$70k–$100k).
+- **Correct action:** Surface hot-oil truck or solvent flush down the casing-tubing annulus. Melts/dissolves the wax. ~$3k–$6k. No pull, no wireline, no downhole access required. Well returns to nominal. Pull completely averted.
+- **The twist — alarm fatigue + vendor delay:** The 90-day hot-oil PM treatment is 52 days overdue (now Day 142). The operator did NOT forget — the third-party chemical vendor delayed for logistical reasons. The delay exists in a vendor email thread / portal, not in SCADA. Additionally, the RTOC was experiencing alarm fatigue from 14 other false-positive vibration events that week. Nobody chased the overdue PM.
+- **SME validation from Bill Barna** (production engineer with extensive Permian experience, direct conversation with user, June 11): *"Many operators have poor programs. Often, there are so many false positives, nobody believes the system. All of the problems you listed happen."* — confirms both alarm fatigue AND missed/deferred PM as real, frequent operational problems even at larger operators. **NOT a straw man.**
+- **GDC moat:** RAG fuses (1) Chemical vendor service log (overdue by 52 days), (2) Fluid PVT report (confirms high WAT chemistry), (3) Prior pull record (bearings normal 18 months ago, eliminating mechanical wear hypothesis). Three siloed data sources; no single system other than GDC has all three.
+- **5-gate check:** Discrete event ✅ (treatment date/delay) · Off-sensor ✅ (wax thickness unmeasured) · APM mis-routes ✅ · Common/material ✅ (endemic Permian problem) · Remedy feasible ✅ (surface truck, no pull).
+
+**Next priority order:**
+1. **Sprint H2-REFRAME** — `gdc-second-opinion` hostile pass on paraffin scenario → rewrite DEMO_MASTER §5, H2 briefing, H2 verdict copy, CLAIM_LEDGER, STAKEHOLDER_BRIEF §H2
+2. **Sprint H3-E** — Replace legacy single-Hz dashboard with 6-well pad allocation table
+3. **User-provided SME changes** (mentioned at close — TBD next session)
+4. **Sprint P4** — H1 date-templating
 
 ---
 

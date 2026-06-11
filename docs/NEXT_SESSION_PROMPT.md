@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session BE — Sprint H3-D: DEMO_MASTER §6 field-level rewrite + STAKEHOLDER_BRIEF.md)
-**git head:** `412c6f3` (fix(briefing-p1): cap Panel 1 left column width — H1 660px, H2 620px)
+**Date:** June 11, 2026 (Session BE — Sprint H3-D docs + Panel 1 layout fixes + H2 physics invalidation)
+**git head:** `388b716` (docs(session-be): update image digest after Panel 1 layout fix)
 **fault-trigger-ui image:** `sha256:0aca289c78726f784fb8384e5866c18065c0ade08981b5b56300901e19c8693e`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -45,17 +45,56 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks (in order)
 
-### SPRINT P4 — H1 Batch B date-templating (small, code change)
+### ⚠️ SPRINT H2-REFRAME — Full H2 scenario replacement (TOP PRIORITY — blocking)
+
+**H2 is currently on screen with a fatal physics error that must be corrected before any demo.**
+
+**The defect:** The current H2 scenario claims GDC recommends a "~$8k–$15k flush + reseal" as an alternative to a "~$70k–$100k pump pull." This is physically impossible — **an ESP protector/seal section cannot be resealed in place.** It is integral to the downhole string at depth. Any correction to a protector seal **requires pulling the completion with a workover rig.** Gemini search confirmed this unambiguously (Session BE). The "$8k–$15k" cost number is fictitious; the economic comparison is incoherent.
+
+**The approved replacement scenario (H2-NEW): Paraffin/Wax deposition mimicking bearing wear**
+
+- **Asset:** Same ESP on a waxy Permian carbonate producer (Permian Basin crude is paraffin-rich; WAT ≈ 110–122°F; Gemini-confirmed)
+- **Telemetry signature:** Gradually rising vibration + Amps, declining motor efficiency — indistinguishable from mechanical bearing wear on a 4-sensor string (physically correct: restricted tubing increases backpressure and torque)
+- **APM routes to:** Mechanical bearing wear → pump pull → full investigation (~$70k–$100k)
+- **The real cause:** Well A-3's 90-day hot-oil paraffin treatment (a routine surface chemical truck job) is 52 days overdue. It is NOT forgotten by the operator — it was delayed by the chemical vendor (billing dispute, truck shortage). The delay is in a vendor portal/email thread, not in SCADA. Combined with alarm fatigue (RTOC is seeing false positives on 14 other wells that week; nobody is chasing the hot-oil PM).
+- **GDC context fusion:** Retrieves (1) Chemical vendor service log (T−142 days, 90-day schedule overdue by 52 days); (2) Fluid lab PVT report (confirms high WAT crude chemistry); (3) Prior pull record (bearings were normal 18 months ago — eliminates mechanical wear hypothesis)
+- **Verdict:** "Paraffin wax deposition — NOT bearing wear. Dispatch hot-oiler, do NOT pull."
+- **Correct action:** Surface hot-oil truck or chemical solvent flush down the annulus. ~$3k–$6k. Well returns to nominal. **Pull averted completely. No workover required.**
+- **5-gate survival check:** Discrete event ✅ (treatment date/delay) · Off-sensor ✅ (wax thickness downhole unmeasured) · APM mis-routes ✅ (bearing wear hypothesis) · Common/material ✅ (endemic Permian problem) · Remedy feasible ✅ (surface truck, no pull)
+
+**SME context from Bill Barna (production engineer with extensive Permian experience):**
+> *"Many operators have poor programs. Often, there are so many false positives, nobody believes the system. All of the problems you listed happen."*
+This validates both the alarm-fatigue angle AND the missed/deferred PM angle as real, common O&G realities. Not a straw man — the operator's processes can be solid and this still happens.
+
+**Key design principle (NO STRAW MAN rule preserved):** The operator did not negligently forget. A third-party vendor delay + alarm fatigue created a data gap between the CMMS service record and the live RTOC decision-maker. GDC closes that silo. The operator looks operationally competent; the gap is structural, not behavioral.
+
+**What this session needs:**
+1. Run `gdc-second-opinion` hostile-engineer pass on the paraffin scenario (full 5-gate + remedy feasibility)
+2. If passes: rewrite DEMO_MASTER §5 with new scenario spec
+3. Rewrite H2 briefing (3 panels), scenario-replay GDC verdict copy, and STAKEHOLDER_BRIEF §H2
+4. Update CLAIM_LEDGER (retire old H2 rows; add new ones)
+5. Deploy new UI — backend endpoint is a lower priority for now (briefing + verdict copy first)
+
+---
+
+### SPRINT H3-E — Pad-level dashboard (post-briefing, medium priority)
+
+**The gap:** The H3 briefing (3 panels, Session H3-C) correctly tells the 6-well Pad Alpha story (gas ceiling, GOR-ranked allocation, +77.9 bbl/d uplift). But when the CTA fires `runVizierOptimize()` and drops out of `h3BriefingMode`, the user lands on the **legacy single-well dashboard** — three scalar VFD Hz cards, a scalar Pareto chart (avg_Hz x-axis), and a trial table with one Hz column. This is incoherent with the briefing.
+
+**The fix:** Replace the 3 backward-compat value cards with (1) a **6-well per-well allocation table** (Well · GOR · SCADA 50 Hz · GDC optimal Hz · Δ) sourced from `wells[]` + `joint_optimal`; (2) a **field uplift card** (+77.9 bbl/d · +$369,225/90d · gas 7.9999/8.0 MMscfd) from `joint_optimal` + `constraint_stack`. Data is already in the API response — this is frontend-only work. Vizier pareto chart can stay.
+
+---
+
+### SPRINT P4 — H1 Batch B date-templating (small, code change — lower priority)
 - Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dates
-- Template to `today − offset` at startup (same pattern as H2 docs — `_H2_SCENARIO_DATE` pattern in app.py)
+- Template to `today − offset` at startup (same pattern as H2 docs)
 - Find affected rows: `grep -n "2025" gke/fault-trigger-ui/app.py | grep -i "field_intel\|sonic\|shift\|gor\|lab"`
-- Scope: app.py only — no HTML change needed
-- Deploy after: docker build → push → rollout → smoke test H1 scenario
+
+---
 
 ### SPRINT STAKEHOLDER-REVIEW — user review of STAKEHOLDER_BRIEF.md
 - `docs/STAKEHOLDER_BRIEF.md` is written and committed (Session BE)
-- Read it with the user, confirm tone and claims are correct
-- Check any 🔴 NEEDS-EXPERT items against what's labeled on screen
+- **NOTE:** The H2 paragraph in this brief also contains the physics error ("flush and reseal") — it must be updated as part of the H2-REFRAME sprint before this brief is shared with any customer
 
 ---
 
@@ -100,7 +139,7 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
 | STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | Sprint STAKEHOLDER-REVIEW — confirm tone/claims |
 | **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly** |
-| H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Soft range only — labeled as estimate on screen and in STAKEHOLDER_BRIEF.md |
+| **H2 SCENARIO — PHYSICS ERROR (blocking)** | **❌ MUST FIX** | **"Flush + reseal in-place" is physically impossible for a downhole ESP protector — always requires a pull. Full H2 scenario replacement required. See Sprint H2-REFRAME above.** |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
 | MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |
