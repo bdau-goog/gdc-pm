@@ -2,6 +2,19 @@
 
 ---
 
+## Session AY (June 11, 2026) — *H2 Briefing 3-panel — Maintenance Provenance*
+
+**Code committed:** `7673efd` (feat(h2-briefing): 3-panel H2 Briefing — Maintenance Provenance scenario)
+**Cluster image digest:** `sha256:de369a364855624d78d499c0d9373024d738e0ce1508c44fbd19cb0d6619f4f9` (fault-trigger-ui)
+
+**What was built and deployed:** Full 3-panel H2 Briefing matching the §4.5 Briefing Pattern Spec. Panel 1 (The Equipment): ESP-ALPHA-3 asset card + 4-sensor string description + amber amber workover context callout ("8 weeks ago — fresh motor, new pump, startup normal"). Panel 2 (The Provenance Hook): timeline strip (T−8wk workover → T−5wk onset → NOW alarm) + 2×2 sensor tiles (efficiency ~76%→~65% amber, vibration ~1.0→~4.8 mm/s red, amps ~83A→~88A amber, PIP ~1,330 PSI stable) + APM conclusion card ("Bearing wear. Pull the pump.") with 51% stat attributed to 2014 SPE Artificial Lift Conference survey (Gemini-verified, no unverified paper number cited). Panel 3 (The Decision): GDC verdict card (elastomer seal degradation pathway) + amber quote callout + 2-col action cards (flush+reseal ~$8k–$15k est. ⚠ vs pump-pull ~$70k–$100k averted) + universal pattern table (O&G / P&E / Manufacturing) + closing quote. Navigation footer with Back/Next/▶ Run the Scenario. "← Briefing" button added to scenario header. Tab comment and title updated from "ESP Slug Flow Discrimination" to "Maintenance Provenance". `h2BriefingMode: true` and `h2BriefingPanel: 1` data props added to app.js.
+
+**Key integrity decisions:** (1) Sensor values sourced directly from `app.py` FAULT_PROFILES (lines 6357–6368) — no invented numbers. (2) 51% stat attributed to 2014 SPE Artificial Lift Conference survey per Gemini search — no paper number cited as specific papers not individually confirmed. (3) Flush+reseal ~$8k–$15k labeled with ⚠ soft estimate footnote ("no hard public source · verify with completion engineer") — NEEDS-EXPERT tag preserved. (4) Sensor tile values show ranges not point values to avoid false precision. Wireframe sign-off gate was honoured — user approved before any HTML was written.
+
+**Next task:** H2 Scenario Replay UI — update existing GDC Advisor Zone 1 verdict copy from old slug-flow language to workover-fluid-incompatibility language; full SCADA/GDC console redesign per DEMO_MASTER §5 visual spec. Pre-approved in DEMO_MASTER §5 — no additional wireframe sign-off needed.
+
+---
+
 ## Session AX (June 11, 2026) — *H2 backend deploy + domain terminology audit*
 
 **Code committed:** `306ef60` (fix: protector fill oil), `2d0035a` (fix: Ariel JGP temps)
