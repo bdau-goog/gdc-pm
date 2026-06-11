@@ -3,6 +3,16 @@
 ---
 ---
 
+## Session AT (June 11, 2026) — *Strategy locked: sovereign-edge framing, three-horizon stories finalized, build plan set — docs-only wrap session*
+
+**Code committed:** docs only — NEXT_SESSION_PROMPT (comprehensive build plan)
+**Cluster image digest:** unchanged (sha256:2fd95932...) — no app code
+
+Session AT was the strategy-resolution session. Prior session AS identified we over-conceded L2 and tried to make L3 alone carry the moat, producing weak scenarios. This session resolved the value proposition definitively via two Gemini checks: (1) a hostile red-team that FAILS overclaims but confirms the core claim survives; (2) a NEUTRAL market-check (no hostile priming) that found C3.ai, GE Vernova, AVEVA, Aspen Mtell, and Cognite all have 2025-2026 roadmap items for LLM-based document-aware diagnosis -- confirming GDC is industry-aligned, not contrarian. Corrected competitive claim: no native production-ready commercial product combines all three tiers today; the whole APM market is heading here for cloud; GDC delivers it inside the sovereign perimeter, on open weights, where the data already lives. Three gaps locked: diagnostic (why lives in documents, not sensors) / scale (200 wells, 2am) / sovereignty (cloud APM precluded for NOCs, IEC 62443-compliant operators). Honest-footing rule: "yes a skilled engineer could on one well -- what GDC does is make it automatic, fleet-scale, instant, cited, inside the perimeter." Three-horizon arc locked: H1 = ambiguity (gas lock vs drawdown; one signature, opposite actions) / H2 = provenance (bearing wear vs seal degradation from wrong-fluid workover; purely documentary cause) / H3 = bounded optimization (Vizier searches cloud, edge enforces thermal constraint; holds when WAN drops; honest hybrid, not air-gap). H2 maintenance-provenance passes all 4 survival tests (Gemini confirmed API RP 11S3/S5: elastomer degradation and bearing wear genuinely ambiguous on standard 4-sensor string). Full vid narration scripts written. Comprehensive NEXT_SESSION_PROMPT written with 8 build priorities ordered by importance. No app code written -- correctly, strategy lock and spec are the prerequisite for efficient implementation.
+
+
+---
+
 ## Session AS (June 11, 2026) — *MCP server migrated to ~/mcp/; frac-hit scenario FAILS T1; maintenance-provenance H2 candidate proposed; L2 over-concession identified — docs only, no app code*
 
 **Code committed:** docs only — NEXT_SESSION_PROMPT, SESSION_LOG; ~/mcp/ files outside git repo
