@@ -2,6 +2,21 @@
 
 ---
 
+## Session BB (June 11, 2026) — *Sprint F0 framing relabel + Sprint H3-A thermal integrity fix deployed*
+
+**Code committed:** `e85f9b9` (feat(h3-thermal+f0): retrain esp_thermal multi-feature + relabel to Operations Intelligence) · `81c3a5b` (fix(h3-thermal): use 4-feature physics polynomial directly)
+**Cluster image digest:** `sha256:5e58c06af22ee98fa0ebd7e3342522a4eee0357a816d08bdc961191579d08c4e`
+
+**Sprint F0 — framing relabel:** "GDC Predictive Maintenance" → "GDC Operations Intelligence" in index.html (line 18) and DEMO_MASTER §1 title. Single-line change, deployed and verified live. Header wording "Operations Intelligence" confirmed by user (vs "Operations Advisor").
+
+**Sprint H3-A — thermal integrity fix:** `esp_thermal.ubj` was the flagged integrity hole from Session AZ red-team (single-feature `temp = f(hz)` only — physically unsound per API RP 11S3/S5, IEEE 112). New multi-feature training script written (`scripts/train_esp_thermal.py`) generating 20k physics-grounded samples with the 4-feature polynomial: `temp_f = f(vfd_hz, motor_amps, intake_fluid_temp, water_cut_pct)`. Model trained (P95 delta = 1.726°F vs noiseless physics polynomial, gate passed). However, the model was trained locally with XGBoost 3.2.0 while the container runs XGBoost 2.0.3 — the `.ubj` format has breaking changes between major versions. Confirmed: model loaded successfully but predicted -19.8°F at 50 Hz (unphysical). Root cause: XGBoost major-version `.ubj` incompatibility.
+
+**Resolution:** The 4-feature physics polynomial (API RP 11S3/S5, IEEE 112) is now the PRIMARY thermal evaluator — `esp_thermal.ubj` intentionally NOT loaded from `load_health_models()`. The polynomial IS the physics model, is more defensible than an approximation of itself, and avoids version dependency entirely. Live verification: 50Hz→188°F ✅, 54.6Hz→198°F ✅, 65Hz→261°F ✅. The `esp_thermal` key is absent from the live model registry — confirmed correct. Training script retained in `scripts/train_esp_thermal.py` as documentation. If container is ever updated to `xgboost>=3.0.0`, the XGBoost model can be re-enabled.
+
+**Key decisions:** (1) "Operations Intelligence" confirmed by user. (2) Physics polynomial preferred over XGBoost approximation — transparent, no version dependency, same 4 features. (3) H3 field size 6 wells / Pad Alpha confirmed; gas ceiling 8.0 MMscfd confirmed; Sprint H3-B (N-well vizier) is next.
+
+---
+
 ## Session AZ (June 11, 2026) — *Strategy session: framing correction + H3 field pivot locked*
 
 **Code committed:** None (docs-only planning session, no app code)

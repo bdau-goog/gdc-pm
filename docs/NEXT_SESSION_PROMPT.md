@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session BA — H2 Replay UI deployed)
-**git head:** `866522f` (feat(h2-replay): reskin H2 Scenario Replay UI)
-**fault-trigger-ui image:** `sha256:a87b424b44cca53d4da6da2fffe837b777b8ccb0daed7aa0e62f624227681e3b`
+**Date:** June 11, 2026 (Session BB — Sprint F0 + H3-A thermal integrity fix)
+**git head:** `81c3a5b` (fix(h3-thermal): use 4-feature physics polynomial directly)
+**fault-trigger-ui image:** `sha256:5e58c06af22ee98fa0ebd7e3342522a4eee0357a816d08bdc961191579d08c4e`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -20,7 +20,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
 - field_intel: **9–12** · rag_docs: **18**
 
-**Actual at session-BA close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
+**Actual at session-BB close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$0.65/hr). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -43,45 +43,20 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Strategic Context — What Was Done in Session BA
+## STEP 3: Next Implementation Tasks (in order)
 
-**H2 Scenario Replay UI (Sprint P1) — DEPLOYED ✅**
-
-The H2 replay UI has been fully reskinned from slug-flow to workover-fluid-incompatibility:
-- **app.js:** `h2SlugFlowRevealed` → `h2VerdictRevealed`; doc4/doc5 state+timers added; `_renderH2ReplayChart()` now uses `efficiency[]` (amber) + `vib[]` (purple) on dual y-axis, x-axis "Weeks post-workover"; fixed `scada_hi_idx` → `scada_alarm_idx` field mismatch (was a silent bug).
-- **index.html:** Physics & Logic panel → workover-fluid content; alarm banners fixed; SCADA view → bearing-wear framing, pump_pull outcome; GDC Advisor → "ELASTOMER SEAL DEGRADATION — NOT BEARING WEAR", 5 doc reveals (Workover Completion Report → OEM Matrix → Prior Pull Record → Field Tour Note → Well History); SVG wellbore → downhole PROTECTOR seal degrading amber→red; health% display replaces slug_flow_prob%.
-- **Smoke test:** `scenario: workover_fluid_incompatibility`, `health_ok: True`, `efficiency[0]: 75.03`, `scada_alarm_idx: 79`, 5 doc_reveals. All correct.
-
----
-
-## STEP 4: Next Implementation Tasks (in order)
-
-### SPRINT F0 — Framing relabel (fast win, ~30 min)
-1. **Confirm** final header wording with user first — "Operations Advisor" / "Operations Intelligence" / other.
-2. `index.html:18` — "GDC Predictive Maintenance" → agreed wording.
-3. Copy audit: `grep -n "predict.*maintenance\|maintenance.*predict" gke/fault-trigger-ui/index.html gke/fault-trigger-ui/static/app.js`
-4. Update DEMO_MASTER §1 product statement + narration docs.
-
-### SPRINT H3 — Field-level Optimize (replaces old single-pump H3)
-Four sub-tasks in order:
-
-**H3-A: Retrain `esp_thermal.ubj` → multi-feature** ← REQUIRED INTEGRITY FIX
-- Current model: `temp_f = f(hz)` only — physically unsound (winding temp depends on motor current, fluid temp, load, cooling per API RP 11S3/S5, IEEE 112)
-- New model: `temp_f = f(hz, motor_amps, intake_fluid_temp, water_cut_pct)`
-- Generate training data from FAULT_PROFILES physics with Gaussian noise
-- Verify: max prediction delta vs physics polynomial ≤ ±2°F
-
-**H3-B: Rework `vizier_optimize()` → N-well field**
+### SPRINT H3-B: Rework `vizier_optimize()` → N-well field
 - N=6 wells (Pad Alpha), `gas_ceiling_mmscfd=8.0`, per-well randomized `GOR_i ∈ [400–1400 scf/bbl]`
 - Constraint: Σ `associated_gas_i` ≤ ceiling; per-well RUL ≥ horizon
 - Baseline comparison: independent per-pump optimization → show joint uplift explicitly
 
-**H3-C: H3 UI — 3-panel briefing + field optimization display**
+### SPRINT H3-C: H3 UI — 3-panel briefing + field optimization display
 - Panel 1: oil-price spike + constraint-stack (gas binding, others muted)
 - Panel 2: the tradeoff (faster Hz → more gas → hits ceiling)
 - Panel 3: field-wide setpoint vector + joint-vs-independent uplift card
+- Per §4.5 Briefing Pattern Spec — wireframe sign-off before HTML
 
-**H3-D: DEMO_MASTER §6 rewrite** (field-level spec)
+### SPRINT H3-D: DEMO_MASTER §6 rewrite (field-level spec)
 
 ### SPRINT P3 — H3 copy fix (tiny)
 `index.html`: "no cloud dependency" → "no public-cloud dependency for the decision."
@@ -102,17 +77,33 @@ Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dat
 | H2 "protector fill oil" terminology | ✅ DEPLOYED | `306ef60` |
 | Ariel JGP temperature limits | ✅ DEPLOYED | `2d0035a` |
 | **H2 Scenario Replay UI** | **✅ DEPLOYED** | **`866522f` — session BA · workover-fluid-incompatibility reskin** |
-| H3 field-level optimization | ❌ NOT BUILT | New scope — Sprint H3 |
-| H3 Briefing panels | ❌ NOT BUILT | Part of Sprint H3-C |
+| **Sprint F0: "GDC Operations Intelligence" header** | **✅ DEPLOYED** | **`e85f9b9`+`81c3a5b` — session BB · index.html line 18** |
+| **Sprint H3-A: thermal model 4-feature fix** | **✅ DEPLOYED** | **`81c3a5b` — session BB · 4-feature physics polynomial (API RP 11S3/S5, IEEE 112)** |
+| H3 field-level optimization | ❌ NOT BUILT | New scope — Sprint H3-B/C/D |
+| H3 Briefing panels | ❌ NOT BUILT | Part of Sprint H3-C (needs wireframe sign-off) |
 | H3 copy — "no cloud dependency" | ⚠️ NEEDS FIX | Sprint P3 |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
-| **esp_thermal.ubj — single-feature (Hz only)** | **❌ INTEGRITY HOLE** | **Sprint H3-A — must retrain multi-feature. Red-team FAIL.** |
-| Header "GDC Predictive Maintenance" | ⚠️ WRONG FRAMING | Sprint F0 — confirm new wording with user before touching code |
+| **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly; esp_thermal.ubj not loaded** |
+| Header "GDC Predictive Maintenance" | ✅ FIXED | Session BB Sprint F0 — now "GDC Operations Intelligence" |
 | Ollama GPU pod | ✅ AT 0 | GPU-discipline rule in effect. False is correct. |
 | MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |
 | H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Soft range only — labeled as estimate on screen |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
+
+---
+
+## H3-A Technical Notes (for next session context)
+
+**What was done:** `esp_thermal.ubj` was retrained with 4-feature model (scripts/train_esp_thermal.py, 20k samples, P95=1.726°F). However, the model was trained with XGBoost 3.2.0 locally while the container runs XGBoost 2.0.3 — the `.ubj` format has breaking changes between major versions (confirmed: model loaded but predicted -19.8°F at 50 Hz — unphysical).
+
+**Resolution:** The 4-feature physics polynomial (API RP 11S3/S5, IEEE 112) is now the PRIMARY thermal evaluator (not a fallback):
+```
+temp_f = intake_temp + 95.0 + 1.5*(hz-45) + 0.9*(amps-65) + 0.12*max(0,hz-58)³ - 0.25*(wc-30)
+```
+This is MORE defensible than an XGBoost approximation of itself — transparent, physics-grounded, explainable to O&G engineers. Live verification: 50Hz→188°F, 54.6Hz→198°F, 65Hz→261°F ✅
+
+**If ever retraining esp_thermal for container:** update `requirements.txt` to `xgboost>=3.0.0` and rebuild the container, OR train inside the container using `xgboost==2.0.3`.
 
 ---
 
@@ -123,7 +114,7 @@ Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dat
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - `feature-trio-clean` branch — do NOT merge to main
 - `app.py` ~6,800 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first, targeted reads only
-- **Wireframes → sign-off → HTML** (Sprint H3 briefing panels need sign-off per panel spec in DEMO_MASTER)
+- **Wireframes → sign-off → HTML** (Sprint H3-C briefing panels need sign-off per panel spec in DEMO_MASTER)
 - **No build/push/deploy without user walkthrough and verification**
 - Gemini tools (gemini_search, gemini_second_opinion) on autoApprove — use freely for fact-checking
 - **Ask inline questions — no option lists** (ask_followup_question options array causes display issues)

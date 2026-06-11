@@ -1,5 +1,5 @@
-# GDC Predictive Maintenance — Master Demo Specification & Blueprint
-**Version:** Session AU (June 11, 2026) — Sovereign-Edge of Industry-Validated Capability; H2 Maintenance-Provenance; Locked Strategy
+# GDC Operations Intelligence — Master Demo Specification & Blueprint
+**Version:** Session BB (June 11, 2026) — Sovereign-Edge of Industry-Validated Capability; H2 Maintenance-Provenance; Locked Strategy
 **Status:** Authoritative Single Source of Truth  
 **Enforcement:** This document contains the complete visual specs, narrative blueprints, and the **Claims Ledger**. No claims may go on screen unless they have a `SURVIVES` row in the Ledger (Appendix).
 
