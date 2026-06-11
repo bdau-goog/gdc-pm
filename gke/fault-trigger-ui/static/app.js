@@ -199,6 +199,8 @@ createApp({
       h2ConsoleTab: 'scada',       // 'scada' | 'gdc'
       h2SplitPercent: 56,          // left column width %
       h2PullOutcome: null,         // 'false_positive' if SCADA path chose pump pull
+      h2BriefingMode: true,        // true=show 3-panel briefing; false=scenario replay
+      h2BriefingPanel: 1,          // 1=The Equipment, 2=The Provenance Hook, 3=The Decision
 
       // Physics & Logic Info Panel state (Fix 10)
       showH1Info: false,

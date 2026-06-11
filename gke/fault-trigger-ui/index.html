@@ -1575,12 +1575,229 @@
       </template><!-- /h1-scenario-replay -->
     </div><!-- tab-horizon1 -->
 
-    <!-- ══ TAB: HORIZON 2 — Classify — ESP Slug Flow Discrimination ══ -->
+    <!-- ══ TAB: HORIZON 2 — Classify — Maintenance Provenance (Session AY) ══ -->
     <div class="main-tab-content" :class="{active: mainTab==='horizon2'}">
+
+      <!-- ══ H2 BRIEFING MODE ══ 3-panel background briefing (§4.5 pattern) -->
+      <div v-if="h2BriefingMode" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:var(--bg)">
+
+        <!-- PROGRESS STRIP -->
+        <div style="flex-shrink:0;padding:7px 20px;background:var(--surf2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+          <span style="font-size:0.75rem;font-weight:700;color:var(--text2)">Classify &#x2014; Maintenance Provenance</span>
+          <span style="font-size:0.56rem;color:var(--muted)">Background Briefing</span>
+          <div style="flex:1"></div>
+          <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
+                :style="{background: h2BriefingPanel===1 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
+          <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
+                :style="{background: h2BriefingPanel===2 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
+          <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background 0.3s"
+                :style="{background: h2BriefingPanel===3 ? '#3b82f6' : 'rgba(100,116,139,0.3)'}"></span>
+          <span style="font-size:0.54rem;color:var(--muted);margin-left:2px">{{ h2BriefingPanel }} / 3</span>
+          <button @click="h2BriefingMode=false" style="font-size:0.56rem;padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;margin-left:8px">Skip to Scenario &#x2192;</button>
+        </div>
+
+        <!-- ── PANEL 1: The Equipment ── -->
+        <div v-if="h2BriefingPanel===1" style="flex:1;display:flex;min-height:0;padding:20px 28px;gap:28px;overflow:hidden">
+          <!-- Left: asset card -->
+          <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow:hidden">
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:6px">Panel 1 of 3 &#x2014; The Equipment</div>
+              <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 5px">Fresh Motor. New Pump. 8 Weeks In.</h2>
+              <p style="font-size:0.65rem;color:var(--muted);margin:0">A workover restored this well to nameplate health. The sensor record confirms clean startup.</p>
+            </div>
+            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.22);border-radius:8px;padding:16px 20px">
+              <div style="font-family:var(--mono);font-size:0.68rem;color:#93c5fd;font-weight:700;margin-bottom:12px;letter-spacing:0.04em">WELL ESP-ALPHA-3 &#x00B7; BLOCK 7 PAD &#x00B7; ANDREWS COUNTY, WTX</div>
+              <div style="display:flex;flex-direction:column;gap:9px">
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="font-size:0.62rem;color:#64748b;width:116px;flex-shrink:0;padding-top:1px">Asset type</span>
+                  <span style="font-size:0.62rem;color:var(--text2)">Electric Submersible Pump (ESP)</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="font-size:0.62rem;color:#64748b;width:116px;flex-shrink:0;padding-top:1px">Sensor string</span>
+                  <span style="font-size:0.62rem;color:var(--text2)"><strong style="color:#f59e0b">4-point:</strong> PIP &#x00B7; Motor Amps &#x00B7; Winding Temp &#x00B7; Single-Axis Vibration</span>
+                </div>
+                <div style="display:flex;align-items:flex-start;gap:12px">
+                  <span style="font-size:0.62rem;color:#64748b;width:116px;flex-shrink:0;padding-top:1px">No discharge gauge</span>
+                  <span style="font-size:0.62rem;color:var(--text2)">Standard Permian config &#x2014; ~90% of producing ESP wells</span>
+                </div>
+              </div>
+            </div>
+            <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+              Standard Permian 4-sensor string. The same configuration runs on ~90% of producing ESP wells in the basin. No discharge-pressure gauge &#x2014; the configuration where sensor ambiguity matters most.
+            </div>
+          </div>
+          <!-- Right: workover context callout -->
+          <div style="flex:0 0 220px;display:flex;flex-direction:column;justify-content:center;gap:12px">
+            <div style="padding:14px 16px;border-left:3px solid rgba(251,191,36,0.45);background:rgba(251,191,36,0.05);border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(251,191,36,0.8)">8 weeks ago &#x2014; workover complete</div>
+              <div style="height:1px;background:rgba(251,191,36,0.15)"></div>
+              <div style="display:flex;flex-direction:column;gap:5px;font-size:0.62rem;color:var(--text2);line-height:1.65">
+                <span>Fresh motor. New pump stages.</span>
+                <span>Protector refilled. Startup: normal.</span>
+                <span>Motor amps: nominal.</span>
+                <span style="color:rgba(74,222,128,0.8)">Expected run life: 12&#x2013;18 months.</span>
+              </div>
+              <div style="font-size:0.60rem;color:var(--muted);font-style:italic;margin-top:4px">No anomaly on startup. No reason for concern.</div>
+            </div>
+          </div>
+        </div><!-- /h2-panel1 -->
+
+        <!-- ── PANEL 2: The Provenance Hook ── -->
+        <div v-if="h2BriefingPanel===2" style="flex:1;display:flex;flex-direction:column;min-height:0;padding:20px 28px;gap:14px;overflow-y:auto">
+          <div>
+            <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:6px">Panel 2 of 3 &#x2014; The Provenance Hook</div>
+            <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 5px">Bearing Wear. Pull the Pump.</h2>
+            <p style="font-size:0.65rem;color:var(--muted);margin:0">Three weeks after startup, efficiency dropped and vibration rose. APM makes the statistically correct call &#x2014; and it is wrong.</p>
+          </div>
+          <!-- Timeline strip -->
+          <div style="position:relative;display:flex;align-items:center;padding:12px 20px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:8px">
+            <div style="position:absolute;left:20px;right:20px;top:50%;height:1px;background:rgba(251,191,36,0.22)"></div>
+            <div style="display:flex;justify-content:space-between;width:100%;position:relative">
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="width:8px;height:8px;border-radius:50%;background:rgba(251,191,36,0.7)"></div>
+                <span style="font-size:0.54rem;color:var(--muted);white-space:nowrap;margin-top:2px">Workover</span>
+                <span style="font-size:0.50rem;color:rgba(100,116,139,0.6)">T&#x2212;8 wk</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="width:8px;height:8px;border-radius:50%;background:rgba(251,191,36,0.5)"></div>
+                <span style="font-size:0.54rem;color:var(--muted);white-space:nowrap;margin-top:2px">Onset</span>
+                <span style="font-size:0.50rem;color:rgba(100,116,139,0.6)">T&#x2212;5 wk</span>
+              </div>
+              <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                <div style="width:10px;height:10px;border-radius:50%;background:rgba(239,68,68,0.8)"></div>
+                <span style="font-size:0.54rem;color:rgba(239,68,68,0.85);white-space:nowrap;font-weight:700;margin-top:2px">Alarm today</span>
+                <span style="font-size:0.50rem;color:rgba(239,68,68,0.5)">NOW</span>
+              </div>
+            </div>
+          </div>
+          <!-- 4 sensor tiles + APM conclusion -->
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-width:260px">
+              <div class="h1-p5-cell" style="animation-delay:0s;padding:10px 12px;background:rgba(15,23,42,0.65);border:1px solid rgba(251,191,36,0.22);border-radius:8px">
+                <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Efficiency</div>
+                <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(251,191,36,0.9)">~76% &#x2192; ~65%</div>
+                <div style="font-size:0.52rem;color:var(--muted);margin-top:3px">&#x2193; declining (bearing friction + seal bypass)</div>
+              </div>
+              <div class="h1-p5-cell" style="animation-delay:0.1s;padding:10px 12px;background:rgba(15,23,42,0.65);border:1px solid rgba(239,68,68,0.22);border-radius:8px">
+                <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Vibration</div>
+                <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(239,68,68,0.9)">~1.0 &#x2192; ~4.8 mm/s</div>
+                <div style="font-size:0.52rem;color:rgba(239,68,68,0.6);margin-top:3px">&#x2191; above ISA-18.2 HI (4.0 mm/s)</div>
+              </div>
+              <div class="h1-p5-cell" style="animation-delay:0.2s;padding:10px 12px;background:rgba(15,23,42,0.65);border:1px solid rgba(251,191,36,0.18);border-radius:8px">
+                <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Amps</div>
+                <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(251,191,36,0.7)">~83A &#x2192; ~88A</div>
+                <div style="font-size:0.52rem;color:var(--muted);margin-top:3px">&#x2191; slightly elevated</div>
+              </div>
+              <div class="h1-p5-cell" style="animation-delay:0.3s;padding:10px 12px;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:8px">
+                <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">PIP</div>
+                <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(148,163,184,0.8)">~1,330 PSI</div>
+                <div style="font-size:0.52rem;color:var(--muted);margin-top:3px">&#x2192; stable (pump still pumping)</div>
+              </div>
+            </div>
+            <!-- APM conclusion -->
+            <div style="flex:1;min-width:240px;padding:14px 16px;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.28);border-radius:8px;display:flex;flex-direction:column;gap:8px">
+              <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(100,116,139,0.7)">APM Diagnosis</div>
+              <div style="display:flex;flex-direction:column;gap:5px;font-size:0.62rem;color:var(--text2);line-height:1.6">
+                <span><strong>Pattern:</strong> Mechanical degradation &#x2014; bearing wear</span>
+                <span><strong>Confidence:</strong> High (amps elevated + vibration rising)</span>
+                <span><strong>Action:</strong> Pull pump &#x00B7; full investigation</span>
+                <span><strong>Est. cost:</strong> ~$70k&#x2013;$100k</span>
+              </div>
+              <div style="padding:10px 12px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:7px;margin-top:4px">
+                <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;font-style:italic">&#x201C;Bearing wear. Pull the pump.&#x201D;</div>
+                <div style="font-size:0.55rem;color:var(--muted);margin-top:5px;line-height:1.55">APM makes the statistically correct call.<br>51% of ESP failures trace to operational factors &#x2014; this pattern matches the most common one.<br><span style="font-size:0.50rem;opacity:0.6">Source: 2014 SPE Artificial Lift Conference survey</span></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /h2-panel2 -->
+
+        <!-- ── PANEL 3: The Decision ── -->
+        <div v-if="h2BriefingPanel===3" style="flex:1;display:flex;flex-direction:column;min-height:0;padding:20px 28px;gap:14px;overflow-y:auto">
+          <div>
+            <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:6px">Panel 3 of 3 &#x2014; The Decision</div>
+            <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 5px">Wrong Root Cause. Right Pattern.</h2>
+            <p style="font-size:0.65rem;color:var(--muted);margin:0">APM&#x2019;s diagnosis is correct for the most common case. The workover changed what &#x201C;most common&#x201D; means for this well.</p>
+          </div>
+          <div style="display:flex;gap:14px;flex-wrap:wrap;flex:1;min-height:0">
+            <!-- Left: verdict + action cards -->
+            <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:10px">
+              <!-- GDC verdict -->
+              <div style="padding:14px 16px;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.22);border-radius:8px">
+                <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(74,222,128,0.7);margin-bottom:8px">GDC Verdict</div>
+                <div style="display:flex;flex-direction:column;gap:5px;font-size:0.62rem;color:var(--text2);line-height:1.65">
+                  <span><strong>Root cause:</strong> Elastomer seal degradation</span>
+                  <span><strong>Pathway:</strong> Incompatible protector fill oil &#x2192; Buna-N seal swell &#x2192; well fluid ingress &#x2192; bearing contamination</span>
+                  <span><strong>Evidence:</strong> Workover completion report + OEM compatibility matrix + prior pull record (bearings NORMAL 18 months prior)</span>
+                </div>
+              </div>
+              <div style="padding:10px 14px;border-left:3px solid rgba(251,191,36,0.35);background:rgba(251,191,36,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+                &#x201C;The completion report says what fluid was used. The OEM manual says that fluid destroys Buna-N seals. GDC connected them. No sensor, no human, no APM system had done that yet.&#x201D;
+              </div>
+              <!-- Action cards 2-col -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+                <div class="h1-p5-cell" style="animation-delay:0s;padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.22);border-radius:8px">
+                  <div style="font-size:0.50rem;font-weight:700;color:rgba(74,222,128,0.8);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">&#x2714; GDC Recommended</div>
+                  <div style="font-size:0.65rem;font-weight:700;color:var(--text2);margin-bottom:4px">Flush + reseal</div>
+                  <div style="font-size:0.62rem;color:rgba(74,222,128,0.8);font-weight:700;margin-bottom:6px">~$8k&#x2013;$15k <span style="font-size:0.48rem;color:var(--muted);font-weight:400">est. &#x26A0;</span></div>
+                  <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">Stops ingress at source. Motor and pump preserved. Run life intact.</div>
+                </div>
+                <div class="h1-p5-cell" style="animation-delay:0.1s;padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid rgba(239,68,68,0.22);border-radius:8px">
+                  <div style="font-size:0.50rem;font-weight:700;color:rgba(239,68,68,0.7);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">&#x2718; Averted</div>
+                  <div style="font-size:0.65rem;font-weight:700;color:var(--text2);margin-bottom:4px">Pump-pull investigation</div>
+                  <div style="font-size:0.62rem;color:rgba(239,68,68,0.8);font-weight:700;margin-bottom:6px">~$70k&#x2013;$100k</div>
+                  <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">Wrong root cause &#x2014; same failure resumes post-reinstall if seals not replaced.</div>
+                </div>
+              </div>
+              <div style="font-size:0.50rem;color:rgba(100,116,139,0.55);font-style:italic">&#x26A0; Flush+reseal = soft estimate &#x00B7; no hard public source &#x00B7; verify with completion engineer</div>
+            </div>
+            <!-- Right: universal pattern + closing quote -->
+            <div style="flex:0 0 236px;display:flex;flex-direction:column;gap:10px">
+              <div style="padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:8px">
+                <div style="font-size:0.52rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Universal Pattern</div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <div class="h1-p6-row" style="animation-delay:0s;font-size:0.58rem;color:var(--text2);line-height:1.5"><strong style="color:rgba(251,191,36,0.7)">O&amp;G upstream</strong><br>Wrong protector fill oil &#x2192; Buna-N seal failure</div>
+                  <div style="height:1px;background:rgba(100,116,139,0.15)"></div>
+                  <div class="h1-p6-row" style="animation-delay:0.15s;font-size:0.58rem;color:var(--text2);line-height:1.5"><strong style="color:rgba(251,191,36,0.7)">Power &amp; Energy</strong><br>Wrong transformer coolant &#x2192; winding insulation</div>
+                  <div style="height:1px;background:rgba(100,116,139,0.15)"></div>
+                  <div class="h1-p6-row" style="animation-delay:0.3s;font-size:0.58rem;color:var(--text2);line-height:1.5"><strong style="color:rgba(251,191,36,0.7)">Manufacturing</strong><br>Wrong bearing lubricant &#x2192; premature fatigue</div>
+                </div>
+              </div>
+              <div style="padding:14px 16px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:8px;text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center">
+                <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0;font-style:italic;line-height:1.5">&#x201C;The documents already existed. GDC read them in seconds.&#x201D;</div>
+              </div>
+            </div>
+          </div>
+        </div><!-- /h2-panel3 -->
+
+        <!-- BRIEFING NAVIGATION FOOTER -->
+        <div style="flex-shrink:0;padding:10px 20px;background:var(--surf2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+          <button v-if="h2BriefingPanel > 1" @click="h2BriefingPanel--"
+                  style="font-size:0.58rem;padding:5px 14px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text2);cursor:pointer">
+            &#x2190; Back
+          </button>
+          <div v-else style="width:80px"></div>
+          <span style="font-size:0.52rem;color:var(--muted);font-style:italic">
+            <span v-if="h2BriefingPanel===1">What this well looked like at startup</span>
+            <span v-if="h2BriefingPanel===2">What the data says before GDC reads the documents</span>
+            <span v-if="h2BriefingPanel===3">See GDC resolve it live</span>
+          </span>
+          <button v-if="h2BriefingPanel < 3" @click="h2BriefingPanel++"
+                  style="font-size:0.58rem;padding:5px 14px;border-radius:5px;border:1px solid rgba(59,130,246,0.45);background:rgba(59,130,246,0.15);color:#93c5fd;cursor:pointer">
+            Next &#x2192;
+          </button>
+          <button v-if="h2BriefingPanel===3" @click="h2BriefingMode=false;loadH2Scenario()"
+                  style="font-size:0.62rem;padding:6px 18px;border-radius:5px;border:1px solid rgba(74,222,128,0.35);background:rgba(16,185,129,0.15);color:rgba(74,222,128,0.9);font-weight:700;cursor:pointer">
+            &#x25BA; Run the Scenario
+          </button>
+        </div>
+
+      </div><!-- /h2BriefingMode -->
+
       <!-- HEADER BAR: title + transport controls + New Scenario -->
       <div class="horizon-banner" style="padding:8px 20px;gap:10px">
         <div style="display:flex;align-items:center;gap:8px;flex:1">
-          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Classify — ESP Slug Flow Discrimination</h2>
+          <button @click="h2BriefingMode=true;h2BriefingPanel=1" title="Return to Background Briefing" style="padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--muted);font-size:0.56rem;cursor:pointer;flex-shrink:0">&#x2190; Briefing</button>
+          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Classify &#x2014; Maintenance Provenance</h2>
           <span style="font-size:0.65rem;color:var(--muted)" v-if="h2ReplayData">
             &nbsp;·&nbsp; Well A-3 &nbsp;·&nbsp; Pad Alpha &nbsp;·&nbsp; ⏺ Scenario Replay
           </span>
