@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session BE — Sprint H3-D docs + Panel 1 layout fixes + H2 physics invalidation)
-**git head:** `388b716` (docs(session-be): update image digest after Panel 1 layout fix)
+**Date:** June 11, 2026 (Session BF — §3 APM calibration + Lift IQ hostile-pass · Session BE: Sprint H3-D docs + Panel 1 layout fixes + H2 physics invalidation)
+**git head:** `d000c52` (docs(session-bf): §3 APM two-tier calibration; Lift IQ/sovereignty hostile-pass rewording)
 **fault-trigger-ui image:** `sha256:0aca289c78726f784fb8384e5866c18065c0ade08981b5b56300901e19c8693e`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -20,7 +20,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
 - field_intel: **9–12** · rag_docs: **18**
 
-**Actual at session-BE close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
+**Actual at session-BF close:** cluster unchanged (docs-only session, no deploy) · field_intel=11 · rag_docs=18 ✅
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$0.65/hr). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -67,6 +67,8 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 This validates both the alarm-fatigue angle AND the missed/deferred PM angle as real, common O&G realities. Not a straw man — the operator's processes can be solid and this still happens.
 
 **Key design principle (NO STRAW MAN rule preserved):** The operator did not negligently forget. A third-party vendor delay + alarm fatigue created a data gap between the CMMS service record and the live RTOC decision-maker. GDC closes that silo. The operator looks operationally competent; the gap is structural, not behavioral.
+
+**Session BF completed (docs-only):** §3 APM two-tier calibration done. Alarm fatigue confirmed as H2 named pain point. Buyer = NOC-leaning (sovereignty is load-bearing). Lift IQ rebuttals corrected in §3 rejected-claims + §9. **H2 code still blocking.**
 
 **What this session needs:**
 1. Run `gdc-second-opinion` hostile-engineer pass on the paraffin scenario (full 5-gate + remedy feasibility)
@@ -136,6 +138,7 @@ This validates both the alarm-fatigue angle AND the missed/deferred PM angle as 
 | Sprint H3-B: N-well field Vizier optimization | ✅ DEPLOYED | `84e1b5f` — session BC · 6-well LP-optimal, gas ceiling 8.0 MMscfd |
 | Sprint H3-C: 3-panel H3 briefing | ✅ DEPLOYED | `662166c` — session BD |
 | **Sprint H3-D: DEMO_MASTER §6 + STAKEHOLDER_BRIEF.md** | **✅ COMMITTED** | **Session BE — docs only, no deploy needed** |
+| **§3 APM two-tier calibration + Lift IQ hostile-pass** | **✅ COMMITTED** | **Session BF — docs only, `d000c52` · 5–15% adoption range · Lift IQ rebuttals corrected** |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
 | STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | Sprint STAKEHOLDER-REVIEW — confirm tone/claims |
 | **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly** |

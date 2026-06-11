@@ -2,6 +2,15 @@
 
 ---
 
+## Session BF (June 11, 2026) — *APM market calibration + Lift IQ hostile-pass + §3 two-tier reframe*
+
+**Code committed:** `d000c52` (docs(session-bf): §3 APM two-tier calibration; Lift IQ/sovereignty hostile-pass rewording)
+**Cluster image digest:** `sha256:0aca289c` (unchanged — docs-only, no deploy)
+
+Docs-only strategic session triggered by user SME input: (1) Permian operators routinely ignore alarms due to false-positive fatigue; (2) most independents do NOT have advanced APM — threshold SCADA is the realistic baseline. Ran bias-resistant outside research (GlobalData, SPE maturity-matrix, SWPSC, practitioner SME Bill Barna = SUPPORTED). Confirmed ~5–15% of mid/small Permian independents run true ML PdM; ~85–95% run threshold-only SCADA. User confirmed target buyer is NOC-leaning (not cost-driven US independent) — sovereignty is load-bearing for the actual buyer. Ran two `gdc-second-opinion` hostile passes: Test A (sovereignty for NOC buyer) found "only complete path" FAILS + Governance/IP pillar needs inference-sovereignty scoping; Test B ("SLB Lift IQ is better, drop the mic") found Axis 1 (cloud-only) FAILS (Lift IQ Edge exists) and Axis 3 (SLB-only) FAILS (SLB Agora is multi-OEM); Axes 2+4 SURVIVES-IF-REWORDED. All corrections applied: DEMO_MASTER §3 L2 tier now two-tier (threshold-only vs. best-of-breed APM sub-tiers); three new Rejected Claims added; §3 Sovereignty Gap reworded; §9 Governance pillar scoped to inference-sovereignty; Honest Counter expanded with Lift IQ four-axis reframe; Retired Claims table has three new rows. CLAIM_LEDGER: five new rows (APM-D1/D2, LIFTIQ-1/2/3). Alarm fatigue confirmed as H2-specific named pain point. Paraffin scenario hostile pass and §5 rewrite remain top priority for next session.
+
+---
+
 ## Session BE (June 11, 2026) — *Sprint H3-D docs + Panel 1 layout fixes + H2 physics invalidation + paraffin reframe decision*
 
 **Code committed:** `d2010c6` (docs: H3-D) · `412c6f3` (fix: Panel 1 layout) · `388b716` (docs: digest patch)
