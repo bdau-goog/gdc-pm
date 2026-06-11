@@ -296,7 +296,7 @@ def generate_dynamic_documents(asset_id: str, fault_type: str, sensors: dict) ->
                 "content": random.choice([
                     f"Maximo PM Record: {asset_id} aerial fin-fan cooler last cleaned {overdue_mo} months ago (interval: 6 months per Ariel manual). Overdue by {overdue_mo - 6} months. CREW-BRAVO-B on-site tomorrow — can append at zero travel cost.",
                     f"Preventive Maintenance: {asset_id} fin-fan cleaning WO-PM-0194 completed {overdue_mo} months ago. PM interval 6 months — overdue {overdue_mo - 6} months. Fouling consistent with observed delta-T increase.",
-                    f"Maximo: {asset_id} cooler PM overdue {overdue_mo - 6} months. Ariel JGP design limit 250°F discharge. Current {discharge_temp:.0f}°F. Crew scheduled on-site tomorrow for transmitter calibration.",
+                    f"Maximo: {asset_id} cooler PM overdue {overdue_mo - 6} months. SCADA operator alarm: 230°F. Ariel JGP application guideline: 330°F (shutdown: 350°F). Current {discharge_temp:.0f}°F. Crew scheduled on-site tomorrow for transmitter calibration.",
                 ]),
                 "timestamp": (now - timedelta(days=random.randint(1, 5))).isoformat() + "Z"
             },
@@ -1329,7 +1329,7 @@ FINANCIAL_JUSTIFICATIONS = {
         "capital_at_risk_usd": 150000,
         "early_intervention_usd": 200,
         "unmitigated_impact": {
-            "basis": "Cylinder head seizure or catastrophic gasket failure. When discharge temperature exceeds 250°F (Ariel JGP cylinder design limit), piston rings and cylinder liner distort. Seizure can occur within 20–40 minutes after cooling circuit failure.",
+            "basis": "Cylinder head seizure or catastrophic gasket failure. When discharge temperature rises into the upper operating range (SCADA operator alarm: 230°F; Ariel JGP application guideline: 330°F; shutdown setpoint: 350°F), sustained overheating causes piston ring and cylinder liner thermal distortion. Seizure can occur within 20–40 minutes after cooling circuit failure.",
             "line_items": [
                 {"label": "Cylinder head and liner replacement — 2 cylinders", "usd": 38000, "note": "Ariel JGP: $19,000/cylinder head assembly (valve deck, head gasket, cooling jacket)"},
                 {"label": "Piston ring and rod packing replacement", "usd": 14500, "note": "Thermal distortion damages piston rings; Ariel OEM parts per cylinder"},
@@ -4720,7 +4720,7 @@ INTELLIGENCE_FEED = {
                 "Daily Well Performance Scan — ESP-ALPHA-1 / Well A-1\n"
                 "· Pump Intake Pressure (PIP): 1,400 PSI (normal range: 1,200–1,600 PSI) ✓\n"
                 "· Motor current: 75A (normal range: 60–90A) ✓\n"
-                "· Winding temperature: 198°F (alarm limit: 250°F) ✓\n"
+                "· Winding temperature: 198°F (alarm limit: 280°F derated) ✓\n"
                 "· Gas Void Fraction (GVF) estimate: 42% (threshold: 60%) ✓\n"
                 "· Production rate: 847 BOPD (on target)\n"
                 "· No corrective action recommended. Continue monitoring."
