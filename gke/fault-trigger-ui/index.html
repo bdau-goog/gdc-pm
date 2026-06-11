@@ -1834,72 +1834,70 @@
         <div class="pp-cols">
           <div>
             <div class="pp-section">
-              <div class="pp-section-title">⚙ The Physics — Why the Pump Looks Broken</div>
-              <p class="pp-text">High Gas-Liquid Ratio (GLR) causes intermittent gas pockets and liquid slugs to cycle through the surface flowline. Heavy liquid slugs impacting the wellhead piping transmit mechanical shocks down the tubing string, vibrating the downhole sensor (1.1 → 2.4 mm/s rise). <span class="pp-warn">The downhole pump is completely healthy.</span> The fault is entirely at the surface choke manifold.</p>
-            </div>
-            <div class="pp-section">
-              <div class="pp-section-title">🔎 Why the Default Action Is a $150k Well Pull</div>
-              <p class="pp-text">When vibration alarms fire in a SCADA environment, the default assumption is downhole mechanical wear. Distinguishing slug flow from bearing damage requires thermal correlation:</p>
+              <div class="pp-section-title">&#x2699; The Physics &#x2014; How Wrong Fill Oil Causes Bearing Failure</div>
+              <p class="pp-text">During the workover 8 weeks ago, the crew filled the protector with a synthetic ester-class oil incompatible with Buna-N elastomer shaft seals (documented only in the completion report). Buna-N seals swell and degrade on contact with synthetic esters &#x2014; pressure barrier fails within 3&#x2013;8 weeks.</p>
               <ul class="pp-list">
-                <li><strong>Slug flow:</strong> vibration rises + motor temperature stays flat (healthy pump)</li>
-                <li><strong>Bearing wear:</strong> vibration rises + motor temperature climbs (friction)</li>
-                <li>This data exists in 3–5 separate systems — SCADA, downhole portal, lab reports, shift notes</li>
-                <li>Lease operators are trained to be conservative — vibration alarm = shut in and order pull</li>
-                <li>Even senior engineers do this correlation <em>after</em> SCADA alarms — GDC does it 12–24h earlier</li>
+                <li><strong>Step 1:</strong> Seal integrity lost &#x2192; well fluid (brine + hydrocarbons) enters protector housing</li>
+                <li><strong>Step 2:</strong> Contaminated fluid reaches bearing assembly &#x2192; bearing friction increases</li>
+                <li><strong>Step 3:</strong> Bearing wear is <em>real</em> &#x2014; but caused by ingress, not mechanical age</li>
+                <li><strong>On sensor:</strong> efficiency declining + vibration rising = bearing wear signature. <span class="pp-warn">Indistinguishable from age-related bearing failure on a 4-sensor string.</span></li>
               </ul>
             </div>
             <div class="pp-section">
-              <div class="pp-section-title">⚡ How GDC Distinguishes Surface vs Downhole</div>
+              <div class="pp-section-title">&#x1F50E; Why APM Routes to a $70k&#x2013;$100k Pump Pull</div>
+              <p class="pp-text">APM correctly identifies the bearing wear pattern. The standard routing is a pump-pull investigation &#x2014; the statistically common cause. But no sensor on a running ESP can measure historical protector fill oil provenance. Without the workover completion report and OEM compatibility matrix, the root cause is architecturally invisible.</p>
               <ul class="pp-list">
-                <li>XGBoost correlates vibration rise vs. winding temperature stability in real-time across all wells</li>
-                <li>slug_flow confidence builds to ≥90% as surface slug pattern confirms — distinct from high-confidence downhole fault (motor temp stays flat)</li>
-                <li>Gemma retrieves OEM troubleshooting guide: <em>"Vibration drift without motor temperature elevation indicates surface flowline slugging"</em></li>
-                <li>Synthesized assessment: <span class="pp-em">Do NOT pull. Dispatch surface technician to adjust choke valve.</span></li>
+                <li>Efficiency declining: motor losses rising (bearing friction)</li>
+                <li>Vibration rising: bearing surface degradation</li>
+                <li><em>The root cause is a document-only variable. No sensor carries it.</em></li>
               </ul>
             </div>
           </div>
           <div>
             <div class="pp-section">
-              <div class="pp-section-title">💰 Cost Avoidance</div>
-              <table class="pp-table">
-                <thead><tr><th></th><th>Conservative SCADA</th><th>Proactive (GDC)</th></tr></thead>
-                <tbody>
-                  <tr><td>Detection</td><td>Single vibration threshold alarm</td><td>Multivariate temp + vibration correlation</td></tr>
-                  <tr><td>Default action</td><td class="pp-danger">Shut in + schedule pump pull</td><td>Dispatch lease operator to choke valve</td></tr>
-                  <tr><td>What's wrong?</td><td>Surface flowline slugging</td><td>Surface flowline slugging</td></tr>
-                  <tr><td>Pump pull cost</td><td class="pp-danger">$150,000 (unnecessary)</td><td class="pp-em">$0 — pump confirmed healthy</td></tr>
-                  <tr><td>Truck roll cost</td><td>$1,500</td><td>$1,500 (or $0 if batched)</td></tr>
-                  <tr><td>Net avoided</td><td>—</td><td class="pp-em">$148,500</td></tr>
-                </tbody>
-              </table>
+              <div class="pp-section-title">&#x26A1; How GDC Identifies the Root Cause</div>
+              <ul class="pp-list">
+                <li>L2 health score crosses threshold &#x2192; routes to L3 document fusion</li>
+                <li>Doc 1 &#x2014; Workover completion report: identifies fill oil vendor + product code</li>
+                <li>Doc 2 &#x2014; OEM compatibility matrix: product class = INCOMPATIBLE with Buna-N seals</li>
+                <li>Doc 3 &#x2014; Prior pull record: bearings normal 18 months ago &#x2192; bearing-age hypothesis eliminated</li>
+                <li>Doc 4 &#x2014; Field tour note: "slight vibration above typical" &#x2014; concerning-in-hindsight</li>
+                <li>Doc 5 &#x2014; Well history: confirms workover 8 weeks ago, no prior anomalies</li>
+                <li><strong>Synthesis:</strong> "Elastomer seal degradation from workover fluid incompatibility &#x2014; NOT bearing wear."</li>
+              </ul>
             </div>
             <div class="pp-section" style="margin-top:14px">
-              <div class="pp-section-title">⚠ Why H2 Is the Most Vulnerable Scenario</div>
-              <p class="pp-text">A technically sophisticated audience will say: <em>"An experienced engineer can look at flat winding temperature and rising vibration and know it's not downhole."</em></p>
-              <p class="pp-text">The correct answer: <span class="pp-warn">Yes — for one well.</span> The math changes at scale:</p>
-              <div style="margin-top:10px;padding:12px 16px;border-radius:8px;background:rgba(255,109,0,0.09);border:2px solid rgba(255,109,0,0.45);display:flex;align-items:center;gap:16px">
-                <div style="font-family:var(--mono);font-size:2rem;font-weight:800;color:var(--orange);white-space:nowrap;flex-shrink:0;line-height:1">1:500</div>
-                <div style="font-size:0.71rem;color:var(--text2);line-height:1.55"><strong style="color:var(--orange)">1 production engineer manages 300–500 wells.</strong> GDC performs this vibration–temperature correlation continuously across every well simultaneously at sub-second latency. The engineer cannot. That is the scale argument.</div>
-              </div>
+              <div class="pp-section-title">&#x1F4B0; Cost Avoidance</div>
+              <table class="pp-table">
+                <thead><tr><th></th><th>SCADA / APM</th><th>GDC Advisor</th></tr></thead>
+                <tbody>
+                  <tr><td>Root cause identified</td><td class="pp-danger">&#x2718; No (no sensor carries it)</td><td class="pp-em">&#x2714; Yes (documents)</td></tr>
+                  <tr><td>Recommended action</td><td class="pp-danger">Pump-pull investigation</td><td>Flush + reseal protector</td></tr>
+                  <tr><td>Pull cost</td><td class="pp-danger">~$70k&#x2013;$100k</td><td class="pp-em">Averted</td></tr>
+                  <tr><td>Reseal cost</td><td>n/a</td><td>~$8k&#x2013;$15k est. &#x26A0;</td></tr>
+                  <tr><td>Root cause fixed</td><td class="pp-danger">&#x2718; Seal still degraded on reinstall</td><td class="pp-em">&#x2714; Seal replaced</td></tr>
+                </tbody>
+              </table>
+              <div style="font-size:0.44rem;color:var(--muted);margin-top:5px">&#x26A0; Reseal cost is an estimate &#x2014; no hard public source; requires SME verification. Chemistry: Buna-N + synthetic ester incompatibility confirmed (API RP 11S3/S5).</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ISA-18.2 HI alarm banner — SCADA has fired, cause still ambiguous -->
-      <div v-if="h2ReplayData && h2CursorIdx >= h2ReplayData.scada_hi_idx && !h2SlugFlowRevealed"
+      <!-- ISA-18.2 VIB HI alarm banner — root cause unknown from telemetry -->
+      <div v-if="h2ReplayData && h2CursorIdx >= h2ReplayData.scada_alarm_idx && !h2VerdictRevealed"
            style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.28);font-size:0.58rem;color:#fca5a5;font-weight:700">
-        ⚠ ISA-18.2 VIBRATION HIGH ALARM — ESP-ALPHA-3 · vib {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '—' }} mm/s · Cause indeterminate from telemetry alone
+        &#x26A0; ISA-18.2 VIBRATION HIGH &#x2014; ESP-ALPHA-3 &middot; vib {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }} mm/s &middot; Mechanical degradation &#x2014; root cause unknown from telemetry alone
       </div>
 
-      <!-- GDC discriminator banner — after slug_flow probability confirmed -->
-      <div v-if="h2ReplayData && h2SlugFlowRevealed"
+      <!-- GDC verdict banner — after RAG fusion completes -->
+      <div v-if="h2ReplayData && h2VerdictRevealed"
            style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(59,130,246,0.10);border:1px solid rgba(59,130,246,0.28);font-size:0.58rem;color:#93c5fd;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span>⚡ GDC classifies in-string slug flow — pump mechanically healthy — do NOT pull</span>
-        <span v-if="h2ReplayData.lead_time_minutes > 0" style="font-weight:400;color:var(--muted);white-space:nowrap">
-          · {{ h2ReplayData.lead_time_minutes }} min ahead of ISA-18.2 HI alarm
+        <span>&#x26A1; GDC verdict: Elastomer seal degradation &#x2014; workover fluid incompatibility &middot; flush + reseal recommended</span>
+        <span v-if="h2ReplayData.workover_vendor" style="font-weight:400;color:var(--muted);white-space:nowrap">
+          &middot; {{ h2ReplayData.workover_vendor }} {{ h2ReplayData.workover_product }}
         </span>
-        <span v-if="!h2ReplayData.classifier_ok" style="color:var(--yellow);font-weight:400">[⚠ FALLBACK_SYNTHETIC]</span>
+        <span v-if="!h2ReplayData.health_ok" style="color:var(--yellow);font-weight:400">[&#x26A0; FALLBACK_SYNTHETIC]</span>
       </div>
 
       <!-- LOADING / NO DATA placeholder -->
@@ -1913,8 +1911,8 @@
           <div style="font-size:1.5rem">⚡</div>
           <div style="font-size:0.75rem;font-weight:700;color:var(--text2)">Click ↺ New Scenario to begin</div>
           <div style="font-size:0.60rem;color:var(--muted);max-width:400px;text-align:center;line-height:1.6">
-            GDC precomputes the slug flow trajectory and runs the real XGBoost classifier.
-            Vibration rises cyclically while motor temperature stays flat — the discriminating signal.
+            GDC precomputes the 8-week post-workover trajectory, runs the real esp_health.ubj model,
+            and generates two documents via Gemma (workover report + field tour note).
           </div>
         </template>
       </div>
@@ -1925,7 +1923,7 @@
         <!-- LEFT: Dual-sensor chart (vib rising + temp flat) + scrubber -->
         <div :style="{'flex': '0 0 ' + h2SplitPercent + '%', 'maxWidth': h2SplitPercent + '%'}" style="display:flex;flex-direction:column;gap:2px;min-height:0">
           <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px;flex-shrink:0">
-            📡 DISCRIMINATING SENSORS — VIB rising · TEMP FLAT (key discriminator)
+            &#x1F4E1; DEGRADATION SIGNATURE &#x2014; EFF declining (amber) &middot; VIB rising (purple)
           </div>
           <!-- SCRUBBER inside Left Column, padding-left:48px aligns with Plotly margin.l:48 -->
           <div style="padding-left:48px;padding-right:12px;padding-bottom:2px;flex-shrink:0;position:relative">
@@ -1937,10 +1935,10 @@
             <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
               <span style="position:absolute;left:0">T+0</span>
               <span style="color:rgba(251,191,36,0.88);position:absolute"
-                    :style="{left: (h2ReplayData.gdc_detect_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC▲</span>
+                    :style="{left: (h2ReplayData.gdc_detect_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC&#x25B2;</span>
               <span style="color:var(--red);position:absolute"
-                    :style="{left: (h2ReplayData.scada_hi_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">HI▲</span>
-              <span style="position:absolute;right:0">T+{{ h2ReplayData.t_min[h2ReplayData.n-1] }} min</span>
+                    :style="{left: (h2ReplayData.scada_alarm_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">HI&#x25B2;</span>
+              <span style="position:absolute;right:0">T+{{ h2ReplayData.t_min[h2ReplayData.n-1] }} wks</span>
             </div>
           </div>
           <!-- 2-sensor Plotly chart fills all available height -->
@@ -1971,67 +1969,67 @@
 
             <!-- ── SCADA VIEW ── -->
             <div v-show="h2ConsoleTab==='scada'" style="flex:1;min-width:0;display:flex;flex-direction:column;overflow-y:auto;padding:8px 8px;gap:6px">
-              <!-- Pre-HI alarm: quiet ISA-101 slate -->
-              <div v-if="h2CursorIdx < h2ReplayData.scada_hi_idx"
+              <!-- Pre-alarm: quiet ISA-101 slate -->
+              <div v-if="h2CursorIdx < h2ReplayData.scada_alarm_idx"
                    style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:20px">
                 <div style="font-family:var(--mono);font-size:0.56rem;color:rgba(100,116,139,0.5);letter-spacing:0.10em;text-align:center;line-height:2.2">
-                  WELL A-3 — SURVEILLANCE ACTIVE<br>
+                  WELL A-3 &#x2014; SURVEILLANCE ACTIVE<br>
                   ALL SENSORS WITHIN CONFIGURED LIMITS<br>
-                  VIB {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '—' }} mm/s &nbsp;|&nbsp; TEMP {{ h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '—' }}°F
+                  EFF {{ h2ReplayData.efficiency && h2ReplayData.efficiency[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.efficiency[h2CursorIdx]).toFixed(1) : '&#x2014;' }}% &nbsp;|&nbsp; VIB {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }} mm/s
                 </div>
               </div>
-              <!-- Post-HI alarm: ISA-18.2 industrial layout -->
-              <div v-if="h2CursorIdx >= h2ReplayData.scada_hi_idx">
+              <!-- Post-alarm: ISA-18.2 industrial layout — Maintenance Provenance -->
+              <div v-if="h2CursorIdx >= h2ReplayData.scada_alarm_idx">
                 <!-- ISA-18.2 amber alarm banner -->
                 <div style="background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.35);border-radius:4px;padding:6px 12px;margin-bottom:8px">
-                  <div style="font-family:var(--mono);font-size:0.58rem;color:rgba(251,191,36,0.9);font-weight:700;letter-spacing:0.06em">⚠ VIBRATION HIGH — ESP-ALPHA-3</div>
-                  <div style="font-family:var(--mono);font-size:0.44rem;color:rgba(251,191,36,0.5);margin-top:2px">ISA-18.2 H ALARM · INVESTIGATION REQUIRED</div>
+                  <div style="font-family:var(--mono);font-size:0.58rem;color:rgba(251,191,36,0.9);font-weight:700;letter-spacing:0.06em">&#x26A0; MECHANICAL DEGRADATION &#x2014; INVESTIGATION RECOMMENDED</div>
+                  <div style="font-family:var(--mono);font-size:0.44rem;color:rgba(251,191,36,0.5);margin-top:2px">ISA-18.2 VIB H ALARM &middot; ROOT CAUSE UNKNOWN FROM TELEMETRY</div>
                 </div>
                 <!-- 2×2 monospace tag grid -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
                   <div style="background:var(--surf);border:1px solid rgba(251,191,36,0.4);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">VIB (mm/s) · H ALARM</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.9)">{{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '—' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">H:4.0 · HH:5.0</div>
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">VIB (mm/s) &middot; H ALARM</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.9)">{{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">H:4.0 &middot; HH:5.0</div>
+                  </div>
+                  <div style="background:var(--surf);border:1px solid rgba(251,191,36,0.25);border-radius:4px;padding:6px 8px">
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">EFF (%) &middot; DECLINING</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.75)">{{ h2ReplayData.efficiency && h2ReplayData.efficiency[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.efficiency[h2CursorIdx]).toFixed(1) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">NOM:~76 &middot; SUB-ALARM</div>
                   </div>
                   <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">TEMP (°F) · NOMINAL</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(74,222,128,0.8)">{{ h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '—' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">HL:260 · NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">AMPS (A) &middot; ELEVATED &#x2191;</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.65)">{{ h2ReplayData.amps[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.amps[h2CursorIdx]).toFixed(1) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">NOM:~83 &middot; OL:102</div>
                   </div>
-                  <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">PIP (PSI) · NOMINAL</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(148,163,184,0.8)">{{ h2ReplayData.psi[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.psi[h2CursorIdx]).toFixed(0) : '—' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">LL:800 · NOMINAL</div>
-                  </div>
-                  <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">AMPS (A) · NOMINAL</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(148,163,184,0.8)">{{ h2ReplayData.amps[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.amps[h2CursorIdx]).toFixed(1) : '—' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">LL:40 · NOMINAL</div>
+                  <div style="background:var(--surf);border:1px solid rgba(74,222,128,0.2);border-radius:4px;padding:6px 8px">
+                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">TEMP (&#xB0;F) &middot; NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(74,222,128,0.8)">{{ h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">HL:280 &middot; NOMINAL</div>
                   </div>
                 </div>
-                <!-- Two equal-size slate action cards — operator decides, no hand-holding -->
+                <!-- SCADA action cards: bearing wear assumption -->
                 <div v-if="!h2Resolved && !h2PullOutcome" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
-                  <button @click="h2Pause(); h2PullOutcome='false_positive'" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
-                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">🔧 Request Pump Pull</div>
+                  <button @click="h2Pause(); h2PullOutcome='pump_pull'" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
+                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">&#x1F527; Request Pump Pull</div>
                     <div style="font-size:0.44rem;color:var(--muted)">Mobilize workover rig</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Inspect ESP downhole</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Investigate downhole</div>
                   </button>
                   <button @click="h2Resolved=true" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
-                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">🚛 Dispatch Surface Tech</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Truck roll to wellsite</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Check flowline & choke</div>
+                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">&#x1F4CA; Continue Monitoring</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Flag for next tour</div>
+                    <div style="font-size:0.44rem;color:var(--muted)">Monitor trend</div>
                   </button>
                 </div>
-                <!-- False-positive outcome (chose pump pull) -->
-                <div v-if="h2PullOutcome==='false_positive'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
-                  <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">❌ PREMATURE PUMP PULL — ESP WAS MECHANICALLY HEALTHY</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Workover mobilized for a mechanically healthy pump. Surface backpressure regime was the root cause — addressable with a surface truck roll.<br><span style="font-size:0.44rem;color:var(--muted)">Workover cost basis — see ⓘ Physics &amp; Logic panel</span></div>
+                <!-- Pump-pull outcome -->
+                <div v-if="h2PullOutcome==='pump_pull'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
+                  <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">&#x2718; PUMP PULL INITIATED &#x2014; ROOT CAUSE UNIDENTIFIED</div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Bearing wear confirmed on pull. Workover fluid incompatibility (root cause) not identified from telemetry alone. Seal remains degraded &#x2014; failure will recur.<br><span style="font-size:0.44rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics &amp; Logic</span></div>
                 </div>
-                <!-- Truck roll outcome (chose surface tech) -->
-                <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(129,201,149,0.07);border:1px solid rgba(129,201,149,0.35);border-radius:6px">
-                  <div style="font-size:0.58rem;font-weight:700;color:var(--g-green);margin-bottom:4px">✅ SURFACE TECH DISPATCHED — CHOKE VALVE ADJUSTMENT</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Technician en-route to adjust surface choke backpressure. Motor temperature remained flat throughout — in-string slug loading mechanism confirmed at surface.</div>
+                <!-- Monitoring outcome -->
+                <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px">
+                  <div style="font-size:0.58rem;font-weight:700;color:rgba(251,191,36,0.8);margin-bottom:4px">&#x23F3; MONITORING &#x2014; DEGRADATION CONTINUES</div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Passive monitoring. Root cause (workover fluid incompatibility) remains unknown without document fusion. Degradation trajectory continues.</div>
                 </div>
               </div>
             </div><!-- /scada-view -->
@@ -2044,21 +2042,22 @@
                 <!-- Quiet baseline: before GDC detect -->
                 <div v-if="h2CursorIdx < h2ReplayData.gdc_detect_idx"
                      style="font-family:var(--mono);font-size:0.44rem;color:rgba(100,116,139,0.45);letter-spacing:0.08em;line-height:1.6">
-                  WELL A-3 — GDC SCANNING · VIBRATION TREND OBSERVED · TEMPERATURE NOMINAL
+                  WELL A-3 &#x2014; GDC SCANNING &middot; EFFICIENCY TREND OBSERVED &middot; VIBRATION RISING &middot; TEMPERATURE NOMINAL
                 </div>
-                <!-- Scanning: at gdc_detect_idx, before slug reveal -->
-                <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2SlugFlowRevealed"
+                <!-- Scanning: at gdc_detect_idx, before verdict reveal -->
+                <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2VerdictRevealed"
                      style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.44rem;color:#93c5fd;letter-spacing:0.06em">
                   <span class="streaming-dot"></span>
-                  SLUG FLOW {{ h2ReplayData.slug_flow_prob[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.slug_flow_prob[h2CursorIdx])*100).toFixed(0) : '—' }}% · RETRIEVING FIELD CONTEXT VIA PGVECTOR RAG…
+                  HEALTH {{ h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0) : '&#x2014;' }}% &middot; RETRIEVING FIELD CONTEXT VIA PGVECTOR RAG&#x2026;
                 </div>
-                <!-- GDC verdict: after slug_flow revealed -->
-                <div v-if="h2SlugFlowRevealed"
+                <!-- GDC verdict: after verdict revealed -->
+                <div v-if="h2VerdictRevealed"
                      style="background:rgba(21,50,80,0.4);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px">
-                  <div style="font-family:var(--mono);font-size:0.50rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">⚡ IN-STRING SLUG FLOW CONFIRMED · PUMP HEALTHY</div>
+                  <div style="font-family:var(--mono);font-size:0.50rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">&#x26A1; ELASTOMER SEAL DEGRADATION &#x2014; NOT BEARING WEAR</div>
                   <div style="font-size:0.44rem;color:var(--text2);margin-top:2px;line-height:1.5">
-                    VIB rising + TEMP FLAT = cyclic hydraulic loading at pump intake · no motor friction · cooling intact
-                    <span style="color:rgba(74,222,128,0.7);margin-left:8px">slug_flow {{ h2ReplayData.slug_flow_prob[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.slug_flow_prob[h2CursorIdx])*100).toFixed(0) : '—' }}% confidence</span>
+                    Root cause: workover fill oil &#x2192; Buna-N seal degradation &#x2192; well fluid ingress &#x2192; bearing contamination
+                    <span v-if="h2ReplayData.workover_vendor" style="color:rgba(251,191,36,0.7);margin-left:8px">&middot; {{ h2ReplayData.workover_vendor }} {{ h2ReplayData.workover_product }}</span>
+                    <span style="color:rgba(74,222,128,0.7);margin-left:8px">&middot; health {{ h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0) : '&#x2014;' }}%</span>
                   </div>
                 </div>
               </div>
@@ -2071,74 +2070,90 @@
                   <!-- Pre-detect: locked -->
                   <div v-if="h2CursorIdx < h2ReplayData.gdc_detect_idx" style="opacity:0.3;pointer-events:none">
                     <div style="border:1px solid var(--border);border-radius:6px;padding:9px;background:var(--surf)">
-                      <div style="font-size:0.56rem;font-weight:700;color:var(--green)">✔ Context-aware recommendation</div>
-                      <div style="font-size:0.48rem;color:var(--muted);margin-top:3px">Available after GDC classifies slug_flow ≥ 70%</div>
+                      <div style="font-size:0.56rem;font-weight:700;color:var(--green)">&#x2714; Context-aware provenance analysis</div>
+                      <div style="font-size:0.48rem;color:var(--muted);margin-top:3px">Available after health score crosses detection threshold</div>
                     </div>
-                    <div style="font-size:0.44rem;color:rgba(100,116,139,0.4);text-align:center;margin-top:5px">🔒 GDC slug_flow probability building…</div>
+                    <div style="font-size:0.44rem;color:rgba(100,116,139,0.4);text-align:center;margin-top:5px">&#x1F512; GDC health score building&hellip;</div>
                   </div>
                   <!-- Post-detect, pre-RAG: scanning -->
-                  <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2SlugFlowRevealed" class="h1-rag-pending">
+                  <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2VerdictRevealed" class="h1-rag-pending">
                     <span class="streaming-dot"></span>
-                    &nbsp;Retrieving field context via pgvector RAG…
+                    &nbsp;Retrieving provenance documents via pgvector RAG&hellip;
                   </div>
                   <!-- Post-RAG: action cards + outcomes -->
-                  <template v-if="h2SlugFlowRevealed">
+                  <template v-if="h2VerdictRevealed">
                     <!-- Active choices -->
                     <div v-if="!h2Resolved && !h2PullOutcome" style="display:flex;flex-direction:column;gap:5px">
                       <button @click="h2Resolved=true" class="h1-action-card h1-card-green">
-                        <div class="h1-card-header">✔ GDC RECOMMENDED: Dispatch Surface Truck Roll</div>
-                        <div class="h1-card-sub">Surface tech to adjust choke valve · backpressure calibration</div>
-                        <div class="h1-card-desc">In-string slug loading confirmed — pump healthy. VIB cyclic, TEMP flat. Surface choke backpressure adjustment resolves. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">[WTX lease op. labor · mileage · choke cal.]</span></div>
+                        <div class="h1-card-header">&#x2714; GDC RECOMMENDED: Flush + Reseal Protector</div>
+                        <div class="h1-card-sub">Controlled flush &middot; replace fill oil with OEM-spec &middot; reseal shaft seals</div>
+                        <div class="h1-card-desc">Root cause: workover fill oil &#x2192; Buna-N seal degradation &#x2192; ingress pathway active. Flush + reseal stops ingress. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">~$8k&#x2013;$15k est. &#x26A0; [NEEDS-EXPERT]</span></div>
                       </button>
-                      <button @click="h2PullOutcome='false_positive'" class="h1-action-card h1-card-contraindicated">
-                        <div class="h1-card-header">❌ GDC CONTRAINDICATED: Request Pump Pull</div>
-                        <div class="h1-card-sub">Pump is mechanically healthy — workover not justified</div>
-                        <div class="h1-card-desc">Pump is mechanically healthy — workover not warranted. See ⓘ for workover cost basis.</div>
+                      <button @click="h2PullOutcome='pump_pull'" class="h1-action-card h1-card-contraindicated">
+                        <div class="h1-card-header">&#x2718; GDC CONTRAINDICATED: Request Pump Pull</div>
+                        <div class="h1-card-sub">Addresses symptom only &#x2014; Buna-N seal not fixed on reinstall</div>
+                        <div class="h1-card-desc">Pull investigation (~$70k&#x2013;$100k) addresses bearing wear symptom but not the seal root cause. Failure will recur. See &#x24D8; for cost basis.</div>
                       </button>
                     </div>
-                    <!-- Truck roll resolved -->
+                    <!-- Flush+reseal resolved -->
                     <div v-if="h2Resolved && !h2PullOutcome" class="h1-outcome-resolved">
-                      <div style="font-weight:700;margin-bottom:4px">✅ SURFACE TECH DISPATCHED — CHOKE ADJUSTMENT IN PROGRESS</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Backpressure adjustment initiated · vibration expected to return to nominal as slug loading subsides · motor temperature flat throughout — downhole pump mechanically healthy per classifier</div>
+                      <div style="font-weight:700;margin-bottom:4px">&#x2705; FLUSH + RESEAL INITIATED &#x2014; ROOT CAUSE ADDRESSED</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Protector fill oil replaced with OEM-spec &middot; ingress pathway sealed &middot; bearing contamination source eliminated &middot; ~$8k&#x2013;$15k est. &#x26A0;</div>
                     </div>
-                    <!-- False-positive (pulled healthy pump) -->
-                    <div v-if="h2PullOutcome==='false_positive'" class="h1-outcome-seized">
-                      <div style="font-weight:700;margin-bottom:6px">❌ FALSE-POSITIVE PUMP PULL — GDC WARNING IGNORED</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Workover mobilized for a mechanically healthy pump. Surface backpressure regime was the root cause.<br><span style="font-size:0.48rem;color:var(--muted)">Workover cost basis — see ⓘ Physics &amp; Logic panel</span></div>
+                    <!-- Pump pull despite GDC warning -->
+                    <div v-if="h2PullOutcome==='pump_pull'" class="h1-outcome-seized">
+                      <div style="font-weight:700;margin-bottom:6px">&#x2718; PUMP PULL DESPITE GDC WARNING &#x2014; ROOT CAUSE UNADDRESSED</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Bearing wear confirmed on pull. Buna-N seal still degraded &#x2014; failure will recur after reinstall without fill oil change.<br><span style="font-size:0.48rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics &amp; Logic panel</span></div>
                     </div>
                   </template>
                 </div>
 
-                <!-- ZONE 2 RIGHT (30%): Vertical Document Stack -->
+                <!-- ZONE 2 RIGHT (30%): Vertical Document Stack — 5 provenance docs -->
                 <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
-                  <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)</div>
-                  <!-- Doc 1: Surface Choke Log (fires with RAG) -->
-                  <div v-if="h2SlugFlowRevealed" class="h1-rag-doc-card">
-                    <span style="font-size:0.9rem;flex-shrink:0">🔧</span>
+                  <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT &#x2014; AlloyDB pgvector (&lt; 2s)</div>
+                  <!-- Doc 1: Workover Completion Report (fires with RAG) -->
+                  <div v-if="h2VerdictRevealed" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F527;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Surface Choke Valve Log<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">3 adjustments this tour · backpressure unstable</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.93</div>
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Workover Completion Report<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">{{ h2ReplayData.workover_vendor || 'fill oil vendor' }} &ndash; {{ h2ReplayData.workover_product || 'product code' }}</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.94 &middot; <span style="color:rgba(251,191,36,0.7)">&#x1F916; Gemma</span></div>
                     </div>
                   </div>
-                  <!-- Doc 2: Separator Test (revealed ~2s after RAG) -->
+                  <!-- Doc 2: OEM Compatibility Matrix (+2s) -->
                   <div v-if="h2RagDoc2Shown" class="h1-rag-doc-card">
-                    <span style="font-size:0.9rem;flex-shrink:0">🧪</span>
+                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F4CB;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Separator Test Report<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">1.8 bbl/cycle · 14-min period · GOR rising</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.88</div>
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">OEM Fluid Compatibility Matrix<br><span style="font-weight:400;color:rgba(239,68,68,0.8);font-size:0.48rem">Buna-N + synthetic ester: INCOMPATIBLE</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.89 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
                     </div>
                   </div>
-                  <!-- Doc 3: Shift Note (revealed ~3.5s after RAG) -->
+                  <!-- Doc 3: Prior Pull Record (+3.5s) -->
                   <div v-if="h2RagDoc3Shown" class="h1-rag-doc-card">
-                    <span style="font-size:0.9rem;flex-shrink:0">📋</span>
+                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F4C1;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Night Shift Note<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">"Pumping rough but temp is normal"</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.81</div>
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Prior Pull Record<br><span style="font-weight:400;color:rgba(74,222,128,0.7);font-size:0.48rem">Bearings: NORMAL &#x2014; age hypothesis eliminated</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.82 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
+                    </div>
+                  </div>
+                  <!-- Doc 4: Field Tour Note (+5s) -->
+                  <div v-if="h2RagDoc4Shown" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F4DD;</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Lease Operator Tour Note<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">"Slight vibration above typical &#x2014; monitoring"</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.78 &middot; <span style="color:rgba(251,191,36,0.7)">&#x1F916; Gemma</span></div>
+                    </div>
+                  </div>
+                  <!-- Doc 5: Well History (+6.5s) -->
+                  <div v-if="h2RagDoc5Shown" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F4CA;</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Well History Extract<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Workover 8 wks ago &middot; no prior anomalies</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.74 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
                     </div>
                   </div>
                   <!-- Placeholder skeletons before RAG fires -->
-                  <div v-if="!h2SlugFlowRevealed" style="flex:1;display:flex;flex-direction:column;gap:5px;opacity:0.25">
-                    <div v-for="n in 3" :key="n" style="height:40px;border:1px dashed rgba(100,116,139,0.2);border-radius:4px"></div>
+                  <div v-if="!h2VerdictRevealed" style="flex:1;display:flex;flex-direction:column;gap:5px;opacity:0.25">
+                    <div v-for="n in 5" :key="n" style="height:36px;border:1px dashed rgba(100,116,139,0.2);border-radius:4px"></div>
                   </div>
                 </div>
 
@@ -2148,60 +2163,53 @@
             <!-- ── SHARED SVG WELLBORE STRIP (visible on BOTH tabs) ── -->
             <div style="flex:0 0 80px;display:flex;flex-direction:column;padding:3px 3px;border-left:1px solid rgba(100,116,139,0.12);min-height:0">
               <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">WELLBORE</div>
-              <!-- SVG wellbore — H2: surface slug animation, healthy green downhole pump -->
+              <!-- SVG wellbore — H2: downhole protector seal degradation (root cause) -->
               <svg viewBox="0 0 50 220" style="width:100%;flex:1;overflow:visible">
-                <!-- Surface flowline (horizontal at top) -->
-                <rect x="2" y="8" width="46" height="5" rx="2" fill="rgba(100,116,139,0.2)" stroke="rgba(100,116,139,0.3)" stroke-width="0.8"/>
-                <text x="25" y="12.5" text-anchor="middle" fill="#64748b" font-size="3.5" font-family="Inter,sans-serif">FLOWLINE</text>
-                <!-- Surface slug animation: oscillating pulses, opacity grows with cursor -->
-                <g :style="{opacity: h2ReplayData ? Math.min(1, h2CursorIdx / Math.max(1, h2ReplayData.n-1)) : 0}">
-                  <ellipse cx="12" cy="10.5" rx="4" ry="2"
-                           :fill="'rgba(255,179,0,' + Math.min(0.7, 0.1 + 0.6*(h2CursorIdx/Math.max(1,h2ReplayData.n-1))) + ')'">
-                    <animate attributeName="cx" values="2;48;2" dur="3.5s" repeatCount="indefinite"/>
-                  </ellipse>
-                  <ellipse cx="32" cy="10.5" rx="3" ry="1.5"
-                           :fill="'rgba(255,179,0,' + Math.min(0.5, 0.05 + 0.45*(h2CursorIdx/Math.max(1,h2ReplayData.n-1))) + ')'">
-                    <animate attributeName="cx" values="48;2;48" dur="4.8s" repeatCount="indefinite"/>
-                  </ellipse>
-                </g>
                 <!-- Wellhead -->
-                <rect x="16" y="14" width="18" height="6" rx="1.5" fill="rgba(100,116,139,0.45)"/>
-                <text x="25" y="18.5" text-anchor="middle" fill="#64748b" font-size="4" font-family="Inter,sans-serif">WH</text>
+                <rect x="16" y="8" width="18" height="6" rx="1.5" fill="rgba(100,116,139,0.45)"/>
+                <text x="25" y="12.5" text-anchor="middle" fill="#64748b" font-size="4" font-family="Inter,sans-serif">WH</text>
                 <!-- Tubing string (vertical) -->
-                <line x1="18" y1="20" x2="18" y2="162" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
-                <line x1="32" y1="20" x2="32" y2="162" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
-                <!-- Fluid column (slug_flow: PIP stays nominally stable) -->
+                <line x1="18" y1="14" x2="18" y2="150" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
+                <line x1="32" y1="14" x2="32" y2="150" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
+                <!-- Fluid column — PIP stays nominally stable in this scenario -->
                 <rect x="19"
-                      :y="162 - Math.max(3, Math.min(45, h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 45 : 38))"
+                      :y="150 - Math.max(3, Math.min(38, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 38 : 32))"
                       width="12"
-                      :height="Math.max(3, Math.min(45, h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 45 : 38))"
-                      fill="rgba(59,130,246,0.28)"
-                      stroke="rgba(59,130,246,0.3)" stroke-width="0.5"/>
-                <!-- Intake label -->
-                <line x1="10" y1="152" x2="18" y2="152" stroke="rgba(100,116,139,0.25)" stroke-width="0.6" stroke-dasharray="1.5,1.5"/>
-                <text x="8" y="152" text-anchor="end" fill="rgba(100,116,139,0.35)" font-size="3" font-family="Inter,sans-serif">INTAKE</text>
-                <!-- Pump — GREEN (healthy, not the problem) -->
-                <rect x="15" y="153" width="20" height="8" rx="1.5" fill="rgba(16,185,129,0.35)" stroke="rgba(74,222,128,0.5)" stroke-width="0.8"/>
-                <text x="25" y="159" text-anchor="middle" fill="rgba(74,222,128,0.9)" font-size="3.5" font-family="Inter,sans-serif" font-weight="600">PUMP ✓</text>
-                <!-- Motor — GREEN (temp flat = no thermal stress) -->
-                <rect x="15" y="163" width="20" height="13" rx="1.5" fill="rgba(16,185,129,0.25)" stroke="rgba(74,222,128,0.4)" stroke-width="0.8"/>
-                <text x="25" y="169" text-anchor="middle" fill="rgba(74,222,128,0.8)" font-size="3.5" font-family="Inter,sans-serif" font-weight="600">MOTOR ✓</text>
-                <text x="25" y="174" text-anchor="middle" fill="rgba(148,163,184,0.65)" font-size="3" font-family="Inter,sans-serif">
-                  {{ h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) + '°F' : '—' }}
+                      :height="Math.max(3, Math.min(38, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 38 : 32))"
+                      fill="rgba(59,130,246,0.28)" stroke="rgba(59,130,246,0.3)" stroke-width="0.5"/>
+                <!-- PUMP — sub-alarm amber when onset reached -->
+                <rect x="15" y="150" width="20" height="7" rx="1.5"
+                      :fill="h2ReplayData && h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(16,185,129,0.3)' : 'rgba(251,191,36,0.25)'"
+                      :stroke="h2ReplayData && h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(74,222,128,0.5)' : 'rgba(251,191,36,0.5)'"
+                      stroke-width="0.8"/>
+                <text x="25" y="155" text-anchor="middle"
+                      :fill="h2ReplayData && h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(74,222,128,0.9)' : 'rgba(251,191,36,0.85)'"
+                      font-size="3.5" font-family="Inter,sans-serif" font-weight="600">PUMP</text>
+                <!-- PROTECTOR — degrading seal (ROOT CAUSE) — color rises to red with cursor -->
+                <rect x="15" y="158" width="20" height="7" rx="1.5"
+                      :fill="'rgba(239,68,68,' + Math.min(0.30, 0.02 + 0.28*(h2CursorIdx/Math.max(1,(h2ReplayData ? h2ReplayData.n-1 : 79)))) + ')'"
+                      :stroke="'rgba(239,68,68,' + Math.min(0.75, 0.10 + 0.65*(h2CursorIdx/Math.max(1,(h2ReplayData ? h2ReplayData.n-1 : 79)))) + ')'"
+                      stroke-width="0.8"/>
+                <text x="25" y="162.5" text-anchor="middle" fill="rgba(252,165,165,0.85)" font-size="3.2" font-family="Inter,sans-serif" font-weight="600">PROT</text>
+                <text x="25" y="165.5" text-anchor="middle" fill="rgba(252,165,165,0.65)" font-size="2.8" font-family="Inter,sans-serif">seal&#x26A0;</text>
+                <!-- MOTOR — temp sub-alarm (green) -->
+                <rect x="15" y="166" width="20" height="11" rx="1.5" fill="rgba(16,185,129,0.25)" stroke="rgba(74,222,128,0.4)" stroke-width="0.8"/>
+                <text x="25" y="171" text-anchor="middle" fill="rgba(74,222,128,0.8)" font-size="3.5" font-family="Inter,sans-serif" font-weight="600">MOTOR</text>
+                <text x="25" y="175" text-anchor="middle" fill="rgba(148,163,184,0.65)" font-size="3" font-family="Inter,sans-serif">
+                  {{ h2ReplayData && h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) + '&#xB0;F' : '&#x2014;' }}
                 </text>
                 <!-- Perforation marks -->
-                <line x1="15" y1="183" x2="10" y2="183" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <line x1="35" y1="183" x2="40" y2="183" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <line x1="15" y1="187" x2="10" y2="187" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <line x1="35" y1="187" x2="40" y2="187" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="15" y1="184" x2="10" y2="184" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="35" y1="184" x2="40" y2="184" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="15" y1="188" x2="10" y2="188" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
+                <line x1="35" y1="188" x2="40" y2="188" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
                 <text x="25" y="196" text-anchor="middle" fill="rgba(100,116,139,0.45)" font-size="3.5" font-family="Inter,sans-serif">PERFS</text>
-                <!-- Legend labels -->
-                <text x="25" y="205" text-anchor="middle" fill="rgba(255,179,0,0.55)" font-size="3" font-family="Inter,sans-serif">▲ surface</text>
-                <text x="25" y="210" text-anchor="middle" fill="rgba(255,179,0,0.55)" font-size="3" font-family="Inter,sans-serif">slugging</text>
+                <text x="25" y="204" text-anchor="middle" fill="rgba(252,165,165,0.55)" font-size="3" font-family="Inter,sans-serif">&#x25B2; seal</text>
+                <text x="25" y="208" text-anchor="middle" fill="rgba(252,165,165,0.55)" font-size="3" font-family="Inter,sans-serif">degrading</text>
               </svg>
-              <!-- Slug flow probability display -->
+              <!-- Health score display -->
               <div style="text-align:center;font-size:0.30rem;font-family:var(--mono);color:rgba(100,116,139,0.4);flex-shrink:0;padding-top:1px;line-height:1.4">
-                slug={{ h2ReplayData.slug_flow_prob && h2ReplayData.slug_flow_prob[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.slug_flow_prob[h2CursorIdx])*100).toFixed(0)+'%' : '—' }}
+                health={{ h2ReplayData && h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0)+'%' : '&#x2014;' }}
               </div>
             </div><!-- /shared SVG wellbore strip -->
 

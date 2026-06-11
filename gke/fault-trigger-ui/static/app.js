@@ -190,12 +190,16 @@ createApp({
       h2CursorIdx: 0,              // scrubber position (0..N-1)
       h2Playing: false,            // auto-advance timer running
       h2PlayTimer: null,           // setInterval handle
-      h2SlugFlowRevealed: false,   // true once cursor >= gdc_detect_idx (+1.5s)
-      h2RagDoc2Shown: false,       // Separator Test card (+2s after slug revealed)
-      h2RagDoc3Shown: false,       // Shift Note card (+3.5s after slug revealed)
+      h2VerdictRevealed: false,    // true once cursor >= gdc_detect_idx (+1.5s)
+      h2RagDoc2Shown: false,       // OEM Matrix (+2s after verdict revealed)
+      h2RagDoc3Shown: false,       // Prior Pull Record (+3.5s after verdict revealed)
+      h2RagDoc4Shown: false,       // Field Tour Note (+5s after verdict revealed)
+      h2RagDoc5Shown: false,       // Well History (+6.5s after verdict revealed)
       h2RagRevealTimer: null,      // setTimeout for 1.5s delay after GDC detect
       h2RagDoc2Timer: null,
       h2RagDoc3Timer: null,
+      h2RagDoc4Timer: null,
+      h2RagDoc5Timer: null,
       h2ConsoleTab: 'scada',       // 'scada' | 'gdc'
       h2SplitPercent: 56,          // left column width %
       h2PullOutcome: null,         // 'false_positive' if SCADA path chose pump pull
@@ -409,15 +413,19 @@ createApp({
     // H2 Scenario Replay: advance state when cursor crosses detection thresholds
     h2CursorIdx(val) {
       if (!this.h2ReplayData) return;
-      // Cross GDC detect threshold → reveal slug_flow + schedule sequential doc reveals
-      if (!this.h2SlugFlowRevealed && val >= this.h2ReplayData.gdc_detect_idx) {
+      // Cross GDC detect threshold → reveal verdict + schedule sequential doc reveals
+      if (!this.h2VerdictRevealed && val >= this.h2ReplayData.gdc_detect_idx) {
         if (this.h2RagRevealTimer) clearTimeout(this.h2RagRevealTimer);
         this.h2RagRevealTimer = setTimeout(() => {
-          this.h2SlugFlowRevealed = true;
+          this.h2VerdictRevealed = true;
           if (this.h2RagDoc2Timer) clearTimeout(this.h2RagDoc2Timer);
           if (this.h2RagDoc3Timer) clearTimeout(this.h2RagDoc3Timer);
+          if (this.h2RagDoc4Timer) clearTimeout(this.h2RagDoc4Timer);
+          if (this.h2RagDoc5Timer) clearTimeout(this.h2RagDoc5Timer);
           this.h2RagDoc2Timer = setTimeout(() => { this.h2RagDoc2Shown = true; }, 2000);
           this.h2RagDoc3Timer = setTimeout(() => { this.h2RagDoc3Shown = true; }, 3500);
+          this.h2RagDoc4Timer = setTimeout(() => { this.h2RagDoc4Shown = true; }, 5000);
+          this.h2RagDoc5Timer = setTimeout(() => { this.h2RagDoc5Shown = true; }, 6500);
         }, 1500);
       }
       // Update Plotly cursor line (shape index 2 in h2-replay-chart)
@@ -1993,15 +2001,19 @@ createApp({
     async loadH2Scenario() {
       this.h2Pause();
       this.h2CursorIdx = 0;
-      this.h2SlugFlowRevealed = false;
+      this.h2VerdictRevealed = false;
       this.h2RagDoc2Shown = false;
       this.h2RagDoc3Shown = false;
+      this.h2RagDoc4Shown = false;
+      this.h2RagDoc5Shown = false;
       this.h2Resolved = false;
       this.h2PullOutcome = null;
       this.h2ConsoleTab = 'scada';
       if (this.h2RagRevealTimer) { clearTimeout(this.h2RagRevealTimer); this.h2RagRevealTimer = null; }
       if (this.h2RagDoc2Timer)   { clearTimeout(this.h2RagDoc2Timer);   this.h2RagDoc2Timer   = null; }
       if (this.h2RagDoc3Timer)   { clearTimeout(this.h2RagDoc3Timer);   this.h2RagDoc3Timer   = null; }
+      if (this.h2RagDoc4Timer)   { clearTimeout(this.h2RagDoc4Timer);   this.h2RagDoc4Timer   = null; }
+      if (this.h2RagDoc5Timer)   { clearTimeout(this.h2RagDoc5Timer);   this.h2RagDoc5Timer   = null; }
       this.h2ReplayData = null;
       this.h2ReplayLoading = true;
       try {
@@ -2033,14 +2045,18 @@ createApp({
     h2Reset() {
       this.h2Pause();
       this.h2CursorIdx = 0;
-      this.h2SlugFlowRevealed = false;
+      this.h2VerdictRevealed = false;
       this.h2RagDoc2Shown = false;
       this.h2RagDoc3Shown = false;
+      this.h2RagDoc4Shown = false;
+      this.h2RagDoc5Shown = false;
       this.h2Resolved = false;
       this.h2PullOutcome = null;
       if (this.h2RagRevealTimer) { clearTimeout(this.h2RagRevealTimer); this.h2RagRevealTimer = null; }
       if (this.h2RagDoc2Timer)   { clearTimeout(this.h2RagDoc2Timer);   this.h2RagDoc2Timer   = null; }
       if (this.h2RagDoc3Timer)   { clearTimeout(this.h2RagDoc3Timer);   this.h2RagDoc3Timer   = null; }
+      if (this.h2RagDoc4Timer)   { clearTimeout(this.h2RagDoc4Timer);   this.h2RagDoc4Timer   = null; }
+      if (this.h2RagDoc5Timer)   { clearTimeout(this.h2RagDoc5Timer);   this.h2RagDoc5Timer   = null; }
     },
     h2Scrub(idx) {
       if (!this.h2ReplayData) return;
@@ -2070,30 +2086,28 @@ createApp({
     },
     _renderH2ReplayChart() {
       const d = this.h2ReplayData;
-      if (!d || !d.vib || !d.temp) return;
-      const cursorT = d.t_min[this.h2CursorIdx] || 0;
-      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;
-      const scadaT  = d.t_min[d.scada_hi_idx]    || 0;
-      const xMax    = d.t_min[d.n - 1] || 30;
+      if (!d || !d.efficiency || !d.vib) return;
+      const cursorT = d.t_min[this.h2CursorIdx]    || 0;
+      const gdcT    = d.t_min[d.gdc_detect_idx]     || 0;
+      const scadaT  = d.t_min[d.scada_alarm_idx]    || 0;
+      const xMax    = d.t_min[d.n - 1]              || 8;
+      const HI_VIB  = 4.0; // ISA-18.2 HI alarm (mm/s)
 
-      // Two stacked subplots: Vibration (rising) + Temperature (flat) — the discriminating pair
+      // Single dual-axis chart: Efficiency % (amber, declining) + Vib mm/s (purple, rising)
       const traces = [
-        { x: d.t_min, y: d.vib,  name: 'Vib (mm/s)',  type: 'scatter', mode: 'lines',
-          line: {color:'#a78bfa', width:1.8}, xaxis:'x', yaxis:'y',  showlegend:true },
-        // ISA-18.2 HI alarm threshold line on vib chart
-        { x: [0, xMax], y: [d.scada_hi_threshold, d.scada_hi_threshold],
-          name: 'ISA HI (4.0)', type: 'scatter', mode: 'lines',
-          line: {color:'rgba(239,68,68,0.6)', width:1.2, dash:'dash'},
-          xaxis:'x', yaxis:'y', showlegend:true, hoverinfo:'skip' },
-        { x: d.t_min, y: d.temp, name: 'Temp (°F)',   type: 'scatter', mode: 'lines',
-          line: {color:'#60a5fa', width:1.8}, xaxis:'x', yaxis:'y2', showlegend:true },
+        { x: d.t_min, y: d.efficiency, name: 'Efficiency (%)', type: 'scatter', mode: 'lines',
+          line: {color:'#f59e0b', width:2.0}, yaxis:'y', showlegend:true },
+        { x: d.t_min, y: d.vib, name: 'Vibration (mm/s)', type: 'scatter', mode: 'lines',
+          line: {color:'#a78bfa', width:2.0}, yaxis:'y2', showlegend:true },
+        { x: [0, xMax], y: [HI_VIB, HI_VIB],
+          name: 'ISA HI 4.0', type: 'scatter', mode: 'lines',
+          line: {color:'rgba(239,68,68,0.55)', width:1.2, dash:'dash'},
+          yaxis:'y2', showlegend:true, hoverinfo:'skip' },
       ];
 
       const shapes = [
-        // GDC detection (amber dash)
         { type:'line', x0:gdcT,    x1:gdcT,    y0:0, y1:1, xref:'x', yref:'paper',
           line:{color:'rgba(251,191,36,0.88)', width:2, dash:'dash'} },
-        // SCADA HI (red dash)
         { type:'line', x0:scadaT,  x1:scadaT,  y0:0, y1:1, xref:'x', yref:'paper',
           line:{color:'rgba(239,68,68,0.88)',   width:2, dash:'dash'} },
         // Cursor (gray dot) — shape index 2, updated cheaply via relayout
@@ -2102,34 +2116,29 @@ createApp({
       ];
 
       const annotations = [
-        { x:gdcT,   y:1.01, xref:'x', yref:'paper', text:'<b>GDC ▲</b>',
+        { x:gdcT,   y:1.01, xref:'x', yref:'paper', text:'<b>GDC \u25B2</b>',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
-        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>SCADA HI ▲</b>',
+        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>SCADA HI \u25B2</b>',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
       ];
 
-      const commonYAxis = {gridcolor:'#1e2a38', zeroline:false, showline:false,
-                           tickfont:{size:8}, nticks:4};
-      const xRange = xMax > 30 ? [xMax - 30, xMax] : [0, Math.max(30, xMax)];
-
       Plotly.newPlot('h2-replay-chart', traces, {
         paper_bgcolor:'#0b0c10', plot_bgcolor:'#0f1318',
         font:{color:'#e0e0e0', family:'Inter,sans-serif', size:9},
-        margin:{l:48, r:12, t:18, b:30},
-        grid:{rows:2, columns:1, pattern:'independent', roworder:'top to bottom', ygap:0.08},
-        xaxis:  {gridcolor:'#1e2a38', zeroline:false, range:xRange,
-                 title:{text:'Time (min)', font:{size:8, color:'#5a6a7a'}},
-                 anchor:'y2', showticklabels:true, tickfont:{size:7}},
-        yaxis:  {...commonYAxis, title:{text:'mm/s', font:{color:'#a78bfa',size:8}},
-                 titlefont:{color:'#a78bfa'}, tickfont:{...commonYAxis.tickfont, color:'#a78bfa'},
-                 anchor:'x', domain:[0.52,1.0]},
-        yaxis2: {...commonYAxis, title:{text:'°F',  font:{color:'#60a5fa',size:8}},
-                 titlefont:{color:'#60a5fa'}, tickfont:{...commonYAxis.tickfont, color:'#60a5fa'},
-                 anchor:'x', domain:[0.0, 0.46]},
+        margin:{l:50, r:52, t:18, b:36},
+        xaxis:  {gridcolor:'#1e2a38', zeroline:false, range:[0, xMax],
+                 title:{text:'Weeks post-workover', font:{size:8, color:'#5a6a7a'}},
+                 tickfont:{size:7}},
+        yaxis:  {gridcolor:'#1e2a38', zeroline:false,
+                 title:{text:'Efficiency (%)', font:{color:'#f59e0b', size:8}},
+                 tickfont:{size:8, color:'#f59e0b'}, nticks:5, side:'left'},
+        yaxis2: {overlaying:'y', zeroline:false,
+                 title:{text:'Vib (mm/s)', font:{color:'#a78bfa', size:8}},
+                 tickfont:{size:8, color:'#a78bfa'}, nticks:5, side:'right'},
         shapes, annotations,
         showlegend:true,
         legend:{orientation:'h', x:0, y:1.07, xanchor:'left', font:{size:8},
