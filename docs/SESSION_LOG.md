@@ -3,6 +3,16 @@
 ---
 ---
 
+## Session AU (June 11, 2026) — *Docs sprint: DEMO_STORY_AND_PATH + VIDEO_SCRIPT + DEMO_MASTER §3/§5/§6 rewrite + CLAIM_LEDGER H2 rows*
+
+**Code committed:** docs only — DEMO_MASTER, CLAIM_LEDGER, DEMO_STORY_AND_PATH (new), VIDEO_SCRIPT (new), NEXT_SESSION_PROMPT, SESSION_LOG
+**Cluster image digest:** unchanged (sha256:2fd95932...) — no app code deployed (H2 docs must precede H2 code)
+
+Session AU executed all 8 build priorities from the Session AT NEXT_SESSION_PROMPT. Startup checks clean (8/8 pods, gemma4 online, field_intel=6, rag_docs=18). All work was documentation — correctly, because the spec must be written and approved before H2 code is touched. Six artefacts written or rewritten: (1) docs/DEMO_STORY_AND_PATH.md (new, ~400 lines) — stakeholder-ready narrative of the full journey (7 beats from overclaiming SCADA to locked sovereign-edge thesis), locked value proposition with three gaps, full H1/H2/H3 stories with physics and cost claims sourced, morning recording checklist. (2) docs/VIDEO_SCRIPT.md (new) — four narration scripts (Overview ~60s, H1/H2/H3 ~90–120s each) with Open/Tension/Reveal/Resolution/Bridge structure, production notes, runtime targets. (3) DEMO_MASTER §3 rewritten from STATE-vs-CONTEXT to sovereign-edge of industry-validated capability — three gaps (diagnostic/scale/sovereignty), competitive claim (Gemini neutral-search verified wording), market validation, honest-footing rule, where-not-what framing. Three-tier stack and rejected claims preserved. (4) DEMO_MASTER §5 replaced slug-flow (invalidated Session AR) with maintenance-provenance spec — workover fluid incompatibility → Buna-N seal degradation misdiagnosed as bearing wear on standard 4-sensor string → GDC reads workover completion report + OEM compatibility matrix + timing correlation + pull record → averts $70k–$100k pull; survival test table; G1–G6 synthetic doc requirements; screen architecture and backend endpoint spec. (5) DEMO_MASTER §6 updated with honest Vizier hybrid framing — "only parameter-level data to cloud; edge safety constraint holds even if WAN drops; retired 'no cloud dependency' language." (6) CLAIM_LEDGER.md — slug-flow H2 section archived with FAIL annotations; new H2 maintenance-provenance section added (H2-P1 through H2-C2, all tagged and status-set). Gemini search ran for H2 cost claims: full ESP workover AFE Andrews County WTX July 2023 = $140k (supports our $70k–$100k investigation range); flush+reseal has no hard public source — correctly tagged 🔴 NEEDS-EXPERT, displayed as $8k–$15k range in narration. Two 🔴 NEEDS-EXPERT items remain open: H2-C1 reseal cost and H2-P4 swell timeline — both softened in all copy, require SME verification before hard display. Next session: H2 synthetic document draft + G1–G6 gate sign-off → H2 backend endpoint → H2 briefing UI → H2 scenario replay.
+
+---
+---
+
 ## Session AT (June 11, 2026) — *Strategy locked: sovereign-edge framing, three-horizon stories finalized, build plan set — docs-only wrap session*
 
 **Code committed:** docs only — NEXT_SESSION_PROMPT (comprehensive build plan)

@@ -1,5 +1,5 @@
 # GDC Predictive Maintenance — Master Demo Specification & Blueprint
-**Version:** Session AF (June 10, 2026) — STATE-vs-CONTEXT Universal Moat; RTOC-Sovereign Deployment; Integrity Fixes Applied
+**Version:** Session AU (June 11, 2026) — Sovereign-Edge of Industry-Validated Capability; H2 Maintenance-Provenance; Locked Strategy
 **Status:** Authoritative Single Source of Truth  
 **Enforcement:** This document contains the complete visual specs, narrative blueprints, and the **Claims Ledger**. No claims may go on screen unless they have a `SURVIVES` row in the Ledger (Appendix).
 
@@ -20,39 +20,55 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 | Act | Tab | Scenario | Asset | Core Claim | GDC Advantage |
 |-----|-----|----------|-------|------------|---------------|
 | **H1** | **Discern** | Gas Lock or Fluid Drawdown | ESP-ALPHA-1–6 (random) | *Discerning Operator: Context & Scale* | L3 document fusion resolves the ambiguous unloading signal; enables safe proactive intervention vs. reactive manual action under operator workload |
-| **H2** | **Classify** | Slug Flow | ESP-ALPHA-3 | *Fault Discrimination: Prevent False Alarms* | Fuses L3 docs to prevent $150k unnecessary pump pull |
+| **H2** | **Classify** | Workover Fluid Incompatibility | ESP-ALPHA-3 | *Provenance Diagnosis: Prevent Wrong Fix* | Reads workover completion report + OEM matrix → reclassifies from bearing wear to seal degradation → averts $70k–$100k unnecessary pull |
 | **H3** | **Optimize** | VFD Optimization | ESP-ALPHA-1 | *Edge-Cloud Collaboration* | Local XGBoost checks limits; Vertex AI Vizier drives search |
 
 **Narrative Arc:** Discern (H1) → Classify (H2) → Optimize (H3)
 
 ---
 
-## 3. CORE VALUE PROPOSITION — THE DEFENSIBLE SCADA vs GDC ARGUMENT
+## 3. CORE VALUE PROPOSITION — SOVEREIGN EDGE OF AN INDUSTRY-VALIDATED CAPABILITY
 
-### Session AF Reframe — STATE vs. CONTEXT: The Universal Industrial AI Moat
+**Version:** Session AU (June 11, 2026) — **LOCKED. Do not re-open.** See `docs/DEMO_STORY_AND_PATH.md §B` for the full stakeholder narrative.
 
-**The PRIME DIRECTIVE for this section:** Concede sensors completely and honestly. Win on CONTEXT — not because sensors are bad, but because the *deciding* information is categorically not a real-time measurement.
+**The PRIME DIRECTIVE for this section:** Concede sensors and L1/L2 completely and honestly. Win on WHERE the capability runs — not just what it does.
 
-#### The Core Thesis — Sensors Report STATE. Decisions Need CONTEXT.
+#### The Locked Thesis — The Industry Is Building This. GDC Delivers It Inside the Perimeter.
 
-Sensors give operators **STATE**: the current value of a physical measurement — PIP, amps, vibration, gas concentration. Sensors are excellent at this. Modern APM platforms score state signals with calibrated ML models, and we concede both tiers honestly.
+The AI-powered diagnostic advisor — the capability the entire APM industry (GE Vernova, AVEVA, Aspen Mtell, Cognite, C3.ai) is building for cloud deployment in 2025–2026 — GDC delivers inside the operator's sovereign boundary, on open-weight Gemma, at the edge, where the data already lives.
 
-What sensors cannot report is **CONTEXT**: equipment history, recent human interventions, GOR trends, formation characteristics, adjacent-well events, regulatory constraints. Context originates from human activity and field events, and is recorded only in unstructured documents — shift notes, sonic logs, lab reports, work orders, maintenance records.
+**This is a WHERE claim, not a WHAT claim.** The capability class (real-time ML anomaly detection + LLM-based differential diagnosis over unstructured documents) is industry-validated. GDC's differentiator is WHERE it runs. The demo demonstrates that capability running inside a sovereign perimeter.
 
-**The decisive fact:** the correct action on an ambiguous fault signal almost always depends on context the sensor does not and cannot carry. A downhole gauge confirms gas lock. It does not report this well's sand completion history or whether an offset frac is drawing it down. A vibration sensor confirms the pattern. It does not report the choke log or the separator test result. You cannot instrument your way out of a context gap.
+**Market validation (Gemini neutral-search confirmed, Session AT — no hostile priming):**
+- C3.ai 2026 roadmap: "virtual subject matter expert… full context — all sensor data, structured, unstructured, past work performed on the machine"
+- GE Vernova, AVEVA, Aspen Mtell, Cognite: all have 2025–2026 GenAI roadmap items for document-aware diagnosis
+- The direction is industry-validated. GDC's differentiator is sovereign-edge deployment, not the AI capability class.
 
-**GDC's categorical moat:** fuses unstructured field documents via pgvector RAG against the live signal and synthesizes the action-determining context in seconds. No SCADA product, control-layer or APM, does this. It is architecturally impossible for them — not because they are unsophisticated, but because their data model is sensor-based.
+#### The Competitive Claim (use exact wording — Gemini neutral-search verified, Session AT)
 
-> *"The data can't come to the AI, so the AI goes to the data — GDC puts Google's AI stack inside the operator's sovereign boundary, reads the full document corpus, and returns the context SCADA cannot."*
+> *"No native, production-ready commercial product combines real-time ML anomaly detection with LLM-based differential diagnosis over unstructured maintenance documents — as of 2025–2026, this is where all major APM platforms are heading. GDC delivers it now, inside the sovereign perimeter, on open weights."*
 
-#### The Universal Pattern — One Thesis, Four Verticals
+#### Three Gaps That Drive the Value Proposition
 
-The same STATE-vs-CONTEXT gap drives the value proposition across industrial sectors. The demo proves it with O&G as the worked example; the platform claim is horizontal:
+**1. The Diagnostic Gap**
+SCADA says *that* something is wrong. APM says the *pattern* is anomalous. Neither says *why* — because "why" lives in unstructured documents: shift notes, workover reports, OEM manuals, lab results, completion records. No sensor-based system reads them in real time. GDC reads the documents.
 
-| Vertical | Ambiguous STATE on the sensor | Deciding CONTEXT (in documents — not sensors) |
+**2. The Scale Gap**
+A senior engineer can diagnose one well. They cannot diagnose 200 wells at 2am. GDC gives every operator senior-level differential diagnosis on every asset at once — automatic, cited, with an audit trail.
+
+**3. The Sovereignty Gap**
+Cloud APM requires data egress — precluded for NOCs, IEC 62443 OT-compliance operators, and jurisdictions with data-residency law. GDC is the only complete path for those operators. The decision and the safety constraint both remain on-premise.
+
+#### The Honest-Footing Rule (use when challenged with "but a human could figure this out")
+
+> *"Yes — a skilled engineer could reach this conclusion with the right documents and time, on a single well. What GDC does is make it automatic, fleet-scale, instant, cited, and inside your perimeter — turning a diagnosis that's possible in principle into one that happens every time in practice."*
+
+#### The Universal Pattern — One Platform, Four Verticals
+
+| Vertical | Ambiguous Signal | Deciding Context (in documents — not sensors) |
 |---|---|---|
 | **O&G upstream (demo)** | ESP intake pressure + amps decline (gas lock or drawdown?) | Sand/completion history · offset-frac report · GOR trend · shift note |
-| **Power & Energy** | Transformer DGA gas rise / turbine vibration anomaly | LTC maintenance log · loading plan · prior fault record · IEC/NERC constraint |
+| **Power & Energy** | Transformer DGA gas rise / turbine vibration anomaly | LTC maintenance log · loading plan · prior fault record · service record |
 | **Manufacturing / Process** | Motor or pump vibration / bearing temp rise | Lubrication log · production schedule · prior rebuild record · OEM bulletin |
 | **Mining / Heavy Industry** | Haul-truck driveline signal / crusher vibration | Service history · haul-road condition report · OEM TSB · shift note |
 
@@ -403,38 +419,70 @@ Never raw `<digit` in template text. Never raw `{{ }}` in static strings.
 
 ---
 
-## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP SLUG FLOW DISCRIMINATION)
+## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP MAINTENANCE PROVENANCE — WORKOVER FLUID INCOMPATIBILITY)
 
-**Status: ⚠️ SCENARIO INVALIDATED — under reframe (Session AR)**
+**Version:** Session AU (June 11, 2026) — **Maintenance-provenance scenario. Passes all 4 survival tests. Approved. Build per this spec.**
 
-> **Design decision Session AR:** The H2 slug-flow scenario was dual-red-teamed by Gemini and Claude Opus with web search. Both independently rated the following as **FAILS:** (1) flat-temperature-as-discriminator (RTD is in motor, not pump/protector — thermally separated; in high-GOR wells gas at intake *reduces* cooling → temp trends up, not flat — discriminator runs backwards); (2) $150k-pull vs $1,500-truck-roll as false dichotomy (real baseline is choke/VFD adjustment first, same cheap action from the amp chart); (3) L3 moat on slug flow (deciding signal is telemetric — cyclic amps-with-recovery + cyclic PIP — documents only corroborate); (4) "APM stops at anomaly score" over-concedes (Mtell classifies trained failure modes + attaches canned SOP). **Committed reframe:** H2 → off-sensor missing-variable scenario, candidate = **offset-well frac-hit interference**. The deciding variable (neighbor's frac schedule/regulatory filing/partner notice) is categorically not on any sensor and is truthfully recorded only in a third-party document. Passes all 4 survival tests: discrete event / categorically off-sensor / APM mis-attributes / common+material in Permian. Open item: differentiate from H1's use of "offset-frac report" as corroborating evidence — H2 makes the offset event *the* hidden cause, not a supporting doc.
->
-> **4 scenario survival tests (mandatory for any H2 candidate):**
-> 1. Cause is a **discrete past event** (not slow drift — drift = APM territory)
-> 2. Cause is **categorically not telemetric** (not "not yet integrated" — categorically off-sensor)
-> 3. APM would **mis-route** it to an expensive wrong action
-> 4. **Common and material** enough that fleet-scale automation pays
->
-> **New H2 spec to be written, validated (dual-AI red-team), and approved before any code.**
+> **Design history:** The original slug-flow H2 scenario was invalidated in Session AR (dual-AI red-team: 4 FAILs — deciding signal is telemetric, false cost dichotomy, temperature discriminator runs backwards, APM understated). A frac-hit replacement was rejected in Session AS (fails Test 1 — experienced operators recognize signatures). The maintenance-provenance scenario was proposed in Session AS, validated via Gemini search (API RP 11S3/11S5 confirms elastomer/bearing ambiguity on 4-sensor string), confirmed in Session AT. **All 4 survival tests pass — see §D of DEMO_STORY_AND_PATH.md.**
 
-### The Core Story (Session V corrected physics)
-- **The Problem:** In high-GOR ESP wells, intermittent gas/liquid slugs travel up the production tubing string. When alternating gas slugs and liquid slugs arrive at the pump intake, they cause cyclic cavitation and hydraulic imbalance at the impeller — measured directly at the downhole PDG gauge. On raw telemetry, slug flow looks alarming but is NOT a downhole failure.
-- **The Correct Mechanism:** In-string multiphase slug loading at the pump intake. Gas slugs dip PIP and amps; liquid slugs re-load them. The gauge measures this cyclic pattern at source — no long-distance mechanical transmission is involved. **Motor winding temperature stays FLAT** — no additional friction, cooling flow nominally maintained.
-- **The Discriminator:** Bearing wear (real pull justified): vibration rises AND temperature rises. Slug flow (do NOT pull): vibration rises cyclically AND temperature FLAT. Temperature is the categorical discriminator.
-- **The SCADA Danger:** SCADA's ISA-18.2 HI alarm fires at 4.0 mm/s (vibration rising). The HH auto-trip at 5.0 mm/s has NOT fired — vib peaks at ~4.5 mm/s. Operator must decide. SCADA has no architecture to co-read the flat temperature as exonerating evidence or to retrieve the Surface Choke Valve Log, Separator Test Report, or Shift Note.
-- **The GDC Solution:** GDC's RAG reads the **Surface Choke Valve Log** (3 adjustments this tour — operator compensating for backpressure), the **Separator Test Report** (1.8 bbl slug volumes, GOR rising), and the **Night Shift Note** ("pumping rough but temp is normal").
-- **The Verdict:** GDC classifies slug_flow at ≥90% confidence via `esp_classifier.ubj` (inference-api, 5-class). Downhole pump confirmed healthy.
-- **The Action:** Dispatch a surface tech to adjust backpressure (**$1,500 surface truck roll**), saving **$148,500** in unnecessary Capex.
-- **Red Team Ledger:** See `docs/RED_TEAM_LEDGER.md` H2 section for all challenge/rebuttal pairs.
+### Scenario Survival Tests (all 4 pass)
 
-### Visual & Narrative Drama (H2 Classify Tab) — IMPLEMENTED
-- Dual-sensor Plotly chart: **Vibration (rising cyclically, purple)** + **Motor Temp (completely flat, blue)** — the visual discriminator.
-- Transport controls: ◀◀ ▶ ▶▶ + scrubber with GDC▲ / SCADA HI▲ markers.
-- ISA-101 SCADA View: quiet pre-alarm slate → amber ISA-18.2 HI banner → 2×2 monospace tag grid → 2 equal-size action cards (no guidance text, operator decides).
-- GDC Advisor View: 3-zone layout (Zone 1 headline, Zone 2 action+doc stack, Zone 2 right sequential doc reveals).
-- Shared SVG wellbore strip visible on BOTH sub-tabs: surface slug animation (amber pulses in flowline) + healthy green PUMP ✓ and MOTOR ✓ at depth.
-- Sequential doc reveals: Choke Log (fires with RAG) → Separator Test (+2s) → Shift Note (+3.5s).
-- False-positive pump pull outcome: shows $150k itemized breakdown [WTX spot rig + motor + cable + deferred prod].
+| Test | Result | Evidence |
+|---|---|---|
+| **1. Discrete past event** | ✅ PASS | Wrong-fluid fill is a specific event at a specific time (workover date), not slow drift |
+| **2. Categorically off-sensor** | ✅ PASS | No online sensor on a running ESP can measure historical hydraulic-fluid fill provenance. Physically impossible. |
+| **3. APM mis-routes** | ✅ PASS | Standard 4-sensor string: elastomer seal degradation and bearing wear genuinely ambiguous (API RP 11S3/11S5). APM routes to bearing wear → expensive pump-pull investigation. |
+| **4. Common and material** | ✅ PASS | 51% of ESP failures attributed to human factors/operational problems (SPE 185275-MS, 194398-MS, 144562-MS). Fleet-scale automation has defensible ROI. |
+
+### The Core Story
+
+- **Asset:** Permian ESP producer, 8 weeks post-workover. Standard 4-sensor string: PIP, motor amps, winding temp, single-axis vibration accelerometer.
+- **Symptom pattern:** Motor efficiency declining + vibration rising slowly over 3–4 weeks. On the standard 4-sensor string, this pattern matches early **bearing wear** — the most common cause, and the cause any APM platform routes to.
+- **Hidden cause:** During the workover 8 weeks ago, the crew used a **non-OEM-spec hydraulic fluid incompatible with the Buna-N elastomer shaft seals**. Documented only in the workover completion report (fluid type, vendor, date). No online sensor on the running ESP carries this information — it is physically impossible for one to do so.
+- **Why APM gets it wrong:** Elastomer seal degradation and bearing wear produce genuinely ambiguous signatures on a standard 4-sensor ESP string without vibration spectral analysis or dedicated bearing temperature sensors. *(API RP 11S3, 11S5; Gemini search confirmed Session AT.)* APM routes to the *statistically common* hypothesis (bearing wear) and cannot access the workover completion report.
+- **GDC resolution:** L2 classifier (`esp_health.ubj`) flags mechanical degradation → routes to L3 fusion. Gemma reads: (1) workover completion report (fluid type — observations only, no diagnosis); (2) OEM fluid compatibility matrix (fluid class → Buna-N: INCOMPATIBLE); (3) timing correlation (3-week onset = expected elastomer swell timeline); (4) last pull record (bearings normal → bearing-wear hypothesis eliminated). GDC verdict: "Elastomer seal degradation from workover fluid incompatibility — NOT bearing wear. Correct action: controlled flush + reseal (~$8k–$15k)."
+- **Why the operator misses it:** At 2am with a vibration alarm firing on Well #47 of 200, no operator checks the 8-week-old workover completion report. GDC generates the non-obvious provenance hypothesis automatically.
+- **Cost claims (🔴 NEEDS-EXPERT for reseal; 🟡 OUR-CODE-consistent for pull):**
+  - Flush + reseal: ~$8k–$15k (stated as estimate — no hard public source found via Gemini search; confirmed "substantially less than full workover"; requires SME verification before hard display)
+  - Pump-pull investigation: ~$70k–$100k (consistent with $140k AFE for full ESP workover, Andrews County WTX, July 2023, per Gemini search — our range is the investigation subset before repair/replace decision)
+- **SPE citation:** 51% of ESP failures = human factors/operational problems — 2014 SPE AI Conference survey; SPE 185275-MS, 194398-MS, 144562-MS.
+
+### Synthetic Documents Required (G1–G6 Gate — sign off before any pixel)
+
+Three documents for L3 RAG retrieval. All must pass all 6 gates before seeding or display.
+
+| Document | Content (measurements/observations only — no diagnosis) | G-gate notes |
+|---|---|---|
+| **Workover completion report** | Date, crew, procedure, fluid vendor and product code, fill volume. No diagnosis. | G1: use fictional vendor. G2: record only what the crew recorded. G3: nothing alarming in isolation. G4: decisive only when crossed with OEM matrix. |
+| **OEM fluid compatibility matrix** | Factual table: fluid class vs. elastomer type (Buna-N, Viton, HNBR) → Compatible / Conditionally Compatible / INCOMPATIBLE. | G1: fictional OEM name. G2: pure facts. G5: accurate chemistry (Buna-N + petroleum-based hydraulic fluids: compatible; Buna-N + synthetic ester or phosphate ester: INCOMPATIBLE). |
+| **Shift note (recent)** | Operator observation: "pumping rougher than usual since ~3 weeks ago, vibration uptick, monitoring." No diagnosis, no alarm escalation. | G3: concerning-in-hindsight, not alarming-in-isolation. G6: operator tour note, 12-hour cadence, hand-written form. |
+
+### Screen Architecture (same H1 pattern)
+
+```
+CLASSIFY tab
+├── H2 Briefing (3 panels, per §4.5 Briefing Pattern Spec)
+│   ├── Panel 1: The Equipment (ESP + sensor string + workover context callout)
+│   ├── Panel 2: The Provenance Hook (timeline: workover → onset → alarm today; 4 sensor tiles; doc stack)
+│   └── Panel 3: The Decision (GDC verdict card; action cards; universal pattern close)
+│       └── CTA: ▶ Run the Scenario
+└── H2 Scenario Replay (same mechanics as H1)
+    ├── Shared sensor chart: efficiency trend + vibration rise (the "bearing wear" signature)
+    ├── SCADA View: degradation flagged, recommends investigation (no root-cause hypothesis)
+    └── GDC Advisor: reads 3 docs → reclassifies → flush+reseal recommendation
+```
+
+**Backend endpoint:** `GET /api/h2/scenario-replay?asset=ESP-ALPHA-3`
+
+Returns: efficiency[], vib[], t_min[], health_score[], gdc_detect_idx, scada_alarm_idx, gdc_verdict, doc_reveals[]
+
+### Visual & Narrative Drama (H2 Classify Tab) — TO BUILD
+
+- Dual-sensor Plotly chart: **Motor efficiency (declining, amber)** + **Vibration (rising, purple)** — the "bearing wear" visual signature.
+- Transport controls: ◀◀ ▶ ▶▶ + scrubber with GDC detect▲ / Investigation trigger▲ markers.
+- ISA-101 SCADA View: quiet pre-alarm slate → degradation banner ("Mechanical degradation detected — investigation recommended") → no root-cause hypothesis — action cards: (A) Pump-pull investigation / (B) Continue monitoring.
+- GDC Advisor View: 3-zone layout. Zone 1: "Elastomer seal degradation — NOT bearing wear." Zone 2: action card (flush+reseal ~$8k–$15k) vs. averted action (pump pull ~$70k–$100k). Zone 2 right: sequential doc reveals — Workover completion report (fires with RAG) → OEM matrix (+2s) → Shift note (+3.5s) → Pull record (+5s).
+- Universal pattern close (Panel 3): O&G (wrong fluid) / P&E (wrong coolant) / MRO (wrong lubricant).
 
 ---
 
@@ -443,14 +491,15 @@ Never raw `<digit` in template text. Never raw `{{ }}` in static strings.
 ### The Core Story
 - **The Goal:** Don't just protect—maximize. When oil prices spike, operators want to run ESPs faster (e.g. 50 Hz → 58 Hz).
 - **The Risk:** Running faster increases heat. If motor windings exceed **280°F (derated operating setpoint; Class H insulation limit = 356°F / 180°C per IEC 60085)**, the pump burns out. *(Note: 280°F is the field operating threshold applied in the demo — not the insulation class limit. See RT-NEW-2 in RED_TEAM_LEDGER.)*
-- **The Collaboration:** Vertex AI Vizier runs in the cloud to drive the multi-step GP search space. Local GDC edge models enforce the physical safety constraint.
+- **The Collaboration (honest hybrid — NOT air-gap):** Vertex AI Vizier runs in the cloud to drive the multi-step GP search space using Gaussian process math — only parameter-level data goes to cloud, never raw operational telemetry. The local XGBoost thermal model (`esp_thermal.ubj`) evaluates every candidate setpoint against the 280°F derated safety constraint and holds it — **even if the WAN link drops mid-search**. The decision and the safety constraint both remain on-premise. This is the novel piece: not the cloud optimization (Bayesian search is common), but the edge safety constraint that holds at precisely the wrong moment (process upset, storm, satellite outage during a price spike). The edge is the safety system.
+  - ❌ **Retired language:** "no cloud dependency for the decision" — too absolute. Replace with: "no public-cloud dependency for the decision — the safety constraint and the final approved setpoint both run on-premise."
 
 ---
 
 ## 7. SHARED UI CONVENTIONS
 
 - **GDC Advisor:** No "Copilot" branding is used. The AI is a streaming, operator-assist Advisor.
-- **Tabs (L→R):** `How It Works` · `Discern` (H1 Unloading) · `Classify` (H2 Slug Flow) · `Optimize` (H3 VFD). **Surveillance tab removed (Session AC).**
+- **Tabs (L→R):** `How It Works` · `Discern` (H1 Unloading) · `Classify` (H2 Maintenance Provenance) · `Optimize` (H3 VFD). **Surveillance tab removed (Session AC).**
 - **No Operating Envelope scatter charts**: These require too much explanation. Use the dual-axis trend chart and the dynamic wellbore schematic instead.
 - **No 14-well pad strip**: This is a visual bloat. The scale story is made through text (e.g. "14 wells under continuous surveillance") rather than a decorative map.
 - **Engineering Diagram wellbore:** Drawn in dark-mode CSS HTML to scale. Horizontal slugging animations rendered *only at surface*, gas lock animations *only at depth*.
@@ -478,7 +527,7 @@ Every synthetic field document (modal, RAG card, seeded `field_intel` row, app.p
 - H1 Sonic Log modal: fails G1 (Baker Hughes), G2 (diagnosis in body), G3 (smoking gun — 150 ft near-critical at 06:00)
 - H1 Shift Note: review against G3 (GVF "estimated at 78%" is inferred, not a direct sensor reading — verify wording)
 - H1 OEM Guide doc card: review G4 (does it independently solve the case?)
-- H2 Choke Log, Separator Test, Night Shift Note: verify G3/G5/G6 compliance
+- H2 Workover completion report, OEM compatibility matrix, shift note: sign off against G1–G6 gate before seeding (new H2 scenario — not yet built)
 
 ---
 
