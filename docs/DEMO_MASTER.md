@@ -1,5 +1,5 @@
 # GDC Operations Intelligence — Master Demo Specification & Blueprint
-**Version:** Session BE (June 11, 2026) — §6 field-level rewrite (Sprint H3-D); STAKEHOLDER_BRIEF.md added; H2 Maintenance-Provenance; Locked Strategy
+**Version:** Session BF (June 11, 2026) — §3 APM two-tier calibration; Lift IQ/sovereignty hostile-pass rewording; 5–15% deployment reality; rejected-claims updated · Session BE: §6 field-level rewrite (Sprint H3-D); STAKEHOLDER_BRIEF.md added; H2 Maintenance-Provenance; Locked Strategy
 **Status:** Authoritative Single Source of Truth  
 **Enforcement:** This document contains the complete visual specs, narrative blueprints, and the **Claims Ledger**. No claims may go on screen unless they have a `SURVIVES` row in the Ledger (Appendix).
 
@@ -57,7 +57,7 @@ SCADA says *that* something is wrong. APM says the *pattern* is anomalous. Neith
 A senior engineer can diagnose one well. They cannot diagnose 200 wells at 2am. GDC gives every operator senior-level differential diagnosis on every asset at once — automatic, cited, with an audit trail.
 
 **3. The Sovereignty Gap**
-Cloud APM requires data egress — precluded for NOCs, IEC 62443 OT-compliance operators, and jurisdictions with data-residency law. GDC is the only complete path for those operators. The decision and the safety constraint both remain on-premise.
+Cloud APM requires data egress — precluded for NOCs, IEC 62443 OT-compliance operators, and jurisdictions with data-residency law. GDC delivers this capability inside the sovereign boundary — architecturally designed for on-prem inference from the ground up. The decision and the safety constraint both remain on-premise. *(Do not claim "only complete path" — on-prem alternatives exist including SLB Lift IQ Edge. Win on architectural design, not exclusivity — see Rejected claims below.)*
 
 #### The Honest-Footing Rule (use when challenged with "but a human could figure this out")
 
@@ -79,7 +79,7 @@ This is not an oilfield trick. It is the structural gap in every industrial AI d
 | Tier | Architecture | What each tier reads | The honest GDC position |
 |---|---|---|---|
 | **L1 — Threshold alarms** | SCADA control layer — hard setpoints, rate rules | **Tags** (individual sensor values) | **Fully conceded.** SCADA trips the pump to protect it. GDC wins nothing here. Never imply SCADA lets the pump die. |
-| **L2 — Learned detection** | Threshold-based SCADA: hand-authored rules. Advanced predictive platforms (GE SmartSignal, AVEVA PRiSM, Aspen Mtell): adaptive ML, retraining workflows. | **Tag patterns** (multivariate sensor correlations) | **Contested ground — concede gracefully.** Threshold SCADA hand-authors rules per well; advanced APM platforms do adaptive ML. GDC's modest L2 edge (calibrated probability, learned-not-hand-set, decoupled from control layer) is supporting context, **not the headline**. Against best-of-breed APM, detection converges — L3 is still the moat. |
+| **L2 — Learned detection** | Threshold-based SCADA: hand-authored rules per well. Advanced predictive platforms (GE SmartSignal, AVEVA PRiSM, Aspen Mtell, SLB Lift IQ): adaptive ML, retraining workflows. | **Tag patterns** (multivariate sensor correlations) | **Contested ground — two distinct sub-tiers (calibrate by audience):** **(1) Against threshold-only SCADA** — the realistic baseline for ~85–95% of mid/small Permian independents (true ML PdM penetration ~5–15% per SPE maturity-matrix / GlobalData analysis; practitioner SME confirmed): XGBoost pre-threshold multivariate scoring is a **genuine, honest detection edge** — give it full credit. **(2) Against best-of-breed APM** (SmartSignal/PRiSM/Mtell/Lift IQ — ~5–15% with real ML): detection converges — **L3 document fusion remains the categorical moat.** ⚠ Never claim GDC out-detects best-of-breed APM on model quality. |
 | **L3 — Context fusion** | No SCADA product, control-layer or APM, reads unstructured text into real-time fault diagnosis | **Documents** (shift notes, acoustic sonic logs, GOR reports, work orders) | **Categorical Moat.** GDC fuses unstructured field documents via pgvector RAG and chains them into the live diagnosis. The operator has the same documents — GDC's advantage is reading and correlating the entire corpus in seconds during a live process upset. Architecturally impossible for any current SCADA/APM product. |
 
 #### "Tags vs. Tag-Patterns vs. Documents" (centerpiece for How It Works)
@@ -102,6 +102,9 @@ This is not an oilfield trick. It is the structural gap in every industrial AI d
 - ❌ **"No sensor now or future can distinguish gas lock from drawdown"** — **False** (discharge gauge resolves state; PIP is a submergence proxy). Retired Session AF. Win on CONTEXT, not an overstated sensor impossibility.
 - ❌ "The decision stays at the pad" — decision-maker is in the RTOC. Retired.
 - ❌ "No cloud dependency for the decision" → replace with: "runs inside the operator's sovereign boundary; local inference is outage-immune."
+- ❌ **"GDC is the only complete path for sovereign operators"** — False (SLB Lift IQ Edge, on-prem historian vendors, private cloud options all exist). Replace with: *"GDC is architecturally designed for on-prem AI from the ground up — not adapted from cloud."* (gdc-second-opinion Test A FAILS, Session BF)
+- ❌ **"Lift IQ is cloud-only / sends your data to SLB's cloud"** — False as a categorical claim. SLB has on-prem/hybrid Lift IQ Edge deployments. Reframe: *"Lift IQ was architected cloud-first and adapted for edge; GDC is sovereign-first by design."* (gdc-second-opinion Test B Axis 1 FAILS, Session BF)
+- ❌ **"Lift IQ covers SLB-contracted ESPs only"** — False. SLB Agora/Lift IQ can ingest non-SLB ESP data. Reframe: *"Lift IQ's core model depth concentrates in the SLB ecosystem; GDC is a native multi-OEM, multi-lift platform with no equipment bias."* (gdc-second-opinion Test B Axis 3 FAILS, Session BF)
 
 **Conceding sensors makes the L3 context-moat more credible, not less.**
 
@@ -665,9 +668,11 @@ GDC co-locates at the **operator's RTOC or corporate data center**, inside the I
 |---|---|---|
 | **1 — Isolation + self-sufficiency** | OT/production data must not cross the public internet under the operator's OT-security policy (IEC 62443 zones & conduits), AND the AI must keep functioning when the outside link is severed (Starlink/WAN drop during a process upset is a real scenario). The AI runs **inside**, no external dependency for the decision. | **IEC 62443 / Purdue** (O&G, manufacturing); **NERC-CIP CIP-005/007** (Power & Energy BES assets — *not applicable to upstream O&G*); **API 1164** (O&G pipeline) |
 | **2 — Sovereignty / residency** | Reservoir and production data is commercially sensitive; many NOCs and regulated jurisdictions require it to remain in-country / off public multi-tenant cloud. | National data-residency law; operator policy (e.g., Saudi Arabia NCA ECC-1:2018) |
-| **3 — Governance & IP** | Open-weight **Gemma on GDC** means proprietary prompts (telemetry + field documents) never transit a third-party model API and are never externally logged or exposed. | Operator IP/security policy |
+| **3 — Governance & IP** | Open-weight **Gemma on GDC** deployed on-prem gives operators **full control over inference data** — proprietary prompts (telemetry + field documents) never transit a third-party model API during inference and are never externally logged. Operators can audit the model weights directly. *(Scope: inference-sovereignty claim. GDC is a Google-supplied platform — Gemma's training-data provenance is Google's responsibility, separate from the operator's inference IP. If challenged on platform dependency, position as "inference sovereignty" not "full IP isolation from all third-party components".)* | Operator IP/security policy |
 
 **Honest counter (NO-STRAW-MAN):** Cloud-first US independents with cloud historians (AVEVA CONNECT, Cognite Data Fusion) and no residency constraint can run this in Vertex — often simpler and cheaper. GDC's market is operators and workloads where public cloud is **precluded**. The demo dramatizes that workload; do not claim "everyone needs GDC."
+
+**Lift IQ honest counter (Session BF — gdc-second-opinion verified):** SLB offers Lift IQ Edge on-prem/hybrid deployments. Do NOT claim "Lift IQ sends your data to SLB's cloud" — that may be false for a given deployment. The honest four-axis reframe (Ledger LIFTIQ rows): (1) **Architectural design** — GDC is sovereign-first by design, not adapted from cloud; (2) **Perceived conflict of interest** — SLB recommends and sells pulls; GDC is vendor-neutral (soften to "perceived/potential"); (3) **Multi-OEM native** — GDC has no SLB-ecosystem bias; (4) **L3 automated fusion** — Lift IQ's *automated* system cannot fuse unstructured vendor emails, overdue-PM logs, and field documents into the live real-time diagnosis at fleet scale in seconds; human SLB experts may incorporate context manually, but not automatically across 200 wells at 2am. **For cost-driven US independents with no residency constraint:** Lift IQ may be the better commercial answer — do not claim GDC is superior for this buyer.
 
 **One-sentence spine:** *"The data can't come to the AI, so the AI goes to the data — GDC puts Google's AI stack inside the operator's sovereign boundary."*
 
@@ -686,6 +691,9 @@ GDC's sovereign value rests on **reliability of the decision + sovereignty**, no
 | "The decision stays at the pad" | Decision-maker is in the RTOC; pad is unmanned. | "Decision support runs inside the operator's sovereign boundary, beside SCADA in the RTOC." |
 | "No cloud dependency for the decision" | Too absolute; framing that doesn't acknowledge the real reason. | "No public-cloud dependency for the decision — runs sovereign, outage-immune." |
 | "NERC-CIP" cited for upstream O&G | NERC-CIP has **zero jurisdiction** over upstream O&G (governs BES only). Citing it to an O&G audience signals regulatory confusion. | Use **IEC 62443 / Purdue** for O&G; NERC-CIP **only** when explicitly addressing the P&E vertical. |
+| "GDC is the only complete path for sovereign operators" | False — SLB Lift IQ Edge, private-cloud historians, and other on-prem analytics exist. (gdc-second-opinion Test A FAILS, Session BF) | "GDC is architecturally designed for on-prem AI from the ground up — not adapted from cloud. It brings cloud-native AI services inside the sovereign boundary." |
+| "Lift IQ is cloud-only / sends data to SLB's cloud" | False as a categorical claim — SLB has Lift IQ Edge on-prem/hybrid deployments. (gdc-second-opinion Test B Axis 1 FAILS, Session BF) | "Lift IQ was architected cloud-first and adapted for edge. GDC is sovereign-first by design." Verify specific deployment model before asserting. |
+| "Lift IQ covers SLB-contracted ESPs only" | False — SLB Agora/Lift IQ can ingest non-SLB ESP data. (gdc-second-opinion Test B Axis 3 FAILS, Session BF) | "Lift IQ's core model depth concentrates in the SLB equipment ecosystem; GDC is native multi-OEM with no equipment bias." |
 
 ---
 
