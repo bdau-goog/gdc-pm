@@ -20,7 +20,7 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 | Act | Tab | Scenario | Asset | Core Claim | GDC Advantage |
 |-----|-----|----------|-------|------------|---------------|
 | **H1** | **Discern** | Gas Lock or Fluid Drawdown | ESP-ALPHA-1–6 (random) | *Discerning Operator: Context & Scale* | L3 document fusion resolves the ambiguous unloading signal; enables safe proactive intervention vs. reactive manual action under operator workload |
-| **H2** | **Classify** | Workover Fluid Incompatibility | ESP-ALPHA-3 | *Provenance Diagnosis: Prevent Wrong Fix* | Reads workover completion report + OEM matrix → reclassifies from bearing wear to seal degradation → averts $70k–$100k unnecessary pull |
+| **H2** | **Classify** | Paraffin/Wax Deposition Mimicking Bearing Wear | ESP-ALPHA-3 | *Provenance Diagnosis: Prevent Wrong Pull* | Retrieves vendor service log + PVT report + prior pull record → identifies overdue hot-oil PM as root cause → averts $70k–$100k unnecessary pump pull |
 | **H3** | **Optimize** | VFD Optimization | ESP-ALPHA-1 | *Edge-Cloud Collaboration* | Local XGBoost checks limits; Vertex AI Vizier drives search |
 
 **Narrative Arc:** Discern (H1) → Classify (H2) → Optimize (H3)
@@ -422,82 +422,94 @@ Never raw `<digit` in template text. Never raw `{{ }}` in static strings.
 
 ---
 
-## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP MAINTENANCE PROVENANCE — WORKOVER FLUID INCOMPATIBILITY)
+## 5. H2 SPECIFICATION — THE CLASSIFY TAB (ESP PARAFFIN/WAX DEPOSITION MIMICKING BEARING WEAR)
 
-**Version:** Session AU (June 11, 2026) — **Maintenance-provenance scenario. Passes all 4 survival tests. Approved. Build per this spec.**
+**Version:** Session BG (June 11, 2026) — **Paraffin/wax deposition scenario. Passes all 5 survival gates (including Gate 5 — Remedy Feasibility, added Session BE). Hostile-engineer pass: gdc-second-opinion Session BG — three FAILS verdicts overturned (hostile engineer inverted PIP hydraulics; PIP rise confirmed correct by Gemini search + API RP 11S); 4 SURVIVES-IF-REWORDED fixes applied. Replaces workover-fluid-incompatibility scenario (Session BE physics invalidation: "flush + reseal in place" is impossible for a downhole ESP protector).**
 
-> **Design history:** The original slug-flow H2 scenario was invalidated in Session AR (dual-AI red-team: 4 FAILs — deciding signal is telemetric, false cost dichotomy, temperature discriminator runs backwards, APM understated). A frac-hit replacement was rejected in Session AS (fails Test 1 — experienced operators recognize signatures). The maintenance-provenance scenario was proposed in Session AS, validated via Gemini search (API RP 11S3/11S5 confirms elastomer/bearing ambiguity on 4-sensor string), confirmed in Session AT. **All 4 survival tests pass — see §D of DEMO_STORY_AND_PATH.md.**
+> **Design history:** Slug-flow (Session AR, 4 FAILs), frac-hit (Session AS, Gate 1 FAIL), workover-fluid-incompatibility (Session AT–AY, deployed to screen) → Session BE: user exposed fatal physics error ("how do you reseal a pump without pulling it?"). Flush+reseal in-place is physically impossible for a downhole ESP protector — correction always requires pulling the completion. Session BE added Gate 5 (Remedy Feasibility) to `.clinerules`. Paraffin/wax deposition is the approved replacement: Session BG gdc-second-opinion hostile-engineer pass complete — all FAILS overturned, 4 rewording fixes applied.
 
-### Scenario Survival Tests (all 4 pass)
+### Scenario Survival Tests — All 5 Pass
 
-| Test | Result | Evidence |
-|---|---|---|
-| **1. Discrete past event** | ✅ PASS | Wrong-fluid fill is a specific event at a specific time (workover date), not slow drift |
-| **2. Categorically off-sensor** | ✅ PASS | No online sensor on a running ESP can measure historical protector fill oil provenance. Physically impossible. |
-| **3. APM mis-routes** | ✅ PASS | Standard 4-sensor string: elastomer seal degradation and bearing wear genuinely ambiguous (API RP 11S3/11S5). APM routes to bearing wear → expensive pump-pull investigation. |
-| **4. Common and material** | ✅ PASS | 51% of ESP failures attributed to human factors/operational problems (SPE 185275-MS, 194398-MS, 144562-MS). Fleet-scale automation has defensible ROI. |
+| Gate | Test | Result | Evidence |
+|---|---|---|---|
+| **1. Discrete past event** | Cause is a specific thing that happened at a specific time, not slow drift | ✅ PASS | 90-day hot-oil treatment due on Day 90; delayed by third-party vendor (truck availability logistics dispute). Specific calendar date, specific reason. Documented in vendor service portal — NOT in SCADA. |
+| **2. Categorically off-sensor** | Cause cannot be measured by any sensor on the monitored asset | ✅ PASS | Wax deposition thickness inside production tubing: physically unmeasurable by any sensor on a running ESP string. PIP/amps/temp/vib measure pump and motor behavior — not tubing wall state. |
+| **3. APM mis-routes** | Best-of-breed APM routes to the wrong, expensive action | ✅ PASS | Rising amps + rising vibration + declining efficiency on a 4-sensor string is **highly similar to** early bearing wear — APM's most common ESP failure class. APM often classifies this pattern as bearing wear (a common failure mode). Without document context, bearing wear is the most probable diagnosis. APM routes to pump-pull investigation (~$70k–$100k). |
+| **4. Common and material** | Failure class occurs often enough for fleet-scale automation to have defensible ROI | ✅ PASS | Paraffin deposition endemic to Permian carbonate producers (WAT ~110–122°F per PVT analysis — Gemini-confirmed range). Missed/deferred hot-oil treatments confirmed as common operational reality by SME Bill Barna (Permian production engineer): *"Many operators have poor programs. Often, there are so many false positives, nobody believes the system. All of the problems you listed happen."* |
+| **5. Remedy feasibility** | GDC-prescribed corrective action physically executable without workover or downhole access | ✅ PASS | Hot-oil truck roll + annulus flush: surface-only operation. Truck circulates heated oil down the casing-tubing annulus to melt/dissolve paraffin deposits. ~$3k–$6k (🔴 NEEDS-EXPERT — soft estimate; SME-confirmed directionally correct). No workover rig. No wireline. No downhole access. Well returns to nominal within hours. **Pull completely averted.** |
 
 ### The Core Story
 
-- **Asset:** Permian ESP producer, 8 weeks post-workover. Standard 4-sensor string: PIP, motor amps, winding temp, single-axis vibration accelerometer.
-- **Symptom pattern:** Motor efficiency declining + vibration rising slowly over 3–4 weeks. On the standard 4-sensor string, this pattern matches early **bearing wear** — the most common cause, and the cause any APM platform routes to.
-- **Hidden cause:** During the workover 8 weeks ago, the crew used a **non-OEM-spec protector fill oil incompatible with the Buna-N elastomer shaft seals**. Documented only in the workover completion report (fluid type, vendor, date). No online sensor on the running ESP carries this information — it is physically impossible for one to do so.
-- **Why APM gets it wrong:** APM correctly identifies the bearing wear signature (amps elevated, vibration rising) — the bearing wear is **real**. It is caused by well fluid contaminating the bearing assembly through the degraded protector seal. But APM cannot determine **why** the bearings are wearing. Without the workover completion report and OEM fluid compatibility matrix, APM routes to the statistically common hypothesis (normal bearing wear) and recommends a pump pull. GDC fuses the documents, identifies the root cause (incompatible fill fluid → Buna-N seal degradation → well fluid ingress → bearing contamination pathway), and recommends the correct lower-cost fix: flush + reseal to stop the ingress. *(Physics: Gemini search confirmed Session AV — seal degrades → pressure barrier lost → well fluid ingress → bearing contamination. API RP 11S1 teardown classification. Session AV red-team: all 4 survival tests pass with strengthened Test 3.)*
-- **GDC resolution:** L2 classifier (`esp_health.ubj`) flags mechanical degradation → routes to L3 fusion. Gemma reads: (1) workover completion report (fluid type — observations only, no diagnosis); (2) OEM fluid compatibility matrix (fluid class → Buna-N: INCOMPATIBLE); (3) timing correlation (3-week onset = expected elastomer swell timeline); (4) last pull record (bearings normal → bearing-wear hypothesis eliminated). GDC verdict: "Elastomer seal degradation from workover fluid incompatibility — NOT bearing wear. Correct action: controlled flush + reseal (~$8k–$15k)."
-- **Why the operator misses it:** At 2am with a vibration alarm firing on Well #47 of 200, no operator checks the 8-week-old workover completion report. GDC generates the non-obvious provenance hypothesis automatically.
-- **Cost claims (🔴 NEEDS-EXPERT for reseal; 🟡 OUR-CODE-consistent for pull):**
-  - Flush + reseal: ~$8k–$15k (stated as estimate — no hard public source found via Gemini search; confirmed "substantially less than full workover"; requires SME verification before hard display)
-  - Pump-pull investigation: ~$70k–$100k (consistent with $140k AFE for full ESP workover, Andrews County WTX, July 2023, per Gemini search — our range is the investigation subset before repair/replace decision)
-- **SPE citation:** 51% of ESP failures = human factors/operational problems — 2014 SPE AI Conference survey; SPE 185275-MS, 194398-MS, 144562-MS.
+- **Asset:** Permian ESP producer on a waxy carbonate formation. Standard 4-sensor string: PIP, motor amps, winding temperature, single-axis vibration. No downhole discharge-pressure gauge (~90% of Permian ESP wells).
+- **Telemetry signature over ~3–4 weeks:** Motor amps gradually rising (+12–18% above nominal); vibration gradually rising (0.15 → 0.38 in/s RMS); motor efficiency declining (~8–12% below nominal); PIP stable or slightly rising. *(PIP rises because: restriction above pump steepens system curve → operating point shifts to lower flow rate → less reservoir drawdown → PIP builds. Confirmed by Gemini search, API RP 11S, ResearchGate, production-technology.org. Session BG hostile-engineer attack ["pump pulls harder → PIP decreases"] inverts centrifugal pump hydraulics — overturned.)*
+- **Why the signature is highly similar to bearing wear on a 4-sensor string:** Both paraffin restriction and bearing wear produce rising amps + rising vibration + declining efficiency. Against threshold-only SCADA (~85–95% of Permian independents): vibration HI alarm fires with no root-cause hypothesis. Against best-of-breed APM: APM often classifies this pattern as bearing wear and recommends pump-pull investigation — correct symptom identification, wrong root cause, wrong fix.
+- **Hidden root cause:** Well A-3's 90-day hot-oil paraffin treatment is 52 days overdue (Day 142). Crude WAT ≈ 118°F (per PVT analysis for this well — Document 2). As produced fluid cools below WAT rising up the tubing, paraffin deposits on tubing walls. Restriction builds backpressure on the pump, driving the telemetry signature. The delay is documented in a vendor service portal — NOT in SCADA. The RTOC is experiencing alarm fatigue from 14 other false-positive vibration events on the pad that week.
+- **NO STRAW MAN:** The operator is NOT negligent. A third-party vendor logistics dispute caused the delay. The gap is structural (vendor portal not integrated with SCADA), not behavioral. GDC closes the data silo; it does not expose operator incompetence. Confirmed by SME Bill Barna.
+- **GDC context fusion (L3 RAG):** pgvector RAG retrieves three siloed documents:
+  1. **Chemical vendor service log** (last hot-oil treatment Day 0, 90-day schedule, Day 142 = 52 days overdue; delay reason: vendor truck availability). 🔄 DYNAMIC — Gemma generates per run with randomized vendor, dates, technician.
+  2. **Fluid PVT / lab report** (crude WAT = 118°F, moderate-to-high wax content, 90-day hot-oil interval confirmed per production engineering recommendation for this well). 📌 STATIC SEED.
+  3. **Prior pull record** (last workover 18 months ago: bearings inspected — NORMAL, no unusual wear, pump returned to service in good condition). 📌 STATIC SEED.
+- **GDC verdict:** "Paraffin wax deposition — NOT bearing wear. Hot-oil treatment overdue by 52 days — consistent with restriction onset at Day ~106. Bearings normal at last inspection 18 months ago — bearing-wear hypothesis eliminated. Dispatch hot-oil truck. Do NOT pull."
+- **Cost claims:**
+  - Hot-oil truck roll + annulus flush: ~$3k–$6k (🔴 NEEDS-EXPERT — soft estimate; SME-confirmed directionally correct; display with caveat. Alternatively: chemical solvent squeeze ~$4k–$8k.)
+  - Pump-pull investigation averted: ~$70k–$100k (🟡 OUR-CODE — consistent with $140k AFE for full ESP workover, Andrews County WTX, July 2023, Gemini search; our range is the investigation subset)
+- **Why the operator misses it:** At 2am with a vibration alarm on Well A-3 among 200 wells, compounded by alarm-fatigue from 14 other false-positive vibration events on the pad that week, no operator checks a vendor service portal entry for an overdue PM. GDC generates the non-obvious provenance hypothesis automatically, across every asset, in < 2 seconds.
+
+### Two-Tier SCADA/APM Framing (per §3 calibration — Session BF)
+
+| Tier | What it does | H2 result |
+|---|---|---|
+| **Threshold SCADA** (~85–95% of Permian independents) | Fires vibration HI alarm when single tag crosses setpoint. No root-cause hypothesis. | Fires alarm. Action cards: (A) pull investigation / (B) continue monitoring. Neither names paraffin. GDC XGBoost detection edge is genuine here (pre-threshold multivariate scoring). |
+| **Best-of-breed APM** (SmartSignal/PRiSM/Mtell/Lift IQ — ~5–15%) | Multivariate ML classifies symptom pattern → most-probable failure class. | Classifies as "mechanical degradation / likely bearing wear." CORRECT symptom. WRONG root cause. WRONG fix. L3 document fusion is the categorical moat APM cannot reach. |
+| **GDC L3 context fusion** | Fuses unstructured field documents into real-time root-cause diagnosis | Vendor log (overdue PM 52d) + PVT (WAT 118°F, high wax) + pull record (bearings normal 18mo ago) → "Paraffin deposition. Dispatch hot-oiler. Do NOT pull." **CATEGORICAL MOAT.** |
 
 ### Synthetic Documents Required (G1–G6 Gate — sign off before any pixel)
 
-**Five documents** for L3 RAG retrieval. Two are **dynamically generated by Gemma per scenario run** (so each demo run looks like a different well/workover — varying vendor, date, technician). Three are **static seeds** (factual reference data, same every run). All must pass all 6 gates before seeding or display.
-
-#### Dynamic Generation Architecture
-
-On each call to `GET /api/h2/scenario-replay`:
-1. The endpoint draws randomized scenario parameters (workover date offset, fictional fluid vendor, fill volume, technician initials, well production rate baseline).
-2. It calls the local Gemma model to generate the **workover completion report** and **shift note** texts, injecting the randomized parameters into a Gemma prompt template.
-3. The generated texts are returned in the `doc_reveals[]` payload — they are NOT static seeds. Each run produces unique document text.
-4. The static documents (OEM matrix, pull record, well history) are pre-seeded in `field_intel` and retrieved via pgvector RAG in the normal way.
-
-This proves to a technical audience that Gemma is synthesizing content per-run, not retrieving pre-written text.
+Three documents for L3 RAG retrieval. One is dynamically generated by Gemma per run. Two are static seeds with Python date-templating at startup. All must pass all 6 gates before seeding or display.
 
 | Document | Generation | Content (measurements/observations only — no diagnosis) | G-gate notes |
 |---|---|---|---|
-| **Workover completion report** | 🔄 DYNAMIC — Gemma generates per run | Date, crew, procedure, fictional fluid vendor and product code, fill volume, protector system capacity. No diagnosis. Parameters randomized per run. | G1: fictional vendor (e.g. "TexPlex Industrial Fluids — SynFlow 460E"). G2: observations only. G3: nothing alarming in isolation. G4: decisive only when crossed with OEM matrix. |
-| **OEM fluid compatibility matrix** | 📌 STATIC SEED | Factual table: fluid class vs. elastomer type (Buna-N, Viton, HNBR) → Compatible / Conditionally Compatible / INCOMPATIBLE. Sourced from fictional OEM manual. | G1: fictional OEM name (e.g. "PermPump Systems — ESP Series 4000 Service Manual"). G2: pure facts. G5: chemistry accurate (Buna-N + petroleum-based: compatible; Buna-N + synthetic ester/phosphate ester: INCOMPATIBLE — Gemini confirmed). |
-| **Prior pull record** | 📌 STATIC SEED | Last workover summary: pull date (18 months prior), motor condition (normal), bearing condition (NORMAL — no unusual wear), protector condition (normal). No anomalies. | G4: decisive only in combination with the workover completion report (eliminates bearing-wear hypothesis when crossed with the "normal bearings" finding). G6: post-pull inspection report from ESP service company. |
-| **Shift note (recent tour)** | 🔄 DYNAMIC — Gemma generates per run | Operator observation: rough pumping noted, vibration uptick, flagged for monitoring. No diagnosis, no alarm escalation. Timestamps and operator initials randomized per run. | G3: concerning-in-hindsight, not alarming-in-isolation. G6: operator tour note, 12-hour cadence. |
-| **Well history extract** | 📌 STATIC SEED | Workover dates and procedure list for past 24 months: two prior workovers (both normal), plus current workover 8 weeks ago. No anomalies pre-current-workover. | G5: timeline must be internally consistent (current workover date = T-8wk from alarm; prior workovers at realistic intervals). G6: SCADA historian or well file extract. |
+| **Chemical vendor service log** | 🔄 DYNAMIC — Gemma generates per run | Last hot-oil treatment date (Day 0 offset), 90-day schedule, current day overdue count, delay reason (vendor logistics). No diagnosis. Parameters randomized per run (vendor name, technician, dates). | G1: fictional vendor (e.g. "Permian ChemTreat Services — HeatFlow 400"). G2: observations only. G3: "52 days overdue" is concerning-in-hindsight, not alarming-in-isolation (PM delays are common, not emergency triggers). G4: decisive only when crossed with PVT (high WAT crude + overdue treatment = paraffin likely). |
+| **Fluid PVT / lab report** | 📌 STATIC SEED | Crude characterization: WAT = 118°F (measured by DSC or cooling curve), moderate-to-high wax content (wt%), 90-day hot-oil treatment interval recommended for this well at current flowing conditions. No diagnosis. | G1: fictional lab (e.g. "Permian Basin Fluid Analysis LLC — PVT Report #PAL-2024-047"). G2: measurements only. G5: WAT 118°F physically consistent (Gemini-confirmed 110–122°F range for Permian carbonate crude). G6: routine reservoir fluid study. |
+| **Prior pull record** | 📌 STATIC SEED | Last workover summary (18 months prior): pull date, pump condition — normal, bearing condition — NORMAL (no unusual wear noted), motor condition — normal. No anomalies. | G4: decisive only in combination with vendor log (cross-referencing "normal bearings 18mo ago" + "overdue paraffin PM" eliminates bearing-wear hypothesis). G6: ESP service company post-pull inspection report. |
 
-### Screen Architecture (same H1 pattern)
+### Screen Architecture (per §4.5 Briefing Pattern Spec)
 
 ```
 CLASSIFY tab
-├── H2 Briefing (3 panels, per §4.5 Briefing Pattern Spec)
-│   ├── Panel 1: The Equipment (ESP + sensor string + workover context callout)
-│   ├── Panel 2: The Provenance Hook (timeline: workover → onset → alarm today; 4 sensor tiles; doc stack)
-│   └── Panel 3: The Decision (GDC verdict card; action cards; universal pattern close)
-│       └── CTA: ▶ Run the Scenario
-└── H2 Scenario Replay (same mechanics as H1)
-    ├── Shared sensor chart: efficiency trend + vibration rise (the "bearing wear" signature)
-    ├── SCADA View: degradation flagged, recommends investigation (no root-cause hypothesis)
-    └── GDC Advisor: reads 3 docs → reclassifies → flush+reseal recommendation
+├── H2 Briefing (3 panels — h2BriefingMode: true) [same §4.5 chrome as H1/H3]
+│   ├── Panel 1: The Well (setup beat)
+│   │   (Well spec card: 4-sensor string, no discharge gauge, waxy carbonate)
+│   │   (Production chemistry card: WAT 118°F, 90-day hot-oil interval)
+│   │   (Callout: "Paraffin is endemic to Permian carbonate producers — the fix is cheap if caught early")
+│   ├── Panel 2: The Signature (hook beat)
+│   │   (Timeline strip: Day 0 ✔ → Day 90 ⚠ DUE → Day 106 ↑ onset → Day 142 🔴 TODAY)
+│   │   (4 sensor tiles: Amps +14% · Vib 0.38 in/s · Eff -10% · PIP stable)
+│   │   (Two-tier SCADA/APM callout: threshold fires alarm / APM routes to bearing wear)
+│   └── Panel 3: The Decision (decision beat)
+│       (GDC verdict card [green outline]: "Paraffin wax deposition — NOT bearing wear")
+│       (Action cards: Hot-oil truck ~$3k–$6k [GDC RECOMMENDED] vs Pump pull ~$70k–$100k [AVERTED])
+│       (Doc stack: vendor log [DYNAMIC] + PVT report + pull record)
+│       CTA: ▶ Run the Scenario → sets h2BriefingMode=false
+└── H2 Scenario Replay (h2BriefingMode: false)
+    ├── Dual-sensor Plotly chart: motor efficiency (amber, declining) + vibration (purple, rising)
+    │   X-axis: days post last hot-oil treatment
+    │   Markers: GDC detect▲ (amber dashed) · SCADA vib HI▲ (red dashed)
+    ├── Transport controls: ◀◀ ▶ ▶▶ + scrubber
+    ├── SCADA View: quiet slate → vibration HI banner → action cards (pull investigation / monitor)
+    └── GDC Advisor View: 3-zone layout
+        Zone 1: "PARAFFIN WAX DEPOSITION — NOT BEARING WEAR · health score · confidence"
+        Zone 2L: action cards — Hot-oil truck [GDC RECOMMENDED] vs Pull [AVERTED]
+        Zone 2R: sequential doc reveals — vendor log [DYNAMIC] → PVT report (+2s) → pull record (+3.5s)
+        Zone 3: wellbore schematic (paraffin deposit buildup animation in tubing above pump)
+    [← Briefing] button returns to h2BriefingMode=true, h2BriefingPanel=1
 ```
 
 **Backend endpoint:** `GET /api/h2/scenario-replay?asset=ESP-ALPHA-3`
 
-Returns: efficiency[], vib[], t_min[], health_score[], gdc_detect_idx, scada_alarm_idx, gdc_verdict, doc_reveals[]
+Returns: `efficiency[], vib[], t_min[], health_score[], gdc_detect_idx, scada_alarm_idx, gdc_verdict, doc_reveals[]`
 
-### Visual & Narrative Drama (H2 Classify Tab) — TO BUILD
-
-- Dual-sensor Plotly chart: **Motor efficiency (declining, amber)** + **Vibration (rising, purple)** — the "bearing wear" visual signature.
-- Transport controls: ◀◀ ▶ ▶▶ + scrubber with GDC detect▲ / Investigation trigger▲ markers.
-- ISA-101 SCADA View: quiet pre-alarm slate → degradation banner ("Mechanical degradation detected — investigation recommended") → no root-cause hypothesis — action cards: (A) Pump-pull investigation / (B) Continue monitoring.
-- GDC Advisor View: 3-zone layout. Zone 1: "Elastomer seal degradation — NOT bearing wear." Zone 2: action card (flush+reseal ~$8k–$15k, soft estimate) vs. averted action (pump pull ~$70k–$100k). Zone 2 right: sequential doc reveals — Workover completion report [DYNAMIC] (fires with RAG) → OEM matrix (+2s) → Pull record (+3.5s) → Shift note [DYNAMIC] (+5s) → Well history (+6.5s). Five documents total; two generated by Gemma per run.
-- Universal pattern close (Panel 3): O&G (wrong fluid) / P&E (wrong coolant) / MRO (wrong lubricant).
+**Note on GPU dependency:** Document 1 (vendor log) is generated by Gemma per run. Documents 2–3 are static seeds. GPU is NOT required for the briefing panels — Gemma generation is live during scenario replay only (and can fall back to a static template if GPU is off).
 
 ---
 

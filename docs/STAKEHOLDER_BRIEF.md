@@ -19,7 +19,7 @@ GDC Discern fuses those documents against the live sensor signal in seconds and 
 
 When a pump gradually degrades over several weeks, the sensor pattern typically points to one cause: bearing wear. A standard AI monitoring platform correctly identifies the symptom — and recommends the standard response: pull the pump and rebuild it. That costs somewhere in the range of \$70,000–\$100,000.
 
-GDC Classify goes further. It reads the workover completion report from eight weeks earlier, crosses the fluid type used by the service crew against the pump manufacturer's compatibility specification, and identifies the actual root cause: the wrong fill oil was used, and it has been slowly dissolving the seals. The correct fix is a controlled flush and reseal — a fraction of the cost of a full pull, and the only action that actually stops the degradation from recurring. The expensive fix addresses the symptom. GDC finds the cause.
+GDC Classify goes further. It reads three documents the monitoring platform cannot see: a chemical vendor service log showing the well's 90-day paraffin treatment was 52 days overdue due to a vendor logistics delay; a fluid lab report confirming the crude's high wax content and recommended treatment interval; and the last pull record showing the pump bearings were inspected as normal 18 months ago. The actual root cause is paraffin deposition in the production tubing — the pump is working harder against a restriction, not against failing bearings. The correct response is a surface hot-oil truck job (estimated $3,000–$6,000). The $70,000–$100,000 pump pull is averted entirely. The expensive fix addresses the symptom. GDC finds the cause.
 
 ### H3 — Optimize: Running the Field, Not Just the Pump
 
@@ -34,7 +34,7 @@ GDC Optimize ranks the wells by their gas efficiency, allocates the gas budget t
 | Horizon | The Problem Without GDC | What GDC Delivers | What It Avoids |
 |---|---|---|---|
 | **H1 — Discern** | Ambiguous sensor signal forces a conservative shutdown on every unloading event — the safe default when cause is unknown | Cited diagnosis in seconds: correct low-cost action where safe, correct shutdown where necessary | \$150k workover from the wrong intervention; unnecessary production deferral from unnecessary shutdown |
-| **H2 — Classify** | AI monitoring flags bearing wear and recommends a pump pull — correct symptom, wrong root cause, expensive fix | Reads the workover history, finds the incompatible fill fluid, recommends a targeted repair that stops the damage | \$70k–\$100k pump pull for a problem that requires a flush and reseal *(reseal cost is an estimate — verify with completion engineer)* |
+| **H2 — Classify** | AI monitoring flags bearing wear and recommends a pump pull — correct symptom, wrong root cause, expensive fix | Reads the vendor service log + fluid lab report + pull history; identifies overdue paraffin treatment as root cause; recommends a surface hot-oil truck job | \$70k–\$100k pump pull averted; estimated surface treatment ~\$3k–\$6k *(soft estimate — verify with field service vendor)* |
 | **H3 — Optimize** | Uniform throttle is the safe default when there is no cross-well optimizer — leaves production on the table | Allocates the gas budget to the most efficient wells first; recovers deferred production within the contract ceiling | Approximately 78 bbl/d of deferred production under uniform throttle *(figure from current scenario parameters — will vary by field)* |
 
 ---
