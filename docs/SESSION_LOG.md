@@ -2,6 +2,30 @@
 
 ---
 
+## Session AZ (June 11, 2026) — *Strategy session: framing correction + H3 field pivot locked*
+
+**Code committed:** None (docs-only planning session, no app code)
+**Cluster image digest:** `sha256:de369a36` (unchanged — no code deployed)
+
+**What was decided:**
+
+**Decision 1 — Framing correction.** "GDC Predictive Maintenance" (banner + project name) is a fossil misnomer. H1 and H2 are real-time operations decisions, not long-horizon trend-extrapolation PdM. The umbrella becomes **"Operations Advisor"** (or "Operations Intelligence" — final wording to be confirmed with user at the start of the next build session). This doesn't abandon predictive value: H3 owns a distinct, honest sub-claim — **"predictive optimization under a safety constraint"** — predicting where the thermal failure boundary is *as a function of control setpoints* (forward simulation under a what-if), which is categorically different from APM-style passive trend-extrapolation PdM and doesn't reopen the §3 concessions. No architecture change; copy-only sprint (Sprint F0).
+
+**Decision 2 — H3 goes field-level.** Today H3 optimizes a single pump (one Hz, one thermal constraint). Reframed to field-wide joint VFD optimization across Pad Alpha (6 wells). Rationale: Discern→Classify→Optimize maps to one-well → one-well → **the field**, making the §3 scale gap literal rather than just a talking point. The coupling constraint is **gas handling / compression takeaway** — the most common real production-limiting bottleneck in the Permian (Waha negative gas prices are the symptom; RRC flaring regulations and midstream contracts make it binding). A per-well constraint-stack panel will list all three real ceilings (gas / produced-water-SWD / electrical-bus) with gas **bolded as binding** this run and the others muted as tracked-but-not-binding.
+
+**Red-team result (Gemini MCP second-opinion, this session):**
+- ✅ Gas ceiling = real, defensible, binding Permian constraint (RRC + contracts + infrastructure).
+- ✅ Well heterogeneity in GOR / thermal headroom makes joint optimization > sum of independent optimizations. "Classic resource-allocation problem." Engineer-credible.
+- ✅ 20-yr production engineer "unequivocally recognizes this as a real, high-value optimization problem."
+- ❌ **FAIL (pre-existing):** current `esp_thermal.ubj` predicts winding temp from Hz alone — physically unsound. Motor thermal RUL depends on **motor current, fluid temperature, load, and cooling** — not just speed (API RP 11S3/S5, IEEE 112). This was a latent integrity hole now surfaced. Must retrain multi-feature before H3 can ship. Full report: `/tmp/mcp-results/second_opinion_1781181758.txt`.
+
+**New backlog (replaces prior priority order):**
+Sprint F0 (framing relabel) → Sprint P1 (H2 scenario replay UI) → Sprint H3 (field H3: multi-feature thermal retrain → N-well vizier_optimize → UI → §6 rewrite) → Sprint P3 (H3 copy fix) → Sprint P4 (H1 date-templating).
+
+**Open confirmations for next session:** field size (6 wells / Pad Alpha proposed), gas ceiling (8.0 MMscfd proposed), final header wording, whether to write §6 field-H3 spec before or at build start.
+
+---
+
 ## Session AY (June 11, 2026) — *H2 Briefing 3-panel — Maintenance Provenance*
 
 **Code committed:** `7673efd` (feat(h2-briefing): 3-panel H2 Briefing — Maintenance Provenance scenario)
