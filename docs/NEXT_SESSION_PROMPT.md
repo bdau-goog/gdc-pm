@@ -29,12 +29,24 @@ cat ~/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: NEXT SESSION — Two Bounded Tasks (in order)
 
-### Task 1 — Stand up web-search + Gemini second-opinion MCP server (~15 min)
-The MCP server closes the in-session citation gap that caused H2 to drift undetected.
-- Tool: `web_search` (Brave Search API — free tier) + `gemini_second_opinion` (Gemini API — free tier user has)
-- Both in one MCP server. User to have **Gemini API key** (Google AI Studio) ready.
-- Brave Search key optional; Gemini-only is acceptable for the red-team function.
-- After: verify both tools return results in-session.
+### Task 1 — Activate the MCP server (5 min — server is already installed)
+
+**The MCP server (`gdc-second-opinion`) is built, registered, and deps installed.**
+`mcp/second_opinion_server.py` + `mcp/start.sh` on disk; registered in Cline settings; `mcp 1.27.2` + `google-genai 1.73.0` installed. **The only missing piece is your Gemini API key.**
+
+**Step 1 (do once, before opening VS Code):**
+```bash
+echo "GEMINI_API_KEY=your-key-here" >> ~/gdc-pm/.env
+```
+The `.env` file is gitignored. The key never enters git or this chat.
+
+**Step 2:** Reload VS Code (or Cline extension) to pick up the new MCP server entry.
+
+**Step 3:** Verify the tools appear in Cline — look for `gemini_second_opinion` and `gemini_search` in the MCP tools panel, or call one:
+```
+gemini_search("what is the ISA-18.2 HH alarm level for ESP vibration on downhole gauges?")
+```
+Should return a cited answer. If it returns "GEMINI_API_KEY is not set", the .env wasn't sourced — re-open VS Code from a terminal that has sourced .env.
 
 ### Task 2 — Lock the new H2 scenario (frac-hit / offset-well interference)
 Sequence — DO NOT SKIP or COMBINE steps:
@@ -64,7 +76,7 @@ Sequence — DO NOT SKIP or COMBINE steps:
 | RED_TEAM_LEDGER.md | ✅ UPDATED Session AR | H2-9..12 + H2-C1..C3 added; process finding recorded |
 | .clinerules | ✅ UPDATED Session AR | Scenario Validation Gate + In-Session Red-Team Discipline sections added |
 | Video Script | ⚠️ SPRINT 5 | docs/VIDEO_SCRIPT.md does not exist |
-| web-search + Gemini MCP | ⚠️ TASK 1 NEXT SESSION | Not set up. Closes in-session citation + dual-model cross-check gap. |
+| web-search + Gemini MCP | ⚠️ KEY ONLY NEEDED | Server built + registered + deps installed (Session AR). Add `GEMINI_API_KEY` to `.env` + reload VS Code. See Task 1. |
 
 ---
 
