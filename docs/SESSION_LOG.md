@@ -2,6 +2,21 @@
 
 ---
 
+## Session BC (June 11, 2026) — *Sprint H3-B: N-well field Vizier optimization deployed*
+
+**Code committed:** `84e1b5f` (feat(h3-b): N-well field Vizier optimization — 6-well Pad Alpha, gas ceiling 8.0 MMscfd, LP-optimal joint allocation)
+**Cluster image digest:** `sha256:21bb97c56f052119b68d5a4736a1220290855cbb6fadfaa1337277cdcdc98942`
+
+**What was built:** `vizier_optimize()` completely rewritten from single-well to 6-well field-level joint optimization. Three module-level constants added: `_PAD_ALPHA_WELL_PARAMS` (6 wells, per-well GOR ∈ [450–1350 scf/bbl], RUL base 590–820 days, individual thermal/amp/water-cut parameters), `_GAS_CEILING_MMSCFD=8.0`, `_PUMP_FLOW_COEFF=24.0`. Two inner functions: `evaluate_well(hz, w)` (4-feature thermal polynomial per well, per-well RUL decay, gas/oil/cash) and `evaluate_field(hz_vec)` (6-well aggregation with gas ceiling constraint). Independent baseline computed as uniform proportional throttle (each well wants max Hz → total gas exceeds 8.0 MMscfd → uniform scale-back). Joint LP-optimal computed by sorting wells by GOR ascending and allocating gas budget to lowest-GOR wells first (analytically optimal for linear oil/gas objective). Vizier study upgraded to 6-parameter GP Bandit (one Hz per well). Fallback sequence: 15 field Hz vectors arcing from gas-ceiling violation → uniform throttle → LP-optimal.
+
+**Live verification (Vertex AI Vizier ran live, GAUSSIAN_PROCESS_BANDIT):** A-5 (GOR=1350, marginal well) correctly throttled to 59.67 Hz vs 63.99 Hz for independent. A-3/A-6 (lowest GOR) run at max 66.0 Hz. Joint uplift: +77.9 bbl/d / +$369,225 over 90 days. Gas ceiling respected at 7.9999 MMscfd. Backward-compat keys (`trials[]`, `scada_nominal`, `vizier_optimal`, `optimal_hz`) preserved for existing pareto chart.
+
+**Key decisions:** (1) Per-well RUL decay formula: `rul_base × exp(-0.11 × max(0, hz−50))` — decay begins above SCADA nominal, rul_base 590–820 days reflects realistic Permian ESP lifecycle. (2) LP algorithm is the correct analytical solution: objective is linear in Hz, gas is linear in Hz, so bang-bang (low GOR → max, high GOR → min) with one marginal well. (3) Vizier's 15-trial GP result is sub-optimal vs LP analytical (expected in 6D with few trials) — H3-C UI will show BOTH: Vizier exploration pareto + LP field allocation panel. (4) P3 copy fix was already applied in a prior session (all index.html occurrences already read "no public-cloud dependency") — no change needed.
+
+**Next task:** Sprint H3-C — 3-panel H3 briefing + field optimization display (wireframe sign-off before HTML per §4.5 spec).
+
+---
+
 ## Session BB (June 11, 2026) — *Sprint F0 framing relabel + Sprint H3-A thermal integrity fix deployed*
 
 **Code committed:** `e85f9b9` (feat(h3-thermal+f0): retrain esp_thermal multi-feature + relabel to Operations Intelligence) · `81c3a5b` (fix(h3-thermal): use 4-feature physics polynomial directly)

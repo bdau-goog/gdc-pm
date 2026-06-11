@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session BB — Sprint F0 + H3-A thermal integrity fix)
-**git head:** `81c3a5b` (fix(h3-thermal): use 4-feature physics polynomial directly)
-**fault-trigger-ui image:** `sha256:5e58c06af22ee98fa0ebd7e3342522a4eee0357a816d08bdc961191579d08c4e`
+**Date:** June 11, 2026 (Session BC — Sprint H3-B N-well field Vizier optimization)
+**git head:** `84e1b5f` (feat(h3-b): N-well field Vizier optimization)
+**fault-trigger-ui image:** `sha256:21bb97c56f052119b68d5a4736a1220290855cbb6fadfaa1337277cdcdc98942`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -20,7 +20,7 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
 - field_intel: **9–12** · rag_docs: **18**
 
-**Actual at session-BB close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
+**Actual at session-BC close:** 6 pods Running · ollama=0 · ollama_online=False · field_intel=11 · rag_docs=18 ✅
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$0.65/hr). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -45,24 +45,52 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks (in order)
 
-### SPRINT H3-B: Rework `vizier_optimize()` → N-well field
-- N=6 wells (Pad Alpha), `gas_ceiling_mmscfd=8.0`, per-well randomized `GOR_i ∈ [400–1400 scf/bbl]`
-- Constraint: Σ `associated_gas_i` ≤ ceiling; per-well RUL ≥ horizon
-- Baseline comparison: independent per-pump optimization → show joint uplift explicitly
-
 ### SPRINT H3-C: H3 UI — 3-panel briefing + field optimization display
-- Panel 1: oil-price spike + constraint-stack (gas binding, others muted)
-- Panel 2: the tradeoff (faster Hz → more gas → hits ceiling)
-- Panel 3: field-wide setpoint vector + joint-vs-independent uplift card
-- Per §4.5 Briefing Pattern Spec — wireframe sign-off before HTML
+- **Wireframe sign-off required before any HTML** (per §4.5 Briefing Pattern Spec)
+- Panel 1: The Opportunity (oil-price spike + well heterogeneity setup)
+- Panel 2: The Tradeoff (gas ceiling binding → constraint-stack panel: gas BOLD, others muted)
+- Panel 3: The Optimization (field-wide setpoint vector + joint-vs-independent uplift card)
+- Key data available from `/api/vizier/optimize`:
+  - `wells[]` — per-well GOR, max_hz, independent_hz, joint_hz
+  - `independent_baseline` / `joint_optimal` — oil, gas, cash_flow, uplift_bbl_d, uplift_cash_90d
+  - `constraint_stack` — gas binding=True, thermal/RUL binding=False
+- Replace existing H3 "ⓘ Physics & Logic" toggle panel with proper 3-panel briefing
 
 ### SPRINT H3-D: DEMO_MASTER §6 rewrite (field-level spec)
-
-### SPRINT P3 — H3 copy fix (tiny)
-`index.html`: "no cloud dependency" → "no public-cloud dependency for the decision."
+- Update §6 to reflect 6-well Pad Alpha joint optimization (N-well, gas ceiling, LP uplift)
 
 ### SPRINT P4 — H1 Batch B date-templating (small)
 Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dates. Template to `today − offset`.
+
+---
+
+## H3-B Technical Notes (for next session context)
+
+**What was built (Session BC):**
+`vizier_optimize()` rewritten for N-well field optimization. Key results on live cluster:
+```
+n_wells: 6 | gas_ceiling: 8.0 MMscfd
+A-1 GOR=650  max=65.5 indep=63.99 joint=65.50
+A-2 GOR=1100 max=65.5 indep=63.99 joint=65.50
+A-3 GOR=450  max=66.0 indep=64.48 joint=66.00  ← lowest GOR, highest priority
+A-4 GOR=900  max=65.5 indep=63.99 joint=65.50
+A-5 GOR=1350 max=65.5 indep=63.99 joint=59.67  ← marginal well (highest GOR, throttled)
+A-6 GOR=750  max=66.0 indep=64.48 joint=66.00
+
+Independent baseline: 9,238 bbl/d @ $78.9M / 90d
+Joint LP-optimal:     9,316 bbl/d @ $79.2M / 90d
+Uplift: +77.9 bbl/d / +$369,225 over 90d ✅ ceiling respected at 7.9999 MMscfd
+```
+
+**LP algorithm:** Sort wells by GOR ascending → allocate gas ceiling to lowest-GOR wells first → marginal well fills remaining budget. Analytically optimal for linear objective (maximize Σ oil subject to gas budget).
+
+**Vizier ran live (GAUSSIAN_PROCESS_BANDIT):** 15 trials, 6D parameter space. Vizier's best trial (T3, uniform ~60Hz) was sub-optimal vs LP analytical — expected with 15 trials in 6D. H3-C UI should show BOTH: Vizier exploration (existing pareto chart) + LP analytical field allocation (new panel).
+
+**New response keys for H3-C UI:**
+- `wells[i].{id, name, gor_scf_bbl, rul_base_days, max_hz, independent_hz, joint_hz}`
+- `independent_baseline.{hz_setpoints[], total_oil_bbl_d, total_gas_mmscfd, total_cash_flow}`
+- `joint_optimal.{hz_setpoints[], total_oil_bbl_d, total_gas_mmscfd, total_cash_flow, uplift_bbl_d, uplift_cash_90d}`
+- `constraint_stack.{gas_ceiling.{binding:true, value_mmscfd, scada_mmscfd, indep_mmscfd, joint_mmscfd}, thermal_derated, rul_horizon}`
 
 ---
 
@@ -74,36 +102,18 @@ Sonic log / shift note / GOR lab report in `field_intel` have hardcoded 2025 dat
 | H1 Scenario replay | ✅ DEPLOYED | Session AP |
 | H2 backend endpoint | ✅ DEPLOYED | `sha256:cd46caa8` — session AX |
 | H2 Briefing panels (3 panels) | ✅ DEPLOYED | `7673efd` — session AY |
-| H2 "protector fill oil" terminology | ✅ DEPLOYED | `306ef60` |
-| Ariel JGP temperature limits | ✅ DEPLOYED | `2d0035a` |
-| **H2 Scenario Replay UI** | **✅ DEPLOYED** | **`866522f` — session BA · workover-fluid-incompatibility reskin** |
-| **Sprint F0: "GDC Operations Intelligence" header** | **✅ DEPLOYED** | **`e85f9b9`+`81c3a5b` — session BB · index.html line 18** |
-| **Sprint H3-A: thermal model 4-feature fix** | **✅ DEPLOYED** | **`81c3a5b` — session BB · 4-feature physics polynomial (API RP 11S3/S5, IEEE 112)** |
-| H3 field-level optimization | ❌ NOT BUILT | New scope — Sprint H3-B/C/D |
-| H3 Briefing panels | ❌ NOT BUILT | Part of Sprint H3-C (needs wireframe sign-off) |
-| H3 copy — "no cloud dependency" | ⚠️ NEEDS FIX | Sprint P3 |
+| H2 Scenario Replay UI | ✅ DEPLOYED | `866522f` — session BA |
+| Sprint F0: "GDC Operations Intelligence" header | ✅ DEPLOYED | `e85f9b9`+`81c3a5b` — session BB |
+| Sprint H3-A: thermal model 4-feature fix | ✅ DEPLOYED | `81c3a5b` — session BB |
+| **Sprint H3-B: N-well field Vizier optimization** | **✅ DEPLOYED** | **`84e1b5f` — session BC · 6-well LP-optimal, gas ceiling 8.0 MMscfd** |
+| H3 UI — 3-panel briefing + field display | ❌ NOT BUILT | Sprint H3-C (wireframe sign-off first) |
+| DEMO_MASTER §6 field-level spec | ❌ NOT UPDATED | Sprint H3-D |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
-| **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly; esp_thermal.ubj not loaded** |
-| Header "GDC Predictive Maintenance" | ✅ FIXED | Session BB Sprint F0 — now "GDC Operations Intelligence" |
-| Ollama GPU pod | ✅ AT 0 | GPU-discipline rule in effect. False is correct. |
-| MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |
+| **esp_thermal.ubj — XGBoost version mismatch** | **✅ RESOLVED** | **Session BB: physics polynomial used directly** |
 | H2-C1 flush+reseal ~$8k–$15k | ⚠️ 🔴 NEEDS-EXPERT | Soft range only — labeled as estimate on screen |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
-
----
-
-## H3-A Technical Notes (for next session context)
-
-**What was done:** `esp_thermal.ubj` was retrained with 4-feature model (scripts/train_esp_thermal.py, 20k samples, P95=1.726°F). However, the model was trained with XGBoost 3.2.0 locally while the container runs XGBoost 2.0.3 — the `.ubj` format has breaking changes between major versions (confirmed: model loaded but predicted -19.8°F at 50 Hz — unphysical).
-
-**Resolution:** The 4-feature physics polynomial (API RP 11S3/S5, IEEE 112) is now the PRIMARY thermal evaluator (not a fallback):
-```
-temp_f = intake_temp + 95.0 + 1.5*(hz-45) + 0.9*(amps-65) + 0.12*max(0,hz-58)³ - 0.25*(wc-30)
-```
-This is MORE defensible than an XGBoost approximation of itself — transparent, physics-grounded, explainable to O&G engineers. Live verification: 50Hz→188°F, 54.6Hz→198°F, 65Hz→261°F ✅
-
-**If ever retraining esp_thermal for container:** update `requirements.txt` to `xgboost>=3.0.0` and rebuild the container, OR train inside the container using `xgboost==2.0.3`.
+| MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |
 
 ---
 
@@ -113,7 +123,7 @@ This is MORE defensible than an XGBoost approximation of itself — transparent,
 - No `browser_action` (SSH remote, no browser)
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,800 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first, targeted reads only
+- `app.py` ~6,900 lines · `index.html` ~3,200 lines · `app.js` ~2,300 lines — grep first, targeted reads only
 - **Wireframes → sign-off → HTML** (Sprint H3-C briefing panels need sign-off per panel spec in DEMO_MASTER)
 - **No build/push/deploy without user walkthrough and verification**
 - Gemini tools (gemini_search, gemini_second_opinion) on autoApprove — use freely for fact-checking
