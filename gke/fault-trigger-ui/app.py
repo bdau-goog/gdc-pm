@@ -660,10 +660,10 @@ def _h2_fmt(dt: datetime) -> str:
 _H2_OEM_MATRIX_TEXT = (
     "PermPump Systems\n"
     "ESP Series 4000 Service Manual — Rev. 3\n"
-    "Section 8.4: Hydraulic Fluid Compatibility — Protector/Seal Section\n\n"
-    "Table 8-2: Approved Hydraulic Fill Fluids — Protector Section\n"
+    "Section 8.4: Protector Fill Oil Compatibility — Seal Section\n\n"
+    "Table 8-2: Approved Protector Fill Oils — Protector Section\n"
     "Seal material (Series 4000 standard configuration): Buna-N / NBR elastomer shaft seals\n\n"
-    "INSTRUCTIONS: Confirm hydraulic fill product fluid class against Table 8-2 BEFORE\n"
+    "INSTRUCTIONS: Confirm protector fill oil product fluid class against Table 8-2 BEFORE\n"
     "filling. Use of an INCOMPATIBLE fluid class voids the protector warranty.\n\n"
     "FLUID CLASS                                        | Buna-N/NBR  | Viton/FKM | HNBR\n"
     "---------------------------------------------------+-------------+-----------+------\n"
@@ -671,8 +671,8 @@ _H2_OEM_MATRIX_TEXT = (
     "Synthetic hydrocarbon - PAO (ISO VG 100-460)       | COMPATIBLE  | COMPATIBLE| COMP\n"
     "Synthetic ester-based fluid (polyol ester,         |             |           |\n"
     "  diester, trimethylolpropane ester)               | INCOMPATIBLE| COMPATIBLE| COND*\n"
-    "Phosphate ester hydraulic fluid                    | INCOMPATIBLE| COMPATIBLE| COMP\n"
-    "Water-glycol hydraulic fluid (<=50% glycol)        | COND+       | COND+     | COMP\n\n"
+    "Phosphate ester synthetic fluid                    | INCOMPATIBLE| COMPATIBLE| COMP\n"
+    "Water-glycol based fluid (<=50% glycol)            | COND+       | COND+     | COMP\n\n"
     "INCOMPATIBLE = Failure expected within days to weeks of continuous service.\n"
     "COMPATIBLE   = Approved for use within nameplate temperature limits.\n"
     "COND         = Conditionally compatible - see footnote.\n\n"
@@ -780,7 +780,7 @@ def _seed_h2_static_docs_bg() -> None:
                 return
             _static_docs = [
                 ("oem_manual",
-                 "PermPump Systems ESP-4000 — Sec 8.4: Hydraulic Fluid Compatibility",
+                 "PermPump Systems ESP-4000 — Sec 8.4: Protector Fill Oil Compatibility",
                  _H2_OEM_MATRIX_TEXT,
                  "Fluid compatibility matrix: synthetic ester = INCOMPATIBLE with Buna-N. "
                  "3-8 week symptom onset post-fill. Decisive when crossed with workover report."),
@@ -6333,7 +6333,7 @@ async def h2_scenario_replay():
     On the standard 4-sensor string, this pattern matches early bearing wear — the most
     common cause APM routes to (pump-pull investigation ~$70k-$100k).
 
-    Hidden cause: wrong hydraulic fill fluid used at workover (synthetic ester class,
+    Hidden cause: wrong protector fill oil used at workover (synthetic ester class,
     incompatible with Buna-N seals per OEM matrix). Documented only in the workover
     completion report. No online sensor can carry this information (Test 2 PASS).
 
@@ -6468,8 +6468,8 @@ async def h2_scenario_replay():
         f"Protector: shaft seal weeping lower bag (expected wear). "
         f"Bearings: light polish, no pitting.\n\n"
         f"NEW ASSEMBLY: New 150 hp motor, 7-stage AR-trim pump, Series 4000 protector.\n\n"
-        f"HYDRAULIC FILL: Product {_vendor} {_prod_code}. Procedure per SPC-ESP-003. "
-        f"Fill volume: {_fill_vol} gal. System capacity: 3.1 gal. No leakage detected.\n\n"
+        f"PROTECTOR OIL FILL: Product {_vendor} {_prod_code}. Procedure per SPC-ESP-003. "
+        f"Fill volume: {_fill_vol} gal. Protector capacity: 3.1 gal. No leakage detected.\n\n"
         f"STARTUP: Amps at panel: {_startup_a} A. WHP tubing: {_whp_tp} psi. "
         f"WHP casing: {_whp_cp} psi. Rate approx. {_s_rate} BOPD / {_s_water} BWPD.\n\n"
         f"Signed: {_tech}\n"
@@ -6503,15 +6503,15 @@ async def h2_scenario_replay():
         f"Crew Supervisor: {_tech}\n"
         f"Motor nameplate: 150 hp / 1200 V / 100 A\n"
         f"Set depth: {_set_depth} ft MD\n"
-        f"Hydraulic fill product: {_vendor} {_prod_code}\n"
-        f"Hydraulic fill volume: {_fill_vol} gal\n"
+        f"Protector fill oil product: {_vendor} {_prod_code}\n"
+        f"Protector fill volume: {_fill_vol} gal\n"
         f"Startup amps: {_startup_a} A\n"
         f"WHP tubing at startup: {_whp_tp} psi\n"
         f"WHP casing at startup: {_whp_cp} psi\n"
         f"Startup rate: approx. {_s_rate} BOPD / {_s_water} BWPD\n\n"
         f"Format as a terse field report. Include: scope of work, pull conditions (motor IR, "
         f"pump wear, protector weeping — give plausible values), new assembly installation, "
-        f"hydraulic fill procedure reference (SPC-ESP-003), fill completion without leakage, "
+        f"protector fill procedure reference (SPC-ESP-003), fill completion without leakage, "
         f"startup readings. No diagnosis. No recommendation. Sign with {_tech}. "
         f"End with: 'Company Rep sign-off: [Pending RTOC review — field copy]'"
     )
