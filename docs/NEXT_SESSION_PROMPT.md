@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** June 11, 2026 (Session BE — Sprint H3-D: DEMO_MASTER §6 field-level rewrite + STAKEHOLDER_BRIEF.md)
-**git head:** `[commit after session-be wrap]`
+**git head:** `d2010c6` (docs(session-be): Sprint H3-D — DEMO_MASTER §6 field rewrite + STAKEHOLDER_BRIEF.md)
 **fault-trigger-ui image:** `sha256:a1c534d5c38b0dddda191a3627e5090466a2aedb621c6a897b14dfd2cf0c398b` (UNCHANGED — docs-only session)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
