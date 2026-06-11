@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 11, 2026 (Session AV — H2 synthetic documents approved, DEMO_MASTER §5 physics fix)
-**git head:** `dea71be` (docs(session-av): H2 synthetic docs approved + DEMO_MASTER physics fix + CLAIM_LEDGER H2-P1/D1/D2)
-**fault-trigger-ui image:** `sha256:2fd95932...` (unchanged — no app code deployed this session)
+**Date:** June 11, 2026 (Session AW — GPU discipline + H2 backend endpoint written)
+**git head:** `b61d6f7` (feat(h2-backend): H2 scenario-replay endpoint — maintenance-provenance scenario, date anchors, static seed, Gemma fallback templates)
+**fault-trigger-ui image:** `sha256:2fd95932...` (NOT YET DEPLOYED — code committed, build+push+deploy pending)
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -50,68 +50,57 @@ gcloud auth application-default set-quota-project gdc-pm-v2
 
 ---
 
-## STEP 3: Session AV Completed — What Was Done
+## STEP 3: Session AW Completed — What Was Done
 
 | Item | Status |
 |---|---|
-| All 5 H2 synthetic documents drafted, G1–G6 gated, Gemini red-teamed | ✅ DONE |
-| `docs/H2_SYNTHETIC_DOCS.md` — full approved spec (Gemma templates + Python date anchors) | ✅ DONE |
-| DEMO_MASTER §5 physics fix — bearing wear IS real (APM right symptom, wrong root cause) | ✅ DONE |
-| CLAIM_LEDGER H2-P1 updated + H2-D1 + H2-D2 rows added | ✅ DONE |
-| Date-templating architecture approved for ALL H1/H2/H3 static seeds | ✅ DONE |
-| Commit `dea71be` on `feature-trio-clean` | ✅ DONE |
-
-**Key finding this session:** The H2 physics was corrected — APM CORRECTLY identifies bearing wear (amps elevated, vibration rising), but cannot determine WHY (root cause = incompatible workover fluid → seal degradation → well fluid ingress → bearing contamination). This makes the APM moat claim STRONGER: not "APM misidentifies the symptom" but "APM gets the symptom right and recommends the wrong, expensive fix." All 4 Scenario Survival Tests still pass.
+| GPU discipline: ollama scaled to 0, .clinerules + NEXT_SESSION_PROMPT updated | ✅ DONE — commit `3e4d5d7` |
+| H2 backend endpoint `GET /api/h2/scenario-replay` — full implementation | ✅ COMMITTED `b61d6f7` — NOT YET DEPLOYED |
+| H2 date anchors (`_H2_SCENARIO_DATE`, `_H2_WORKOVER_DATE`, `_H2_PRIOR_PULL_DATE`) at module level | ✅ in `b61d6f7` |
+| H2 static doc helpers (`_build_h2_doc3`, `_build_h2_doc5`, `_H2_OEM_MATRIX_TEXT`) | ✅ in `b61d6f7` |
+| `_seed_h2_static_docs_bg()` daemon thread (idempotent startup seed to field_intel) | ✅ in `b61d6f7` |
+| N=80 steps / 8-week trajectory (efficiency↓ + vib↑ + amps elevated + temp slightly up) | ✅ in `b61d6f7` |
+| `esp_health.ubj` sliding window health score + SCADA ISA-18.2 HI alarm (vib≥4.0 mm/s) | ✅ in `b61d6f7` |
+| Gemma async doc generation (Doc 1 workover report + Doc 4 tour note) with fallback templates | ✅ in `b61d6f7` |
+| Old slug-flow H2 stub (invalidated Session AR) fully replaced | ✅ in `b61d6f7` |
 
 ---
 
 ## STEP 4: Next Implementation Task
 
-**All 5 H2 documents approved. Gate is cleared. BUILD H2 backend + UI.**
+**H2 backend committed. Gate cleared. Next: deploy + smoke-test, then wireframe.**
 
-### PRIORITY 1: H2 Backend Endpoint (`GET /api/h2/scenario-replay`)
+### PRIORITY 1 (immediate): Deploy H2 backend endpoint
 
-Per DEMO_MASTER §5 Screen Architecture and docs/H2_SYNTHETIC_DOCS.md:
+```bash
+# From gdc-pm root:
+docker build -t gcr.io/gdc-pm-v2/fault-trigger-ui:latest gke/fault-trigger-ui/
+docker push gcr.io/gdc-pm-v2/fault-trigger-ui:latest
+kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
+kubectl rollout status deployment/fault-trigger-ui -n gdc-pm
 
-**Python date anchor setup** (add to app.py startup, near existing H2 seeding logic):
-```python
-from datetime import datetime, timedelta
-SCENARIO_DATE   = datetime.now()
-WORKOVER_DATE   = SCENARIO_DATE - timedelta(weeks=8)
-PRIOR_PULL_DATE = WORKOVER_DATE - timedelta(weeks=78)
-def _fmt_date(dt): return dt.strftime("%B %d, %Y")
+# Smoke-test (GPU down is correct — Gemma will use fallback template):
+curl -s "http://gdc-pm.bdau.io/api/h2/scenario-replay" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+print('scenario:', d.get('scenario'))
+print('n:', d.get('n'))
+print('doc_gen_mode:', d.get('doc_gen_mode'))
+print('gdc_detect_idx:', d.get('gdc_detect_idx'))
+print('scada_alarm_idx:', d.get('scada_alarm_idx'))
+print('doc_reveals count:', len(d.get('doc_reveals',[])))
+print('workover_vendor:', d.get('workover_vendor'))
+print('health_ok:', d.get('health_ok'))
+"
 ```
 
-**Static seed docs at startup** (seed to field_intel using above anchors):
-- Doc 2: OEM matrix — seed once, no dates
-- Doc 3: Prior pull record — Python f-string with PRIOR_PULL_DATE
-- Doc 5: Well history — Python f-string with 7 algorithmically-distributed SCADA events
+**Expected:** scenario=workover_fluid_incompatibility · n=80 · doc_gen_mode=FALLBACK_TEMPLATE (GPU down) · 5 doc_reveals · health_ok=True
 
-**Per-run dynamic generation** (in endpoint handler):
-- Doc 1: Call Gemma with workover completion report template + randomized params
-- Doc 4: Call Gemma with tour note template + randomized params
-- Return both in `doc_reveals[]` payload
+### PRIORITY 2: H2 Briefing wireframe → sign-off → HTML (per §4.5 Briefing Pattern Spec)
 
-**Endpoint returns:**
-```json
-{
-  "efficiency": [...],    // motor efficiency %, declining over N steps
-  "vib": [...],           // vibration mm/s, rising over N steps
-  "t_min": [...],         // time axis in weeks post-workover
-  "health_score": [...],  // esp_health.ubj output per window
-  "gdc_detect_idx": N,    // first index where health_score < 0.65
-  "scada_alarm_idx": N,   // index where vib or amps crosses SCADA threshold
-  "gdc_verdict": "...",   // Gemma-generated verdict string
-  "doc_reveals": [...]    // 5 document objects, staggered timing
-}
-```
+Per hard constraint: **wireframe → sign-off → HTML**. No H2 HTML without user sign-off.
 
-**SCADA alarm rule for H2:** vibration threshold cross (amps elevated is secondary). SCADA sees "mechanical degradation" but no root cause.
-
-### PRIORITY 2: H2 Briefing UI (3 panels, per §4.5 Briefing Pattern Spec)
-
-Per constraint: **wireframe → sign-off → HTML**. Do not write HTML without sign-off.
-
+3 panels (from DEMO_MASTER §5):
 - Panel 1: The Equipment (ESP + 4-sensor string callout + workover event 8 weeks ago)
 - Panel 2: The Provenance Hook (timeline: workover → symptom onset → alarm today; 4 sensor tiles; doc stack preview)
 - Panel 3: The Decision (GDC verdict card; action cards flush+reseal vs pump-pull; universal pattern close; CTA ▶ Run the Scenario)
@@ -120,9 +109,7 @@ Per constraint: **wireframe → sign-off → HTML**. Do not write HTML without s
 
 Same mechanics as H1. Dual-sensor Plotly chart (motor efficiency declining + vibration rising). SCADA View / GDC Advisor View. Sequential doc reveals (5 docs, staggered timing).
 
-### PRIORITY 4 (if time): H1 Batch B remediation
-
-Apply Python date-templating to H1 static seed documents (sonic log, shift note, GOR lab report). Also fix remaining G1/G2/G3 issues on those documents (see DEMO_MASTER §8).
+### PRIORITY 4 (if time): H1 Batch B date-templating remediation
 
 ---
 
@@ -132,8 +119,9 @@ Apply Python date-templating to H1 static seed documents (sonic log, shift note,
 |------|--------|------|
 | H1 Briefing — all 6 panels | ✅ COMPLETE Session AQ | Deployed |
 | H1 Scenario replay | ✅ WORKING | Deployed |
-| H2 Briefing panels | ❌ NOT BUILT | Documents approved Session AV. Backend endpoint + UI = next task. |
+| H2 Briefing panels | ❌ NOT BUILT | Backend committed `b61d6f7`. Deploy + smoke-test → wireframe → sign-off → HTML. |
 | H2 Scenario replay | ❌ NOT BUILT | After briefing panels |
+| H2 backend endpoint | ⚠️ COMMITTED NOT DEPLOYED | `b61d6f7` — needs docker build+push+kubectl rollout |
 | H3 copy — Vizier framing | ⚠️ NEEDS COPY FIX | H3 tab may still say "no cloud dependency" — Priority 4 |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sonic log, shift note, GOR lab have hardcoded dates. Batch B remediation. |
 | MCP gdc-second-opinion | ✅ WORKING | gdc-pm/mcp/, gemini-3.5-flash, Vertex AI ADC, location=global, project=gdc-das-life-2026, max_output_tokens=8192 — upgraded Session AV |
