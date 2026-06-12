@@ -135,6 +135,9 @@ createApp({
       h1ShiftNoteModalOpen: false,  // click-through Shift Handover Note modal
       h1SonicLogModalOpen: false,   // click-through Acoustic Sonic Log modal
       h1GorModalOpen: false,        // click-through GOR/Separator Lab Report modal
+      h1RagDoc3ModalOpen: false,    // click-through OEM Manual / RAG doc 3 modal (Sprint L2)
+      h2DocModalOpen: false,        // click-through H2 scenario document modal (Sprint L2)
+      h2DocModalItem: null,         // active H2 doc {title, text, source}
       h1OverrideModalOpen: false,   // GDC override confirmation modal (VFD trim during drawdown)
       h1ShowEvidenceTable: false,   // toggle Bayesian evidence table in Zone 1 verdict
       // Legacy evidence wall state — kept as h1EvidenceActive counter drives h1RagRevealed via watcher

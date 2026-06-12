@@ -6724,6 +6724,75 @@ _BAYES_FINDINGS = {
 }
 
 
+def _fetch_rag_sections(query: str, asset_class: str = "esp", limit: int = 3) -> list:
+    """
+    Sprint L2: Return structured RAG results with REAL pgvector cosine similarity scores.
+
+    Queries rag_documents using cosine distance (<=> operator).
+    Used by h1_scenario_replay and h2_scenario_replay to return
+    honestly-labelled retrieval results for the UI document stack.
+
+    Returns:
+        list of {title, excerpt, full_text, similarity (0.0–1.0 or None if no embedding)}
+    """
+    try:
+        model = _get_embed_model_singleton()
+        conn  = get_db()
+        rows  = []
+        if model:
+            emb   = model.encode(query, normalize_embeddings=True).tolist()
+            emb_s = "[" + ",".join(str(x) for x in emb) + "]"
+            with conn.cursor() as cur:
+                # cosine similarity = 1 - cosine_distance
+                cur.execute(
+                    """
+                    SELECT doc_title, content,
+                           ROUND((1.0 - (embedding <=> %s::vector))::numeric, 4) AS similarity
+                    FROM rag_documents
+                    WHERE asset_class = %s
+                    ORDER BY embedding <=> %s::vector
+                    LIMIT %s
+                    """,
+                    (emb_s, asset_class, emb_s, limit)
+                )
+                rows = cur.fetchall()
+                if not rows:
+                    # Fallback: any asset_class
+                    cur.execute(
+                        """
+                        SELECT doc_title, content,
+                               ROUND((1.0 - (embedding <=> %s::vector))::numeric, 4) AS similarity
+                        FROM rag_documents
+                        ORDER BY embedding <=> %s::vector
+                        LIMIT %s
+                        """,
+                        (emb_s, emb_s, limit)
+                    )
+                    rows = cur.fetchall()
+        else:
+            # No embed model — return top rows with no score
+            with conn.cursor() as cur:
+                cur.execute(
+                    "SELECT doc_title, content, NULL FROM rag_documents "
+                    "WHERE asset_class = %s LIMIT %s",
+                    (asset_class, limit)
+                )
+                rows = cur.fetchall()
+        conn.close()
+        result = []
+        for title, content, similarity in rows:
+            result.append({
+                "title":      title or "Field Document",
+                "excerpt":    content[:280].strip() + ("…" if len(content) > 280 else ""),
+                "full_text":  content,
+                "similarity": float(similarity) if similarity is not None else None,
+            })
+        return result
+    except Exception as _e:
+        log.debug(f"_fetch_rag_sections failed (non-fatal): {_e}")
+        return []
+
+
 def _bayes_discriminate(fault_type: str) -> dict:
     """
     Sprint L1: Compute naive-Bayes posterior P(fault_type) via log-odds fusion.
@@ -7008,6 +7077,9 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
         "bayes_findings":   bayes["steps"],
         "bayes_method":     bayes["method"],
         "bayes_lr_note":    bayes["lr_note"],
+        "rag_sections":     _fetch_rag_sections(
+                                f"{ft.replace('_', ' ')} ESP pump gas lock fluid drawdown",
+                                "esp", 3),
     }
 
 
@@ -7232,6 +7304,9 @@ async def h2_scenario_replay():
         "wat_f":            _wat_f,
         "health_ok":        health_ok,
         "model_used":       "esp_health.ubj" if health_ok else "FALLBACK_SYNTHETIC",
+        "rag_sections":     _fetch_rag_sections(
+                                "paraffin wax deposition ESP tubing restriction hot-oil treatment",
+                                "esp", 3),
     }
 
 
