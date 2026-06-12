@@ -93,7 +93,7 @@ This was fixed in Session X (Batch B). NEXT_SESSION_PROMPT entry was stale.
 | STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | H2 physics error now fixed in all UIs |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
-| MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended 2026-06-12 · toggle: ./scripts/mcp-disable.sh / mcp-enable.sh |
+| MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended 2026-06-12 · toggle: ~/mcp-disable.sh / ~/mcp-enable.sh |
 | Pad Alpha RAG corpus (10 docs) | ✅ SEEDED | Session BI — 3 constraint-setting + 7 background in rag_documents |
 | H2 endpoint response time | ⚠️ SLOW | ~35s for 80-step XGBoost loop — acceptable (spinner shown); no action needed |
 
@@ -109,8 +109,8 @@ This was fixed in Session X (Batch B). NEXT_SESSION_PROMPT entry was stale.
 - **Wireframes → sign-off → HTML** (always)
 - **No build/push/deploy without user walkthrough and verification**
 - MCP gdc-second-opinion: ⛔ DISABLED (billing suspended 2026-06-12)
-  - To re-enable: `./scripts/mcp-enable.sh` → reconnect in Cline MCP sidebar
-  - To disable again: `./scripts/mcp-disable.sh` (run immediately after use)
+  - To re-enable: `~/mcp-enable.sh` → reconnect in Cline MCP sidebar
+  - To disable again: `~/mcp-disable.sh` (run immediately after use)
   - Do NOT call gemini_search or gemini_second_opinion while disabled
 - **Ask inline questions — no option lists** (ask_followup_question options array causes display issues)
 - **Keep text before tool calls short**
