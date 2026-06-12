@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date: June 12, 2026 (Session BM — Sprint L2 deployed)
-**git head:** `e554977` — feat: Sprint L2 — real pgvector retrieval + doc modals + LR provenance bands
-**fault-trigger-ui image:** `sha256:e1b4ed84e7d1bdedc8e6ec657f5b5acda2e2ea7a057a79173cbaeb8cfc30644e`
+**Date: June 12, 2026 (Session BN — Sprint L3 deployed)
+**git head:** `e4349b8` — feat(sprint-l3): corpus expansion — 10 scenario RAG docs with noise mix
+**fault-trigger-ui image:** `sha256:916bdc216a8a49be6766adc56dfa7ac76c2f3df7a2e8fe407e8545180e87032f`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -23,7 +23,7 @@ source .env && curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | jq 
 - 6 pods 1/1 Running + 3 prune CronJob Completed (ollama pod ABSENT — correct)
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
 
-**Actual at session-BM close:** fault-trigger-ui pod 1/1 Running · HTTP 200 · Sprint L2 verified live
+**Actual at session-BN close:** fault-trigger-ui pod 1/1 Running · HTTP 200 · Sprint L3 verified live
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$1.09/hr single node). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -51,43 +51,36 @@ cat /home/brian/gdc-pm/docs/SESSION_BL_ARCHITECTURE_REVIEW.md
 
 ### ✅ SPRINT L1 — Weight Metadata Migration — COMPLETE (Session BL)
 ### ✅ SPRINT L2 — Readable Docs + Discoverable Weights — COMPLETE (Session BM)
+### ✅ SPRINT L3 — Corpus Expansion — COMPLETE (Session BN)
 
-**What L2 delivered:**
-- `_fetch_rag_sections()` — real pgvector cosine similarity search on `rag_documents`
-- H1 `rag_sections[2].similarity` = **0.3794** (was hardcoded "cosine sim 0.82")
-- H2 `rag_sections` = real scores 0.3556 / 0.3155 / 0.2994
-- H2 doc cards: click → full text modal (Chemical Service Log, PVT Report, Prior Pull Record)
-- H1 OEM doc 3: click → modal showing retrieved rag_documents content + real similarity
-- H1 Bayesian evidence table: provenance band under each row: `Band lr_min–lr_max · lr_source · ⓘ weight in field_intel DB`
-- H2 label: "FIELD DOCUMENT CORPUS — AlloyDB on-cluster" (honest; not "pgvector (< 2s)")
+**What L3 delivered:**
+- `_L3_SCENARIO_RAG_DOCS` — 10 new docs in `rag_documents` with SentenceTransformer embeddings
+- H1 set: Tour 2 Shift Note (GVF), Separator GOR Test, OEM GVF Bulletin (HIGH) + Megger Test, Water Disposal (NOISE)
+- H2 set: Chemical Service Log (hot-oil 52d overdue), Fluid PVT (WAT 118°F), ESP Pull Record (bearings NORMAL) (HIGH) + VFD Config, Rig Schedule (NOISE)
+- H1 retrieval: OEM GVF bulletin now #2 at **0.5351** (vs generic ESP manual at 0.4096) — clear discrimination
+- H2 retrieval: Chemical Treatment Log now **#1 at 0.3790** (was thermal memo at 0.3556)
+- Noise docs not appearing in top-3 for either scenario query — verified live
 
 ---
 
-### ⚠️ TOP PRIORITY (Session BN) — Sprint L3: Corpus Expansion
+### ⚠️ TOP PRIORITY (Session BO) — Sprint L4: Gemma Extraction + Path A Evidence-Strength Modulation
 
-**Goal:** Add more H1/H2 `field_intel` documents (including some noise/neutral docs) so retrieval visibly discriminates. Makes the "pgvector searches and finds relevant docs" claim more compelling.
+**Goal:** GPU showcase — Gemma 4 reads the retrieved L3 documents and:
+1. **Extraction:** Emits structured findings (F1/F2/F3/F4) from retrieved doc text — replacing hardcoded _H1_BAYES_SEED_DOCS labels with Gemma-generated extraction
+2. **Evidence-strength modulation (Path A):** Classifies assertion strength (emphatic/qualified/absent) from doc text → adjusts LR within physics-anchored `lr_min`/`lr_max` bands in `field_intel`
+3. Gemma never assigns a weight; it moves within a range a domain engineer set and cited
 
-**L3 scope:**
-1. Seed 6–10 additional `field_intel` docs for `__h1_bayes_corpus__` (mix of supporting + noise)
-2. Seed additional H2 paraffin scenario docs into `field_intel` (e.g., well history, shift notes pre-onset)
-3. Verify pgvector retrieval now returns a discriminating mix (relevant docs score higher than noise)
-4. Update H1 header: since `rag_sections` now returns real docs, "RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)" label on H1 is now **honest** — no change needed.
+**Requires:** `./scripts/gpu-start.sh` (announces ~$1.09/hr before running). Single L4 node sufficient for Gemma 4.
 
 **Sprint sequence:**
 | Sprint | Deliverable | GPU? |
 |---|---|---|
 | **L1** | Weight-metadata migration + `_bayes_discriminate` DB refactor | No ✅ |
 | **L2** | Readable-doc modal + discoverable weight provenance panel (H1 + H2) | No ✅ |
-| **L3** | Corpus expansion — more H1/H2 `field_intel` docs (some noise) | No |
+| **L3** | Corpus expansion — 10 H1/H2 `rag_documents` (3 HIGH + 2 NOISE per scenario) | No ✅ |
 | **L4** | Gemma extraction + Path A evidence-strength modulation (GPU showcase only) | Single L4 ~$1.09/hr |
 
-**Atomic-fix discipline:** Deploy and verify L3 before starting L4. Do not combine sprints.
-
----
-
-### ✅ SESSION BK — Cost controls deployed (no app code change)
-### ✅ SPRINT H2-REPLAY — Paraffin/Wax Deposition Scenario — COMPLETE (Session BJ)
-### ✅ SPRINT H3-F — Selectable Binding Constraint + RAG Provenance — COMPLETE (Session BI)
+**Atomic-fix discipline:** Deploy and verify L4 before starting any other sprint.
 
 ---
 
@@ -102,13 +95,12 @@ cat /home/brian/gdc-pm/docs/SESSION_BL_ARCHITECTURE_REVIEW.md
 | Sprint H3-E: pad-level dashboard | ✅ DEPLOYED | Session BH |
 | Sprint H3-F: selectable constraints + RAG | ✅ DEPLOYED | Session BI |
 | H3 briefing panel Hz values (66.0, 65.5, 59.7) | ⚠️ HARDCODED | From live API 2026-06-11 — update if _PAD_ALPHA_WELL_PARAMS changes |
-| H1/H2 "cosine sim · pgvector (< 2s)" labels | ✅ RESOLVED | Sprint L2 — real pgvector retrieval active · sha256:e1b4ed84 |
-| H1 `_BAYES_FINDINGS` LRs in code | ✅ RESOLVED | Sprint L1 — weights in field_intel DB |
+| H1/H2 pgvector retrieval | ✅ REAL + DISCRIMINATING | Sprint L3 — GVF bulletin #2 (0.535) for H1; paraffin log #1 (0.379) for H2 |
 | H1 Bayesian provenance band | ✅ DEPLOYED | Sprint L2 — Band lr_min–lr_max · lr_source shown |
 | H2 doc modals (click to read) | ✅ DEPLOYED | Sprint L2 — full text in modal |
-| H1_METHODOLOGY.md LRs 8/5/3/2→99.6% | ⚠️ STALE DOC | Code uses 3/2/1.6/1.4→93% — fix after L3 |
+| H1_METHODOLOGY.md LRs 8/5/3/2→99.6% | ⚠️ STALE DOC | Code uses 3/2/1.6/1.4→93% — fix after L4 |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended 2026-06-12 · toggle: ~/mcp-disable.sh / ~/mcp-enable.sh |
-| Pad Alpha RAG corpus (10 docs) | ✅ SEEDED | Session BI — 3 constraint-setting + 7 background in rag_documents |
+| Pad Alpha RAG corpus (10 Pad Alpha + 10 L3 scenario docs) | ✅ SEEDED | Session BN — 38 total rag_documents rows |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 
 ---
@@ -119,7 +111,7 @@ cat /home/brian/gdc-pm/docs/SESSION_BL_ARCHITECTURE_REVIEW.md
 - No `browser_action` (SSH remote, no browser)
 - **Batch all edits to same file in ONE `replace_in_file` call** (or use Python splice for large functions)
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~7,320 lines · `index.html` ~3,660 lines · `app.js` ~2,310 lines — grep first, targeted reads only
+- `app.py` ~7,680 lines · `index.html` ~3,660 lines · `app.js` ~2,310 lines — grep first, targeted reads only
 - **Wireframes → sign-off → HTML** (always)
 - **No build/push/deploy without user walkthrough and verification**
 - MCP gdc-second-opinion: ⛔ DISABLED (billing suspended 2026-06-12)
