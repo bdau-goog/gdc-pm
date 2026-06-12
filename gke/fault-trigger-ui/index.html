@@ -1851,27 +1851,27 @@
           </button>
         </div>
       </div>
-      <!-- H2 Physics & Logic Info Panel -->
+      <!-- H2 Physics & Logic Info Panel — Paraffin/Wax Deposition (Session BJ) -->
       <div v-if="showH2Info" class="physics-panel">
         <div class="pp-cols">
           <div>
             <div class="pp-section">
-              <div class="pp-section-title">&#x2699; The Physics &#x2014; How Wrong Fill Oil Causes Bearing Failure</div>
-              <p class="pp-text">During the workover 8 weeks ago, the crew filled the protector with a synthetic ester-class oil incompatible with Buna-N elastomer shaft seals (documented only in the completion report). Buna-N seals swell and degrade on contact with synthetic esters &#x2014; pressure barrier fails within 3&#x2013;8 weeks.</p>
+              <div class="pp-section-title">&#x2699; The Physics &#x2014; How Paraffin Creates a Bearing-Wear Signature</div>
+              <p class="pp-text">Permian crude is paraffin-rich. As produced fluid rises up the tubing and cools below the Wax Appearance Temperature (WAT &#x007E;118&#xB0;F, confirmed by PVT), crystals deposit on the tubing wall. The pump works harder against the narrowing cross-section.</p>
               <ul class="pp-list">
-                <li><strong>Step 1:</strong> Seal integrity lost &#x2192; well fluid (brine + hydrocarbons) enters protector housing</li>
-                <li><strong>Step 2:</strong> Contaminated fluid reaches bearing assembly &#x2192; bearing friction increases</li>
-                <li><strong>Step 3:</strong> Bearing wear is <em>real</em> &#x2014; but caused by ingress, not mechanical age</li>
-                <li><strong>On sensor:</strong> efficiency declining + vibration rising = bearing wear signature. <span class="pp-warn">Indistinguishable from age-related bearing failure on a 4-sensor string.</span></li>
+                <li><strong>Restriction above pump:</strong> system curve steepens &#x2192; operating rate falls &#x2192; less drawdown &#x2192; <span style="color:var(--green)">PIP rises</span> (backpressure builds)</li>
+                <li><strong>Pump off BEP:</strong> efficiency declines; pump churning at lower flow &#x2192; amps rise, vibration rises (turbulent slug pattern)</li>
+                <li><strong>Motor thermal load:</strong> barely changes &#x2014; the restriction is hydraulic, not mechanical &#x2192; <span style="color:var(--green)">temperature stays flat</span></li>
+                <li><strong>On sensor:</strong> efficiency declining + vibration rising = <span class="pp-warn">indistinguishable from bearing wear on a 4-sensor string.</span> PIP rising is the tell &#x2014; if you know to look.</li>
               </ul>
             </div>
             <div class="pp-section">
               <div class="pp-section-title">&#x1F50E; Why APM Routes to a $70k&#x2013;$100k Pump Pull</div>
-              <p class="pp-text">APM correctly identifies the bearing wear pattern. The standard routing is a pump-pull investigation &#x2014; the statistically common cause. But no sensor on a running ESP can measure historical protector fill oil provenance. Without the workover completion report and OEM compatibility matrix, the root cause is architecturally invisible.</p>
+              <p class="pp-text">APM correctly identifies the bearing-wear sensor pattern (efficiency declining + vibration rising). The statistically common cause is bearing degradation &#x2014; and that is the standard routing. But no sensor on a running ESP can measure wax thickness in the tubing above it. The PM overdue date is in a vendor portal, not in SCADA.</p>
               <ul class="pp-list">
-                <li>Efficiency declining: motor losses rising (bearing friction)</li>
-                <li>Vibration rising: bearing surface degradation</li>
-                <li><em>The root cause is a document-only variable. No sensor carries it.</em></li>
+                <li>EFF declining + VIB rising: matches bearing wear signature exactly</li>
+                <li>PIP slightly elevated: APM has no paraffin-restriction model for this tell</li>
+                <li><em>The root cause is a maintenance-record variable. No sensor carries it.</em></li>
               </ul>
             </div>
           </div>
@@ -1880,12 +1880,10 @@
               <div class="pp-section-title">&#x26A1; How GDC Identifies the Root Cause</div>
               <ul class="pp-list">
                 <li>L2 health score crosses threshold &#x2192; routes to L3 document fusion</li>
-                <li>Doc 1 &#x2014; Workover completion report: identifies fill oil vendor + product code</li>
-                <li>Doc 2 &#x2014; OEM compatibility matrix: product class = INCOMPATIBLE with Buna-N seals</li>
-                <li>Doc 3 &#x2014; Prior pull record: bearings normal 18 months ago &#x2192; bearing-age hypothesis eliminated</li>
-                <li>Doc 4 &#x2014; Field tour note: "slight vibration above typical" &#x2014; concerning-in-hindsight</li>
-                <li>Doc 5 &#x2014; Well history: confirms workover 8 weeks ago, no prior anomalies</li>
-                <li><strong>Synthesis:</strong> "Elastomer seal degradation from workover fluid incompatibility &#x2014; NOT bearing wear."</li>
+                <li>Doc 1 &#x2014; Chemical vendor service log: PM {{ h2ReplayData && h2ReplayData.pm_overdue_days ? h2ReplayData.pm_overdue_days : 52 }}d overdue; vendor logistics delay documented</li>
+                <li>Doc 2 &#x2014; Fluid PVT report: WAT {{ h2ReplayData && h2ReplayData.wat_f ? h2ReplayData.wat_f : 118 }}&#xB0;F confirmed; 8.3% wax content; high deposition risk; 90-day treatment interval required</li>
+                <li>Doc 3 &#x2014; Prior pull record: bearings NORMAL 18 months prior &#x2192; bearing-age hypothesis eliminated</li>
+                <li><strong>Synthesis:</strong> &#x201C;Paraffin/wax deposition from missed PM &#x2014; NOT bearing wear. Dispatch hot-oil truck.&#x201D;</li>
               </ul>
             </div>
             <div class="pp-section" style="margin-top:14px">
@@ -1893,14 +1891,14 @@
               <table class="pp-table">
                 <thead><tr><th></th><th>SCADA / APM</th><th>GDC Advisor</th></tr></thead>
                 <tbody>
-                  <tr><td>Root cause identified</td><td class="pp-danger">&#x2718; No (no sensor carries it)</td><td class="pp-em">&#x2714; Yes (documents)</td></tr>
-                  <tr><td>Recommended action</td><td class="pp-danger">Pump-pull investigation</td><td>Flush + reseal protector</td></tr>
+                  <tr><td>Root cause identified</td><td class="pp-danger">&#x2718; No (not in telemetry)</td><td class="pp-em">&#x2714; Yes (vendor log + PVT)</td></tr>
+                  <tr><td>Recommended action</td><td class="pp-danger">Pump-pull investigation</td><td>Hot-oil truck dispatch</td></tr>
                   <tr><td>Pull cost</td><td class="pp-danger">~$70k&#x2013;$100k</td><td class="pp-em">Averted</td></tr>
-                  <tr><td>Reseal cost</td><td>n/a</td><td>~$8k&#x2013;$15k est. &#x26A0;</td></tr>
-                  <tr><td>Root cause fixed</td><td class="pp-danger">&#x2718; Seal still degraded on reinstall</td><td class="pp-em">&#x2714; Seal replaced</td></tr>
+                  <tr><td>Hot-oil cost</td><td>n/a</td><td class="pp-em">~$3k&#x2013;$6k &#x2714;</td></tr>
+                  <tr><td>Root cause fixed</td><td class="pp-danger">&#x2718; Wax still in tubing</td><td class="pp-em">&#x2714; Tubing cleared</td></tr>
                 </tbody>
               </table>
-              <div style="font-size:0.44rem;color:var(--muted);margin-top:5px">&#x26A0; Reseal cost is an estimate &#x2014; no hard public source; requires SME verification. Chemistry: Buna-N + synthetic ester incompatibility confirmed (API RP 11S3/S5).</div>
+              <div style="font-size:0.44rem;color:var(--muted);margin-top:5px">Hot-oil truck cost: representative Permian Basin range; surface-only, no downhole access required. Physics: API RP 11S system curve + Permian PVT (WAT Gemini-confirmed, Session BG).</div>
             </div>
           </div>
         </div>
@@ -1912,12 +1910,12 @@
         &#x26A0; ISA-18.2 VIBRATION HIGH &#x2014; ESP-ALPHA-3 &middot; vib {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }} mm/s &middot; Mechanical degradation &#x2014; root cause unknown from telemetry alone
       </div>
 
-      <!-- GDC verdict banner — after RAG fusion completes -->
+      <!-- GDC verdict banner — paraffin scenario -->
       <div v-if="h2ReplayData && h2VerdictRevealed"
            style="margin:0 12px 4px;padding:5px 14px;border-radius:5px;background:rgba(59,130,246,0.10);border:1px solid rgba(59,130,246,0.28);font-size:0.58rem;color:#93c5fd;font-weight:700;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <span>&#x26A1; GDC verdict: Elastomer seal degradation &#x2014; workover fluid incompatibility &middot; flush + reseal recommended</span>
-        <span v-if="h2ReplayData.workover_vendor" style="font-weight:400;color:var(--muted);white-space:nowrap">
-          &middot; {{ h2ReplayData.workover_vendor }} {{ h2ReplayData.workover_product }}
+        <span>&#x26A1; GDC verdict: Paraffin/wax deposition &#x2014; PM {{ h2ReplayData.pm_overdue_days }}d overdue &middot; dispatch hot-oil truck &middot; do NOT pull</span>
+        <span v-if="h2ReplayData.pm_vendor" style="font-weight:400;color:var(--muted);white-space:nowrap">
+          &middot; {{ h2ReplayData.pm_vendor }} &middot; WAT {{ h2ReplayData.wat_f }}&#xB0;F
         </span>
         <span v-if="!h2ReplayData.health_ok" style="color:var(--yellow);font-weight:400">[&#x26A0; FALLBACK_SYNTHETIC]</span>
       </div>
@@ -1933,8 +1931,8 @@
           <div style="font-size:1.5rem">⚡</div>
           <div style="font-size:0.75rem;font-weight:700;color:var(--text2)">Click ↺ New Scenario to begin</div>
           <div style="font-size:0.60rem;color:var(--muted);max-width:400px;text-align:center;line-height:1.6">
-            GDC precomputes the 8-week post-workover trajectory, runs the real esp_health.ubj model,
-            and generates two documents via Gemma (workover report + field tour note).
+            GDC precomputes the 8-week trajectory, runs the real esp_health.ubj model,
+            and retrieves 3 provenance documents (vendor PM log &middot; fluid PVT &middot; prior pull record).
           </div>
         </template>
       </div>
@@ -2043,15 +2041,15 @@
                     <div style="font-size:0.44rem;color:var(--muted)">Monitor trend</div>
                   </button>
                 </div>
-                <!-- Pump-pull outcome -->
+                <!-- Pump-pull outcome — paraffin: wax still in tubing -->
                 <div v-if="h2PullOutcome==='pump_pull'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
-                  <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">&#x2718; PUMP PULL INITIATED &#x2014; ROOT CAUSE UNIDENTIFIED</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Bearing wear confirmed on pull. Workover fluid incompatibility (root cause) not identified from telemetry alone. Seal remains degraded &#x2014; failure will recur.<br><span style="font-size:0.44rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics &amp; Logic</span></div>
+                  <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">&#x2718; PUMP PULL INITIATED &#x2014; ROOT CAUSE NOT ADDRESSED</div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Pump pulled and bearings confirmed worn &#x2014; but the cause was paraffin restriction, not bearing failure. Wax still in tubing. Pump will re-wear on restart without hot-oil treatment.<br><span style="font-size:0.44rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic</span></div>
                 </div>
-                <!-- Monitoring outcome -->
+                <!-- Monitoring outcome — paraffin: wax restriction deepening -->
                 <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px">
-                  <div style="font-size:0.58rem;font-weight:700;color:rgba(251,191,36,0.8);margin-bottom:4px">&#x23F3; MONITORING &#x2014; DEGRADATION CONTINUES</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Passive monitoring. Root cause (workover fluid incompatibility) remains unknown without document fusion. Degradation trajectory continues.</div>
+                  <div style="font-size:0.58rem;font-weight:700;color:rgba(251,191,36,0.8);margin-bottom:4px">&#x23F3; MONITORING &#x2014; WAX RESTRICTION DEEPENING</div>
+                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Passive monitoring. Root cause (paraffin PM overdue) remains unknown without document fusion. Wax restriction deepens &#x2014; pump damage risk rising.</div>
                 </div>
               </div>
             </div><!-- /scada-view -->
@@ -2072,17 +2070,16 @@
                   <span class="streaming-dot"></span>
                   HEALTH {{ h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0) : '&#x2014;' }}% &middot; RETRIEVING FIELD CONTEXT VIA PGVECTOR RAG&#x2026;
                 </div>
-                <!-- GDC verdict: after verdict revealed -->
+                <!-- GDC verdict: paraffin scenario -->
                 <div v-if="h2VerdictRevealed"
                      style="background:rgba(21,50,80,0.4);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px">
-                  <div style="font-family:var(--mono);font-size:0.50rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">&#x26A1; ELASTOMER SEAL DEGRADATION &#x2014; NOT BEARING WEAR</div>
+                  <div style="font-family:var(--mono);font-size:0.50rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">&#x26A1; PARAFFIN/WAX RESTRICTION &#x2014; NOT BEARING WEAR</div>
                   <div style="font-size:0.44rem;color:var(--text2);margin-top:2px;line-height:1.5">
-                    Root cause: workover fill oil &#x2192; Buna-N seal degradation &#x2192; well fluid ingress &#x2192; bearing contamination
-                    <span v-if="h2ReplayData.workover_vendor" style="color:rgba(251,191,36,0.7);margin-left:8px">&middot; {{ h2ReplayData.workover_vendor }} {{ h2ReplayData.workover_product }}</span>
+                    Root cause: PM {{ h2ReplayData.pm_overdue_days }}d overdue &#x2192; wax buildup in tubing &#x2192; restriction &#x2192; PIP&#x2191; amps&#x2191; vib&#x2191; &middot; temp flat
+                    <span style="color:rgba(251,191,36,0.7);margin-left:8px">&middot; WAT {{ h2ReplayData.wat_f }}&#xB0;F confirmed &middot; PVT high-wax crude</span>
                     <span style="color:rgba(74,222,128,0.7);margin-left:8px">&middot; health {{ h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0) : '&#x2014;' }}%</span>
                   </div>
                 </div>
-              </div>
 
               <!-- ZONES 2+3 in a flex row -->
               <div style="flex:1;display:flex;min-height:0;overflow:hidden">
@@ -2104,48 +2101,45 @@
                   </div>
                   <!-- Post-RAG: action cards + outcomes -->
                   <template v-if="h2VerdictRevealed">
-                    <!-- Active choices -->
+                    <!-- Active choices — paraffin: hot-oil truck vs pump pull -->
                     <div v-if="!h2Resolved && !h2PullOutcome" style="display:flex;flex-direction:column;gap:5px">
                       <button @click="h2Resolved=true" class="h1-action-card h1-card-green">
-                        <div class="h1-card-header">&#x2714; GDC RECOMMENDED: Flush + Reseal Protector</div>
-                        <div class="h1-card-sub">Controlled flush &middot; replace fill oil with OEM-spec &middot; reseal shaft seals</div>
-                        <div class="h1-card-desc">Root cause: workover fill oil &#x2192; Buna-N seal degradation &#x2192; ingress pathway active. Flush + reseal stops ingress. <span style="font-size:0.44rem;color:rgba(100,116,139,0.5)">~$8k&#x2013;$15k est. &#x26A0; [NEEDS-EXPERT]</span></div>
+                        <div class="h1-card-header">&#x2714; GDC RECOMMENDED: Dispatch Hot-Oil Truck</div>
+                        <div class="h1-card-sub">Surface hot-oil unit &middot; melt wax deposit &middot; restore tubing ID &middot; no pull needed</div>
+                        <div class="h1-card-desc">Paraffin PM {{ h2ReplayData.pm_overdue_days }}d overdue. Hot-oil flush clears restriction, pump returns to nominal. <span style="color:rgba(74,222,128,0.8)">~$3k&#x2013;$6k &middot; surface-only &middot; no downhole access.</span></div>
                       </button>
                       <button @click="h2PullOutcome='pump_pull'" class="h1-action-card h1-card-contraindicated">
                         <div class="h1-card-header">&#x2718; GDC CONTRAINDICATED: Request Pump Pull</div>
-                        <div class="h1-card-sub">Addresses symptom only &#x2014; Buna-N seal not fixed on reinstall</div>
-                        <div class="h1-card-desc">Pull investigation (~$70k&#x2013;$100k) addresses bearing wear symptom but not the seal root cause. Failure will recur. See &#x24D8; for cost basis.</div>
+                        <div class="h1-card-sub">Treats bearing wear symptom &#x2014; wax restriction is the actual root cause</div>
+                        <div class="h1-card-desc">Pull investigation (~$70k&#x2013;$100k). Bearings may show wear, but wax in tubing remains. Pump will re-wear on restart without hot-oil treatment.</div>
                       </button>
                     </div>
-                    <!-- Flush+reseal resolved -->
+                    <!-- Hot-oil dispatched resolved -->
                     <div v-if="h2Resolved && !h2PullOutcome" class="h1-outcome-resolved">
-                      <div style="font-weight:700;margin-bottom:4px">&#x2705; FLUSH + RESEAL INITIATED &#x2014; ROOT CAUSE ADDRESSED</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Protector fill oil replaced with OEM-spec &middot; ingress pathway sealed &middot; bearing contamination source eliminated &middot; ~$8k&#x2013;$15k est. &#x26A0;</div>
+                      <div style="font-weight:700;margin-bottom:4px">&#x2705; HOT-OIL TRUCK DISPATCHED &#x2014; PARAFFIN RESTRICTION CLEARED</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Hot-oil unit melts wax deposit &middot; tubing ID restored &middot; pump returns to BEP &middot; ~$3k&#x2013;$6k &middot; no pull &middot; root cause addressed</div>
                     </div>
-                    <!-- Pump pull despite GDC warning -->
+                    <!-- Pump pull despite GDC warning — paraffin -->
                     <div v-if="h2PullOutcome==='pump_pull'" class="h1-outcome-seized">
-                      <div style="font-weight:700;margin-bottom:6px">&#x2718; PUMP PULL DESPITE GDC WARNING &#x2014; ROOT CAUSE UNADDRESSED</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Bearing wear confirmed on pull. Buna-N seal still degraded &#x2014; failure will recur after reinstall without fill oil change.<br><span style="font-size:0.48rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics &amp; Logic panel</span></div>
+                      <div style="font-weight:700;margin-bottom:6px">&#x2718; PUMP PULL DESPITE GDC WARNING &#x2014; WAX STILL IN TUBING</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump pulled. Bearings worn &#x2014; confirms the symptom. Paraffin restriction remains. Pump will re-wear without hot-oil treatment on restart.<br><span style="font-size:0.48rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic panel</span></div>
                     </div>
-                  </template>
-                </div>
-
-                <!-- ZONE 2 RIGHT (30%): Vertical Document Stack — 5 provenance docs -->
+                <!-- ZONE 2 RIGHT (30%): Vertical Document Stack — 3 paraffin provenance docs -->
                 <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
-                  <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT &#x2014; AlloyDB pgvector (&lt; 2s)</div>
-                  <!-- Doc 1: Workover Completion Report (fires with RAG) -->
+                  <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT &#x2014; AlloyDB pgvector (< 2s)</div>
+                  <!-- Doc 1: Chemical Vendor Service Log (fires with RAG verdict) -->
                   <div v-if="h2VerdictRevealed" class="h1-rag-doc-card">
-                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F527;</span>
-                    <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Workover Completion Report<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">{{ h2ReplayData.workover_vendor || 'fill oil vendor' }} &ndash; {{ h2ReplayData.workover_product || 'product code' }}</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.94 &middot; <span style="color:rgba(251,191,36,0.7)">&#x1F916; Gemma</span></div>
-                    </div>
-                  </div>
-                  <!-- Doc 2: OEM Compatibility Matrix (+2s) -->
-                  <div v-if="h2RagDoc2Shown" class="h1-rag-doc-card">
                     <span style="font-size:0.9rem;flex-shrink:0">&#x1F4CB;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">OEM Fluid Compatibility Matrix<br><span style="font-weight:400;color:rgba(239,68,68,0.8);font-size:0.48rem">Buna-N + synthetic ester: INCOMPATIBLE</span></div>
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Chemical Service Log<br><span style="font-weight:400;color:rgba(239,68,68,0.8);font-size:0.48rem">PM {{ h2ReplayData.pm_overdue_days }}d overdue &#x2014; vendor delay</span></div>
+                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.94 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
+                    </div>
+                  </div>
+                  <!-- Doc 2: Fluid PVT Report (+2s) -->
+                  <div v-if="h2RagDoc2Shown" class="h1-rag-doc-card">
+                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F9EA;</span>
+                    <div style="flex:1;min-width:0">
+                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Fluid PVT Report<br><span style="font-weight:400;color:rgba(251,191,36,0.8);font-size:0.48rem">WAT {{ h2ReplayData.wat_f }}&#xB0;F &middot; high wax &middot; 90d cycle confirmed</span></div>
                       <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.89 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
                     </div>
                   </div>
@@ -2157,25 +2151,9 @@
                       <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.82 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
                     </div>
                   </div>
-                  <!-- Doc 4: Field Tour Note (+5s) -->
-                  <div v-if="h2RagDoc4Shown" class="h1-rag-doc-card">
-                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F4DD;</span>
-                    <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Lease Operator Tour Note<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">"Slight vibration above typical &#x2014; monitoring"</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.78 &middot; <span style="color:rgba(251,191,36,0.7)">&#x1F916; Gemma</span></div>
-                    </div>
-                  </div>
-                  <!-- Doc 5: Well History (+6.5s) -->
-                  <div v-if="h2RagDoc5Shown" class="h1-rag-doc-card">
-                    <span style="font-size:0.9rem;flex-shrink:0">&#x1F4CA;</span>
-                    <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Well History Extract<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Workover 8 wks ago &middot; no prior anomalies</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine sim 0.74 &middot; <span style="color:rgba(148,163,184,0.6)">&#x1F4CC; static</span></div>
-                    </div>
-                  </div>
                   <!-- Placeholder skeletons before RAG fires -->
                   <div v-if="!h2VerdictRevealed" style="flex:1;display:flex;flex-direction:column;gap:5px;opacity:0.25">
-                    <div v-for="n in 5" :key="n" style="height:36px;border:1px dashed rgba(100,116,139,0.2);border-radius:4px"></div>
+                    <div v-for="n in 3" :key="n" style="height:36px;border:1px dashed rgba(100,116,139,0.2);border-radius:4px"></div>
                   </div>
                 </div>
 

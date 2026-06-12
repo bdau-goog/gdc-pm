@@ -6742,47 +6742,45 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
 @app.get("/api/h2/scenario-replay")
 async def h2_scenario_replay():
     """
-    H2 Classify — Workover Fluid Incompatibility (Maintenance Provenance Scenario).
-    DEMO_MASTER §5 (Session AU). Passes all 4 Scenario Survival Tests.
+    H2 Classify — Paraffin/Wax Deposition (Missed PM Scenario).
+    DEMO_MASTER §5 (Session BG + BJ). Passes all 5 Scenario Survival Gates.
 
-    A Permian ESP (ESP-ALPHA-3) 8 weeks post-workover shows progressive bearing wear
-    signature: motor efficiency declining + vibration rising over 3-4 weeks.
-    On the standard 4-sensor string, this pattern matches early bearing wear — the most
-    common cause APM routes to (pump-pull investigation ~$70k-$100k).
+    ESP-ALPHA-3, Permian Basin. 90-day hot-oil treatment PM cycle.
+    Treatment is 52 days overdue (Day 142 since last treatment). Third-party
+    chemical vendor delayed due to logistics — documented in service portal,
+    NOT in SCADA historian. RTOC experiencing alarm fatigue.
 
-    Hidden cause: wrong protector fill oil used at workover (synthetic ester class,
-    incompatible with Buna-N seals per OEM matrix). Documented only in the workover
-    completion report. No online sensor can carry this information (Test 2 PASS).
+    Physics (API RP 11S / production chemistry / Session BG Gemini verification):
+      Paraffin crystals (WAT ~118°F, PVT-confirmed) deposit on tubing wall above
+      pump as produced fluid cools. Restriction builds.
+      System curve: restriction → lower rate → less drawdown → PIP RISES.
+      Pump works against backpressure → amps rise, vibration rises (turbulent
+      slug pattern through restriction). Motor thermal load barely changes
+      (hydraulic restriction, not mechanical failure) → temperature stays FLAT.
 
-    GDC fuses 5 documents → correct action: flush + reseal protector (~$8k-$15k estimate).
-    Physics: API RP 11S3/11S5 — elastomer/bearing genuinely ambiguous on 4-sensor string.
-    Bearing wear is REAL (caused by well fluid ingress through degraded seal) — APM gets
-    the symptom right but the root cause wrong.
-
-    Timeline: N=80 steps at 0.1 weeks/step = 8-week window post-workover.
-    Sensors: efficiency[] (%), vib[] (mm/s), amps[] (A), t_min[] (weeks).
-
+    APM routes to: bearing wear → pump pull (~$70k–$100k).
+    GDC correct action: dispatch hot-oil truck (~$3k–$6k, surface-only, no pull).
     """
-    N      = 80     # steps — 0.1 weeks/step = 8 weeks post-workover
-    W      = 15     # sliding window width for health model
-    t_step = 0.1    # weeks per step
+    N      = 80
+    W      = 15
+    t_step = 0.1   # weeks per step
 
-    # Randomized onset and ramp — each run looks different (defensible live model)
-    onset_idx = random.randint(22, 30)       # symptom onset ~2.2–3.0 weeks post-workover
-    k         = random.uniform(1.3, 2.2)     # ramp exponent
+    onset_idx = random.randint(18, 26)
+    k         = random.uniform(1.2, 2.0)
 
-    # Nominal baselines (fresh pump, 8 weeks post-workover)
-    eff_nom  = random.uniform(74.5, 77.5)    # motor efficiency %
-    vib_nom  = random.uniform(0.9,  1.2)     # vibration mm/s (wellhead sensor)
-    amps_nom = random.uniform(82.0, 85.0)    # motor amps (baseline ~83A per Doc 4)
-    psi_nom  = random.uniform(1280, 1380)    # PIP PSI (stable — pump still pumping)
-    temp_nom = random.uniform(196.0, 202.0)  # winding temp degF
+    # Nominal baselines
+    eff_nom  = random.uniform(74.5, 77.5)
+    vib_nom  = random.uniform(0.9,  1.2)
+    amps_nom = random.uniform(81.0, 84.0)
+    psi_nom  = random.uniform(1150, 1250)   # nominal PIP
+    temp_nom = random.uniform(194.0, 202.0)
 
     # Fault-end targets (week 8 — active alarm state)
-    eff_end  = random.uniform(63.5, 67.5)    # efficiency % (bearing friction + seal bypass)
-    vib_end  = random.uniform(4.3,  5.1)     # vibration mm/s — above ISA-18.2 HI (4.0)
-    amps_end = random.uniform(87.0, 90.0)    # amps elevated (bearing contamination load)
-    temp_end = random.uniform(204.0, 210.0)  # temp slightly elevated (sub-alarm)
+    eff_end  = random.uniform(63.5, 67.5)
+    vib_end  = random.uniform(4.2,  4.9)    # crosses ISA-18.2 VIB HI (4.0 mm/s)
+    amps_end = random.uniform(88.0, 92.0)
+    psi_end  = random.uniform(1480, 1650)   # PIP rises — paraffin restriction tell
+    temp_end = random.uniform(200.0, 208.0) # barely rises — flat (hydraulic, not thermal)
 
     eff_arr, vib_arr, amps_arr, psi_arr, temp_arr, t_wk_arr = [], [], [], [], [], []
     for i in range(N):
@@ -6790,14 +6788,12 @@ async def h2_scenario_replay():
         eff_arr.append( round(eff_nom  + (eff_end  - eff_nom)  * frac + random.gauss(0, 0.4),  2))
         vib_arr.append( round(vib_nom  + (vib_end  - vib_nom)  * frac + random.gauss(0, 0.08), 3))
         amps_arr.append(round(amps_nom + (amps_end - amps_nom) * frac + random.gauss(0, 0.5),  2))
-        psi_arr.append( round(psi_nom                                 + random.gauss(0, 14),    1))
+        psi_arr.append( round(psi_nom  + (psi_end  - psi_nom)  * frac + random.gauss(0, 18),   1))
         temp_arr.append(round(temp_nom + (temp_end - temp_nom) * frac + random.gauss(0, 0.8),  1))
         t_wk_arr.append(round(i * t_step, 2))
 
     # ── Health score from esp_health.ubj (sliding window) ────────────────────
-    # Features: psi, temp_f, vibration, motor_amps, dpsi_dt, dtemp_dt, dvib_dt, damps_dt
-    # dvib_dt is the primary driver (rising vibration rate). Efficiency is a derived
-    # display metric — not a direct model input (model takes raw sensor values).
+    # Features: psi (PIP), temp_f (winding), vibration, motor_amps + rate-of-change
     health_scores = []
     health_ok     = False
     try:
@@ -6848,178 +6844,108 @@ async def h2_scenario_replay():
         N - 1
     )
 
-    # ── Randomized document parameters ───────────────────────────────────────
-    _vendor    = random.choice([
-        "TexPlex Industrial Fluids", "Delta Basin Supply Co.", "Corsair Oilfield Products"])
-    _prod_code = {"TexPlex Industrial Fluids": "TP-450HD",
-                  "Delta Basin Supply Co.":    "DB-460GS",
-                  "Corsair Oilfield Products": "CP-HF460"}[_vendor]
-    _fill_vol   = round(random.uniform(2.9, 3.3), 1)
-    _set_depth  = random.randint(7750, 8100)
-    _tech       = random.choice(["R.M.", "J.V.", "T.K."])
-    _startup_a  = round(random.uniform(82, 88), 1)
-    _wo_year    = _H2_WORKOVER_DATE.strftime("%Y")
-    _wo_seq     = random.randint(1840, 2150)
-    _wo_num     = f"WO-{_wo_year}-{_wo_seq}-A3"
-    _whp_tp     = random.randint(290, 350)
-    _whp_cp     = random.randint(165, 200)
-    _s_rate     = random.randint(165, 215)
-    _s_water    = random.randint(85,  145)
-    _note_date  = _H2_SCENARIO_DATE - timedelta(days=random.randint(1, 4))
-    _tour_shift = random.choice(["Day shift (06:00-18:00)", "Night shift (18:00-06:00)"])
-    _op_init    = random.choice(["T.K.", "R.M.", "J.V."])
-    _tour_amps  = round(random.uniform(86, 89), 1)
-    _whp_tp4    = random.randint(315, 345)
-    _whp_cp4    = random.randint(180, 200)
+    # ── Paraffin scenario document parameters ────────────────────────────────
+    _pm_interval_days = 90
+    _pm_overdue_days  = 52
+    _last_hoil_date   = _H2_SCENARIO_DATE - timedelta(days=142)
+    _pm_due_date      = _last_hoil_date + timedelta(days=_pm_interval_days)
+    _pm_vendor        = random.choice([
+        "Basin Chemical Services LLC",
+        "Permian Chemical Solutions Ltd.",
+        "West Texas Industrial Chemicals",
+    ])
+    _wat_f           = random.randint(112, 124)  # WAT °F: Permian carbonate range (Gemini-confirmed)
+    _prior_pull_date = _H2_PRIOR_PULL_DATE        # bearings normal ~18 months ago
 
-    # ── Fallback document templates (used when Gemma offline) ────────────────
-    _doc1_fallback = (
-        f"WORKOVER COMPLETION REPORT\n"
+    # ── Static document templates — no Gemma / LLM dependency ───────────────
+    _doc1_text = (
+        f"CHEMICAL SERVICE LOG — HOT-OIL / PARAFFIN INHIBITOR TREATMENT\n"
         f"Well: ESP-ALPHA-3 | Andrews County, WTX\n"
-        f"WO Number: {_wo_num} | Date: {_h2_fmt(_H2_WORKOVER_DATE)}\n"
-        f"Service Company: Basin Lift Services LLC | Crew Supervisor: {_tech}\n"
-        f"Motor: 150 hp / 1200 V / 100 A nameplate | Set depth: {_set_depth} ft MD\n\n"
-        f"SCOPE: Motor/pump/protector replacement (vibration/amp anomaly, operator-flagged).\n\n"
-        f"PULL CONDITIONS: Motor IR 9.1 MOhm (above IEEE 43-2000 minimum). "
-        f"Pump: stages 1-3 wear consistent with sand exposure — no unexpected damage. "
-        f"Protector: shaft seal weeping lower bag (expected wear). "
-        f"Bearings: light polish, no pitting.\n\n"
-        f"NEW ASSEMBLY: New 150 hp motor, 7-stage AR-trim pump, Series 4000 protector.\n\n"
-        f"PROTECTOR OIL FILL: Product {_vendor} {_prod_code}. Procedure per SPC-ESP-003. "
-        f"Fill volume: {_fill_vol} gal. Protector capacity: 3.1 gal. No leakage detected.\n\n"
-        f"STARTUP: Amps at panel: {_startup_a} A. WHP tubing: {_whp_tp} psi. "
-        f"WHP casing: {_whp_cp} psi. Rate approx. {_s_rate} BOPD / {_s_water} BWPD.\n\n"
-        f"Signed: {_tech}\n"
-        f"Company Rep sign-off: [Pending RTOC review — field copy]"
-    )
-    _doc4_fallback = (
-        f"FIELD TOUR NOTE — ESP-ALPHA-3\n"
-        f"Date: {_h2_fmt(_note_date)} | {_tour_shift} | Stop time: approx. 09:45\n"
-        f"Operator: {_op_init}\n\n"
-        f"WHP tubing: {_whp_tp4} psi. WHP casing: {_whp_cp4} psi.\n"
-        f"Motor amps at panel: {_tour_amps} A (SCADA historian baseline ~83 A post-workover; "
-        f"motor nameplate 100 A; SCADA overload setpoint 102 A — no alarm).\n"
-        f"Slight wellhead vibration above typical noted on walkdown — below SCADA threshold.\n"
-        f"No surface anomalies. No leaks.\n"
-        f"Action: Flagged for monitoring next tour. No immediate action taken.\n\n"
-        f"Signed: {_op_init}"
+        f"Service Company: {_pm_vendor}\n"
+        f"Operator PM Instruction: {_pm_interval_days}-day hot-oil treatment cycle\n\n"
+        f"TREATMENT HISTORY:\n"
+        f"  Last completed treatment: {_h2_fmt(_last_hoil_date)}\n"
+        f"  Next treatment due:       {_h2_fmt(_pm_due_date)}\n"
+        f"  Current date:             {_h2_fmt(_H2_SCENARIO_DATE)}\n"
+        f"  Status:                   {_pm_overdue_days} DAYS PAST DUE\n\n"
+        f"DELAY NOTE ({_h2_fmt(_pm_due_date)}):\n"
+        f"  Scheduled hot-oil unit not available. Unit committed to Midland Basin\n"
+        f"  pad operations through end of month. Treatment rescheduled.\n"
+        f"  As of {_h2_fmt(_H2_SCENARIO_DATE)}: no confirmed reschedule date on file.\n\n"
+        f"WELL NOTES: High-wax crude confirmed. WAT ~{_wat_f}\u00b0F per PVT report.\n"
+        f"  Operator standing instruction: treat every {_pm_interval_days} days maximum;\n"
+        f"  treat sooner if vibration or amp anomaly observed.\n\n"
+        f"IMMEDIATE ACTION: Dispatch hot-oil unit. Well shows vib/amp deviation\n"
+        f"  consistent with tubing restriction. Do NOT delay further.\n"
     )
 
-    doc1_text    = _doc1_fallback
-    doc4_text    = _doc4_fallback
-    doc_gen_mode = "FALLBACK_TEMPLATE"
-
-    # ── Gemma dynamic doc generation (best-effort; gracefully degrades when GPU down) ─
-    _doc1_prompt = (
-        f"Generate a realistic Permian Basin ESP workover completion report for a field "
-        f"technician. Use ONLY these exact parameters and do not add diagnosis or recommendation:\n\n"
-        f"Well: ESP-ALPHA-3 | Andrews County WTX\n"
-        f"Workover Date: {_h2_fmt(_H2_WORKOVER_DATE)}\n"
-        f"WO Number: {_wo_num}\n"
-        f"Service Company: Basin Lift Services LLC\n"
-        f"Crew Supervisor: {_tech}\n"
-        f"Motor nameplate: 150 hp / 1200 V / 100 A\n"
-        f"Set depth: {_set_depth} ft MD\n"
-        f"Protector fill oil product: {_vendor} {_prod_code}\n"
-        f"Protector fill volume: {_fill_vol} gal\n"
-        f"Startup amps: {_startup_a} A\n"
-        f"WHP tubing at startup: {_whp_tp} psi\n"
-        f"WHP casing at startup: {_whp_cp} psi\n"
-        f"Startup rate: approx. {_s_rate} BOPD / {_s_water} BWPD\n\n"
-        f"Format as a terse field report. Include: scope of work, pull conditions (motor IR, "
-        f"pump wear, protector weeping — give plausible values), new assembly installation, "
-        f"protector fill procedure reference (SPC-ESP-003), fill completion without leakage, "
-        f"startup readings. No diagnosis. No recommendation. Sign with {_tech}. "
-        f"End with: 'Company Rep sign-off: [Pending RTOC review — field copy]'"
+    _doc2_text = (
+        f"FLUID PVT REPORT — ESP-ALPHA-3\n"
+        f"Andrews County, WTX | Analyzed: {_h2_fmt(_H2_WORKOVER_DATE)}\n"
+        f"Laboratory: PBFA-{_H2_WORKOVER_DATE.strftime('%Y')}-A3\n\n"
+        f"CRUDE OIL CHARACTERIZATION:\n"
+        f"  API Gravity:              28.4\u00b0 API\n"
+        f"  Gas-Oil Ratio:            820 scf/bbl\n"
+        f"  Water Cut:                22%\n"
+        f"  Wax Content (by weight):  8.3% \u2014 HIGH\n"
+        f"  Pour Point:               38\u00b0F\n"
+        f"  Wax Appearance Temp (WAT): {_wat_f}\u00b0F (ASTM D5985 cross-polarization)\n\n"
+        f"PARAFFIN DEPOSITION RISK: HIGH\n"
+        f"  Tubing wall temperature drops below WAT in upper 1,500\u20132,000 ft of\n"
+        f"  production string. Estimated radial deposition rate: 0.5\u20131.2 mm/month.\n"
+        f"  At {_pm_interval_days + _pm_overdue_days} days since last treatment,\n"
+        f"  restriction may significantly reduce tubing flow area.\n\n"
+        f"SYSTEM CURVE NOTE (API RP 11S):\n"
+        f"  Tubing restriction \u2192 lower producing rate \u2192 reduced drawdown \u2192 PIP elevation.\n"
+        f"  Pump intake operates above WAT at depth \u2014 pump itself is not the deposition zone.\n\n"
+        f"RECOMMENDED TREATMENT INTERVAL: {_pm_interval_days} days maximum.\n"
     )
-    _doc4_prompt = (
-        f"Generate a brief Permian Basin lease operator field tour note for a well stop. "
-        f"Use ONLY these exact parameters. Record observations only — no diagnosis.\n\n"
-        f"Well: ESP-ALPHA-3\n"
-        f"Tour date: {_h2_fmt(_note_date)}\n"
-        f"Tour shift: {_tour_shift}\n"
-        f"Operator initials: {_op_init}\n"
-        f"WHP tubing: {_whp_tp4} psi\n"
-        f"WHP casing: {_whp_cp4} psi\n"
-        f"Motor amps at panel display: {_tour_amps} A\n"
-        f"SCADA baseline (historian): ~83 A post-workover average\n"
-        f"Motor nameplate: 100 A | SCADA overload setpoint: 102 A\n\n"
-        f"Observations to include:\n"
-        f"- Amps slightly above recent baseline — within normal operating band, no alarm\n"
-        f"- Slight wellhead vibration above typical noted on walkdown — below SCADA threshold\n"
-        f"- No surface anomalies, no leaks\n"
-        f"- Action: flagged for monitoring next tour, no immediate action\n\n"
-        f"Terse field note style. Sign with {_op_init}."
-    )
-    try:
-        import httpx
-        async with httpx.AsyncClient() as _gc:
-            _r1, _r4 = await asyncio.gather(
-                _gc.post(f"{OLLAMA_URL}/api/generate",
-                    json={"model": OLLAMA_MODEL, "prompt": _doc1_prompt,
-                          "stream": False, "options": {"num_predict": 450, "temperature": 0.4}},
-                    timeout=20.0),
-                _gc.post(f"{OLLAMA_URL}/api/generate",
-                    json={"model": OLLAMA_MODEL, "prompt": _doc4_prompt,
-                          "stream": False, "options": {"num_predict": 220, "temperature": 0.3}},
-                    timeout=15.0),
-                return_exceptions=True,
-            )
-        _t1 = (_r1.json().get("response", "").strip()
-               if not isinstance(_r1, Exception) and _r1.status_code == 200 else "")
-        _t4 = (_r4.json().get("response", "").strip()
-               if not isinstance(_r4, Exception) and _r4.status_code == 200 else "")
-        if len(_t1) > 100:
-            doc1_text    = _t1
-            doc_gen_mode = "GEMMA_LIVE"
-        if len(_t4) > 50:
-            doc4_text = _t4
-    except Exception as _ge:
-        log.info(f"H2 Gemma doc generation unavailable — fallback templates active: {_ge}")
 
-    # ── GDC verdict string ────────────────────────────────────────────────────
+    _doc3_text = _build_h2_doc3()  # Prior pull record — bearings NORMAL at _H2_PRIOR_PULL_DATE
+
+    # ── GDC verdict ──────────────────────────────────────────────────────────
     gdc_verdict = (
-        f"Elastomer seal degradation from workover fluid incompatibility — NOT bearing wear. "
-        f"Root cause: {_vendor} {_prod_code} (synthetic ester class) incompatible with "
-        f"Buna-N seals per OEM matrix PPS-4000-SVC-003-R3 (INCOMPATIBLE — failure expected "
-        f"within days to weeks of continuous service). Seal degradation onset 3-8 weeks "
-        f"post-fill (Doc 2 Note 3) aligns with observed symptom onset at "
-        f"~{round(onset_idx * t_step, 1)} weeks post-workover. Prior pull record "
-        f"({_h2_fmt(_H2_PRIOR_PULL_DATE)}) confirms bearings in good condition — "
-        f"bearing-age hypothesis eliminated. Well fluid ingress through degraded seal is "
-        f"contaminating bearing assembly (bearing wear is real, but caused by ingress "
-        f"pathway — not mechanical age). Correct action: controlled flush + reseal "
-        f"(~$8k-$15k estimate [NEEDS-EXPERT]) — NOT pump-pull investigation (~$70k-$100k)."
+        f"Paraffin/wax deposition in production tubing \u2014 NOT bearing wear. "
+        f"Hot-oil PM treatment {_pm_overdue_days} days overdue "
+        f"(last: {_h2_fmt(_last_hoil_date)}, due: {_h2_fmt(_pm_due_date)}). "
+        f"Vendor delay logged by {_pm_vendor} \u2014 not in SCADA historian. "
+        f"PVT confirms WAT {_wat_f}\u00b0F, 8.3% wax content, high deposition risk. "
+        f"PIP rising ({round(psi_nom)}\u2192{round(psi_end)} PSI) is the hydraulic "
+        f"signature of tubing restriction (API RP 11S system curve: restriction \u2192 "
+        f"lower flow \u2192 less drawdown \u2192 PIP \u2191). Temperature flat \u2014 "
+        f"confirms hydraulic restriction, not mechanical failure. "
+        f"Prior pull record ({_h2_fmt(_prior_pull_date)}) confirms bearings in "
+        f"good condition \u2014 bearing-age hypothesis eliminated. "
+        f"Correct action: hot-oil truck (~$3k\u2013$6k, surface-only, no pull). "
+        f"Pump pull (~$70k\u2013$100k) addresses bearing symptom only; "
+        f"wax restriction remains in tubing without hot-oil treatment."
     )
 
-    # ── doc_reveals payload (5 docs, staggered reveal timing) ────────────────
+    # ── doc_reveals payload (3 docs, staggered reveal) ───────────────────────
     doc_reveals = [
-        {"doc_id": 1, "title": "Workover Completion Report",
-         "type": "workover_report", "source": doc_gen_mode,
-         "vendor": _vendor, "product_code": _prod_code,
-         "text": doc1_text, "reveal_delay_ms": 0},
-        {"doc_id": 2, "title": "OEM Fluid Compatibility Matrix",
-         "type": "oem_manual", "source": "STATIC_SEED",
-         "text": _H2_OEM_MATRIX_TEXT, "reveal_delay_ms": 2000},
-        {"doc_id": 3, "title": f"Prior Pull Record — {_h2_fmt(_H2_PRIOR_PULL_DATE)}",
+        {"doc_id": 1, "title": f"Chemical Service Log \u2014 {_pm_vendor}",
+         "type": "vendor_service_log", "source": "STATIC_TEMPLATE",
+         "pm_overdue_days": _pm_overdue_days,
+         "text": _doc1_text, "reveal_delay_ms": 0},
+        {"doc_id": 2, "title": f"Fluid PVT Report \u2014 WAT {_wat_f}\u00b0F",
+         "type": "pvt_report", "source": "STATIC_TEMPLATE",
+         "wat_f": _wat_f,
+         "text": _doc2_text, "reveal_delay_ms": 2000},
+        {"doc_id": 3, "title": f"Prior Pull Record \u2014 {_h2_fmt(_prior_pull_date)}",
          "type": "pull_record", "source": "STATIC_SEED",
-         "text": _build_h2_doc3(), "reveal_delay_ms": 3500},
-        {"doc_id": 4, "title": "Lease Operator Field Tour Note",
-         "type": "shift_note", "source": doc_gen_mode,
-         "text": doc4_text, "reveal_delay_ms": 5000},
-        {"doc_id": 5, "title": "Well History Extract",
-         "type": "well_history", "source": "STATIC_SEED",
-         "text": _build_h2_doc5(), "reveal_delay_ms": 6500},
+         "text": _doc3_text, "reveal_delay_ms": 3500},
     ]
 
     return {
-        "scenario":         "workover_fluid_incompatibility",
+        "scenario":         "paraffin_wax_restriction",
         "asset_id":         "ESP-ALPHA-3",
         "n":                N,
         "efficiency":       eff_arr,
         "vib":              vib_arr,
         "amps":             amps_arr,
-        "t_min":            t_wk_arr,   # weeks post-workover (t_min name kept for JS parity)
+        "psi":              psi_arr,       # PIP rises — paraffin restriction tell
+        "temp":             temp_arr,      # flat — hydraulic not thermal
+        "t_min":            t_wk_arr,      # weeks post-observation-start (JS key kept for parity)
         "health_score":     health_scores,
         "onset_idx":        onset_idx,
         "gdc_detect_idx":   gdc_detect_idx,
@@ -7027,10 +6953,9 @@ async def h2_scenario_replay():
         "scada_alarm_rule": f"Rolling-avg vibration >= {VIB_SCADA_HI} mm/s (ISA-18.2 High alarm)",
         "gdc_verdict":      gdc_verdict,
         "doc_reveals":      doc_reveals,
-        "doc_gen_mode":     doc_gen_mode,
-        "workover_date":    _h2_fmt(_H2_WORKOVER_DATE),
-        "workover_vendor":  _vendor,
-        "workover_product": _prod_code,
+        "pm_overdue_days":  _pm_overdue_days,
+        "pm_vendor":        _pm_vendor,
+        "wat_f":            _wat_f,
         "health_ok":        health_ok,
         "model_used":       "esp_health.ubj" if health_ok else "FALLBACK_SYNTHETIC",
     }
