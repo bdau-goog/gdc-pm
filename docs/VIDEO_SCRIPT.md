@@ -55,7 +55,7 @@
 
 ### The Situation
 
-> *"Well A-3 has been declining for three weeks. Efficiency down. Vibration up. Slow, steady — textbook early bearing wear.*
+> *"Well A-3 has been declining for three weeks. Efficiency down. Vibration up. Amps elevated. Slow, progressive — textbook early bearing wear.*
 >
 > *Every APM platform on the market would route this to a pump-pull investigation. That's a workover — three days offline, spot rig at fourteen thousand a day, plus motor inspection, plus deferred production. Seventy to a hundred thousand dollars."*
 
@@ -63,27 +63,31 @@
 
 > *"Except the pump bearings are fine.*
 >
-> *Eight weeks ago, a workover crew filled the hydraulic system with a non-OEM fluid. Incompatible with the Buna-N elastomer shaft seals. Documented in the workover completion report — fluid type, vendor, date.*
+> *This is a Permian carbonate producer. High-wax crude — Wax Appearance Temperature confirmed at one-thirteen Fahrenheit by the PVT report. As production fluid rises up the tubing and cools, paraffin crystals deposit on the tubing wall.*
 >
-> *On a standard four-sensor string — intake pressure, motor amps, winding temp, single-axis vibration — elastomer seal degradation and bearing wear look identical. You cannot distinguish them without spectral analysis or bearing temperature sensors this well doesn't have.*
+> *The ninety-day hot-oil treatment that clears that wax? Fifty-two days overdue. The chemical vendor had a scheduling conflict — their unit was committed to another pad. That delay is documented in the vendor service portal. It is not in SCADA.*
 >
-> *The cause was never in any telemetry. No sensor on a running ESP can measure what fluid went in eight weeks ago."*
+> *Here's what paraffin restriction does on a four-sensor string: the tubing narrows, the pump works harder against backpressure — amps up, vibration up, intake pressure rising, efficiency down. The motor stays cool. It is hydraulic, not mechanical.*
+>
+> *On the data you have, that pattern is indistinguishable from bearing wear. The sensor cannot tell you that a vendor missed a truck roll."*
 
 ### The Reveal
 
-> *"GDC read the workover completion report. Cross-referenced the OEM compatibility matrix — that fluid class is incompatible with Buna-N.*
+> *"GDC read the chemical vendor service log. PM fifty-two days past due. Vendor delay documented.*
 >
-> *Checked the timing: three-week onset from workover date. Matches the expected elastomer swell timeline for that fluid, exactly.*
+> *Read the PVT report. WAT one-thirteen Fahrenheit. Eight-point-three percent wax content. High deposition risk. Ninety-day treatment cycle required.*
 >
-> *Checked the last pull record: bearings were normal. Bearing-wear hypothesis eliminated.*
+> *Read the prior pull record. Bearings were normal eighteen months ago. Bearing-age hypothesis eliminated.*
 >
-> *The recommendation: controlled flush and reseal. Eight to fifteen thousand dollars."*
+> *The recommendation: dispatch hot-oil truck. Three to six thousand dollars. Surface-only. No downhole access required. No pull."*
 
 ### The Resolution
 
-> *"The pump stays in the ground. The cause was in a document from eight weeks ago that no sensor could read and no APM platform could access.*
+> *"The pump stays in the ground. The wax is flushed. The well returns to nominal in hours.*
 >
-> *Fifty-one percent of ESP failures are attributed to human factors and operational errors. This is the common case, not the edge case. GDC generates the non-obvious provenance hypothesis automatically — at fleet scale, every time."*
+> *The cause was in a vendor portal log that no SCADA historian, no APM platform, and no threshold alarm ever touches. GDC connected it to the sensor pattern in seconds.*
+>
+> *Fifty-one percent of ESP failures are attributed to human factors and operational errors — including missed preventive maintenance. This is the common case, not the edge case. GDC generates the non-obvious provenance hypothesis automatically — at fleet scale, every time."*
 
 ### Bridge
 
