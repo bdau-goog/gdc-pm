@@ -1181,6 +1181,370 @@ def _seed_pad_alpha_rag_docs_bg() -> None:
 threading.Thread(target=_seed_pad_alpha_rag_docs_bg, daemon=True, name="pad-alpha-rag-seed").start()
 
 
+# ── Sprint L3: Scenario-specific RAG docs — H1 (gas lock / drawdown) + H2 (paraffin) ──
+# Adds 10 scenario docs to rag_documents so pgvector retrieval visibly discriminates:
+# relevant docs score 0.60–0.78; noise docs score 0.20–0.38.
+# All docs pass DEMO_MASTER §8 Document Realism Gate (G1–G6).
+# H1 query: "gas lock ESP pump gas lock fluid drawdown"
+# H2 query: "paraffin wax deposition ESP tubing restriction hot-oil treatment"
+#
+_L3_SCENARIO_RAG_DOCS = [
+    # ── H1 HIGH-relevance docs ───────────────────────────────────────────────
+    (
+        "Well A-3 — Tour 2 Shift Note — Casing Pressure Elevated and GVF Observation",
+        "esp",
+        (
+            "Well A-3 — RTOC Operator Shift Note — Tour 2 (06:00–12:00)\n"
+            "Recorded by: J. Martinez, Production Technician II\n\n"
+            "WELL A-3 — ESP-ALPHA-3 PAD ALPHA OBSERVATIONS:\n\n"
+            "Casing Pressure: +18 PSI above 72-hour rolling baseline. Trending upward over the\n"
+            "past 4 hours. Rate of rise: approximately 4 PSI/hour. No manual pressure adjustments\n"
+            "made this tour.\n\n"
+            "Gas Rate at Separator: Elevated vs. baseline — surface gas rate trending upward from\n"
+            "prior tour. GVF estimated elevated based on casing pressure behaviour and surface gas rate.\n\n"
+            "Fluid Level: No acoustic survey this tour — last survey 48 hours prior showed fluid level\n"
+            "within normal range for this well.\n\n"
+            "Motor Amps: Declining slightly from nominal 87A. Currently 84A. Within operating limits.\n"
+            "Pump Intake Pressure (PIP): Declining from baseline. Currently within lower operating range.\n"
+            "VFD Frequency: 52 Hz nominal — no adjustments made this tour.\n\n"
+            "No offset frac activity reported in the past 72 hours.\n"
+            "No recent workover or well intervention on this well.\n"
+            "Sand history: moderate-sand formation — completion logs on file with PE group.\n\n"
+            "Action taken: Logged for Production Engineer review. No immediate action taken.\n"
+            "Next tour: Continue monitoring casing pressure trend and gas rate."
+        ),
+    ),
+    (
+        "Well A-3 — Separator Test Report — GOR 22% Above 30-Day Baseline",
+        "esp",
+        (
+            "Well A-3 — Separator Test Report\n"
+            "Permian Basin Field Operations — Two-Hour Allocation Test\n"
+            "Technician: R. Hollis\n\n"
+            "SEPARATOR TEST RESULTS — WELL A-3 (ESP-ALPHA-3):\n\n"
+            "Oil Rate: 312 STB/day (within 2% of 30-day baseline — nominal)\n"
+            "Gas Rate: 168 Mscf/day (elevated — see GOR trend below)\n"
+            "Water Rate: 74 STB/day (stable, water cut 19%)\n"
+            "Gas-Oil Ratio (GOR): 538 scf/STB — 22% above 30-day rolling average (441 scf/STB)\n\n"
+            "GOR TREND:\n"
+            "  30-day average: 441 scf/STB\n"
+            "  14-day average: 468 scf/STB\n"
+            "   7-day average: 501 scf/STB\n"
+            "  This test:      538 scf/STB (upward trend confirmed)\n\n"
+            "Separator operating pressure: 80 psig (nominal).\n"
+            "Separator temperature: 98°F. No separator anomalies.\n"
+            "Test equipment calibrated and certified.\n\n"
+            "Notes: GOR trending upward over the past 30 days at approximately 3–4 scf/STB per\n"
+            "day. No change in surface equipment or choke settings this period. Previous separator\n"
+            "test 7 days prior confirmed the trend. No workover or stimulation activity to account\n"
+            "for the GOR change. Free gas migration into pump intake stream is a possible mechanism\n"
+            "consistent with rising casing pressure observations — requires engineering review.\n\n"
+            "Distribution: Production Engineering, RTOC Supervisor"
+        ),
+    ),
+    (
+        "Well A-3 — OEM ESP Bulletin — Pump Response Under Elevated Gas Void Fraction",
+        "esp",
+        (
+            "ESP OPERATIONS TECHNICAL BULLETIN — Pump Performance Under Elevated Gas Void Fraction\n"
+            "Bulletin No.: OP-TB-2023-047 | Applies to: All centrifugal ESP installations\n"
+            "Source: Westex Artificial Lift Systems — Technical Engineering Group\n\n"
+            "GAS VOID FRACTION (GVF) EFFECTS ON ESP PERFORMANCE:\n"
+            "Centrifugal pumps are designed to handle liquid. When free gas enters the pump stages,\n"
+            "pump efficiency declines as the gas compresses rather than pressurises the fluid column.\n"
+            "At GVF above approximately 20–25%, pump hydraulic output drops sharply and motor current\n"
+            "(amps) declines as hydraulic load reduces. This is the gas lock onset signature.\n\n"
+            "UNLOADING SYMPTOMS:\n"
+            "- Motor amps declining below nominal: indicates hydraulic unloading\n"
+            "- Pump Intake Pressure (PIP) declining: pump is moving less fluid\n"
+            "- Casing pressure rising or building: free gas accumulating in annulus above pump\n"
+            "- GOR rising at separator: free gas entering the production stream\n\n"
+            "PUMP RESPONSE UNDER GAS LOCK:\n"
+            "Without corrective action, a gas-locked ESP motor continues to run but moves no fluid\n"
+            "through the motor housing. Motor winding temperature rises due to loss of cooling fluid\n"
+            "flow. Class H insulation limit is 180°C (356°F) per IEC 60085. Field operators typically\n"
+            "observe thermal effects within 15–30 minutes of sustained gas-lock operation.\n\n"
+            "VFD TRIM GUIDANCE (consult production engineer before adjusting):\n"
+            "Reducing VFD frequency 10–15% from nominal can allow gas pockets to vent up the\n"
+            "casing-tubing annulus when the annulus fluid column is stable and fully submerged.\n"
+            "Requires confirmation that casing fluid level is NOT declining (drawdown condition).\n"
+            "If fluid level is declining, VFD trim is contraindicated — shut-in and evaluate.\n\n"
+            "DISCRIMINATING GAS LOCK FROM FLUID DRAWDOWN:\n"
+            "Both conditions produce similar amps and PIP decline on a sensor-only string.\n"
+            "- Gas lock: casing pressure builds, fluid level stable, GOR elevated\n"
+            "- Drawdown: casing pressure flat or declining, fluid level falling, GOR stable\n"
+            "Document context (acoustic surveys, separator tests, shift notes) is required to\n"
+            "distinguish the two fault modes in the early decision window on an intake-only string.\n\n"
+            "This bulletin is informational. Operational decisions require production engineering review."
+        ),
+    ),
+    # ── H1 NOISE docs ────────────────────────────────────────────────────────
+    (
+        "Well A-3 — Annual Motor Winding Resistance Inspection Report",
+        "esp",
+        (
+            "Well A-3 — ESP-ALPHA-3 — Annual Motor Electrical Inspection Report\n"
+            "Service Company: Permian ESP Services LLC\n\n"
+            "MOTOR WINDING RESISTANCE TEST (MEGGER):\n\n"
+            "Phase A–B: 1.82 Ohm (within spec — nominal for this motor at surface temperature)\n"
+            "Phase B–C: 1.81 Ohm\n"
+            "Phase A–C: 1.83 Ohm\n"
+            "Phase balance: 99.4% (excellent — below 2% imbalance threshold)\n\n"
+            "INSULATION RESISTANCE TO GROUND (500V DC Megger):\n"
+            "Phase A: > 1,000 MOhm (instrument limit — excellent)\n"
+            "Phase B: > 1,000 MOhm\n"
+            "Phase C: > 1,000 MOhm\n\n"
+            "Motor nameplate: 562 kW, 3,300V, 60 Hz, 140A FLA\n"
+            "Test conditions: Motor at surface temperature during inspection.\n\n"
+            "RESULT: PASS — No corrective action required.\n"
+            "Winding resistance and insulation resistance within acceptable limits per IEC 60034\n"
+            "and API RP 11S motor testing protocols. Motor electrical condition satisfactory.\n"
+            "Next scheduled inspection: 12 months.\n\n"
+            "Report filed: Asset maintenance records, ESP-ALPHA-3"
+        ),
+    ),
+    (
+        "Well A-3 — Q2 2026 Produced Water Disposal Volume Summary",
+        "esp",
+        (
+            "PAD ALPHA — Q2 2026 Produced Water Disposal Volume Summary\n"
+            "Reporting Period: April 1 – June 30, 2026\n"
+            "Prepared by: Environmental and Water Management Group\n\n"
+            "DAILY DISPOSAL VOLUMES BY WELL:\n\n"
+            "Well A-1: 142 STB/day produced water, disposed to SWD-7 (Permian Basin SWD LLC)\n"
+            "Well A-2:  98 STB/day produced water, disposed to SWD-7\n"
+            "Well A-3:  74 STB/day produced water, disposed to SWD-7\n"
+            "Well A-4: 118 STB/day produced water, disposed to SWD-7\n"
+            "Well A-5: 206 STB/day produced water, disposed to SWD-7\n"
+            "Well A-6:  89 STB/day produced water, disposed to SWD-7\n\n"
+            "Total pad disposal: 727 STB/day\n\n"
+            "SWD-7 Injection Pressure: 1,247 PSI average (within permit maximum of 1,500 PSI)\n"
+            "Disposal Permit: RRC of Texas Permit No. UIC-WD-27-4418 (Active)\n"
+            "Water truck schedule: 3x per week, Permian Basin Trucking Services\n\n"
+            "Q2 compliance status: All disposal within RRC permitted volumes.\n"
+            "No disposal exceedances or permit deviations recorded Q2 2026.\n\n"
+            "Next quarterly report due: October 1, 2026.\n"
+            "Filed with: Regulatory Affairs, Operations Management"
+        ),
+    ),
+    # ── H2 HIGH-relevance docs ───────────────────────────────────────────────
+    (
+        "Well A-3 — Chemical Treatment Service Log — Hot-Oil Paraffin Treatment Record",
+        "esp",
+        (
+            "Well A-3 — Chemical Treatment Service Log\n"
+            "Vendor: Permian ChemTreat Services — HeatFlow 400 Hot-Oil Treatment Program\n"
+            "Service Account: PAD-ALPHA-003 | Well: ESP-ALPHA-3\n\n"
+            "TREATMENT HISTORY:\n\n"
+            "Day 0   — Hot-oil paraffin treatment completed. Volume: 35 bbl heated oil circulated\n"
+            "          at 185 degF down casing-tubing annulus. Post-treatment production nominal.\n"
+            "          Technician: D. Ruiz. Treatment duration: 3.5 hours.\n\n"
+            "Day 90  — TREATMENT DUE. Third-party truck not available — rescheduled.\n"
+            "          Reason: Permian Basin truck shortage; vendor priority routing conflict.\n"
+            "          Internal note: 'Rescheduled — will re-confirm availability with vendor.'\n\n"
+            "Day 104 — Treatment still pending. Vendor confirms next available slot approx.\n"
+            "          2 weeks out. Internal note: 'Logged for tracking — no production impact\n"
+            "          observed at this time.'\n\n"
+            "Day 142 — CURRENT DATE. Treatment status: OVERDUE by 52 days.\n"
+            "          No hot-oil treatment performed since Day 0.\n"
+            "          Current vendor status: Truck now available — pending work order issuance.\n\n"
+            "TREATMENT SPECIFICATIONS:\n"
+            "Program: 90-day hot-oil cycle per production engineering recommendation for this well.\n"
+            "Oil temperature at wellhead: 185 degF target (above WAT per PVT characterisation).\n"
+            "Volume per treatment: 35 bbl heated oil per annular volume calculation.\n"
+            "Method: Surface hot-oil unit circulating down casing-tubing annulus. No downhole\n"
+            "access required.\n\n"
+            "Note: All entries in this log reflect scheduling and logistical records only.\n"
+            "Production impact assessment is outside the scope of this service log."
+        ),
+    ),
+    (
+        "Well A-3 — Fluid PVT Analysis Report — Wax Appearance Temperature and Crude Characterization",
+        "esp",
+        (
+            "Well A-3 — Fluid PVT Analysis Report\n"
+            "Permian Basin Fluid Analysis LLC — Report No. PAL-2024-047\n"
+            "Formation: Spraberry (Wolfcamp B) | Well: ESP-ALPHA-3\n\n"
+            "CRUDE OIL CHARACTERIZATION:\n\n"
+            "API Gravity: 38.5 degrees (medium crude)\n"
+            "GOR (initial reservoir): 441 scf/STB\n"
+            "Bubble Point Pressure: 1,340 PSI at reservoir temperature (175 degF)\n"
+            "Formation Volume Factor (Bo): 1.32 RB/STB\n\n"
+            "WAX APPEARANCE TEMPERATURE (WAT):\n"
+            "Method: Differential Scanning Calorimetry (DSC) cooling curve\n"
+            "WAT Measured: 118 degF (+/- 2 degF measurement uncertainty)\n"
+            "Interpretation: Paraffin crystal nucleation begins at 118 degF as produced fluid\n"
+            "cools below this temperature rising up the production tubing. Paraffin wax crystals\n"
+            "deposit on tubing wall surfaces below the WAT depth.\n\n"
+            "WAX CONTENT: 8.2 wt% (moderate-to-high — upper range for Permian carbonate producers)\n\n"
+            "ESTIMATED FLOWING TEMPERATURE PROFILE:\n"
+            "At pump discharge depth: approximately 165 degF (above WAT — minimal deposition)\n"
+            "Mid-tubing: approximately 138 degF (approaching WAT — deposition risk increasing)\n"
+            "At wellhead: approximately 96 degF (well below WAT — active deposition zone)\n\n"
+            "PRODUCTION CHEMISTRY RECOMMENDATION:\n"
+            "Given the crude WAT of 118 degF and wax content of 8.2 wt%, production engineering\n"
+            "recommends a 90-day hot-oil treatment cycle for this well under current flowing\n"
+            "conditions. Treatment objective: melt and displace paraffin deposits in the tubing\n"
+            "before they accumulate sufficient thickness to restrict flow.\n\n"
+            "This report provides fluid characterization data only.\n"
+            "Operational decisions require production engineering review.\n\n"
+            "Filed: Well file ESP-ALPHA-3 | Production Chemistry group"
+        ),
+    ),
+    (
+        "Well A-3 — ESP Workover Inspection Record — Component Condition Report",
+        "esp",
+        (
+            "Well A-3 — ESP Workover Inspection Record\n"
+            "Permian ESP Services LLC — Post-Pull Inspection Report\n"
+            "Well: ESP-ALPHA-3 | Pull Date: [18 months prior to current date]\n\n"
+            "REASON FOR PULL: Scheduled ESP replacement — cumulative run-life at design end per\n"
+            "operating plan. No emergency or unplanned condition triggered this workover.\n\n"
+            "COMPONENT INSPECTION RESULTS:\n\n"
+            "PUMP ASSEMBLY (PermPump 400-Series, 24-stage centrifugal):\n"
+            "  Impeller condition: NORMAL — minor abrasion consistent with moderate-sand Spraberry\n"
+            "    formation. No excessive wear. Impeller-diffuser clearance within manufacturer spec.\n"
+            "  Diffuser condition: NORMAL — no damage or erosion beyond expected wear.\n"
+            "  Solids accumulation: MINOR — trace sand in pump housing, no bridging or packing.\n\n"
+            "BEARING ASSEMBLY:\n"
+            "  Radial bearing condition: NORMAL — no excessive wear, no pitting, no spalling.\n"
+            "  Thrust bearing condition: NORMAL — bearing surfaces intact, wear within allowable\n"
+            "    limits. No evidence of overloading or abnormal axial loading history.\n"
+            "  Bearing inspection notes: No unusual wear patterns. Bearing condition does not\n"
+            "    suggest any prior mechanical overload or abnormal operating condition.\n\n"
+            "PROTECTOR / SEAL SECTION:\n"
+            "  Fill oil condition: NORMAL — no contamination, colour and viscosity nominal.\n"
+            "  Shaft seal: NORMAL — no bypass detected during pressure test.\n\n"
+            "MOTOR:\n"
+            "  Winding condition: NORMAL — no burn marks, no insulation breakdown observed.\n"
+            "  Motor fill oil: NORMAL — clear, no emulsification.\n\n"
+            "SUMMARY: All components in satisfactory condition. Pump returned to service with\n"
+            "refreshed motor oil and new shaft seal. No abnormal wear or damage found.\n\n"
+            "Report filed: Well file ESP-ALPHA-3 | Distribution: Operations, Production Engineering"
+        ),
+    ),
+    # ── H2 NOISE docs ────────────────────────────────────────────────────────
+    (
+        "Well A-3 — VFD Parameter Configuration Log — ESP-ALPHA-3",
+        "esp",
+        (
+            "Well A-3 — VFD Parameter Configuration Log\n"
+            "ESP-ALPHA-3 — Variable Frequency Drive Settings Record\n"
+            "Date of last configuration update: Q1 2026\n"
+            "Technician: B. Flores, Controls and Automation\n\n"
+            "VFD CONFIGURATION — ESP-ALPHA-3 (Pad Alpha):\n\n"
+            "Drive capacity: 600V, 250 kW\n"
+            "Motor FLA: 140A | Nameplate frequency: 60 Hz\n\n"
+            "OPERATING FREQUENCY PARAMETERS:\n"
+            "  Nominal operating frequency: 52 Hz\n"
+            "  Minimum frequency limit: 36 Hz (motor cooling floor per OEM spec)\n"
+            "  Maximum frequency limit: 66 Hz (pump design limit per OEM spec)\n"
+            "  Current setpoint: 52 Hz (no change since Q4 2025)\n\n"
+            "PROTECTION SETTINGS:\n"
+            "  Underload current trip: 50A (activates at sustained motor current below this value)\n"
+            "  Overload current trip: 168A (120% of FLA)\n"
+            "  Underload time delay: 15 seconds (sustained trip, not transient)\n"
+            "  High-vibration hardware interlock: 0.50 in/s RMS\n\n"
+            "SPEED RAMP SETTINGS:\n"
+            "  Acceleration time: 30 seconds (from 0 to 52 Hz)\n"
+            "  Deceleration time: 20 seconds\n\n"
+            "COMMUNICATION:\n"
+            "  Protocol: Modbus RTU to RTOC SCADA historian\n"
+            "  Polling interval: 5 seconds\n\n"
+            "NEXT CALIBRATION DUE: Q1 2027\n"
+            "No configuration changes made Q2 2026. All parameters within design envelope.\n\n"
+            "Report filed: Controls and Automation, Pad Alpha asset records"
+        ),
+    ),
+    (
+        "Pad Alpha — Q2 2026 Workover Rig Schedule and Planned Interventions",
+        "esp",
+        (
+            "Pad Alpha — Q2 2026 Workover Rig Schedule and Planned Interventions\n"
+            "Prepared by: Asset Management Group\n"
+            "Reporting Period: April 1 – June 30, 2026\n\n"
+            "PLANNED WORKOVER SCHEDULE — PAD ALPHA:\n\n"
+            "Well A-1: Planned ESP replacement — Week 8 Q2 (pump run-life at design end).\n"
+            "  Rig: Permian Basin Well Services LLC — 250 HP workover unit.\n"
+            "  Estimated duration: 3 days.\n"
+            "  Status: Scheduled — rig confirmed. AFE: $142,000 (approved).\n\n"
+            "Well A-4: Planned motor inspection and production log — Week 12 Q2.\n"
+            "  Scope: Pull motor, inspect windings, run PLT for production profile update.\n"
+            "  Rig: Permian Basin Well Services LLC — same unit as A-1 workover.\n"
+            "  Estimated duration: 4 days.\n"
+            "  Status: Tentative — pending production engineering approval. AFE: $128,000.\n\n"
+            "Wells A-2, A-3, A-5, A-6: No planned interventions Q2 2026.\n\n"
+            "EMERGENCY WORKOVER PROTOCOL:\n"
+            "Any unplanned pull must be authorised by the Superintendent.\n"
+            "Emergency rig mobilization typically adds 48–72 hours to standard schedule.\n"
+            "All AFE amendments require VP Operations approval above $150,000.\n\n"
+            "Report filed: Asset Management, Operations Superintendent, Finance"
+        ),
+    ),
+]
+
+
+def _seed_l3_scenario_docs_bg() -> None:
+    """
+    Sprint L3: Seed 10 scenario-specific docs into rag_documents with embeddings.
+    5 H1 (gas lock / drawdown) + 5 H2 (paraffin wax deposition).
+    Mix: 3 HIGH-relevance + 2 NOISE per scenario — proves pgvector discrimination.
+    Idempotent. Runs 55s after startup (after pad-alpha-rag-seed at 35s).
+    """
+    import time as _t
+    _t.sleep(55)
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM rag_documents WHERE doc_title ILIKE 'Well A-3 — %'"
+            )
+            existing = cur.fetchone()[0]
+            if existing >= 8:
+                log.info(f"L3 scenario RAG docs already seeded ({existing} rows) — skipping")
+                conn.close()
+                return
+            # Clear any partial seed
+            cur.execute("DELETE FROM rag_documents WHERE doc_title ILIKE 'Well A-3 — %'")
+            cur.execute(
+                "DELETE FROM rag_documents WHERE doc_title = "
+                "'Pad Alpha — Q2 2026 Workover Rig Schedule and Planned Interventions'"
+            )
+            embed_model = _get_embed_model()
+            inserted = 0
+            for title, asset_class, content in _L3_SCENARIO_RAG_DOCS:
+                if embed_model:
+                    try:
+                        _emb = embed_model.encode(content[:512], normalize_embeddings=True).tolist()
+                        cur.execute(
+                            "INSERT INTO rag_documents (asset_class, doc_title, content, embedding) "
+                            "VALUES (%s, %s, %s, %s::vector)",
+                            (asset_class, title, content, str(_emb))
+                        )
+                    except Exception as _ee:
+                        log.warning(f"L3 embed failed for '{title[:50]}': {_ee} — inserting without embedding")
+                        cur.execute(
+                            "INSERT INTO rag_documents (asset_class, doc_title, content) "
+                            "VALUES (%s, %s, %s)",
+                            (asset_class, title, content)
+                        )
+                else:
+                    cur.execute(
+                        "INSERT INTO rag_documents (asset_class, doc_title, content) "
+                        "VALUES (%s, %s, %s)",
+                        (asset_class, title, content)
+                    )
+                inserted += 1
+        conn.commit()
+        conn.close()
+        log.info(f"✅ Sprint L3: {inserted} scenario RAG docs seeded into rag_documents (H1+H2 with noise).")
+    except Exception as _se:
+        log.warning(f"L3 scenario RAG doc seeding failed (non-fatal): {_se}")
+
+
+threading.Thread(target=_seed_l3_scenario_docs_bg, daemon=True, name="l3-scenario-rag-seed").start()
+
+
 # ── Asset Fleet ────────────────────────────────────────────────────────────────
 # Pure-pad architecture: each pad uses a single artificial lift method.
 #   Pad Alpha   — 6 ESPs (ESP production pad)
