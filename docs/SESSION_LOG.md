@@ -2,6 +2,15 @@
 
 ---
 
+## Session BH (June 12, 2026) — *Sprint H3-E: pad-level dashboard deployed*
+
+**Code committed:** `840afe1` (feat(h3-e): pad-level dashboard — field uplift card + 6-well allocation table)
+**Cluster image digest:** `sha256:42b044d2bf16c32f7f6edd10fcd03ff7de60c06d1901d2cc3d693305dab67f01`
+
+Sprint H3-E executed. Session opened with a cold-start review of NEXT_SESSION_PROMPT, SPRINT_PLAN, DEMO_MASTER, and SESSION_LOG to re-establish full context. Provided a structured sprint-by-sprint orientation before implementing. Reconnaissance confirmed the H3 backend already returns `wells[]`, `joint_optimal`, `constraint_stack`, and `independent_baseline` — the frontend was only consuming 4 of ~15 API keys. Also identified an **integrity violation**: H3 Briefing Panel 3 hardcoded `+$369,225` (from Session BD) while the live API at $85/bbl returns `uplift_cash_90d: 179928.0` (~$180k). Wireframe presented and approved before any HTML was written. Two batched file edits: (1) `app.js` — added 4 new data props (`optWells`, `optJointOptimal`, `optIndependentBaseline`, `optConstraintStack`), `wellsSortedByGor` computed property (GOR ascending sort), populated all 4 in `runVizierOptimize()`; (2) `index.html` — replaced `h3-card-grid` (3 single-well cards) with a **PAD ALPHA · JOINT FIELD UPLIFT card** (3 columns: +77.9 bbl/d, live cash uplift, gas ceiling 7.9999/8.0 MMscfd BINDING) and a **PAD ALPHA · 6-WELL OPTIMAL ALLOCATION table** (`v-for wellsSortedByGor` — Well, GOR, Baseline Hz, GDC Optimal Hz, Δ Hz, Role); also fixed Panel 3 integrity violation ($369,225 hardcoded → live `optJointOptimal.uplift_cash_90d`). Build/push/deploy verified: pod 1/1 Running, HTTP 200, 6 wells returning correctly. Pareto chart and trial log unchanged. Next sprint: H3-F (selectable binding constraint + RAG provenance — backend `?constraint=gas|thermal|rul` + frontend toggle + pgvector doc retrieval per constraint).
+
+---
+
 ## Session BG (June 11, 2026) — *H2 paraffin/wax scenario — hostile pass + docs rewrite + briefing deployed*
 
 **Code committed:** `dad8c71` (docs: H2 paraffin scenario rewrite) · `f5f30b6` (feat(h2-briefing): paraffin scenario 3-panel rewrite + v-else layout fix)
