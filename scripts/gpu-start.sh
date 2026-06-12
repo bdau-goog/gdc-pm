@@ -1,48 +1,85 @@
 #!/usr/bin/env bash
 # =============================================================================
-# gpu-start.sh — Start the Ollama LLM (gemma:27b) GPU node
+# gpu-start.sh — Start GPU node pool + Ollama LLM (gemma4:latest on NVIDIA L4)
 #
 # Usage: ./scripts/gpu-start.sh
 #
 # What this does:
-#   1. Scales the Ollama deployment to 1 replica
-#   2. GKE Autopilot provisions an NVIDIA L4 GPU node in us-central1-b (~10-15 min)
-#   3. The init container checks if gemma:27b is on the PVC — if not, pulls it (~10 min)
-#   4. Watches until the pod is Running and the model is responding
+#   1. Resizes the GKE gpu-pool from 0 → 1 node per zone (3 total)
+#      This provisions the NVIDIA L4 VMs — billing starts here (~2-3 min)
+#   2. Scales the Ollama deployment to 1 replica
+#   3. Waits until the pod is Running and the model is responding (~15-20 min)
 #
-# Estimated startup time:
-#   - If model already on PVC: ~15 min (node provisioning)
-#   - First time or after PVC delete: ~25 min (node + model pull)
+# NOTE: This is a standard GKE cluster (NOT Autopilot). The GPU node pool must
+# be explicitly resized before the pod can schedule. This script does both.
 #
-# Cost: ~$0.65/hr while the L4 GPU node is running
+# Cost: ~$3.27/hr (3 × g2-standard-8 L4 nodes) while running.
+#       Single-node cost if you resize manually to 1 node total: ~$1.09/hr.
+#
+# When done: ./scripts/gpu-stop.sh (ALWAYS pair — stops billing)
 # =============================================================================
 set -e
 
 NAMESPACE="gdc-pm"
 DEPLOYMENT="ollama"
+CLUSTER="gdc-edge-simulation"
+NODE_POOL="gpu-pool"
+REGION="us-east1"
+PROJECT="${GOOGLE_CLOUD_PROJECT:-gdc-pm-v2}"
 TIMEOUT=1800   # 30 minutes max wait
 
 echo ""
-echo "┌─────────────────────────────────────────────────────────┐"
-echo "│  🚀 GDC-PM GPU Start — gemma:27b on NVIDIA L4          │"
-echo "│  Zone: us-central1-b  ·  Cost: ~\$0.65/hr              │"
-echo "└─────────────────────────────────────────────────────────┘"
+echo "┌─────────────────────────────────────────────────────────────┐"
+echo "│  🚀 GDC-PM GPU Start — Ollama on NVIDIA L4                 │"
+echo "│  Cost: ~\$3.27/hr (3 nodes) · ALWAYS run gpu-stop.sh when done │"
+echo "└─────────────────────────────────────────────────────────────┘"
 echo ""
 
-# Check current state
+# ── Step 1: Resize GPU node pool if at 0 ────────────────────────────────────
+GPU_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c "g2-standard" || echo "0")
+if [ "${GPU_NODES}" -gt "0" ]; then
+    echo "✅ GPU nodes already running (${GPU_NODES} node(s)). Skipping resize."
+else
+    echo "📤 Resizing ${NODE_POOL} to 1 node per zone (3 total)..."
+    echo "   This provisions NVIDIA L4 VMs. Takes ~2-3 min."
+    gcloud container clusters resize ${CLUSTER} \
+        --node-pool ${NODE_POOL} \
+        --num-nodes 1 \
+        --region ${REGION} \
+        --project ${PROJECT} \
+        --quiet
+    echo "✅ Node pool resize requested. Waiting for nodes to be Ready..."
+
+    # Wait for GPU nodes to join the cluster
+    WAIT_START=$(date +%s)
+    while true; do
+        ELAPSED=$(( $(date +%s) - WAIT_START ))
+        if [ ${ELAPSED} -gt 300 ]; then
+            echo "⚠️  Nodes taking >5 min to be Ready. Continuing anyway..."
+            break
+        fi
+        READY=$(kubectl get nodes --no-headers 2>/dev/null | grep "g2-standard" | grep "Ready" | wc -l || echo "0")
+        if [ "${READY}" -gt "0" ]; then
+            echo "✅ ${READY} GPU node(s) Ready."
+            break
+        fi
+        echo "   Waiting for GPU nodes... (${ELAPSED}s)"
+        sleep 15
+    done
+fi
+
+echo ""
+
+# ── Step 2: Scale Ollama deployment ─────────────────────────────────────────
 CURRENT=$(kubectl get deployment ${DEPLOYMENT} -n ${NAMESPACE} -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
 if [ "${CURRENT}" == "1" ]; then
-    # Already scaled up — check if running
     STATUS=$(kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT} --no-headers 2>/dev/null | awk '{print $3}' | head -1)
     if [ "${STATUS}" == "Running" ]; then
         echo "✅ Ollama is already running."
         kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT} --no-headers
-        echo ""
-        echo "Test: curl -s http://ollama.${NAMESPACE}.svc.cluster.local:11434/api/tags"
         exit 0
     fi
-    echo "⏳ Ollama is already at replicas=1 but not yet Running (status: ${STATUS})."
-    echo "   Watching for it to come up..."
+    echo "⏳ Ollama already at replicas=1 (status: ${STATUS}). Watching..."
 else
     echo "📤 Scaling Ollama deployment to 1..."
     kubectl scale deployment ${DEPLOYMENT} -n ${NAMESPACE} --replicas=1
@@ -50,8 +87,7 @@ else
 fi
 
 echo ""
-echo "⏳ Waiting for L4 GPU node provisioning and pod startup..."
-echo "   (This takes 10-20 minutes. GKE Autopilot is provisioning the node now.)"
+echo "⏳ Waiting for Ollama pod to start (model load takes ~15-20 min total)..."
 echo ""
 
 START=$(date +%s)
@@ -60,7 +96,7 @@ while true; do
     ELAPSED=$(( $(date +%s) - START ))
     if [ ${ELAPSED} -gt ${TIMEOUT} ]; then
         echo ""
-        echo "❌ Timeout after ${TIMEOUT}s. Check events:"
+        echo "❌ Timeout after ${TIMEOUT}s."
         kubectl get events -n ${NAMESPACE} --sort-by=.lastTimestamp | grep -i "ollama" | tail -10
         exit 1
     fi
@@ -77,22 +113,19 @@ while true; do
     fi
 
     if [ "${STATUS}" == "Running" ]; then
-        # Verify model is actually loaded
         POD_NAME=$(kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT} -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
-        MODEL_OK=$(kubectl exec -n ${NAMESPACE} ${POD_NAME} -- curl -sf http://localhost:11434/api/tags 2>/dev/null | grep -c "gemma4" || echo "0")
+        MODEL_OK=$(kubectl exec -n ${NAMESPACE} ${POD_NAME} -- curl -sf http://localhost:11434/api/tags 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(len(d.get('models',[])))" 2>/dev/null || echo "0")
         if [ "${MODEL_OK}" -gt "0" ]; then
             echo ""
-            echo "┌─────────────────────────────────────────────────────────┐"
-            echo "│  ✅ Ollama is READY — gemma:27b loaded and responding  │"
-            echo "└─────────────────────────────────────────────────────────┘"
-            echo ""
+            echo "┌─────────────────────────────────────────────────────────────┐"
+            echo "│  ✅ Ollama is READY — model loaded and responding           │"
+            echo "│  ⚠️  Remember: run ./scripts/gpu-stop.sh when finished     │"
+            echo "└─────────────────────────────────────────────────────────────┘"
             kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT} --no-headers
-            echo ""
-            echo "The GDC-PM UI agent chat will now use real Gemma responses."
             exit 0
         else
             if [ "${LAST_STATUS}" != "Running-loading" ]; then
-                echo "   Pod is Running, waiting for model to load..."
+                echo "   Pod Running, waiting for model to load..."
                 LAST_STATUS="Running-loading"
             fi
         fi

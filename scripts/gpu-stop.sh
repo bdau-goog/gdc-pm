@@ -1,55 +1,66 @@
 #!/usr/bin/env bash
 # =============================================================================
-# gpu-stop.sh — Stop the Ollama LLM GPU node (saves ~$0.65/hr)
+# gpu-stop.sh — Stop Ollama AND scale GPU node pool to 0 (stops all billing)
 #
 # Usage: ./scripts/gpu-stop.sh
 #
 # What this does:
 #   1. Scales the Ollama deployment to 0 replicas
-#   2. GKE Autopilot deprovisions the L4 GPU node (~5 min)
-#   3. The PVC (50Gi, contains the gemma:27b model) is RETAINED
-#      — next gpu-start.sh will reuse the cached model (faster startup)
+#   2. Resizes the GKE gpu-pool to 0 nodes (terminates the L4 VMs — stops billing)
+#   3. The PVC (gemma model cache) is RETAINED for faster next startup
 #
-# NOTE: The GDC-PM UI will show "⛔ LLM offline — rule-based mode"
-# in the agent panel header automatically when Ollama is down.
+# NOTE: This is a standard GKE cluster (NOT Autopilot). Scaling the deployment
+# to 0 does NOT automatically remove the GPU nodes — you must explicitly resize
+# the node pool. This script does both.
+#
+# Billing stops when node pool reaches 0 nodes (~2-3 min after this script).
 # =============================================================================
 set -e
 
 NAMESPACE="gdc-pm"
 DEPLOYMENT="ollama"
+CLUSTER="gdc-edge-simulation"
+NODE_POOL="gpu-pool"
+REGION="us-east1"
+PROJECT="${GOOGLE_CLOUD_PROJECT:-gdc-pm-v2}"
 
 echo ""
-echo "┌─────────────────────────────────────────────────────────┐"
-echo "│  🛑 GDC-PM GPU Stop — shutting down Ollama / L4 node   │"
-echo "└─────────────────────────────────────────────────────────┘"
+echo "┌─────────────────────────────────────────────────────────────┐"
+echo "│  🛑 GDC-PM GPU Stop — shutting down Ollama + GPU nodes     │"
+echo "└─────────────────────────────────────────────────────────────┘"
 echo ""
 
-# Check current state
+# ── Step 1: Scale Ollama deployment to 0 ─────────────────────────────────────
 CURRENT=$(kubectl get deployment ${DEPLOYMENT} -n ${NAMESPACE} -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
 if [ "${CURRENT}" == "0" ]; then
-    echo "✅ Ollama is already stopped (replicas=0). Nothing to do."
+    echo "✅ Ollama deployment already at 0 replicas."
+else
+    echo "📥 Scaling Ollama deployment to 0..."
+    kubectl scale deployment ${DEPLOYMENT} -n ${NAMESPACE} --replicas=0
+    kubectl wait --for=delete pod -l app=${DEPLOYMENT} -n ${NAMESPACE} --timeout=120s 2>/dev/null || true
+    echo "✅ Ollama pod terminated."
+fi
+
+# ── Step 2: Check current GPU node count ─────────────────────────────────────
+GPU_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c "g2-standard" || echo "0")
+if [ "${GPU_NODES}" -eq "0" ]; then
+    echo "✅ GPU node pool already at 0 nodes. No billing to stop."
     exit 0
 fi
 
-echo "📥 Scaling Ollama deployment to 0..."
-kubectl scale deployment ${DEPLOYMENT} -n ${NAMESPACE} --replicas=0
-echo "✅ Scale command sent."
 echo ""
-echo "⏳ Waiting for pod to terminate..."
-kubectl wait --for=delete pod -l app=${DEPLOYMENT} -n ${NAMESPACE} --timeout=120s 2>/dev/null || true
+echo "📥 Resizing ${NODE_POOL} to 0 nodes (terminates ${GPU_NODES} GPU VM(s))..."
+echo "   This stops all GPU billing. Takes ~2-3 minutes."
+gcloud container clusters resize ${CLUSTER} \
+    --node-pool ${NODE_POOL} \
+    --num-nodes 0 \
+    --region ${REGION} \
+    --project ${PROJECT} \
+    --quiet
 
-# Verify
-PODS=$(kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT} --no-headers 2>/dev/null | wc -l)
-if [ "${PODS}" -eq "0" ]; then
-    echo ""
-    echo "┌─────────────────────────────────────────────────────────┐"
-    echo "│  ✅ Ollama stopped. L4 GPU node deprovisioning now.     │"
-    echo "│     PVC (model cache) retained for faster next startup. │"
-    echo "│     Savings: ~\$0.65/hr while stopped.                  │"
-    echo "└─────────────────────────────────────────────────────────┘"
-else
-    echo "⚠️  Pod still showing. Check manually:"
-    kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT}
-fi
 echo ""
-echo "To restart: ./scripts/gpu-start.sh"
+echo "┌─────────────────────────────────────────────────────────────┐"
+echo "│  ✅ GPU nodes terminated. Billing stopped.                  │"
+echo "│     PVC (model cache) retained for faster next startup.     │"
+echo "│  To restart: ./scripts/gpu-start.sh                        │"
+echo "└─────────────────────────────────────────────────────────────┘"
