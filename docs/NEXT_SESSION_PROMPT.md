@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 12, 2026 (Session BL — architecture review, no code written)
+**Date: June 12, 2026 (Session BL — architecture review + Sprint L1 deployed)
 **git head:** see `git log` (Session BL docs commit)
-**fault-trigger-ui image:** `sha256:0da67ee966fa7f5cfa540c2f101d1d673ba62d57a9fb8f8d2b93d6e1cece8e7f`
+**fault-trigger-ui image:** `sha256:07cef48e2de814a3c6e184c7be71e43c0c03acda9aea18ee73afa0e9e5f34ce9`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -60,7 +60,7 @@ Key decisions (full record in `docs/SESSION_BL_ARCHITECTURE_REVIEW.md`):
 
 ---
 
-### ⚠️ TOP PRIORITY (Session BM) — Sprint L1: Weight Metadata Migration
+### ✅ SPRINT L1 — Weight Metadata Migration — COMPLETE (Session BL)
 
 **Prerequisite reading:** `docs/SESSION_BL_ARCHITECTURE_REVIEW.md` + `docs/LLM_RAG_ARCHITECTURE_ASSESSMENT.md` §Session BL
 
@@ -94,6 +94,14 @@ Key decisions (full record in `docs/SESSION_BL_ARCHITECTURE_REVIEW.md`):
 
 ---
 
+### ⚠️ TOP PRIORITY (Session BM) — Sprint L2: Readable Docs + Discoverable Weights
+
+Wire real pgvector retrieval into H1/H2 replay path. Add document modal (click evidence card → full doc text). Add weight provenance panel (lr_base + physics band + citation + effective LR). Closes the cosine-sim·pgvector integrity-label violation. See SESSION_BL_ARCHITECTURE_REVIEW.md §UI Requirements.
+
+**Verification:** After deploy, H1/H2 scenario replay should show evidence cards that open a modal with readable document text and the LR provenance panel.
+
+---
+
 ### ✅ SESSION BK — Cost controls deployed (no app code change)
 - MCP gdc-second-opinion DISABLED (Vertex AI billing). Toggle: `~/mcp-enable.sh` / `~/mcp-disable.sh`
 - GPU node pool resized 3→0 (was idle ~$78/day). gpu-start.sh/gpu-stop.sh now resize node pool
@@ -119,7 +127,7 @@ Key decisions (full record in `docs/SESSION_BL_ARCHITECTURE_REVIEW.md`):
 | Sprint H3-F: selectable constraints + RAG | ✅ DEPLOYED | `sha256:6d79a17d` — session BI |
 | H3 briefing panel Hz values (66.0, 65.5, 59.7) | ⚠️ HARDCODED | From live API 2026-06-11 — update if _PAD_ALPHA_WELL_PARAMS changes |
 | H1/H2 "cosine sim · pgvector (< 2s)" labels | ⚠️ INTEGRITY VIOLATION | Retrieval not executing in replay path — closed by Sprint L1+L2 |
-| H1 `_BAYES_FINDINGS` LRs in code | ⚠️ NOT ADAPTABLE | Must be in DB — closed by Sprint L1 |
+| H1 `_BAYES_FINDINGS` LRs in code | ✅ RESOLVED | Sprint L1 — weights in field_intel DB, get_db() read path live · sha256:07cef48e |
 | H1_METHODOLOGY.md LRs 8/5/3/2→99.6% | ⚠️ STALE DOC | Code uses 3/2/1.6/1.4→93% — fix after L1 |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended 2026-06-12 · toggle: ~/mcp-disable.sh / ~/mcp-enable.sh |
 | Pad Alpha RAG corpus (10 docs) | ✅ SEEDED | Session BI — 3 constraint-setting + 7 background in rag_documents |
