@@ -2515,6 +2515,34 @@
         </div>
         <!-- Value Cards -->
         <div v-if="optTrials.length > 0">
+          <!-- ── BINDING CONSTRAINT SELECTOR ──────────────────────────── -->
+          <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);flex-shrink:0">Binding Constraint</span>
+            <div style="display:flex;gap:6px">
+              <button @click="h3ActiveConstraint='gas';runVizierOptimize()"
+                :style="{background: h3ActiveConstraint==='gas' ? 'rgba(251,191,36,0.15)' : 'rgba(15,23,42,0.5)',
+                         border: h3ActiveConstraint==='gas' ? '1px solid rgba(251,191,36,0.6)' : '1px solid var(--border)',
+                         color: h3ActiveConstraint==='gas' ? '#fbbf24' : 'var(--muted)'}"
+                style="font-size:0.57rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
+                GAS TAKEAWAY
+              </button>
+              <button @click="h3ActiveConstraint='thermal';runVizierOptimize()"
+                :style="{background: h3ActiveConstraint==='thermal' ? 'rgba(239,68,68,0.12)' : 'rgba(15,23,42,0.5)',
+                         border: h3ActiveConstraint==='thermal' ? '1px solid rgba(239,68,68,0.5)' : '1px solid var(--border)',
+                         color: h3ActiveConstraint==='thermal' ? '#ef4444' : 'var(--muted)'}"
+                style="font-size:0.57rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
+                THERMAL LIMIT
+              </button>
+              <button @click="h3ActiveConstraint='rul';runVizierOptimize()"
+                :style="{background: h3ActiveConstraint==='rul' ? 'rgba(139,92,246,0.12)' : 'rgba(15,23,42,0.5)',
+                         border: h3ActiveConstraint==='rul' ? '1px solid rgba(139,92,246,0.5)' : '1px solid var(--border)',
+                         color: h3ActiveConstraint==='rul' ? '#8b5cf6' : 'var(--muted)'}"
+                style="font-size:0.57rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
+                RUL HORIZON
+              </button>
+            </div>
+            <span style="font-size:0.52rem;color:rgba(100,116,139,0.5);font-style:italic">Re-runs Vizier with selected binding constraint</span>
+          </div>
           <!-- ── PAD ALPHA · JOINT FIELD UPLIFT card ─────────────────── -->
           <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px 20px;margin-bottom:12px">
             <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(74,222,128,0.8);margin-bottom:10px">⚡ PAD ALPHA · JOINT FIELD UPLIFT — vs per-pump independent baseline (no cross-well coordination)</div>
@@ -2532,8 +2560,21 @@
               <div style="text-align:center">
                 <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--blue)">{{ (optConstraintStack.gas_ceiling||{}).joint_mmscfd||'—' }} <span style="font-size:0.8rem;font-weight:400;color:var(--muted)">/ {{ (optConstraintStack.gas_ceiling||{}).value_mmscfd||8.0 }} MMscfd</span></div>
                 <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Gas ceiling ✔ respected</div>
-                <div style="font-size:0.52rem;color:rgba(251,191,36,0.8);margin-top:1px;font-weight:700">BINDING: GAS TAKEAWAY</div>
+                <div style="font-size:0.52rem;font-weight:700;margin-top:1px"
+                     :style="{color: h3ActiveConstraint==='thermal' ? 'rgba(239,68,68,0.85)' : h3ActiveConstraint==='rul' ? 'rgba(139,92,246,0.85)' : 'rgba(251,191,36,0.8)'}">
+                  BINDING: {{ h3ActiveConstraint==='thermal' ? 'THERMAL LIMIT' : h3ActiveConstraint==='rul' ? 'RUL HORIZON' : 'GAS TAKEAWAY' }}
+                </div>
               </div>
+            </div>
+          </div>
+          <!-- ── CONSTRAINT PROVENANCE card ─────────────────────────── -->
+          <div v-if="constraintDoc && constraintDoc.found" style="background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.22);border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start">
+            <div style="font-size:1.0rem;flex-shrink:0;margin-top:2px;opacity:0.8">&#x1F4C4;</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.53rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(100,116,139,0.65);margin-bottom:4px">&#x1F50D; Constraint Source &#x2014; Retrieved from AlloyDB pgvector</div>
+              <div style="font-size:0.63rem;font-weight:600;color:var(--text2);margin-bottom:5px">{{ constraintDoc.title }}</div>
+              <div style="font-size:0.58rem;color:var(--muted);line-height:1.65;word-break:break-word;max-height:72px;overflow:hidden">{{ constraintDoc.excerpt }}</div>
+              <div style="font-size:0.50rem;color:rgba(100,116,139,0.45);margin-top:5px">Source: {{ constraintDoc.source }} &middot; asset_class: esp &middot; semantic similarity search</div>
             </div>
           </div>
           <!-- ── PAD ALPHA · 6-WELL OPTIMAL ALLOCATION table ─────────── -->

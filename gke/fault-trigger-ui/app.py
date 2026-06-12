@@ -161,6 +161,9 @@ def _get_embed_model_singleton():
             log.warning(f"SentenceTransformer unavailable — static RAG disabled: {e}")
     return _embed_model
 
+# Alias: callers may use either name
+_get_embed_model = _get_embed_model_singleton
+
 
 # ChromaDB removed (Sprint 5 v8 Fix 7) — now using AlloyDB rag_documents with pgvector
 chroma_client = None
@@ -809,6 +812,168 @@ def _seed_h2_static_docs_bg() -> None:
         log.warning(f"H2 static doc seeding failed (non-fatal): {_se}")
 
 threading.Thread(target=_seed_h2_static_docs_bg, daemon=True, name="h2-seed").start()
+
+# ── Pad Alpha RAG corpus — constraint-setting + background docs ───────────────
+_PAD_ALPHA_CONSTRAINT_DOCS = [
+    ("Pad Alpha \u2014 Gas Gathering Agreement (Ref. PA-2024-GG-047)",
+     "## Pad Alpha Gas Gathering Agreement \u2014 Reference PA-2024-GG-047\n\n"
+     "Operator: GDC Field Operations LLC\n"
+     "Midstream: GatherCo Permian Basin Division\n"
+     "Effective Date: 2024-03-01\n\n"
+     "### Article 4: Committed Volume and Curtailment\n"
+     "4.1 Maximum committed daily gas takeaway volume for the Pad Alpha delivery point: 8.0 MMscfd "
+     "(all associated gas from wells A-1 through A-6).\n"
+     "4.2 Volumes above 8.0 MMscfd require 72-hour advance notice to GatherCo Scheduling.\n"
+     "4.3 Curtailment penalty: $2.15/Mcf on excess gas volume above 8.0 MMscfd ceiling, applied monthly.\n"
+     "4.4 GatherCo Line PA-6-0047 (6-inch lateral) rated at 8.5 MMscfd operating pressure. "
+     "Sustained gas flows above 8.0 MMscfd risk overpressure on the gathering lateral.\n"
+     "Source: Commercial/Legal contract, filed 2024-02-28. Renewed 2025-03-01."),
+
+    ("Pad Alpha \u2014 ESP Motor Thermal Limit Memo (PE-2025-NOV-047)",
+     "## Pad Alpha \u2014 ESP Motor Thermal Operating Limit Memorandum\n"
+     "From: Production Engineering (PE-2025-NOV-047)\n"
+     "To: Pad Alpha RTOC Operations\nDate: 2025-11-14\n\n"
+     "Re: Maximum Continuous Motor Winding Temperature \u2014 Centrilift 400-Series, Pad Alpha A-1 through A-6\n\n"
+     "All six ESP motors on Pad Alpha (Centrilift 400-Series, 200 HP) use Class H insulation rated to "
+     "180\u00b0C (356\u00b0F) per IEC 60034-1. Per API RP 11S \u00a74.3.2, the continuous operating limit is "
+     "derated to 284\u00b0F (140\u00b0C) to preserve insulation service life above 5 years.\n\n"
+     "Operating Limits:\n"
+     "- Maximum continuous winding temperature: 284\u00b0F (thermal constraint)\n"
+     "- SCADA High alarm threshold: 272\u00b0F (reduce Hz or increase water injection)\n"
+     "- Shutdown trip: 284\u00b0F (automatic per VFD configuration)\n\n"
+     "As water cut declines or intake temperatures rise (summer months), the thermal limit may become "
+     "binding before the gas gathering ceiling.\n"
+     "Reference: API RP 11S \u00a74.3.2; Baker Hughes Centrilift Technical Bulletin CTB-456-TH-2023."),
+
+    ("Pad Alpha \u2014 Q2 2026 ESP Fleet RUL Assessment",
+     "## Pad Alpha \u2014 ESP Fleet Remaining Useful Life Assessment \u2014 Q2 2026\n"
+     "Prepared by: Production Engineering / Reliability Group\nDate: 2026-04-30\n\n"
+     "Expected ESP service life: 730 days at nominal operating conditions (Baker Hughes MTBF data).\n\n"
+     "Fleet RUL Status:\n"
+     "Well A-1 | Runtime 720d | RUL estimate 680d | Status: Approaching PM interval\n"
+     "Well A-2 | Runtime 480d | RUL estimate 760d | Status: Healthy\n"
+     "Well A-3 | Runtime 195d | RUL estimate 590d | Status: Post-workover (recently replaced)\n"
+     "Well A-4 | Runtime 605d | RUL estimate 720d | Status: Healthy\n"
+     "Well A-5 | Runtime 655d | RUL estimate 640d | Status: Monitor\n"
+     "Well A-6 | Runtime 520d | RUL estimate 820d | Status: Best health (highest RUL reserve)\n\n"
+     "Recommendations: A-1 and A-4 approaching 2-year PM interval. Limit A-1 and A-4 to <= nominal "
+     "VFD frequency (50 Hz) during high-price periods to extend remaining useful life to Q3 2026 PM window. "
+     "A-6 and A-2 have greatest RUL reserve and can absorb additional Hz loading.\n"
+     "Reference: Baker Hughes Centrilift AH-456-2023; SPE Permian Basin ESP Reliability Survey 2022."),
+
+    ("Pad Alpha \u2014 Monthly Production Test \u2014 May 2026",
+     "## Pad Alpha \u2014 Monthly Production Allocation Test \u2014 May 2026\n"
+     "Test Date: 2026-05-22 | Duration: 24 hours | Tech: J. Torres\n\n"
+     "Well A-1: 2,286 gross BPD | 1,486 oil BPD | 35.0% WC | GOR 650 scf/bbl | 50.0 Hz\n"
+     "Well A-2: 2,496 gross BPD | 1,549 oil BPD | 38.0% WC | GOR 1,100 scf/bbl | 50.0 Hz\n"
+     "Well A-3: 1,991 gross BPD | 1,155 oil BPD | 42.0% WC | GOR 450 scf/bbl | 50.0 Hz\n"
+     "Well A-4: 2,400 gross BPD | 1,632 oil BPD | 32.0% WC | GOR 900 scf/bbl | 50.0 Hz\n"
+     "Well A-5: 1,990 gross BPD | 1,412 oil BPD | 29.0% WC | GOR 1,350 scf/bbl | 50.0 Hz\n"
+     "Well A-6: 2,352 gross BPD | 1,317 oil BPD | 44.0% WC | GOR 750 scf/bbl | 50.0 Hz\n"
+     "Pad total: 8,551 oil BPD | 6.18 MMscfd associated gas at SCADA nominal 50 Hz."),
+
+    ("Pad Alpha \u2014 Tour 3 Operator Shift Log \u2014 2026-06-01",
+     "## Pad Alpha \u2014 Tour 3 Operator Shift Log\nDate: 2026-06-01 | Operator: R. Hawthorn\n\n"
+     "07:15 All 6 VFDs nominal at 50 Hz. No alarms.\n"
+     "09:45 A-3 intake pressure slightly low (1,380 vs 1,400 PSI nominal). Monitoring.\n"
+     "11:00 Separator dump valve replaced on south separator (routine).\n"
+     "13:30 A-3 pressure recovered to 1,400 PSI. No issue.\n"
+     "16:00 End-of-tour walkdown complete. All equipment nominal. No deferred items.\n"
+     "Gas metering at 6.18 MMscfd. All motor temperatures in normal operating range."),
+
+    ("Pad Alpha \u2014 Centrilift 400-Series Motor Technical Data Sheet",
+     "## Centrilift 400-Series ESP Motor \u2014 Technical Data Sheet (Baker Hughes)\n"
+     "Model: CLT-456-200HP-H | Power: 200 HP | Series: 400 (456 OD)\n"
+     "Insulation Class: H (IEC 60034-1) | Nameplate Max Winding Temp: 356\u00b0F (180\u00b0C)\n"
+     "Derated Operating Limit: 284\u00b0F per API RP 11S \u00a74.3 (Class H ESP applications)\n"
+     "Frequency Range: 30\u201370 Hz (VFD-driven) | Nominal: 60 Hz\n"
+     "Motor OD: 4.56 inches | Length: 68 inches\n"
+     "For Permian Basin high-temperature wells (intake > 90\u00b0F), confirm thermal model before "
+     "Hz setpoint approval. See PE memo PE-2025-NOV-047 for Pad Alpha limit application."),
+
+    ("Pad Alpha \u2014 Reservoir Static Pressure Survey \u2014 Q1 2026",
+     "## Pad Alpha \u2014 Reservoir Static Pressure Survey \u2014 Q1 2026\n"
+     "Survey Date: 2026-02-14 | Method: 24-hour shut-in pressure build-up (PBU)\n\n"
+     "A-1: SITP 318 PSI | SIBHP 2,840 PSI | Stable (+5 PSI vs Q4 2025)\n"
+     "A-2: SITP 335 PSI | SIBHP 2,960 PSI | Stable (+12 PSI)\n"
+     "A-3: SITP 297 PSI | SIBHP 2,710 PSI | Stable (0)\n"
+     "A-4: SITP 322 PSI | SIBHP 2,880 PSI | Stable (+8 PSI)\n"
+     "A-5: SITP 349 PSI | SIBHP 3,040 PSI | Up (+18 PSI)\n"
+     "A-6: SITP 311 PSI | SIBHP 2,790 PSI | Stable (+3 PSI)\n"
+     "Static reservoir pressure stable. No depletion signal. Pad in boundary-dominated flow. "
+     "No recommendation to change VFD setpoints based on reservoir conditions alone."),
+
+    ("Pad Alpha \u2014 VFD Calibration Record \u2014 2026-04",
+     "## Pad Alpha \u2014 VFD Calibration and Firmware Record \u2014 April 2026\n"
+     "Date: 2026-04-08 | Technician: B. Strickland (Baker Hughes Field Service)\n"
+     "Scope: Annual calibration, firmware 3.24.1 update \u2014 all 6 ABB ACS880-01 units\n\n"
+     "All units: Hz range 30\u201370 Hz confirmed. Overload at 120%, trip at 135%.\n"
+     "All 6 VFDs: PASS. Operational max 66 Hz per PE memo PE-2025-NOV-047.\n"
+     "Annual calibration certificate issued 2026-04-08. No faults logged."),
+
+    ("Pad Alpha \u2014 ESP Pull and Workover History (2024\u20132025)",
+     "## Pad Alpha \u2014 ESP Pull and Workover History (2024\u20132025)\n"
+     "Source: Well History DB / Maximo | Compiled: 2026-01-15\n\n"
+     "A-3: Pulled 2025-11-28 (runtime 418d). Reason: declining PI. "
+     "Findings: 8 pump stages eroded (sand). New Centrilift 400 CLT-456 installed 2025-12-01 (WO-2025-0342).\n"
+     "A-1: Pulled 2022-08-14 (runtime 614d). Motor windings failed (Class F pre-upgrade). "
+     "Class H motor installed 2022-08-17 (WO-2022-0187). No further issues since.\n"
+     "No unplanned pulls in past 12 months."),
+
+    ("Pad Alpha \u2014 Produced Water Disposal Agreement (PA-WD-2023-11)",
+     "## Pad Alpha \u2014 Produced Water Disposal Agreement \u2014 PA-WD-2023-11\n"
+     "Facility: Permian Deep Disposal LLC, UIC Permit TX-22-W-0447\n"
+     "Effective: 2023-11-01 | Max disposal: 6,500 BPD at Pad Alpha transfer station.\n\n"
+     "At current WC 36.7%, gross ~13,500 BPD: produced water ~4,960 BPD \u2014 within allocation.\n"
+     "SCADA alarm at 5,500 BPD (85% of limit). At VFD setpoints > 60 Hz, water production may approach "
+     "limit \u2014 monitor if setpoints increase. Disposal tariff: $0.38/bbl."),
+]
+
+
+def _seed_pad_alpha_rag_docs_bg() -> None:
+    """Seed Pad Alpha constraint-setting and background docs into rag_documents (idempotent)."""
+    time.sleep(35)  # slightly after h2-seed (30s) and embed model init
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM rag_documents WHERE doc_title ILIKE 'Pad Alpha \u2014 %'")
+            existing = cur.fetchone()[0]
+            if existing >= len(_PAD_ALPHA_CONSTRAINT_DOCS):
+                log.info(f"Pad Alpha RAG docs already seeded ({existing} rows) \u2014 skipping")
+                conn.close()
+                return
+            cur.execute("DELETE FROM rag_documents WHERE doc_title ILIKE 'Pad Alpha \u2014 %'")
+            embed_model = _get_embed_model()
+            for title, content in _PAD_ALPHA_CONSTRAINT_DOCS:
+                if embed_model:
+                    try:
+                        _emb = embed_model.encode(content[:512], normalize_embeddings=True).tolist()
+                        cur.execute(
+                            "INSERT INTO rag_documents (asset_class, doc_title, content, embedding) "
+                            "VALUES (%s, %s, %s, %s::vector)",
+                            ("esp", title, content, str(_emb))
+                        )
+                    except Exception as _ee:
+                        log.warning(f"Embed failed for '{title}': {_ee} \u2014 inserting without embedding")
+                        cur.execute(
+                            "INSERT INTO rag_documents (asset_class, doc_title, content) "
+                            "VALUES (%s, %s, %s)",
+                            ("esp", title, content)
+                        )
+                else:
+                    cur.execute(
+                        "INSERT INTO rag_documents (asset_class, doc_title, content) "
+                        "VALUES (%s, %s, %s)",
+                        ("esp", title, content)
+                    )
+        conn.commit()
+        conn.close()
+        log.info(f"\u2705 Pad Alpha RAG constraint docs seeded ({len(_PAD_ALPHA_CONSTRAINT_DOCS)} docs)")
+    except Exception as _se:
+        log.warning(f"Pad Alpha RAG doc seeding failed (non-fatal): {_se}")
+
+
+threading.Thread(target=_seed_pad_alpha_rag_docs_bg, daemon=True, name="pad-alpha-rag-seed").start()
 
 
 # ── Asset Fleet ────────────────────────────────────────────────────────────────
@@ -5744,7 +5909,7 @@ class OptimizeRequest(BaseModel):
     horizon_days: int = 90
 
 @app.get("/api/vizier/optimize")
-def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
+def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint: str = "gas"):
     """
     Vertex AI Vizier Bayesian Optimization — N-well field optimization (Sprint H3-B).
 
@@ -5800,6 +5965,44 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
                     rag_constraint_source = "AlloyDB rag_documents (SQL)"
     except Exception as e:
         log.debug(f"Vizier RAG constraint DB query skipped (non-fatal): {e}")
+
+    # ── Retrieve constraint-provenance doc from AlloyDB pgvector ─────────────
+    constraint_doc = {"title": "", "excerpt": "", "source": "default", "found": False}
+    _constraint_queries = {
+        "gas":     "gas gathering capacity takeaway limit Pad Alpha MMscfd",
+        "thermal": "motor insulation temperature limit Class H API RP 11S ESP winding",
+        "rul":     "remaining useful life assessment ESP pump fleet service life",
+    }
+    try:
+        _cdoc_conn = get_db()
+        with _cdoc_conn.cursor() as _cdoc_cur:
+            _q_str = _constraint_queries.get(constraint, _constraint_queries["gas"])
+            _emb_m = _get_embed_model()
+            if _emb_m:
+                _qvec = _emb_m.encode(_q_str, normalize_embeddings=True).tolist()
+                _cdoc_cur.execute(
+                    "SELECT doc_title, content FROM rag_documents "
+                    "WHERE asset_class = 'esp' ORDER BY embedding <-> %s::vector LIMIT 1",
+                    (str(_qvec),)
+                )
+            else:
+                _kw = {"gas": "%gathering%", "thermal": "%Class H%", "rul": "%RUL%"}.get(constraint, "%Pad Alpha%")
+                _cdoc_cur.execute(
+                    "SELECT doc_title, content FROM rag_documents "
+                    "WHERE asset_class = 'esp' AND content ILIKE %s LIMIT 1",
+                    (_kw,)
+                )
+            _crow = _cdoc_cur.fetchone()
+            if _crow:
+                constraint_doc = {
+                    "title":   _crow[0],
+                    "excerpt": _crow[1][:420].strip(),
+                    "source":  "AlloyDB pgvector",
+                    "found":   True,
+                }
+        _cdoc_conn.close()
+    except Exception as _cde:
+        log.debug(f"Vizier constraint doc RAG query skipped (non-fatal): {_cde}")
 
     # ── Per-well physics evaluator ────────────────────────────────────────────
     def evaluate_well(hz: float, w: dict) -> dict:
@@ -5891,13 +6094,26 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
         indep_hz_vec = [round(h, 2) for h in well_max_hz]
     indep_eval = evaluate_field(indep_hz_vec)
 
-    # ── Joint optimal: LP allocation — lowest-GOR wells get Hz priority ───────
-    # Rationale: oil/gas ratio is maximised by running low-GOR wells at max Hz first.
-    # Equivalent to a 1D LP where the gas ceiling is the binding resource constraint.
-    _wells_by_gor = sorted(range(len(well_params)), key=lambda i: well_params[i]["gor_scf_bbl"])
+    # ── Joint optimal: LP allocation — priority order varies by binding constraint ──
+    # gas (default): lowest-GOR wells first — maximises oil per unit of gas budget
+    # thermal: largest thermal margin first — wells furthest from burnout run hardest
+    # rul: highest RUL first — aging pumps protected; fresh pumps absorb the load
+    if constraint == "thermal":
+        def _therm_margin_sort(w: dict) -> float:
+            _a = w["nominal_amps_50hz"]
+            return burnout_threshold_f - (77.4 + 0.81*_a + 0.49*w["intake_temp_f"]
+                                          - 0.48*w["water_cut_pct"] - 0.0012*_a*w["intake_temp_f"])
+        _wells_sorted = sorted(range(len(well_params)),
+                               key=lambda i: _therm_margin_sort(well_params[i]), reverse=True)
+    elif constraint == "rul":
+        _wells_sorted = sorted(range(len(well_params)),
+                               key=lambda i: well_params[i]["rul_base_days"], reverse=True)
+    else:  # "gas" — default
+        _wells_sorted = sorted(range(len(well_params)),
+                               key=lambda i: well_params[i]["gor_scf_bbl"])
     joint_hz_vec  = [45.0] * len(well_params)
     _remaining    = _GAS_CEILING_MMSCFD
-    for _idx in _wells_by_gor:
+    for _idx in _wells_sorted:
         _w           = well_params[_idx]
         _mhz         = well_max_hz[_idx]
         _gas_at_max  = _w["gor_scf_bbl"] * _PUMP_FLOW_COEFF * _mhz / 1_000_000.0
@@ -6045,20 +6261,20 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
             "scada_mmscfd":  scada_all50["total_gas_mmscfd"],
             "indep_mmscfd":  indep_eval["total_gas_mmscfd"],
             "joint_mmscfd":  joint_eval["total_gas_mmscfd"],
-            "binding":       True,
+            "binding":       constraint == "gas",
             "note":          "Midstream takeaway capacity — contractual + compression limit",
         },
         "thermal_derated": {
             "label":    "Motor winding temp limit",
             "value_f":  burnout_threshold_f,
             "source":   rag_constraint_source,
-            "binding":  False,
+            "binding":  constraint == "thermal",
             "note":     "Class H insulation derated operating threshold (API RP 11S); retrieved from AlloyDB RAG",
         },
         "rul_horizon": {
             "label":      "RUL horizon constraint",
             "value_days": horizon_days,
-            "binding":    False,
+            "binding":    constraint == "rul",
             "note":       "Per-well: RUL must cover full optimization horizon before setpoint is approved",
         },
     }
@@ -6098,6 +6314,8 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90):
         "constraint_stack":     constraint_stack,
         "burnout_threshold_f":  burnout_threshold_f,
         "rag_constraint_source": rag_constraint_source,
+        "active_constraint":    constraint,
+        "constraint_doc":       constraint_doc,
         "vizier_algorithm":     "GAUSSIAN_PROCESS_BANDIT" if vizier_used else "deterministic_fallback",
         # ── Backward-compat keys (existing app.js pareto chart) ──────────────
         "trials":          trials_out,
