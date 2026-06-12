@@ -66,10 +66,13 @@ What was done:
 
 ---
 
-### SPRINT P4 — H1 Batch B date-templating (remaining low-priority task)
-- Sonic log / shift note in `field_intel` seeded at inject time have static text dates
-- Template to `today − offset` at startup (same pattern as H2 docs)
-- Look for the seed function in app.py that inserts these records; the fix is to replace hardcoded date strings with computed offsets
+### ✅ SPRINT P4 — H1 Batch B date-templating — ALREADY COMPLETE (verified Session BJ)
+All 3 H1 document modals already use `{{ new Date().toLocaleDateString(...) }}` (dynamic):
+- Shift Note modal (index.html line 1487) — ✅ new Date()
+- Sonic Log modal (index.html line 1511) — ✅ new Date()
+- GOR Lab modal (index.html line 1544) — ✅ new Date()
+Inject-time field_intel docs use relative language only (no hardcoded calendar dates).
+This was fixed in Session X (Batch B). NEXT_SESSION_PROMPT entry was stale.
 
 ---
 
@@ -86,7 +89,7 @@ What was done:
 | Sprint H3-F: selectable constraints + RAG | ✅ DEPLOYED | `sha256:6d79a17d` — session BI |
 | H3 briefing panel Hz values (66.0, 65.5, 59.7) | ⚠️ HARDCODED | From live API 2026-06-11 — update if _PAD_ALPHA_WELL_PARAMS changes |
 | H3 Panel 3 cash figure | ✅ FIXED | Was hardcoded $369,225 — now live `optJointOptimal.uplift_cash_90d` |
-| H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
+| H1 static seed date-templating | ✅ ALREADY DONE | new Date() in all 3 modals — verified Session BJ |
 | STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | H2 physics error now fixed in all UIs |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
