@@ -92,6 +92,60 @@ The migration happened because a scripted, deterministic flow survives a live de
 
 ---
 
+---
+
+## Session BL — Architecture Decisions (June 12, 2026)
+
+### The Weight-in-Code Problem (and the fix)
+
+The `_BAYES_FINDINGS` dict in app.py assigns likelihood ratios (LRs) as hardcoded constants (3.0 / 2.0 / 1.6 / 1.4 → ~93% posterior). These are physics-cited expert weights grounded in API RP 11S §4.2/§7.2 — the methodology (Good 1950 / Fagan NEJM 1975 Bayesian log-odds) is legitimate. But the weights are in code: changing one requires a recompile + docker build + rollout.
+
+**User architectural concern:** "It feels wrong that the weights are in the code because 'a person' decided what they should be."
+
+**Resolution — expert-elicitation is correct; adaptability is the gap:**
+- Expert-assigned LRs grounded in physics standards are the textbook method when historical failure-rate data is absent (clinical decision support, API RP 581 RBI, FMEA). The methodology survives the hostile engineer *if* each weight cites its standard.
+- The real weakness is not "a person decided" — it is that the LR is static regardless of document content, and cannot be updated without a recompile.
+
+**Approved fix (4-sprint re-elevation sequence, Session BL):**
+
+| Sprint | Deliverable | GPU? | Cost |
+|---|---|---|---|
+| **L1 — Weight metadata migration** | Add columns to `field_intel`: `finding_code`, `lr_base`, `lr_min`, `lr_max`, `lr_source` (citation), `finding_dir`. Refactor `_bayes_discriminate()` to read LRs from DB not dict. Weights become adaptable without recompile. Posterior is unchanged. | No | $0 |
+| **L2 — Readable docs + discoverable weights** | Document modal: click any evidence card → see full retrieved document text. Weight provenance panel shows `lr_base` + physics band + citation + Gemma-rated strength → effective LR. Closes the hardcoded-label integrity violation. | No | $0 |
+| **L3 — Corpus expansion** | More `field_intel` docs for H1/H2 — some relevant, some noise. Makes retrieval visibly discriminating, reduces "obviously seeded" appearance. | No | $0 |
+| **L4 — Gemma extraction + Path A modulation** | Gemma reads retrieved docs → extracts structured findings (replaces hardcoded finding list). Gemma rates assertion strength → `effective_lr = clamp(lr_base × strength_factor, lr_min, lr_max)`. Gemma writes advisory summarization. GPU on for showcase/record only; CPU fallback for dev. | GPU (single L4 node, ~$1.09/hr, showcase only) | ~$2–3/session |
+
+**The trap — never do this:** Do not let Gemma assign LR values. An LLM picking safety-critical probability weights fails the hostile engineer: *"Show me its calibration."* The physics-cited constants are the anchor; Gemma's role is extraction + bounded modulation within those constants.
+
+### H1 vs H2 Rigor Asymmetry
+
+| | H1 Discern | H2 Classify |
+|---|---|---|
+| Contested artifact | **The posterior %** — "why 93%?" | **The causal chain** — "why paraffin not bearings?" |
+| Rigor type needed | Numerical provenance — weight metadata, physics bands, auditable arithmetic | Causal/physical provenance — physics-cited discriminators, readable documents |
+| LR metadata needed | **Yes** (L1 sprint) | **No** (no LRs in H2) |
+| Readable docs + provenance | **Yes** (L2 sprint) | **Yes** (L2 sprint, different provenance: causal exclusion not LR bands) |
+| Gemma's role | Extraction + evidence-strength modulation + chat | Document summarization + causal synthesis |
+| Verdict mechanism | **Stays Bayesian math** (never LLM) | Gemma-owned synthesis (no CPU classifier backup; the synthesis IS the verdict) |
+
+### Honest Demo Claim (replaces "the LLM diagnoses your pump")
+
+> *"GDC turns a pile of unstructured field documents into structured findings (Gemma, GPU), fuses them with auditable probability math (CPU), and lets the operator interrogate the result in plain language (Gemma, GPU) — all inside the sovereign perimeter on open weights."*
+
+### GPU Cost Reality
+
+- **Before Session BK:** GPU node pool (3 × g2-standard-8 L4) billed 24/7 even when Ollama deployment was scaled to 0, because node-pool resize and deployment-scale are separate GKE layers. **Cost: ~$78/day idle.**
+- **After Session BK fix:** `gpu-start.sh` / `gpu-stop.sh` now resize the node pool (0 ↔ 3), not just the deployment. **Cost when off: $0.**
+- **Recommended for L4 showcase:** resize to `--num-nodes 1` per zone → 1 total node (~$1.09/hr) instead of 3 (~$3.27/hr). Single L4 is sufficient for Gemma 4 demo generation. Change `gpu-start.sh` line 43 accordingly.
+
+### Current integrity exposures (as of Session BL)
+
+| Exposure | Status | Sprint |
+|---|---|---|
+| H1/H2 "cosine sim · pgvector (< 2s)" labels — retrieval not actually executing in replay path | ⚠️ ACTIVE — displayed value ≠ actual value | Closed by L1+L2 |
+| H1 `_BAYES_FINDINGS` LR values in code, not DB | ⚠️ ACTIVE — not adaptable without recompile | Closed by L1 |
+| H1_METHODOLOGY.md says LRs 8/5/3/2 → 99.6%; deployed code uses 3.0/2.0/1.6/1.4 → ~93% | ⚠️ STALE DOC — code is the more honest/correct version | Fix docs after L1 |
+
 ## Related Files
 - `gke/fault-trigger-ui/app.py` — all integration points (embedding ~158, intel loop 509–644, agent rec 3625–3774, SSE stream 3780–3943, get_gemma_finding 4957, pgvector retrieval 5145–5171 + 5945–5995)
 - `gke/fault-trigger-ui/requirements.txt` — `sentence-transformers==2.7.0`

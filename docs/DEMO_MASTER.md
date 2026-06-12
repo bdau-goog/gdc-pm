@@ -44,6 +44,32 @@ The AI-powered diagnostic advisor — the capability the entire APM industry (GE
 - GE Vernova, AVEVA, Aspen Mtell, Cognite: all have 2025–2026 GenAI roadmap items for document-aware diagnosis
 - The direction is industry-validated. GDC's differentiator is sovereign-edge deployment, not the AI capability class.
 
+#### The Two-System Architecture — System A (CPU) + System B (Gemma/GPU)
+
+> **Session BL decision — do not conflate these two systems under the word "the LLM."**
+
+| System | What it is | Hardware | Status |
+|---|---|---|---|
+| **System A — Retrieval** | SentenceTransformer `all-MiniLM-L6-v2` embeddings + AlloyDB pgvector semantic search. Finds the relevant unstructured documents. | **CPU-only** | Always live. Unaffected by GPU off. |
+| **System B — Generation** | Gemma 4 via Ollama. Reads retrieved documents → extracts structured findings, modulates evidence strength, writes advisory prose, powers conversational chat. | **GPU (NVIDIA L4)** | Off by default (cost). On for showcase/record sessions only. |
+
+**The L3 competitive moat is System A** — semantic retrieval of unstructured documents fused with live telemetry. This is architecturally impossible for any current SCADA/APM product and runs on CPU regardless of GPU state.
+
+**System B is the GenAI showcase layer.** Its defensible roles (per Session BL architecture review):
+1. **Extraction** — reads genuinely-unstructured retrieved documents and emits a structured finding ("free gas: none detected → F1"). Replaces hardcoded finding lists.
+2. **Evidence-strength modulation** — classifies assertion strength (emphatic / qualified / absent) and adjusts the LR *within physics-anchored bounds* stored in `field_intel` metadata. Gemma never invents a weight; it moves within a range a domain engineer set and cited.
+3. **Advisory summarization** — writes the operator-language synthesis of the retrieved evidence (the "L3 Context Fused" one-liner).
+4. **Conversational chat** — RAG-grounded "Ask the Advisor": operator interrogates the verdict in natural language.
+
+**The trap to avoid:** Gemma must never *assign* safety-critical probability weights. LR values live in `field_intel` metadata with physics citations (`lr_base`, `lr_min`, `lr_max`, `lr_source` columns), not in code. Weights are adaptable without recompile. The Bayesian arithmetic is always CPU, always auditable.
+
+**H1 vs H2 asymmetry (Session BL):**
+- **H1 (Discern):** Bayesian posterior is the contested artifact — the weight-metadata architecture defends the number. Gemma's role is extraction + evidence-strength modulation + chat. The diagnostic *verdict* stays Bayesian math (never LLM) — that is a feature: an engineer can check the arithmetic.
+- **H2 (Classify):** No posterior to defend. The contested artifact is the *causal chain* (paraffin, not bearing wear). Gemma's role is document summarization + causal synthesis. Rigor is physics-cited discriminators (PIP rises = hydraulic restriction; temp flat = rules out thermal/mechanical), not LR weights.
+
+**The honest demo claim (replace "the LLM diagnoses your pump"):**
+> *"GDC turns a pile of unstructured field documents into structured findings (Gemma, GPU), fuses them with auditable probability math (CPU), and lets the operator interrogate the result in plain language (Gemma, GPU) — all inside the sovereign perimeter on open weights."*
+
 #### The Competitive Claim (use exact wording — Gemini neutral-search verified, Session AT)
 
 > *"No native, production-ready commercial product combines real-time ML anomaly detection with LLM-based differential diagnosis over unstructured maintenance documents — as of 2025–2026, this is where all major APM platforms are heading. GDC delivers it now, inside the sovereign perimeter, on open weights."*
