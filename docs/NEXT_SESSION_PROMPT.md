@@ -6,13 +6,17 @@
 
 ---
 
-## STEP 1: Run These Four Commands First
+## STEP 1: Run These Three Commands First
 
 ```bash
-kubectl get pods -n gdc-pm --no-headers
-kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
-curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
-kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
+# 1. Verify isolation & context
+source .env && echo "PROJECT=$GOOGLE_CLOUD_PROJECT KUBECONFIG=$KUBECONFIG" && kubectl config current-context
+
+# 2. Token-efficient cluster health summary (prevents massive pod table clutter!)
+source .env && kubectl get pods -n gdc-pm --no-headers 2>/dev/null | awk '{print $3}' | sort | uniq -c
+
+# 3. Quick, non-blocking status check (2s max)
+source .env && curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | jq '{ollama_online, ollama_model}' 2>/dev/null || echo "MLOps status API offline/starting"
 ```
 
 **Expected (dev default — GPU OFF):**
