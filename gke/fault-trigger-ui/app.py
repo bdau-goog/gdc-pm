@@ -980,7 +980,7 @@ def _seed_h1_bayes_findings_bg() -> None:
     import time as _time_mod
     _time_mod.sleep(40)
     try:
-        conn = _get_db_conn()
+        conn = get_db()
         with conn.cursor() as cur:
             cur.execute(
                 "SELECT COUNT(*) FROM field_intel WHERE asset_id = '__h1_bayes_corpus__'"
@@ -6741,7 +6741,7 @@ def _bayes_discriminate(fault_type: str) -> dict:
     findings = None
     db_source = "fallback"
     try:
-        conn = _get_db_conn()
+        conn = get_db()
         with conn.cursor() as cur:
             cur.execute(
                 """
