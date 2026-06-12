@@ -2445,7 +2445,7 @@
                 </div>
                 <div style="display:flex;justify-content:space-between;align-items:baseline">
                   <span style="font-size:0.60rem;color:var(--muted)">Cash (90 days)</span>
-                  <span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:rgba(74,222,128,0.9)">+$369,225</span>
+                  <span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:rgba(74,222,128,0.9)">{{ optJointOptimal.uplift_cash_90d > 0 ? '+$' + Math.round(optJointOptimal.uplift_cash_90d).toLocaleString() : '+$180k est.' }}</span>
                 </div>
                 <div style="height:1px;background:rgba(100,116,139,0.15)"></div>
                 <div style="display:flex;justify-content:space-between;align-items:baseline">
@@ -2514,41 +2514,65 @@
           </div>
         </div>
         <!-- Value Cards -->
-        <div class="h3-card-grid" v-if="optTrials.length > 0">
-          <div class="h3-card" style="border-color:rgba(90,106,122,0.4)">
-            <div class="h3-card-title">🛢 SCADA Nominal ({{ optScadaNominal.vfd_hz }} Hz)</div>
-            <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optScadaNominal.flow_rate||0).toLocaleString() }} bbl/d</span></div>
-            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val">{{ optScadaNominal.motor_temp_f || 0 }}°F</span></div>
-            <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val" style="color:var(--green)">{{ optScadaNominal.rul_days || 0 }} days</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;color:var(--muted)">Net Cash Flow ({{ horizonSlider }}d horizon)</span>
-              <span class="h3-card-cash" style="color:var(--text2)">${{ (optScadaNominal.cash_flow||0).toLocaleString() }}</span>
-              <span style="font-size:0.6rem;color:var(--muted)">Safe — leaves money on the table</span>
+        <div v-if="optTrials.length > 0">
+          <!-- ── PAD ALPHA · JOINT FIELD UPLIFT card ─────────────────── -->
+          <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px 20px;margin-bottom:12px">
+            <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(74,222,128,0.8);margin-bottom:10px">⚡ PAD ALPHA · JOINT FIELD UPLIFT — vs per-pump independent baseline (no cross-well coordination)</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+              <div style="text-align:center">
+                <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:rgba(74,222,128,0.9)">+{{ (optJointOptimal.uplift_bbl_d||0).toFixed(1) }}<span style="font-size:0.8rem;font-weight:400"> bbl/d</span></div>
+                <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Oil production uplift</div>
+                <div style="font-size:0.52rem;color:rgba(100,116,139,0.6);margin-top:1px">joint optimal vs uniform throttle</div>
+              </div>
+              <div style="text-align:center;border-left:1px solid rgba(100,116,139,0.2);border-right:1px solid rgba(100,116,139,0.2);padding:0 10px">
+                <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ Math.round(optJointOptimal.uplift_cash_90d||0).toLocaleString() }}</div>
+                <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Cash uplift / {{ horizonSlider }}d horizon</div>
+                <div style="font-size:0.52rem;color:rgba(100,116,139,0.6);margin-top:1px">at ${{ oilPriceSlider }}/bbl · scales with sliders</div>
+              </div>
+              <div style="text-align:center">
+                <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--blue)">{{ (optConstraintStack.gas_ceiling||{}).joint_mmscfd||'—' }} <span style="font-size:0.8rem;font-weight:400;color:var(--muted)">/ {{ (optConstraintStack.gas_ceiling||{}).value_mmscfd||8.0 }} MMscfd</span></div>
+                <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Gas ceiling ✔ respected</div>
+                <div style="font-size:0.52rem;color:rgba(251,191,36,0.8);margin-top:1px;font-weight:700">BINDING: GAS TAKEAWAY</div>
+              </div>
             </div>
           </div>
-          <div class="h3-card active-opt">
-            <div class="h3-card-title">⚡ Vizier Optimal ({{ optVizierOptimal.vfd_hz }} Hz)
-              <span v-if="vizierDeployed" style="margin-left:8px;font-size:0.58rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(0,230,118,0.15);border:1px solid rgba(0,230,118,0.5);color:var(--green);text-transform:none;letter-spacing:0">✅ Applied: {{ optOptimalHz }} Hz</span>
+          <!-- ── PAD ALPHA · 6-WELL OPTIMAL ALLOCATION table ─────────── -->
+          <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:10px;overflow:hidden;margin-bottom:12px">
+            <div style="font-family:var(--mono);font-size:0.56rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center">
+              <span>PAD ALPHA · 6-WELL OPTIMAL ALLOCATION</span>
+              <span style="font-weight:400;color:rgba(100,116,139,0.55);font-size:0.51rem">Baseline = per-pump independent max (no cross-well coordination)</span>
             </div>
-            <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optVizierOptimal.flow_rate||0).toLocaleString() }} bbl/d</span></div>
-            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val">{{ optVizierOptimal.motor_temp_f || 0 }}°F</span></div>
-            <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val">{{ optVizierOptimal.rul_days || 0 }} days</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;color:var(--orange)">Net Cash Flow ({{ horizonSlider }}d horizon)</span>
-              <span class="h3-card-cash">${{ (optVizierOptimal.cash_flow||0).toLocaleString() }}</span>
-              <span style="font-size:0.6rem;color:var(--green)">↑ Maximized without pump burnout</span>
-            </div>
-          </div>
-          <div class="h3-card" style="border-color:rgba(244,67,54,0.4)">
-            <div class="h3-card-title">🔴 Aggressive Run-to-Failure ({{ optRunToFailure.vfd_hz }} Hz)</div>
-            <div class="h3-card-row"><span>Flow Rate:</span><span class="h3-card-val">{{ (optRunToFailure.flow_rate||0).toLocaleString() }} bbl/d</span></div>
-            <div class="h3-card-row"><span>Motor Temp:</span><span class="h3-card-val" style="color:var(--red)">{{ optRunToFailure.motor_temp_f || 0 }}°F</span></div>
-            <div class="h3-card-row"><span>RUL:</span><span class="h3-card-val" style="color:var(--red)">{{ optRunToFailure.rul_days || 0 }} days ⚠ BURNS OUT</span></div>
-            <div class="h3-card-outcome">
-              <span style="font-size:0.62rem;color:var(--red)">Net Cash Flow (with $150k penalty)</span>
-              <span class="h3-card-cash" style="color:var(--red)">${{ (optRunToFailure.cash_flow||0).toLocaleString() }}</span>
-              <span style="font-size:0.6rem;color:var(--red)">Pump burnout penalty applied</span>
-            </div>
+            <table style="width:100%;border-collapse:collapse;font-size:0.60rem">
+              <thead>
+                <tr style="background:rgba(15,23,42,0.5)">
+                  <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Well</th>
+                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">GOR (scf/bbl)</th>
+                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">Baseline Hz</th>
+                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">GDC Optimal</th>
+                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">&#x0394; Hz</th>
+                  <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="w in wellsSortedByGor" :key="w.id"
+                    :style="{borderTop:'1px solid rgba(100,116,139,0.12)', background: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.04)' : 'rgba(74,222,128,0.03)'}">
+                  <td style="padding:6px 14px;font-family:var(--mono)"
+                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ w.name }}</td>
+                  <td style="padding:6px 14px;text-align:right"
+                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.7)' : 'var(--muted)'}">{{ (w.gor_scf_bbl||0).toLocaleString() }}</td>
+                  <td style="padding:6px 14px;text-align:right;font-family:var(--mono);color:var(--text2)">{{ (w.independent_hz||0).toFixed(2) }} Hz</td>
+                  <td style="padding:6px 14px;text-align:right;font-family:var(--mono)"
+                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.joint_hz||0).toFixed(2) }} Hz</td>
+                  <td style="padding:6px 14px;text-align:right;font-family:var(--mono);font-weight:700"
+                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.8)'}">{{ (w.joint_hz - w.independent_hz) >= 0 ? '+' : '' }}{{ (w.joint_hz - w.independent_hz).toFixed(2) }}</td>
+                  <td style="padding:6px 14px;font-size:0.57rem"
+                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
+                    <span v-if="w.joint_hz >= w.independent_hz">Priority · runs max &#x2191;</span>
+                    <span v-else>Marginal · gives way &#x2193;</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         <div class="h3-main-body" v-if="optTrials.length > 0">

@@ -75,6 +75,10 @@ createApp({
       optScadaNominal: {},
       optRunToFailure: {},
       optVizierOptimal: {},
+      optWells: [],
+      optJointOptimal: {},
+      optIndependentBaseline: {},
+      optConstraintStack: {},
       vizierDeployed: false,
       vizierDeploying: false,
       
@@ -300,6 +304,9 @@ createApp({
   },
 
   computed: {
+    wellsSortedByGor() {
+      return [...(this.optWells||[])].sort((a,b) => a.gor_scf_bbl - b.gor_scf_bbl);
+    },
     availableFaults() {
       if (!this.ddAssetId || !ASSET_META[this.ddAssetId]) return [];
       return FAULTS_BY_CLASS[ASSET_META[this.ddAssetId].aclass] || [];
@@ -2209,6 +2216,10 @@ createApp({
           this.optRunToFailure=d.run_to_failure||{};
           this.optVizierOptimal=d.vizier_optimal||{};
           this.optOptimalHz=d.optimal_hz;
+          this.optWells=d.wells||[];
+          this.optJointOptimal=d.joint_optimal||{};
+          this.optIndependentBaseline=d.independent_baseline||{};
+          this.optConstraintStack=d.constraint_stack||{};
           this.vizierDeployed=false;
           this.$nextTick(()=>this._renderVizierPareto());
         }
