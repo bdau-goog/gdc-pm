@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 12, 2026 (Session BI — Sprint H3-F: selectable constraint + RAG provenance deployed)
-**git head:** `073cc1a` (feat(h3-f): selectable binding constraint + RAG provenance)
-**fault-trigger-ui image:** `sha256:6d79a17d9e1edc014b60eb1cf04faba749db72d9a4d4146d75da490a09a92688`
+**Date:** June 12, 2026 (Session BJ — Sprint H2-REPLAY: paraffin scenario deployed)
+**git head:** `d58073d` (docs(h2-video): update H2 narration to paraffin scenario)
+**fault-trigger-ui image:** `sha256:0da67ee966fa7f5cfa540c2f101d1d673ba62d57a9fb8f8d2b93d6e1cece8e7f`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -22,9 +22,8 @@ source .env && curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | jq 
 **Expected (dev default — GPU OFF):**
 - 6 pods 1/1 Running + 3 prune CronJob Completed (ollama pod ABSENT — correct)
 - ollama replicas: **0** · `ollama_online: False` — NOT a problem. Do NOT scale up.
-- rag_docs: **28** (18 original + 10 Pad Alpha constraint docs seeded at startup)
 
-**Actual at session-BI close:** pod `fault-trigger-ui` 1/1 Running · HTTP 200 · all 3 constraint modes verified live · 10 Pad Alpha docs in rag_documents
+**Actual at session-BJ close:** fault-trigger-ui pod 1/1 Running · HTTP 200 · H2-REPLAY paraffin verified live
 
 **GPU discipline:** OFF by default. `./scripts/gpu-start.sh` only at explicit LLM-test step (~$0.65/hr). Always paired with `./scripts/gpu-stop.sh`.
 
@@ -47,34 +46,30 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ---
 
-## STEP 3: Next Implementation Tasks (in order)
+## STEP 3: Next Implementation Task
 
 ### ✅ SPRINT H3-F — Selectable Binding Constraint + RAG Provenance — COMPLETE (Session BI)
 
+### ✅ SPRINT H2-REPLAY — Paraffin/Wax Deposition Scenario — COMPLETE (Session BJ)
+
 What was done:
-- Backend `?constraint=gas|thermal|rul` param added to `/api/vizier/optimize`
-  - **gas**: lowest-GOR wells get Hz priority (oil/gas efficiency maximized)
-  - **thermal**: highest thermal margin first (wells furthest from burnout run hardest)
-  - **rul**: highest RUL first (aging pumps protected; fresh pumps absorb load)
-- `constraint_doc` returned: AlloyDB pgvector semantic search retrieves the constraint-setting document per mode
-- `_PAD_ALPHA_CONSTRAINT_DOCS`: 10 docs seeded idempotently at startup (3 constraint-setting + 7 background)
-- Frontend: 3 toggle buttons (color-coded per mode), dynamic BINDING label, RAG provenance card below uplift card
-- Verified live: all 3 modes return correct RAG doc, correct binding flag, allocation reorders visibly
+- Backend `/api/h2/scenario-replay` rewritten for paraffin_wax_restriction scenario
+  - Physics: PIP rises (1183→1577 PSI) — hydraulic restriction (API RP 11S system curve)
+  - Temp stays flat (+5°F over 8 weeks) — confirms hydraulic, not thermal/mechanical
+  - VIB + AMPS rise → ISA-18.2 HI alarm (same observable pattern as old scenario)
+  - EFF declines (pump off BEP)
+  - 3 static docs: vendor_service_log + pvt_report + pull_record (no Gemma dependency)
+  - Returns `psi[]` + `temp[]` arrays (previously missing from payload)
+- Frontend: 8 blocks updated (physics panel, verdict banner, GDC Zone 1, action cards, doc stack, SCADA outcomes)
+- VIDEO_SCRIPT.md H2 narration updated to paraffin story
+- Verified live: scenario=paraffin_wax_restriction, PIP 1183→1577 PSI, temp flat, health_ok=True
 
 ---
 
-### SPRINT H2-REPLAY — Update scenario replay to paraffin scenario (next priority)
-
-Backend `/api/h2/scenario-replay` still returns workover-fluid-incompatibility data. Need to:
-1. Update trajectory generation (efficiency+vib signature for paraffin restriction)
-2. Update verdict banner text and doc reveals (vendor log, PVT, pull record)
-3. Remove Gemma dependency for static docs
-
----
-
-### SPRINT P4 — H1 Batch B date-templating (low priority)
+### SPRINT P4 — H1 Batch B date-templating (remaining low-priority task)
 - Sonic log / shift note in `field_intel` seeded at inject time have static text dates
 - Template to `today − offset` at startup (same pattern as H2 docs)
+- Look for the seed function in app.py that inserts these records; the fix is to replace hardcoded date strings with computed offsets
 
 ---
 
@@ -84,19 +79,20 @@ Backend `/api/h2/scenario-replay` still returns workover-fluid-incompatibility d
 |------|--------|------|
 | H1 Briefing — all 6 panels | ✅ DEPLOYED | Session AQ |
 | H1 Scenario replay | ✅ DEPLOYED | Session AP |
-| H2 backend endpoint | ⚠️ STALE | Still workover-fluid scenario — needs H2-REPLAY sprint |
 | H2 Briefing panels (3 panels) | ✅ DEPLOYED — PARAFFIN | `sha256:1be9477f` — session BG |
-| H2 Scenario Replay verdict | ⚠️ STALE | Still shows "Elastomer seal degradation" — old scenario |
+| H2 Scenario Replay | ✅ DEPLOYED — PARAFFIN | `sha256:0da67ee9` — session BJ |
+| H2 VIDEO_SCRIPT narration | ✅ UPDATED — PARAFFIN | `d58073d` — session BJ |
 | Sprint H3-E: pad-level dashboard | ✅ DEPLOYED | `sha256:42b044d2` — session BH |
 | Sprint H3-F: selectable constraints + RAG | ✅ DEPLOYED | `sha256:6d79a17d` — session BI |
 | H3 briefing panel Hz values (66.0, 65.5, 59.7) | ⚠️ HARDCODED | From live API 2026-06-11 — update if _PAD_ALPHA_WELL_PARAMS changes |
 | H3 Panel 3 cash figure | ✅ FIXED | Was hardcoded $369,225 — now live `optJointOptimal.uplift_cash_90d` |
 | H1 static seed date-templating | ⚠️ NEEDS FIX | Sprint P4 — hardcoded 2025 dates |
-| STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | H2 physics error now fixed |
+| STAKEHOLDER_BRIEF.md user review | ⚠️ PENDING | H2 physics error now fixed in all UIs |
 | SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Not yet pulled — do not cite as hard facts |
 | 51% ESP failures = operational factors | ✅ ATTRIBUTED | 2014 SPE Artificial Lift Conference survey (Gemini-verified) |
 | MCP gdc-second-opinion | ✅ WORKING | gemini-2.5-flash, Vertex AI ADC, gdc-pm-v2 |
 | Pad Alpha RAG corpus (10 docs) | ✅ SEEDED | Session BI — 3 constraint-setting + 7 background in rag_documents |
+| H2 endpoint response time | ⚠️ SLOW | ~35s for 80-step XGBoost loop — acceptable (spinner shown); no action needed |
 
 ---
 
@@ -104,12 +100,13 @@ Backend `/api/h2/scenario-replay` still returns workover-fluid-incompatibility d
 
 - `terraform/gke.tf` must NOT be applied
 - No `browser_action` (SSH remote, no browser)
-- **Batch all edits to same file in ONE `replace_in_file` call**
+- **Batch all edits to same file in ONE `replace_in_file` call** (or use Python splice for large functions)
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~6,840 lines · `index.html` ~3,640 lines · `app.js` ~2,300 lines — grep first, targeted reads only
+- `app.py` ~6,977 lines · `index.html` ~3,640 lines · `app.js` ~2,300 lines — grep first, targeted reads only
 - **Wireframes → sign-off → HTML** (always)
 - **No build/push/deploy without user walkthrough and verification**
 - Gemini tools (gemini_search, gemini_second_opinion) on autoApprove — use freely for fact-checking
 - **Ask inline questions — no option lists** (ask_followup_question options array causes display issues)
 - **Keep text before tool calls short**
 - **Deploy sequence:** `docker build` → `docker push` → `kubectl set image ... @sha256:<digest>` → `kubectl rollout status` (Artifact Registry, NOT gcr.io)
+- **Token-efficient edits:** Use Python splice scripts for large function replacements (avoids returning 7K-line files to context)
