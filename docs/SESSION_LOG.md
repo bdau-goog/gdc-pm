@@ -2,6 +2,15 @@
 
 ---
 
+## Session BK (June 12, 2026) — *Cost controls (MCP + GPU) + LLM/RAG architecture assessment*
+
+**Code committed:** docs-only this session (no app.py/index.html change). MCP + GPU config commits: `55a3830`, `784848f`, `77db217`.
+**Cluster image digest:** `sha256:0da67ee9` (unchanged — H2 paraffin from Session BJ still live)
+
+Cost-control + investigation session, no application code changed. (1) **MCP disabled:** gdc-second-opinion (Vertex AI Gemini) had spent ~$600/day; killed the process, set `disabled:true` in Cline settings, created `~/mcp-disable.sh` / `~/mcp-enable.sh` toggle scripts (kept at `~/`, not in repo). (2) **GPU root cause found:** GCE costs remained high because 3 × g2-standard-8 (NVIDIA L4) nodes were running 24/7 (~$78/day) despite ollama at 0 replicas. Root cause: this is a **standard GKE cluster, not Autopilot** — `gpu-stop.sh` only scaled the Deployment to 0 but never removed the VMs (it was written with Autopilot assumptions). The Terraform `gpu_pool` has `node_count=1` on a regional cluster = 1 node/zone × 3 zones = 3 nodes; no autoscaler. Resized pool to 0 (verified 0 g2-standard nodes); rewrote gpu-start.sh/gpu-stop.sh to resize the node pool itself. Noted: if `terraform apply` is ever run it would recreate 3 GPU nodes (another reason gke.tf stays barred). (3) **LLM/RAG assessment:** User flagged that the L3 differentiator (Gemma + RAG document ingestion) appeared to have been "slowly removed." Investigation (code-verified) separated TWO systems conflated as "the LLM": **System A** = SentenceTransformer + AlloyDB pgvector semantic retrieval, runs CPU-only, never removed, IS the real differentiator; **System B** = Gemma via Ollama (GPU) for dynamic document *generation* + advisory *prose*. The multivariate detector is XGBoost (CPU), not Gemma. The project migrated its primary demo path from LIVE INJECT (Gemma generates docs live) to SCENARIO REPLAY (scripted/static docs) over many sessions; Session BJ's H2 static-template change was the final step. **INTEGRITY FLAG raised:** H1/H2 replay paths show "cosine sim · pgvector" labels but do NOT execute live retrieval (hardcoded HTML / static templates) — only H3 runs genuine live pgvector. Full assessment in `docs/LLM_RAG_ARCHITECTURE_ASSESSMENT.md`. Impact exploration + integrity resolution deferred to next session (now TOP PRIORITY in NEXT_SESSION_PROMPT).
+
+---
+
 ## Session BJ (June 12, 2026) — *Sprint H2-REPLAY: paraffin/wax deposition scenario deployed + VIDEO_SCRIPT aligned*
 
 **Code committed:** `efb3ef8` (feat(h2-replay): paraffin/wax deposition scenario — physics, 3 docs, no Gemma) · `d58073d` (docs(h2-video): update H2 narration to paraffin scenario)

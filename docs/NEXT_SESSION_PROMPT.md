@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** June 12, 2026 (Session BJ — Sprint H2-REPLAY: paraffin scenario deployed)
-**git head:** `d58073d` (docs(h2-video): update H2 narration to paraffin scenario)
+**Date:** June 12, 2026 (Session BK — cost controls + LLM/RAG architecture assessment)
+**git head:** see `git log` (Session BK docs commit)
 **fault-trigger-ui image:** `sha256:0da67ee966fa7f5cfa540c2f101d1d673ba62d57a9fb8f8d2b93d6e1cece8e7f`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
@@ -47,6 +47,22 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 ---
 
 ## STEP 3: Next Implementation Task
+
+### ⚠️ TOP PRIORITY (Session BL) — L3 / LLM Architecture Impact Exploration
+
+Read `docs/LLM_RAG_ARCHITECTURE_ASSESSMENT.md` FIRST. Key decisions pending:
+1. Demo narrative: live-inject Gemma feed vs Briefing+Replay canonical path
+2. INTEGRITY: H1/H2 replay show "cosine sim · pgvector" labels but do NOT run live
+   retrieval (hardcoded HTML / static templates). Resolve: wire real retrieval OR
+   soften labels. (No Silent Lies rule.)
+3. DEMO_MASTER §3: make System A (retrieval/CPU/real) vs System B (Gemma/GPU/generation)
+   distinction explicit.
+
+### ✅ SESSION BK — Cost controls deployed (no app code change)
+- MCP gdc-second-opinion DISABLED (Vertex AI billing). Toggle: `~/mcp-enable.sh` / `~/mcp-disable.sh`
+- GPU node pool resized 3→0 (was idle ~$78/day). gpu-start.sh/gpu-stop.sh now resize node pool
+  (root cause: standard GKE, not Autopilot — deployment scale-down never removed the VMs)
+- LLM/RAG architecture assessment written (docs/LLM_RAG_ARCHITECTURE_ASSESSMENT.md)
 
 ### ✅ SPRINT H3-F — Selectable Binding Constraint + RAG Provenance — COMPLETE (Session BI)
 
