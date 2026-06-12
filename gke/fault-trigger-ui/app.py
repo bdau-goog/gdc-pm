@@ -7157,10 +7157,106 @@ def _fetch_rag_sections(query: str, asset_class: str = "esp", limit: int = 3) ->
         return []
 
 
-def _bayes_discriminate(fault_type: str) -> dict:
+def _gemma_extract_findings(rag_sections: list, fault_type: str):
+    """
+    Sprint L4: Gemma extraction — reads retrieved L3 RAG documents and classifies
+    assertion strength for each Bayesian finding dimension F1–F4.
+
+    Returns dict {"F1": strength, ...} where strength ∈ {"emphatic","qualified","absent"},
+    or None if Gemma is offline / call fails → CPU fallback uses lr_base unchanged.
+
+    Gemma NEVER assigns a LR value. It only moves within the [lr_min, lr_max] band
+    that a domain engineer cited in field_intel (API RP 11S references).
+
+    Emphatic → lr_max · Qualified → lr_base · Absent → lr_min
+    """
+    if not rag_sections:
+        return None
+
+    # Build doc context — cap each doc at 500 chars (sufficient for classification)
+    doc_blocks = []
+    for i, sec in enumerate(rag_sections[:3], 1):
+        title = sec.get("title", f"Document {i}")
+        text  = (sec.get("full_text") or sec.get("excerpt") or "")[:500].strip()
+        doc_blocks.append(f"[DOC {i}] {title}:\n{text}")
+    doc_context = "\n\n".join(doc_blocks)
+
+    if fault_type == "gas_lock":
+        f1_desc = "Free gas / GVF elevation at pump intake confirmed"
+        f2_desc = "Casing pressure elevated and rising (gas accumulation in annulus)"
+        f3_desc = "GOR trending upward (increasing free gas in produced fluid)"
+        f4_desc = "Shift note / operator report confirms gas presence or unloading"
+    else:
+        f1_desc = "Absence of free gas at intake — fluid level declining"
+        f2_desc = "Casing pressure flat or declining (no gas accumulation)"
+        f3_desc = "GOR stable or not rising (no free-gas migration)"
+        f4_desc = "Separator test or acoustic survey confirms reservoir depletion"
+
+    prompt = (
+        f"You are an evidence classifier for an oil and gas diagnostic system.\n"
+        f"Fault being diagnosed: {fault_type.replace('_', ' ')} on an ESP well.\n\n"
+        f"Read the field documents below. For each finding dimension F1–F4, classify "
+        f"assertion strength based ONLY on what is explicitly stated in the documents.\n\n"
+        f"F1: {f1_desc}\n"
+        f"F2: {f2_desc}\n"
+        f"F3: {f3_desc}\n"
+        f"F4: {f4_desc}\n\n"
+        f"Strength values:\n"
+        f"  emphatic  = document explicitly and clearly states this finding\n"
+        f"  qualified = document mentions related evidence indirectly or with uncertainty\n"
+        f"  absent    = document does not mention this finding dimension\n\n"
+        f"{doc_context}\n\n"
+        f"Reply ONLY with valid JSON, no explanation:\n"
+        f'{{\"F1\":\"emphatic\",\"F2\":\"qualified\",\"F3\":\"absent\",\"F4\":\"emphatic\"}}'
+    )
+
+    try:
+        import requests as _req
+        import re as _re
+        resp = _req.post(
+            f"{OLLAMA_URL}/api/generate",
+            json={
+                "model":   OLLAMA_MODEL,
+                "prompt":  prompt,
+                "stream":  False,
+                "options": {"num_predict": 80, "temperature": 0.1},
+            },
+            timeout=12,
+        )
+        if resp.status_code != 200:
+            log.debug(f"_gemma_extract_findings: Ollama HTTP {resp.status_code}")
+            return None
+
+        raw = resp.json().get("response", "").strip()
+        # Gemma sometimes wraps JSON in markdown code blocks — extract the first {...}
+        m = _re.search(r'\{[^{}]+\}', raw)
+        if not m:
+            log.debug(f"_gemma_extract_findings: no JSON found in response: {raw[:120]}")
+            return None
+
+        parsed = json.loads(m.group())
+        valid_strengths = {"emphatic", "qualified", "absent"}
+        result = {}
+        for code in ("F1", "F2", "F3", "F4"):
+            val = str(parsed.get(code, "")).lower()
+            result[code] = val if val in valid_strengths else "qualified"
+        log.info(f"Sprint L4 — Gemma extraction: {fault_type} → {result}")
+        return result
+
+    except Exception as _e:
+        log.debug(f"_gemma_extract_findings: failed (non-fatal, CPU fallback used): {_e}")
+        return None
+
+
+def _bayes_discriminate(fault_type: str, gemma_mod=None) -> dict:
     """
     Sprint L1: Compute naive-Bayes posterior P(fault_type) via log-odds fusion.
     Prior = 50/50 (encodes telemetry ambiguity honestly).
+
+    Sprint L4: Accepts optional gemma_mod dict {F1..F4: strength} from
+    _gemma_extract_findings(). When provided, applies Path A evidence-strength
+    modulation: emphatic→lr_max, qualified→lr_base, absent→lr_min.
+    Gemma never assigns a weight — it moves within engineer-cited bands only.
 
     Reads findings + LR weights from field_intel DB (Sprint L1 — weights as metadata,
     not code constants). Falls back to _BAYES_FINDINGS dict if DB is unavailable or
@@ -7228,6 +7324,27 @@ def _bayes_discriminate(fault_type: str) -> dict:
         ]
         db_source = "code_fallback"
 
+    # ── Sprint L4: Path A evidence-strength modulation ───────────────────────
+    # Gemma classified each finding's assertion strength from the retrieved docs.
+    # Move the effective LR within the [lr_min, lr_max] band a domain engineer cited.
+    # If gemma_mod is None (GPU offline), lr_base is used unchanged — identical to pre-L4.
+    if gemma_mod:
+        for f in findings:
+            code     = f.get("id", "")
+            strength = gemma_mod.get(code, "qualified")
+            lr_min_v = f.get("lr_min")
+            lr_max_v = f.get("lr_max")
+            if lr_min_v is not None and lr_max_v is not None:
+                if strength == "emphatic":
+                    f["lr"] = lr_max_v   # doc explicitly confirms → upper bound
+                elif strength == "absent":
+                    f["lr"] = lr_min_v   # doc silent on this dimension → lower bound
+                # qualified → lr_base unchanged (nominal engineer-elicited weight)
+            f["gemma_strength"] = strength
+    else:
+        for f in findings:
+            f["gemma_strength"] = "not_available"
+
     # ── Bayesian fusion (identical arithmetic regardless of source) ───────────
     prior_odds = 1.0   # 50/50
     odds = prior_odds
@@ -7238,17 +7355,19 @@ def _bayes_discriminate(fault_type: str) -> dict:
         prev_p = round(prev_odds / (1.0 + prev_odds) * 100, 1)
         new_p  = round(odds       / (1.0 + odds)       * 100, 1)
         steps.append({
-            "id":        f["id"],
-            "label":     f["label"],
-            "source":    f["source"],
-            "lr":        f["lr"],
-            "lr_base":   f.get("lr_base"),
-            "lr_min":    f.get("lr_min"),
-            "lr_max":    f.get("lr_max"),
-            "lr_source": f.get("lr_source", ""),
-            "prior_p":   prev_p,
-            "post_p":    new_p,
-            "physics":   f.get("physics", ""),
+            "id":             f["id"],
+            "label":          f["label"],
+            "source":         f["source"],
+            "lr":             f["lr"],
+            "lr_base":        f.get("lr_base"),
+            "lr_min":         f.get("lr_min"),
+            "lr_max":         f.get("lr_max"),
+            "lr_source":      f.get("lr_source", ""),
+            "prior_p":        prev_p,
+            "post_p":         new_p,
+            "physics":        f.get("physics", ""),
+            "lr_used":        f["lr"],                              # actual LR applied (= lr_max/lr_min when Gemma active)
+            "gemma_strength": f.get("gemma_strength", "not_available"),
         })
     posterior_prob = round(odds / (1.0 + odds), 4)
     return {
@@ -7258,9 +7377,10 @@ def _bayes_discriminate(fault_type: str) -> dict:
         "posterior_pct": round(posterior_prob * 100, 1),
         "posterior":     posterior_prob,
         "steps":         steps,
-        "method":        "naive-Bayes log-odds (Good 1950 / Fagan 1975)",
-        "lr_note":       "Conservative transparent weights grounded in API RP 11S §7.2; not calibrated from empirical data.",
-        "weight_source": db_source,
+        "method":          "naive-Bayes log-odds (Good 1950 / Fagan 1975)",
+        "lr_note":         "Conservative transparent weights grounded in API RP 11S §7.2; not calibrated from empirical data.",
+        "weight_source":   db_source,
+        "gemma_modulated": gemma_mod is not None,
     }
 
 
@@ -7420,30 +7540,33 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
         t_min_arr[scada_alarm_idx] - t_min_arr[gdc_detect_idx], 1
     ) if scada_alarm_idx > gdc_detect_idx else 0.0
 
-    bayes = _bayes_discriminate(ft)
+    # ── Sprint L4: fetch RAG docs first, then run Gemma extraction, then Bayes ──
+    _rag_sections = _fetch_rag_sections(
+        f"{ft.replace('_', ' ')} ESP pump gas lock fluid drawdown", "esp", 3)
+    _gemma_mod = _gemma_extract_findings(_rag_sections, ft)   # None if GPU offline
+    bayes = _bayes_discriminate(ft, gemma_mod=_gemma_mod)
     return {
-        "fault_type":       ft,
-        "n":                N,
-        "psi":              psi_arr,
-        "amps":             amps_arr,
-        "temp":             temp_arr,
-        "vib":              vib_arr,
-        "t_min":            t_min_arr,
-        "health_score":     health_scores,
+        "fault_type":        ft,
+        "n":                 N,
+        "psi":               psi_arr,
+        "amps":              amps_arr,
+        "temp":              temp_arr,
+        "vib":               vib_arr,
+        "t_min":             t_min_arr,
+        "health_score":      health_scores,
         # Single shared alarm moment — both SCADA and GDC views reveal at alarm_idx.
         # gdc_detect_idx is metadata (XGBoost pre-alarm routing flag); not used for reveal timing.
-        "alarm_idx":        scada_alarm_idx,
-        "gdc_detect_idx":   gdc_detect_idx,
-        "scada_rule_fired": scada_rule_fired,
-        "model_used":       "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
-        "bayes_confidence": bayes["posterior"],
-        "bayes_pct":        bayes["posterior_pct"],
-        "bayes_findings":   bayes["steps"],
-        "bayes_method":     bayes["method"],
-        "bayes_lr_note":    bayes["lr_note"],
-        "rag_sections":     _fetch_rag_sections(
-                                f"{ft.replace('_', ' ')} ESP pump gas lock fluid drawdown",
-                                "esp", 3),
+        "alarm_idx":         scada_alarm_idx,
+        "gdc_detect_idx":    gdc_detect_idx,
+        "scada_rule_fired":  scada_rule_fired,
+        "model_used":        "esp_health.ubj" if _model_ok else "FALLBACK_SYNTHETIC",
+        "bayes_confidence":  bayes["posterior"],
+        "bayes_pct":         bayes["posterior_pct"],
+        "bayes_findings":    bayes["steps"],
+        "bayes_method":      bayes["method"],
+        "bayes_lr_note":     bayes["lr_note"],
+        "gemma_modulated":   bayes.get("gemma_modulated", False),
+        "rag_sections":      _rag_sections,
     }
 
 
