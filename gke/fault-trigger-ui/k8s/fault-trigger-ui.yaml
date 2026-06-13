@@ -64,9 +64,9 @@ spec:
                   name: alloydb-secret
                   key: password
             # LLM model name — must match what is loaded in the ollama pod.
-            # Phase 14: upgraded from gemma:2b to gemma:27b (NVIDIA L4).
+            # Autopilot/T4 cluster: gemma4:latest (~$0.35/hr GPU, scale-to-zero).
             - name: OLLAMA_MODEL
-              value: "gemma:27b"
+              value: "gemma4:latest"
             - name: GRAFANA_URL
               value: "http://136.115.220.48"
           resources:

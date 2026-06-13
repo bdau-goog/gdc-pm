@@ -1,10 +1,12 @@
 ---
 # ============================================================================
 # Ollama LLM Inference Server
-# GPU-accelerated pod running Gemma 4:27B for disconnected Edge AI RAG pipeline.
+# GPU-accelerated pod running gemma4:latest for disconnected Edge AI RAG pipeline.
 #
-# Phase 14 upgrade: gemma:2b (A2) → gemma:27b (L4).
-# L4 has 24GB VRAM — sufficient for gemma:27b at Q4_K_M quantization (~17GB).
+# Cluster: GKE Autopilot (us-central1) + NVIDIA T4 GPU (~$0.35/hr, scale-to-zero)
+# T4 has 16GB VRAM — sufficient for gemma4:latest at Q4_K_M quantization.
+# Autopilot provisions the GPU node automatically when replicas=1 is requested
+# and deprovisions it automatically when replicas=0 — no manual node-pool resize.
 #
 # Portable design — works on GKE AND GDC Software-Only:
 #   - PVC uses the cluster's default StorageClass (no GKE-specific class).
@@ -12,14 +14,14 @@
 #     On GDC Software-Only, install the NVIDIA GPU Operator; it will label
 #     GPU nodes with nvidia.com/gpu.present="true" automatically.
 #
-# STORAGE NOTE: gemma:27b Q4_K_M model is ~15GB. This PVC requests 50Gi.
+# STORAGE NOTE: gemma4:latest Q4_K_M model is ~10-15GB. This PVC requests 50Gi.
 #   If upgrading from an existing 10Gi PVC, resize or delete/recreate:
 #     kubectl patch pvc ollama-models-pvc -n gdc-pm -p '{"spec":{"resources":{"requests":{"storage":"50Gi"}}}}'
 #   (only works if the StorageClass supports volume expansion)
 #
-# SCHEDULER NOTE: The ollama-scheduler.yaml CronJobs manage automatic
-#   stand-up (6 AM UTC Mon–Fri) and stand-down (6 PM UTC daily) to avoid
-#   L4 GPU charges during off-hours.
+# GPU BILLING: Use ./scripts/gpu-start.sh and ./scripts/gpu-stop.sh to
+#   scale replicas 0↔1. Autopilot handles node lifecycle automatically.
+#   Always pair start with stop — never leave at replicas=1 overnight.
 # ============================================================================
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -53,19 +55,15 @@ spec:
       labels:
         app: ollama
     spec:
-      # GKE: target L4 GPU node pool (24GB VRAM, Ada Lovelace architecture).
-      # L4 handles gemma:27b Q4_K_M (~17GB VRAM) with 7GB headroom for context.
+      # GKE Autopilot: target T4 GPU class (16GB VRAM, Turing architecture).
+      # T4 handles gemma4:latest Q4_K_M with adequate headroom for RAG context.
       # For GDC Software-Only with A100s, comment out this nodeSelector entirely.
       nodeSelector:
-        cloud.google.com/gke-accelerator: nvidia-l4
-      tolerations:
-        - key: "nvidia.com/gpu"
-          operator: "Exists"
-          effect: "NoSchedule"
+        cloud.google.com/gke-accelerator: nvidia-tesla-t4
 
       # ── Init container: pull model before the server starts ───────────────
-      # gemma:27b Q4_K_M is ~15GB — first pull takes 5–15 minutes depending
-      # on network. Model is persisted to PVC; subsequent restarts skip pull.
+      # gemma4:latest Q4_K_M is ~10-15GB — first pull takes 5–15 minutes
+      # depending on network. Model is persisted to PVC; subsequent restarts skip pull.
       #
       # For air-gapped GDC Software-Only deployments, see options in the
       # original ollama.yaml comments (pre-pull via PVC, custom image, etc.).
@@ -124,7 +122,7 @@ spec:
             # Keep context window large enough for multi-turn RAG conversations
             - name: OLLAMA_NUM_CTX
               value: "8192"
-            # L4 has tensor cores — enable flash attention for faster inference
+            # T4 has tensor cores — enable flash attention for faster inference
             - name: OLLAMA_FLASH_ATTENTION
               value: "1"
           resources:
@@ -133,7 +131,7 @@ spec:
               cpu: "4000m"
               nvidia.com/gpu: 1
             limits:
-              memory: "26Gi"
+              memory: "16Gi"
               cpu: "8000m"
               nvidia.com/gpu: 1
           readinessProbe:

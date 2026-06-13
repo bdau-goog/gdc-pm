@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
 # =============================================================================
-# gpu-start.sh — Start GPU node pool + Ollama LLM (gemma4:latest on NVIDIA L4)
+# gpu-start.sh — Start Ollama LLM (gemma4:latest on NVIDIA T4, Autopilot)
 #
 # Usage: ./scripts/gpu-start.sh
 #
 # What this does:
-#   1. Resizes the GKE gpu-pool from 0 → 1 node in us-east1-b ONLY
-#      gpu-pool is single-zone (us-east1-b) — provisions exactly 1 L4 VM
-#      This is the same zone as the ollama-models-pvc PV — no zone mismatch.
-#   2. Scales the Ollama deployment to 1 replica
+#   1. Scales the Ollama deployment to 1 replica
+#   2. Autopilot automatically provisions a T4 GPU node to satisfy the request
 #   3. Waits until the pod is Running and the model is responding (~15-20 min)
 #
-# NOTE: This is a standard GKE cluster (NOT Autopilot). The GPU node pool must
-# be explicitly resized before the pod can schedule. This script does both.
+# NOTE: This is a GKE Autopilot cluster. Node provisioning is automatic —
+# no explicit node-pool resize needed. Billing starts when the GPU pod schedules.
 #
-# Cost: ~$1.09/hr (1 × g2-standard-8 L4 node in us-east1-b) while running.
+# Cost: ~$0.35/hr (1 × T4 GPU node via Autopilot) while running.
 #
 # When done: ./scripts/gpu-stop.sh (ALWAYS pair — stops billing)
 # =============================================================================
@@ -22,55 +20,17 @@ set -e
 
 NAMESPACE="gdc-pm"
 DEPLOYMENT="ollama"
-CLUSTER="gdc-edge-simulation"
-NODE_POOL="gpu-pool"
-REGION="us-east1"
-PROJECT="${GOOGLE_CLOUD_PROJECT:-gdc-pm-v2}"
 TIMEOUT=1800   # 30 minutes max wait
 
 echo ""
 echo "┌─────────────────────────────────────────────────────────────┐"
-echo "│  🚀 GDC-PM GPU Start — Ollama on NVIDIA L4 (us-east1-b)    │"
-echo "│  Cost: ~\$1.09/hr (1 node) · ALWAYS run gpu-stop.sh when done  │"
+echo "│  🚀 GDC-PM GPU Start — Ollama on NVIDIA T4 (Autopilot)     │"
+echo "│  Cost: ~\$0.35/hr · ALWAYS run gpu-stop.sh when done        │"
 echo "└─────────────────────────────────────────────────────────────┘"
 echo ""
 
-# ── Step 1: Resize GPU node pool if at 0 ────────────────────────────────────
-GPU_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c "g2-standard" || echo "0")
-if [ "${GPU_NODES}" -gt "0" ]; then
-    echo "✅ GPU nodes already running (${GPU_NODES} node(s)). Skipping resize."
-else
-    echo "📤 Resizing ${NODE_POOL} to 1 node in us-east1-b (~$1.09/hr)..."
-    echo "   This provisions 1 NVIDIA L4 VM. Takes ~2-3 min."
-    gcloud container clusters resize ${CLUSTER} \
-        --node-pool ${NODE_POOL} \
-        --num-nodes 1 \
-        --region ${REGION} \
-        --project ${PROJECT} \
-        --quiet
-    echo "✅ Node pool resize requested. Waiting for nodes to be Ready..."
-
-    # Wait for GPU nodes to join the cluster
-    WAIT_START=$(date +%s)
-    while true; do
-        ELAPSED=$(( $(date +%s) - WAIT_START ))
-        if [ ${ELAPSED} -gt 300 ]; then
-            echo "⚠️  Nodes taking >5 min to be Ready. Continuing anyway..."
-            break
-        fi
-        READY=$(kubectl get nodes --no-headers 2>/dev/null | grep "g2-standard" | grep "Ready" | wc -l || echo "0")
-        if [ "${READY}" -gt "0" ]; then
-            echo "✅ ${READY} GPU node(s) Ready."
-            break
-        fi
-        echo "   Waiting for GPU nodes... (${ELAPSED}s)"
-        sleep 15
-    done
-fi
-
-echo ""
-
-# ── Step 2: Scale Ollama deployment ─────────────────────────────────────────
+# ── Step 1: Scale Ollama deployment ─────────────────────────────────────────
+# Autopilot provisions the T4 GPU node automatically when the pod is scheduled.
 CURRENT=$(kubectl get deployment ${DEPLOYMENT} -n ${NAMESPACE} -o jsonpath='{.spec.replicas}' 2>/dev/null || echo "0")
 if [ "${CURRENT}" == "1" ]; then
     STATUS=$(kubectl get pods -n ${NAMESPACE} -l app=${DEPLOYMENT} --no-headers 2>/dev/null | awk '{print $3}' | head -1)
