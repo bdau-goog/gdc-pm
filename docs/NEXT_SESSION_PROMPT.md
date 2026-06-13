@@ -67,21 +67,23 @@ Fix: `kubectl set serviceaccount deployment/fault-trigger-ui ml-inference-ksa` �
 Verified live: `vizier_algorithm: GAUSSIAN_PROCESS_BANDIT` ✅. YAML committed `691c805`.
 Note: Vizier takes ~30-60s (GP Bandit, 15 trials) — normal, not a timeout bug.
 
-### 3g — NEXT: Full demo video scripts + Veo scene prompts ← **NEXT SESSION**
-Three separate Vids videos, 3–5 min each. Each video structure:
-1. **Veo cinematic intro** (~60-90s) — scene prompts for O&G operator challenge + solution arc
-2. **Demo narration** — presenter script synced to each UI panel/interaction
-3. **Bridge/CTA close**
+### 3g — VIDEO_SCRIPT.md full production scripts ✅ COMPLETE (Session BR)
+`docs/VIDEO_SCRIPT.md` fully expanded. Commit `b4e3846`. Contains:
+- 10 Veo cinematic scene prompts across 4 videos (1 Overview + 3×3 H1/H2/H3)
+- Panel-by-panel presenter narration for all 12 briefing panels (H1: 6, H2: 3, H3: 3)
+- Interactive replay walkthroughs for H1, H2, H3 scenarios
+- Integrity gate table: all spoken numbers verified against live code
+- Production notes: GPU pre-flight, recording guidance, screen flow
 
-**Foundation:** `docs/VIDEO_SCRIPT.md` already has 4 skeleton narrations (Overview + H1/H2/H3) with Open/Tension/Reveal/Resolution/Bridge structure. Expand to full shooting scripts.
+### 3h — NEXT: Record demo videos ← **NEXT SESSION**
+**Pre-recording checklist (in SESSION_PROMPT section F):**
+1. Walk all briefing panels live — confirm no copy drift vs. VIDEO_SCRIPT.md narration
+2. GPU: `gpu-start.sh` 10 min before H1 Gemma run (`~$0.35/hr T4`)
+3. Confirm `vizier_algorithm: GAUSSIAN_PROCESS_BANDIT` before H3 run
+4. Record in order: Overview → H1 → H2 → H3
 
-**Model recommendation for this task:** Use **Gemini 2.5 Pro with Thinking**
-- Veo is a Google product — native prompt format knowledge
-- Web access for O&G field accuracy (RTOC environments, shift handoffs)
-- Long context to maintain voice across all 3 scripts in one session
-- VIDEO_SCRIPT.md skeleton → full script with Veo scene prompts per panel
-
-**GPU note:** If demoing H1 Gemma modulation path live: `gpu-start.sh` ~10 min before recording (T4 provisioning ~5-6 min + Ollama startup ~1-2 min, model cached on PVC)
+**GPU note:** `gpu-start.sh` required for live Gemma path on H1/H2 scenario replay.
+For H3: WAN to GCP required for Vizier. No GPU needed.
 
 ---
 
