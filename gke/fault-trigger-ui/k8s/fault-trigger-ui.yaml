@@ -68,7 +68,7 @@ spec:
             - name: OLLAMA_MODEL
               value: "gemma4:latest"
             - name: GRAFANA_URL
-              value: "http://136.115.220.48"
+              value: "http://34.45.194.92"
           resources:
             requests:
               cpu: "250m"
