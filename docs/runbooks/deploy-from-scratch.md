@@ -82,12 +82,19 @@ gcloud container clusters delete gdc-edge-simulation \
 
 ## Step 1 — Create GKE Autopilot Cluster
 
+> **Network note:** The project has a custom VPC (`gdc-pm-vpc`) with no default network.
+> Secondary IP ranges must be specified — GKE will create them on `subnet-gke` automatically.
+> `--workload-pool` is NOT a valid flag for `create-auto`; Autopilot enables Workload Identity by default.
+
 ```bash
 gcloud container clusters create-auto ${CLUSTER} \
   --region ${REGION} \
   --project ${PROJECT_ID} \
   --release-channel regular \
-  --workload-pool "${PROJECT_ID}.svc.id.goog"
+  --network gdc-pm-vpc \
+  --subnetwork subnet-gke \
+  --cluster-ipv4-cidr 10.32.0.0/14 \
+  --services-ipv4-cidr 10.36.0.0/20
 ```
 
 **Wait ~5–10 minutes.** When complete:
