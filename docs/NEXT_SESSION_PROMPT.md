@@ -1,7 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** Session BP — June 13, 2026  
-**git head:** `09a27aa` — docs(session-bo-wrap): Autopilot decision agenda (last committed)  
-**Session BP docs (uncommitted):** deploy-from-scratch.md + AUTOPILOT_MIGRATION.md + this file  
+**git head:** `4e7e09c` — chore(autopilot): companion code changes for T4/Autopilot rebuild  
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -42,7 +41,7 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 1. **Pre-flight (before teardown):**
    - `gcloud compute accelerator-types list --filter="zone:us-central1* AND name=nvidia-tesla-t4"` — confirm T4 available
-   - Apply companion code changes (see below) — THEN commit BEFORE tearing down old cluster
+   - ~~Apply companion code changes (see below)~~ ✅ DONE `4e7e09c` — committed before teardown
 
 2. **Companion code changes to YAML/scripts (do this first):**
    | File | Change |
@@ -88,7 +87,7 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 | H1–H3 all horizons | ✅ DEPLOYED | Paraffin, pad-level dashboard, Vizier |
 | Sprint L4 Gemma extraction | ✅ CPU FALLBACK VERIFIED | GPU path pending T4 rebuild |
 | H1/H2 pgvector retrieval | ✅ REAL + DISCRIMINATING | Sprint L3 |
-| `OLLAMA_MODEL: "gemma:27b"` in manifest | ❌ INTEGRITY VIOLATION | Companion code change needed (Session BP) |
+| `OLLAMA_MODEL: "gemma:27b"` in manifest | ✅ FIXED `4e7e09c` | fault-trigger-ui.yaml now has gemma4:latest |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended |
 | H1_METHODOLOGY.md LR values | ⚠️ STALE DOC | Fix post-rebuild |
 
