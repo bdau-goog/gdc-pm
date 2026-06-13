@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** Session BQ+1 wrap — June 13, 2026  
-**git head:** `5ed18cb` — docs(h1-methodology): correct stale LR values 8/5/3/2→99.6% to live code values 3/2/1.6/1.4→93.1%  
+**git head:** `691c805` — fix(vizier): add serviceAccountName ml-inference-ksa — Workload Identity for aiplatform.user, restores GAUSSIAN_PROCESS_BANDIT  
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -60,12 +60,18 @@ No code changes were needed. The feature was already implemented.
 Corrected stale values: `8/5/3/2 → 99.6%` → live code values `3/2/1.6/1.4 → 93.1%`.
 Committed `5ed18cb`.
 
-### 3f — NEXT: What is actually left?
-All known backlog items are now complete. Read DEMO_MASTER.md §12 Implementation Order
-to identify any remaining H3 or polish tasks. Candidates to investigate:
-- Is there a Vizier Pareto chart that needs implementation?
-- Is the `?` on `vizier_used` in the API response a display bug worth fixing?
-- VIDEO_SCRIPT.md — any remaining gaps before a full demo run?
+### 3f — Vizier IAM 403 ✅ FIXED (Session BQ+1)
+Root cause: `fault-trigger-ui` used default Kubernetes SA (no Workload Identity → no `aiplatform.user`).
+Fix: `kubectl set serviceaccount deployment/fault-trigger-ui ml-inference-ksa` → WI binds to
+`ml-pipeline-sa@gdc-pm-v2.iam.gserviceaccount.com` which already has `roles/aiplatform.user`.
+Verified live: `vizier_algorithm: GAUSSIAN_PROCESS_BANDIT` ✅. YAML committed `691c805`.
+Note: Vizier takes ~30-60s (GP Bandit, 15 trials) — normal, not a timeout bug.
+
+### 3g — NEXT: Full demo dress rehearsal
+All implementation is complete. Suggested next session:
+1. Full end-to-end demo run using VIDEO_SCRIPT.md as the script
+2. Check timing (each horizon ~90-120s per spec)
+3. Any last polish before showing to audience
 
 ---
 
@@ -81,6 +87,7 @@ to identify any remaining H3 or polish tasks. Candidates to investigate:
 | Autopilot rebuild (us-central1, T4) | ✅ COMPLETE — 7/7 pods Running |
 | H3-F (selectable constraint + RAG provenance) | ✅ VERIFIED LIVE (Session BQ+1) — was already deployed |
 | H1_METHODOLOGY.md LR values | ✅ FIXED (Session BQ+1) `5ed18cb` — 3/2/1.6/1.4→93.1% |
+| Vizier GAUSSIAN_PROCESS_BANDIT | ✅ FIXED (Session BQ+1) `691c805` — was 403 IAM_PERMISSION_DENIED |
 | DEMO_MASTER §3 L2/APM-concession reconciliation | ✅ COMPLETE (Session BQ) |
 | VIDEO_SCRIPT.md decision-support language | ✅ COMPLETE (Session BQ) |
 
@@ -97,6 +104,7 @@ to identify any remaining H3 or polish tasks. Candidates to investigate:
 | `OLLAMA_MODEL` manifest | ✅ FIXED `4e7e09c` | `gemma4:latest` in fault-trigger-ui.yaml |
 | GRAFANA_URL | ✅ FIXED `8e9bca3` | `34.45.194.92` (new Autopilot cluster) |
 | H1_METHODOLOGY.md LR values | ✅ FIXED `5ed18cb` | 3/2/1.6/1.4→93.1% (was 8/5/3/2→99.6%) |
+| Vizier vizier_algorithm | ✅ FIXED `691c805` | GAUSSIAN_PROCESS_BANDIT (was deterministic_fallback due to 403 IAM) |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended |
 
 ---
