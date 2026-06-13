@@ -16,6 +16,7 @@ spec:
       labels:
         app: fault-trigger-ui
     spec:
+      serviceAccountName: ml-inference-ksa  # Workload Identity → ml-pipeline-sa (aiplatform.user for Vertex AI Vizier)
       containers:
         - name: fault-trigger-ui
           image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
