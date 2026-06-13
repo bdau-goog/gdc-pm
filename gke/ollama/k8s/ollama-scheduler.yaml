@@ -2,7 +2,7 @@
 # ============================================================================
 # Ollama Scheduler — Automated Stand-Up / Stand-Down CronJobs
 #
-# Saves L4 GPU costs by scaling the ollama deployment to 0 replicas at 6 PM
+# Saves T4 GPU costs by scaling the ollama deployment to 0 replicas at 6 PM
 # UTC and back to 1 replica at 6 AM UTC (Mon–Fri only for stand-up).
 #
 # TIMEZONE NOTE: All schedules are UTC.
@@ -11,15 +11,15 @@
 #       Stand-down: 0 22 * * *    (6 PM ET summer)   or  0 23 * * *    (winter)
 #   - Adjust the schedule fields below as needed.
 #
-# COST IMPACT: An L4 GPU node in GKE costs roughly $0.60–$0.70/hr.
+# COST IMPACT: A T4 GPU node via Autopilot costs roughly $0.35/hr.
 #   Running only 9 AM–6 PM weekdays (9 hours × 5 days = 45 hrs/week) vs 24/7
-#   reduces monthly GPU cost from ~$500 to ~$110. (~78% savings)
+#   reduces monthly GPU cost from ~$252 to ~$63. (~75% savings)
 #
 # HOW IT WORKS:
-#   GKE Cluster Autoscaler watches GPU node utilization. When ollama is
-#   scaled to 0, no pod requests the nvidia.com/gpu resource, and the
-#   Autoscaler deletes the L4 node ~10 minutes later (billing stops).
-#   When scaled back to 1, Autoscaler provisions a new L4 node in ~2-3 min.
+#   Autopilot watches pod resource requests. When ollama is scaled to 0,
+#   no pod requests the nvidia.com/gpu resource, and Autopilot removes the
+#   T4 node automatically (~2-3 min after pod termination — billing stops).
+#   When scaled back to 1, Autopilot provisions a new T4 node in ~2-3 min.
 #
 # APPLY:
 #   kubectl apply -f gke/ollama/k8s/ollama-scheduler.yaml
@@ -96,8 +96,8 @@ spec:
                 - |
                   echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC') — Standing UP ollama deployment (replicas=1)"
                   kubectl scale deployment ollama -n gdc-pm --replicas=1
-                  echo "✅ ollama scaled to 1 replica. GKE Autoscaler will provision L4 node (~2-3 min)."
-                  echo "   Ollama will be ready for gemma:27b inference once readiness probe passes."
+                  echo "✅ ollama scaled to 1 replica. Autopilot will provision T4 node (~2-3 min)."
+                  echo "   Ollama will be ready for gemma4:latest inference once readiness probe passes."
               resources:
                 requests:
                   cpu: "50m"
@@ -142,7 +142,7 @@ spec:
                   echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC') — Standing DOWN ollama deployment (replicas=0)"
                   kubectl scale deployment ollama -n gdc-pm --replicas=0
                   echo "✅ ollama scaled to 0 replicas."
-                  echo "   GKE Autoscaler will remove the L4 GPU node in ~10 min (billing stops)."
+                  echo "   Autopilot will remove the T4 GPU node automatically (~2-3 min, billing stops)."
               resources:
                 requests:
                   cpu: "50m"

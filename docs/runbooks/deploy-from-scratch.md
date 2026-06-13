@@ -54,6 +54,32 @@ export REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
 
 ---
 
+## Step 0.5 — Delete the old Standard GKE cluster (migration only)
+
+**Skip this step if no prior cluster exists.**
+
+The old cluster (`gdc-edge-simulation`, region `us-east1`) must be deleted before the new Autopilot cluster of the same name is created in `us-central1`. The new cluster reuses the same name and Artifact Registry — only the region and cluster type change.
+
+```bash
+# Confirm you are about to delete the right cluster:
+gcloud container clusters describe gdc-edge-simulation \
+  --region us-east1 --project ${PROJECT_ID} \
+  --format="value(location,currentNodeCount)"
+
+# Delete it (irreversible — all cluster workloads and PVCs are gone):
+gcloud container clusters delete gdc-edge-simulation \
+  --region us-east1 \
+  --project ${PROJECT_ID} \
+  --quiet
+```
+
+> **Expected data loss (all intentional):**
+> - AlloyDB PVC data lost — re-seeded automatically by `fault-trigger-ui` startup threads (Step 9)
+> - ollama-models PVC lost — gemma4:latest re-pulled on first `gpu-start.sh` (~5-15 min, cached for subsequent starts)
+> - `gdc-pm.bdau.io` DNS record will be stale until Step 11 updates it with the new LoadBalancer IP
+
+---
+
 ## Step 1 — Create GKE Autopilot Cluster
 
 ```bash
@@ -173,14 +199,15 @@ docker push ${REGISTRY}/telemetry-simulator:latest
 
 ## Step 7 — Fix the OLLAMA_MODEL integrity mismatch (before first deploy)
 
-The `fault-trigger-ui.yaml` manifest has a stale `OLLAMA_MODEL: "gemma:27b"` that doesn't match the actual model pulled by Ollama. Before applying manifests, patch it:
+> ✅ **Already fixed in commit `4e7e09c`** — if you cloned `feature-trio-clean` after Session BP, `fault-trigger-ui.yaml` already has `OLLAMA_MODEL: "gemma4:latest"`. The `sed` command below is a no-op on a current checkout; it is retained here as a safeguard only.
 
 ```bash
-sed -i 's/value: "gemma:27b"/value: "gemma4:latest"/' \
-  gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml
+# No-op on current feature-trio-clean — value already correct:
+grep 'OLLAMA_MODEL' gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml
+# Should show: value: "gemma4:latest"
 ```
 
-Also update `GRAFANA_URL` to match the current Grafana IP once it's assigned (Step 8 will give you the IP):
+Update `GRAFANA_URL` to match the current Grafana IP once it's assigned (Step 8 will give you the IP):
 ```bash
 # After Step 8, get the Grafana LoadBalancer IP and patch:
 # GRAFANA_IP=$(kubectl get svc grafana -n ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
@@ -375,8 +402,8 @@ The following YAML/script changes were identified during Session BO/BP audit. Ap
 
 | File | Change | Why |
 |---|---|---|
-| `gke/ollama/k8s/ollama.yaml` | Change `nodeSelector: nvidia-l4` → `nvidia-tesla-t4`; update resource limits for T4 (16GB); remove taint/toleration (Autopilot manages); fix stale 27b header | L4→T4 migration |
-| `gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml` | `OLLAMA_MODEL: "gemma4:latest"` (was `"gemma:27b"`) | Integrity: displayed value must match actual |
-| `scripts/gpu-start.sh` | Replace node-pool resize logic with `kubectl scale deployment ollama --replicas=1` | Autopilot: no node pool to resize |
-| `scripts/gpu-stop.sh` | Replace node-pool resize logic with `kubectl scale deployment ollama --replicas=0` | Same |
-| `gke/ollama/k8s/ollama-scheduler.yaml` | Comment: update cost to ~$0.35/hr T4 (was $1.09/hr L4) | Accuracy |
+| `gke/ollama/k8s/ollama.yaml` | ✅ DONE `4e7e09c` | nodeSelector T4, limits 16Gi, no tolerations, header updated |
+| `gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml` | ✅ DONE `4e7e09c` | `OLLAMA_MODEL: "gemma4:latest"` |
+| `scripts/gpu-start.sh` | ✅ DONE `4e7e09c` | kubectl scale only, no gcloud resize |
+| `scripts/gpu-stop.sh` | ✅ DONE `4e7e09c` | kubectl scale only, no gcloud resize |
+| `gke/ollama/k8s/ollama-scheduler.yaml` | ✅ DONE (Session BP) | T4 cost/Autopilot language throughout |
