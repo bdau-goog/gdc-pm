@@ -67,11 +67,21 @@ Fix: `kubectl set serviceaccount deployment/fault-trigger-ui ml-inference-ksa` �
 Verified live: `vizier_algorithm: GAUSSIAN_PROCESS_BANDIT` ✅. YAML committed `691c805`.
 Note: Vizier takes ~30-60s (GP Bandit, 15 trials) — normal, not a timeout bug.
 
-### 3g — NEXT: Full demo dress rehearsal
-All implementation is complete. Suggested next session:
-1. Full end-to-end demo run using VIDEO_SCRIPT.md as the script
-2. Check timing (each horizon ~90-120s per spec)
-3. Any last polish before showing to audience
+### 3g — NEXT: Full demo video scripts + Veo scene prompts ← **NEXT SESSION**
+Three separate Vids videos, 3–5 min each. Each video structure:
+1. **Veo cinematic intro** (~60-90s) — scene prompts for O&G operator challenge + solution arc
+2. **Demo narration** — presenter script synced to each UI panel/interaction
+3. **Bridge/CTA close**
+
+**Foundation:** `docs/VIDEO_SCRIPT.md` already has 4 skeleton narrations (Overview + H1/H2/H3) with Open/Tension/Reveal/Resolution/Bridge structure. Expand to full shooting scripts.
+
+**Model recommendation for this task:** Use **Gemini 2.5 Pro with Thinking**
+- Veo is a Google product — native prompt format knowledge
+- Web access for O&G field accuracy (RTOC environments, shift handoffs)
+- Long context to maintain voice across all 3 scripts in one session
+- VIDEO_SCRIPT.md skeleton → full script with Veo scene prompts per panel
+
+**GPU note:** If demoing H1 Gemma modulation path live: `gpu-start.sh` ~10 min before recording (T4 provisioning ~5-6 min + Ollama startup ~1-2 min, model cached on PVC)
 
 ---
 
