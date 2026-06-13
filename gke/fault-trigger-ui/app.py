@@ -127,7 +127,8 @@ def _ollama_keepalive() -> None:
             resp = _req.post(
                 f"{OLLAMA_URL}/api/generate",
                 json={"model": OLLAMA_MODEL, "prompt": "ping", "stream": False,
-                      "options": {"num_predict": 1, "temperature": 0.0}},
+                      "options": {"num_predict": 1, "temperature": 0.0},
+                      "think": False},   # Sprint L4: disable Gemma4 thinking mode for keepalive ping
                 timeout=30,
             )
             if resp.status_code == 200:
@@ -7220,8 +7221,12 @@ def _gemma_extract_findings(rag_sections: list, fault_type: str):
                 "prompt":  prompt,
                 "stream":  False,
                 "options": {"num_predict": 80, "temperature": 0.1},
+                # Sprint L4 fix: disable Gemma4 thinking mode — we need fast JSON
+                # classification, not chain-of-thought reasoning. Thinking mode
+                # adds 60-180s latency that blows the timeout and forces CPU fallback.
+                "think": False,
             },
-            timeout=12,
+            timeout=60,   # was 12 — Gemma4 first-token latency on T4 can be 15-45s
         )
         if resp.status_code != 200:
             log.debug(f"_gemma_extract_findings: Ollama HTTP {resp.status_code}")
