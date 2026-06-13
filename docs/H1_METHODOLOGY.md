@@ -1,7 +1,7 @@
 # H1 Discern — Detection & Discrimination Methodology
 ## XGBoost Health Detection + Bayesian Evidence Fusion for ESP Fluid Unloading
 
-**Version:** Session W (June 9, 2026)  
+**Version:** Session W (June 9, 2026) · **LR values corrected:** Session BQ+1  
 **Status:** Authoritative single source of truth for H1 confidence claims  
 **Supersedes:** fabricated `92% / 94% confidence` literals (removed — §6 below)  
 **Confidence tags:** 🟢 TEXTBOOK = citeable standard · 🟡 OUR-CODE = grep-traceable · 🔴 NEEDS-EXPERT = conservative/transparent weight
@@ -126,32 +126,32 @@ Each finding is derived from a document retrieved via pgvector RAG. The findings
 
 | # | Finding | Drawn from | Direction | LR (drawdown:gas_lock) | Physics basis |
 |---|---|---|---|---|---|
-| F1 | **No free gas detected at pump intake** | Acoustic survey · "None detected" | ↑↑ drawdown | **8.0** | Gas lock requires free gas at intake (API RP 11S §4.2). Drawdown is reservoir depletion — no gas void. |
-| F2 | **Casing pressure flat or slightly declining** | Acoustic survey / shift note | ↑↑ drawdown | **5.0** | Gas lock builds casing pressure as gas accumulates in the annulus. Flat casing = no gas accumulation = drawdown. (API RP 11S §7.2) |
-| F3 | **Dynamic fluid column declining vs prior baseline** | Acoustic survey · fluid-level measurement | ↑ drawdown | **3.0** | In gas lock, the casing annulus remains fully flooded — fluid level stable. In drawdown, the column depletes. The survey observes the trend. |
-| F4 | **GOR nominal / not rising** | Separator test report | ↑ drawdown | **2.0** | Rising GOR signals free gas in the reservoir fluid stream — a gas-lock precursor. Stable GOR with declining fluid level = reservoir drawdown without gas migration. |
+| F1 | **No free gas detected at pump intake** | Acoustic survey · "None detected" | ↑↑ drawdown | **3.0** | Gas lock requires free gas at intake (API RP 11S §4.2). Drawdown is reservoir depletion — no gas void. |
+| F2 | **Casing pressure flat or slightly declining** | Acoustic survey / shift note | ↑↑ drawdown | **2.0** | Gas lock builds casing pressure as gas accumulates in the annulus. Flat casing = no gas accumulation = drawdown. (API RP 11S §7.2) |
+| F3 | **Dynamic fluid column declining vs prior baseline** | Acoustic survey · fluid-level measurement | ↑ drawdown | **1.6** | In gas lock, the casing annulus remains fully flooded — fluid level stable. In drawdown, the column depletes. The survey observes the trend. |
+| F4 | **GOR nominal / not rising** | Separator test report | ↑ drawdown | **1.4** | Rising GOR signals free gas in the reservoir fluid stream — a gas-lock precursor. Stable GOR with declining fluid level = reservoir drawdown without gas migration. |
 
 **For gas-lock scenario:** the findings reverse — free gas IS detected, casing pressure IS rising, fluid level stable, GOR rising. Each LR < 1 for drawdown given these, meaning the same math confidently outputs gas_lock.
 
-**Note on independence:** The naive-Bayes formulation assumes conditional independence of the findings given the fault type. These findings are not fully independent (e.g., no free gas at intake and flat casing pressure are correlated). Conservative LR values (8, 5, 3, 2 rather than higher values that might be physically defensible) mitigate the overconfidence risk of naive-Bayes under dependence. 🔴 The specific LR values are conservative transparent weights, not calibrated from empirical data. This is stated explicitly on-screen.
+**Note on independence:** The naive-Bayes formulation assumes conditional independence of the findings given the fault type. These findings are not fully independent (e.g., no free gas at intake and flat casing pressure are correlated). Conservative LR values (3, 2, 1.6, 1.4 rather than higher values that might be physically defensible) mitigate the overconfidence risk of naive-Bayes under dependence. 🔴 The specific LR values are conservative transparent weights, not calibrated from empirical data. This is stated explicitly on-screen.
 
 ### 4.4 Worked example — fluid drawdown scenario
 
 ```
 Prior odds = 1.0  (50/50)
-After F1 (no free gas):          1.0 × 8.0 = 8.0
-After F2 (flat casing pressure):  8.0 × 5.0 = 40.0
-After F3 (declining fluid column): 40.0 × 3.0 = 120.0
-After F4 (GOR nominal):           120.0 × 2.0 = 240.0
+After F1 (no free gas):           1.0 × 3.0 = 3.0
+After F2 (flat casing pressure):  3.0 × 2.0 = 6.0
+After F3 (declining fluid column): 6.0 × 1.6 = 9.6
+After F4 (GOR nominal):           9.6 × 1.4 = 13.44
 
-posterior_P(drawdown) = 240 / (240 + 1) = 240/241 ≈ 99.6%
+posterior_P(drawdown) = 13.44 / (13.44 + 1) = 13.44/14.44 ≈ 93.1%
 ```
 
-For a typical run, the posterior will be in the **high-90s** (drawdown) or **low single-digits** (gas lock, where the LRs all invert). The exact value varies only by which documents are retrieved and whether they contain all four findings — which is correct, because it reflects the actual evidence retrieved on that run.
+For a typical run, the posterior will be in the **low-to-mid 90s** (drawdown) or **low single-digits** (gas lock, where the LRs all invert). The exact value varies only by which documents are retrieved and whether they contain all four findings — which is correct, because it reflects the actual evidence retrieved on that run.
 
 ### 4.5 What this proves about GDC's value
 
-The posterior is mathematically meaningless without the documents. Set the LRs all to 1 (no document evidence) and the posterior stays at 50%. The confidence number is therefore a **direct measure of how much the L3 document fusion moved the belief** — exactly what we claim GDC does that SCADA cannot. The math tells the story: documents move the needle from 50% to 99%.
+The posterior is mathematically meaningless without the documents. Set the LRs all to 1 (no document evidence) and the posterior stays at 50%. The confidence number is therefore a **direct measure of how much the L3 document fusion moved the belief** — exactly what we claim GDC does that SCADA cannot. The math tells the story: documents move the needle from 50% to ~93%.
 
 ---
 
@@ -188,7 +188,7 @@ The old literals (index.html lines 779, 785) are removed as of Batch B implement
 |---|---|---|
 | Health score (hs) | 🟡 OUR-CODE | `hs = 0.42` — show the real live value |
 | Lead time | 🟡 OUR-CODE | `GDC detected N min before SCADA` — live, varies per run |
-| Bayesian posterior | 🔴 (conservative transparent weights) | `P(drawdown) = 99.6% · naive-Bayes evidence fusion (Good 1950 / Fagan 1975) · ⓘ see Evidence Table` |
+| Bayesian posterior | 🔴 (conservative transparent weights) | `P(drawdown) = 93.1% · naive-Bayes evidence fusion (Good 1950 / Fagan 1975) · ⓘ see Evidence Table` |
 | Evidence table | 🟢 / 🔴 (method vs weights) | Show the 4-row table: finding, source doc, LR value, direction — full audit surface |
 
 ---
@@ -240,4 +240,5 @@ The old literals (index.html lines 779, 785) are removed as of Batch B implement
 ---
 
 *Written: Session W (June 9, 2026) · Author: GDC AI Advisor*  
+*LR values corrected: Session BQ+1 — aligned to live code (app.py lr_base values: F1=3.0, F2=2.0, F3=1.6, F4=1.4 → posterior 93.1%). Old doc values 8/5/3/2 → 99.6% were stale.*  
 *Next update: after Batch B implementation — verify line numbers and posterior range from live test runs*
