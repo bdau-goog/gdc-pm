@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
 **Date:** Session BP — June 13, 2026  
-**git head:** `4e7e09c` — chore(autopilot): companion code changes for T4/Autopilot rebuild  
+**git head:** `2e016a6` — chore(autopilot): finish companion changes (scheduler + runbook)  
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -41,7 +41,7 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 1. **Pre-flight (before teardown):**
    - `gcloud compute accelerator-types list --filter="zone:us-central1* AND name=nvidia-tesla-t4"` — confirm T4 available
-   - ~~Apply companion code changes (see below)~~ ✅ DONE `4e7e09c` — committed before teardown
+   - ~~Apply companion code changes~~ ✅ ALL DONE — `4e7e09c` + `2e016a6` committed
 
 2. **Companion code changes to YAML/scripts (do this first):**
    | File | Change |
