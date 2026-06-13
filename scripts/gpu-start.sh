@@ -5,16 +5,16 @@
 # Usage: ./scripts/gpu-start.sh
 #
 # What this does:
-#   1. Resizes the GKE gpu-pool from 0 → 1 node per zone (3 total)
-#      This provisions the NVIDIA L4 VMs — billing starts here (~2-3 min)
+#   1. Resizes the GKE gpu-pool from 0 → 1 node in us-east1-b ONLY
+#      gpu-pool is single-zone (us-east1-b) — provisions exactly 1 L4 VM
+#      This is the same zone as the ollama-models-pvc PV — no zone mismatch.
 #   2. Scales the Ollama deployment to 1 replica
 #   3. Waits until the pod is Running and the model is responding (~15-20 min)
 #
 # NOTE: This is a standard GKE cluster (NOT Autopilot). The GPU node pool must
 # be explicitly resized before the pod can schedule. This script does both.
 #
-# Cost: ~$3.27/hr (3 × g2-standard-8 L4 nodes) while running.
-#       Single-node cost if you resize manually to 1 node total: ~$1.09/hr.
+# Cost: ~$1.09/hr (1 × g2-standard-8 L4 node in us-east1-b) while running.
 #
 # When done: ./scripts/gpu-stop.sh (ALWAYS pair — stops billing)
 # =============================================================================
@@ -30,8 +30,8 @@ TIMEOUT=1800   # 30 minutes max wait
 
 echo ""
 echo "┌─────────────────────────────────────────────────────────────┐"
-echo "│  🚀 GDC-PM GPU Start — Ollama on NVIDIA L4                 │"
-echo "│  Cost: ~\$3.27/hr (3 nodes) · ALWAYS run gpu-stop.sh when done │"
+echo "│  🚀 GDC-PM GPU Start — Ollama on NVIDIA L4 (us-east1-b)    │"
+echo "│  Cost: ~\$1.09/hr (1 node) · ALWAYS run gpu-stop.sh when done  │"
 echo "└─────────────────────────────────────────────────────────────┘"
 echo ""
 
@@ -40,8 +40,8 @@ GPU_NODES=$(kubectl get nodes --no-headers 2>/dev/null | grep -c "g2-standard" |
 if [ "${GPU_NODES}" -gt "0" ]; then
     echo "✅ GPU nodes already running (${GPU_NODES} node(s)). Skipping resize."
 else
-    echo "📤 Resizing ${NODE_POOL} to 1 node per zone (3 total)..."
-    echo "   This provisions NVIDIA L4 VMs. Takes ~2-3 min."
+    echo "📤 Resizing ${NODE_POOL} to 1 node in us-east1-b (~$1.09/hr)..."
+    echo "   This provisions 1 NVIDIA L4 VM. Takes ~2-3 min."
     gcloud container clusters resize ${CLUSTER} \
         --node-pool ${NODE_POOL} \
         --num-nodes 1 \
