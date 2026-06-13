@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** Session BQ — June 13, 2026  
-**git head:** `b3fd9cb` — fix(sprint-l4): think:False + timeout 60s for Gemma4 extraction  
+**Date:** Session BQ wrap — June 13, 2026  
+**git head:** `1c7355e` — docs(session-bq): reconcile §3 L2/APM framing (+ VIDEO_SCRIPT decision-support update — pending commit)  
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -38,9 +38,8 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### 3a — DNS update (if not done)
-Update `gdc-pm.bdau.io` A-record → **`34.72.142.23`** (new fault-trigger-ui LoadBalancer IP)  
-Grafana: **`34.45.194.92`**
+### 3a — DNS ✅ DONE
+`/etc/hosts` updated by user. `gdc-pm.bdau.io` → `34.72.142.23`. Grafana: `34.45.194.92`.
 
 ### 3b — Sprint L4 COMPLETE ✅
 GPU path fully validated this session. `gemma_modulated: True`, `bayes_pct: 96.6`.  
@@ -49,7 +48,11 @@ GPU path fully validated this session. `gemma_modulated: True`, `bayes_pct: 96.6
 ### 3c — Product task ✅ COMPLETE (Session BQ)
 DEMO_MASTER §3 L2/APM-concession reconciliation done. Hostile-engineer pass run via Gemini API (ADC). Verdict: L2 reclaim FAILS on detection quality, sovereignty-at-L2, and "your data" claims. L2 contribution reframed as **deployment simplicity** (zero legacy footprint). PRIME DIRECTIVE patched; 2 new rejected-claim rows added. See SESSION_LOG for full decision record.
 
-### 3d — H3-F (selectable constraint + RAG provenance) — queued
+### 3d — H3-F (selectable constraint + RAG provenance) — **NEXT CODE SPRINT**
+Backend: `?constraint=gas|thermal|rul` on `/api/vizier/optimize`. Frontend: binding constraint toggle + pgvector doc provenance per constraint. Deploy + verify.
+
+### 3e — H1_METHODOLOGY.md LR values — stale doc fix
+Code is correct (3/2/1.6/1.4 → 93%). Doc says 8/5/3/2 → 99.6%. 10-minute fix.
 
 ---
 
@@ -66,6 +69,7 @@ DEMO_MASTER §3 L2/APM-concession reconciliation done. Hostile-engineer pass run
 | H3-F (selectable constraint + RAG provenance) | ⏸ QUEUED |
 | H1_METHODOLOGY.md LR values | ⚠️ STALE DOC — code is correct (3/2/1.6/1.4→93%); doc says 8/5/3/2→99.6% |
 | DEMO_MASTER §3 L2/APM-concession reconciliation | ✅ COMPLETE (Session BQ) — hostile-pass run; PRIME DIRECTIVE patched |
+| VIDEO_SCRIPT.md decision-support language | ✅ COMPLETE (Session BQ) — 4 beats updated across all 4 narrations |
 
 ---
 

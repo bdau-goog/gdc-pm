@@ -9,7 +9,9 @@
 
 > *"Industrial operations generate two kinds of intelligence: sensor data — which every SCADA and APM platform reads — and operational documents: shift notes, workover reports, OEM manuals, lab results. Documents that no sensor-based system can read in real time.*
 >
-> *GDC changes that. A local LLM reads your documents. Local ML models read your sensors. Together they generate a cited differential diagnosis — not just an anomaly score, but a ranked explanation of what's happening and what to do — inside your sovereign boundary, on open weights, in seconds.*
+> *GDC changes that. A local LLM reads your documents. Local ML models read your sensors. Together they surface a cited differential diagnosis — every alert backed by evidence from your own documents, every verdict auditable, inside your sovereign boundary, on open weights, in seconds.*
+>
+> *GDC is a decision-support advisor, not an autonomous controller. The evidence is cited. The audit trail is complete. The engineer makes the call.*
 >
 > *The whole APM industry is building this capability for the cloud. GDC delivers it where your data already lives."*
 
@@ -43,7 +45,7 @@
 
 > *"The operator reviews the cited verdict and approves the VFD trim. The well stays online. The differential diagnosis took eight seconds. The audit trail cites three documents.*
 >
-> *At 2am, across 200 wells, operators default to reflexive shut-in — the safe choice. GDC makes the better choice automatic."*
+> *At 2am, across 200 wells, operators default to reflexive shut-in — the safe choice. GDC gives every operator the evidence to make the better call — automatically, at scale, with a complete audit trail."*
 
 ### Bridge
 
@@ -83,9 +85,11 @@
 
 ### The Resolution
 
-> *"The pump stays in the ground. The wax is flushed. The well returns to nominal in hours.*
+> *"The engineer reviews the cited evidence — three documents, two seconds. The call is clear: send the truck, not the rig.*
 >
-> *The cause was in a vendor portal log that no SCADA historian, no APM platform, and no threshold alarm ever touches. GDC connected it to the sensor pattern in seconds.*
+> *The pump stays in the ground. The wax is flushed. The well returns to nominal in hours.*
+>
+> *The cause was in a vendor portal log that no SCADA historian, no APM platform, and no threshold alarm ever touches. GDC connected it to the sensor pattern in seconds. GDC advised. The engineer decided.*
 >
 > *Fifty-one percent of ESP failures are attributed to human factors and operational errors — including missed preventive maintenance. This is the common case, not the edge case. GDC generates the non-obvious provenance hypothesis automatically — at fleet scale, every time."*
 
@@ -125,7 +129,7 @@
 
 > *"Diagnose the cause. Prevent the wrong fix. Optimize within limits.*
 >
-> *Three problems. One sovereign AI stack. Running inside your perimeter, on open weights, where the data already lives."*
+> *Three problems. One sovereign AI stack. Every verdict cited. Every engineer in control. Running inside your perimeter, on open weights, where the data already lives."*
 
 ---
 
