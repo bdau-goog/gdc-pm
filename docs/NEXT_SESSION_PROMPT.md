@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date:** Session BQ wrap — June 13, 2026  
-**git head:** `1c7355e` — docs(session-bq): reconcile §3 L2/APM framing (+ VIDEO_SCRIPT decision-support update — pending commit)  
+**Date:** Session BQ+1 wrap — June 13, 2026  
+**git head:** `5ed18cb` — docs(h1-methodology): correct stale LR values 8/5/3/2→99.6% to live code values 3/2/1.6/1.4→93.1%  
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
@@ -42,17 +42,30 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 `/etc/hosts` updated by user. `gdc-pm.bdau.io` → `34.72.142.23`. Grafana: `34.45.194.92`.
 
 ### 3b — Sprint L4 COMPLETE ✅
-GPU path fully validated this session. `gemma_modulated: True`, `bayes_pct: 96.6`.  
+GPU path fully validated. `gemma_modulated: True`, `bayes_pct: 96.6`.  
 **No further L4 work needed.**
 
-### 3c — Product task ✅ COMPLETE (Session BQ)
-DEMO_MASTER §3 L2/APM-concession reconciliation done. Hostile-engineer pass run via Gemini API (ADC). Verdict: L2 reclaim FAILS on detection quality, sovereignty-at-L2, and "your data" claims. L2 contribution reframed as **deployment simplicity** (zero legacy footprint). PRIME DIRECTIVE patched; 2 new rejected-claim rows added. See SESSION_LOG for full decision record.
+### 3c — DEMO_MASTER §3 L2/APM reconciliation ✅ COMPLETE (Session BQ)
+Hostile-engineer pass run via Gemini API. L2 framing reworded to deployment simplicity. PRIME DIRECTIVE patched.
 
-### 3d — H3-F (selectable constraint + RAG provenance) — **NEXT CODE SPRINT**
-Backend: `?constraint=gas|thermal|rul` on `/api/vizier/optimize`. Frontend: binding constraint toggle + pgvector doc provenance per constraint. Deploy + verify.
+### 3d — H3-F (selectable constraint + RAG provenance) ✅ VERIFIED LIVE (Session BQ+1)
+**Already deployed and working.** Constraint toggles (gas/thermal/rul) in UI, API passes constraint,
+pgvector returns real docs for all 3 constraints:
+- `gas` → "Pad Alpha — Gas Gathering Agreement (Ref. PA-2024-GG-047)"
+- `thermal` → "Pad Alpha — ESP Motor Thermal Limit Memo (PE-2025-NOV-047)"
+- `rul` → "Pad Alpha — Q2 2026 ESP Fleet RUL Assessment"
+No code changes were needed. The feature was already implemented.
 
-### 3e — H1_METHODOLOGY.md LR values — stale doc fix
-Code is correct (3/2/1.6/1.4 → 93%). Doc says 8/5/3/2 → 99.6%. 10-minute fix.
+### 3e — H1_METHODOLOGY.md LR values ✅ FIXED (Session BQ+1)
+Corrected stale values: `8/5/3/2 → 99.6%` → live code values `3/2/1.6/1.4 → 93.1%`.
+Committed `5ed18cb`.
+
+### 3f — NEXT: What is actually left?
+All known backlog items are now complete. Read DEMO_MASTER.md §12 Implementation Order
+to identify any remaining H3 or polish tasks. Candidates to investigate:
+- Is there a Vizier Pareto chart that needs implementation?
+- Is the `?` on `vizier_used` in the API response a display bug worth fixing?
+- VIDEO_SCRIPT.md — any remaining gaps before a full demo run?
 
 ---
 
@@ -64,12 +77,12 @@ Code is correct (3/2/1.6/1.4 → 93%). Doc says 8/5/3/2 → 99.6%. 10-minute fix
 | H2 Classify (Paraffin scenario) | ✅ DEPLOYED + VERIFIED (paraffin_wax_restriction, 3 docs) |
 | H3 Optimize (Pad Alpha 6-well + Vizier) | ✅ DEPLOYED + VERIFIED (uplift_bbl_d=189.6, $725K/90d) |
 | Sprint L1–L3 (weight metadata, pgvector, corpus) | ✅ COMPLETE |
-| Sprint L4 Gemma extraction + Path A modulation | ✅ **FULLY VERIFIED** — GPU path `gemma_modulated: True`, 1.6s T4 |
+| Sprint L4 Gemma extraction + Path A modulation | ✅ FULLY VERIFIED — GPU path `gemma_modulated: True`, 1.6s T4 |
 | Autopilot rebuild (us-central1, T4) | ✅ COMPLETE — 7/7 pods Running |
-| H3-F (selectable constraint + RAG provenance) | ⏸ QUEUED |
-| H1_METHODOLOGY.md LR values | ⚠️ STALE DOC — code is correct (3/2/1.6/1.4→93%); doc says 8/5/3/2→99.6% |
-| DEMO_MASTER §3 L2/APM-concession reconciliation | ✅ COMPLETE (Session BQ) — hostile-pass run; PRIME DIRECTIVE patched |
-| VIDEO_SCRIPT.md decision-support language | ✅ COMPLETE (Session BQ) — 4 beats updated across all 4 narrations |
+| H3-F (selectable constraint + RAG provenance) | ✅ VERIFIED LIVE (Session BQ+1) — was already deployed |
+| H1_METHODOLOGY.md LR values | ✅ FIXED (Session BQ+1) `5ed18cb` — 3/2/1.6/1.4→93.1% |
+| DEMO_MASTER §3 L2/APM-concession reconciliation | ✅ COMPLETE (Session BQ) |
+| VIDEO_SCRIPT.md decision-support language | ✅ COMPLETE (Session BQ) |
 
 ---
 
@@ -78,13 +91,13 @@ Code is correct (3/2/1.6/1.4 → 93%). Doc says 8/5/3/2 → 99.6%. 10-minute fix
 | Item | Status | Note |
 |---|---|---|
 | H1–H3 all horizons | ✅ DEPLOYED + VERIFIED | Live on Autopilot cluster |
-| Sprint L4 Gemma extraction | ✅ **GPU PATH VERIFIED** | `gemma_modulated: True`, `bayes_pct: 96.6`, 1.6s |
+| Sprint L4 Gemma extraction | ✅ GPU PATH VERIFIED | `gemma_modulated: True`, `bayes_pct: 96.6`, 1.6s |
 | Sprint L4 fix: `think: False` | ✅ DEPLOYED `b3fd9cb` | Disables Gemma4 chain-of-thought; classification ~1.6s |
 | H1/H2 pgvector retrieval | ✅ REAL + DISCRIMINATING | Sprint L3 |
 | `OLLAMA_MODEL` manifest | ✅ FIXED `4e7e09c` | `gemma4:latest` in fault-trigger-ui.yaml |
 | GRAFANA_URL | ✅ FIXED `8e9bca3` | `34.45.194.92` (new Autopilot cluster) |
+| H1_METHODOLOGY.md LR values | ✅ FIXED `5ed18cb` | 3/2/1.6/1.4→93.1% (was 8/5/3/2→99.6%) |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended |
-| H1_METHODOLOGY.md LR values | ⚠️ STALE DOC | Fix post-rebuild |
 
 ---
 
