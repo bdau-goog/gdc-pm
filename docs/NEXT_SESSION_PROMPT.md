@@ -1,104 +1,105 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date: June 12, 2026 (Session BO — Sprint L4 deployed, GPU test deferred)
-**git head:** `5492e32` — feat(sprint-l4): Gemma extraction + Path A evidence-strength modulation
+**Date: June 13, 2026 (Session BO — Sprint L4 deployed; GPU fixed; cluster rebuild decision pending)**
+**git head:** `9572fa6` — fix(gpu): restrict gpu-pool to us-east1-b — single node $1.09/hr
 **fault-trigger-ui image:** `sha256:2d7f4c0349e34216c81b4ecb2b0c0905b706382d09252843b46d44b7cac98d05`
 **Branch:** `feature-trio-clean` — do NOT merge to main
 
 ---
 
-## ⚠️ GPU CLUSTER ISSUE — READ BEFORE DOING ANY GPU WORK
+## ⚠️ TOP PRIORITY NEXT SESSION — Two Decisions Required Before Development Continues
 
-The cluster `gdc-edge-simulation` is in **us-east1** — a region with essentially no L4 GPU availability.
-- The `ollama-models-pvc` PV is zone-locked to **us-east1-b**
-- The GPU node pool only provisioned a node in **us-east1-d** (wrong zone → PVC mismatch → Ollama Pending forever)
-- Session BO ran `gpu-start.sh` which left a us-east1-d GPU node running. **Run `./scripts/gpu-stop.sh` manually** once the cluster finishes RECONCILING before starting any new session.
-- Future GPU tests require either: (a) a different cluster region (east4/east5), or (b) re-creating the ollama-models-pvc in us-east1-d and updating the deployment.
-- Do NOT run `gpu-start.sh` again in this cluster without resolving the zone mismatch first.
+### Decision 1: Deploy-from-Scratch Process
+Review `docs/runbooks/deploy-from-scratch.md` and verify it is complete and correct.
+If not: rewrite it so it covers the full stack (AlloyDB, RabbitMQ, inference-api, fault-trigger-ui, Ollama GPU pool).
+**Goal:** A new engineer (or a new session) can rebuild this cluster from zero using only this runbook.
+
+### Decision 2: Autopilot Migration
+Analyze whether GKE Autopilot can replace the current standard cluster. Key questions:
+1. Can Autopilot handle GPU requests for Ollama (gemma4:latest, ~6GB VRAM)? Which GPU types?
+2. Does Autopilot auto-scale-to-zero GPU when replicas=0? (This eliminates the billing problem completely)
+3. What must be migrated? AlloyDB PVC (data), ollama-models PVC (model cache), all k8s YAML
+4. What breaks? Any incompatible configs in current k8s YAML?
+5. Cost comparison: current standard cluster vs Autopilot at same workload
+6. Time estimate: how long to tear down and rebuild?
+
+**If Autopilot answers are favorable:** Tear down the current cluster and rebuild in Autopilot. Continue Sprint L4 GPU validation + Sprint L5+ on the new cluster.
+**If Autopilot has blocking issues:** Stay on standard GKE. Apply the L4→T4 migration (wider availability, $0.50/hr).
 
 ---
 
 ## STEP 1: Run These Commands First
 
 ```bash
-# 1. Stop GPU if still running (cluster may still be RECONCILING from Session BO)
-source .env && gcloud container clusters describe gdc-edge-simulation --region us-east1 --format="value(status)" && ./scripts/gpu-stop.sh
+# 1. Verify GPU pool is at 0 (no billing)
+source .env && kubectl get nodes -l cloud.google.com/gke-accelerator=nvidia-l4 --no-headers | wc -l
+# Expected: 0
 
 # 2. Cluster health
 source .env && kubectl get pods -n gdc-pm --no-headers 2>/dev/null | awk '{print $3}' | sort | uniq -c
 
 # 3. Quick status check
-source .env && curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | jq '{ollama_online, ollama_model}' 2>/dev/null || echo "MLOps status API offline/starting"
+source .env && curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | jq '{ollama_online, ollama_model}' 2>/dev/null || echo "API offline"
 ```
 
-**Expected (dev default — GPU OFF):**
-- 6 pods 1/1 Running + 3 prune CronJob Completed (ollama pod ABSENT — correct)
-- `ollama_online: False` — NOT a problem. Do NOT scale up without resolving zone mismatch.
+**Expected:** 6 pods Running, 0 GPU nodes, ollama_online: false
 
 ---
 
-## STEP 2: Read These Two Docs
+## STEP 2: Read DEMO_MASTER.md and deploy-from-scratch runbook
 
 ```bash
 cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
+cat /home/brian/gdc-pm/docs/runbooks/deploy-from-scratch.md
 ```
 
 ---
 
-## STEP 3: Next Implementation Task
+## STEP 3: Sprint Work (after cluster decision)
 
-### ✅ SPRINT L1 — Weight Metadata Migration — COMPLETE (Session BL)
-### ✅ SPRINT L2 — Readable Docs + Discoverable Weights — COMPLETE (Session BM)
-### ✅ SPRINT L3 — Corpus Expansion — COMPLETE (Session BN)
-### ✅ SPRINT L4 — Gemma Extraction + Path A Evidence-Strength Modulation — CODE DEPLOYED, GPU TEST DEFERRED
+### ✅ SPRINT L1 — COMPLETE (Session BL)
+### ✅ SPRINT L2 — COMPLETE (Session BM)
+### ✅ SPRINT L3 — COMPLETE (Session BN)
+### ✅ SPRINT L4 — CODE DEPLOYED, GPU VALIDATION PENDING
 
-**What L4 delivered (Session BO):**
-- `_gemma_extract_findings()`: reads 3 retrieved L3 docs, calls Gemma 4, returns `{F1-F4: emphatic/qualified/absent}`
-- `_bayes_discriminate(gemma_mod=None)`: Path A — emphatic→lr_max, qualified→lr_base, absent→lr_min
-- `h1_scenario_replay`: fetch RAG → Gemma extract → Bayes, returns `gemma_modulated` bool
-- `index.html`: evidence table has Gemma status header + per-finding strength badge
-- **CPU fallback verified live**: `gemma_modulated=False`, `bayes_pct=93.1` unchanged
-- **GPU test deferred**: cluster in us-east1 has no L4 quota; Ollama never scheduled
+**Sprint L4 still needs (once cluster is sorted):**
+1. Run `./scripts/gpu-start.sh` — now provisions exactly 1 L4 node in us-east1-b at ~$1.09/hr
+2. Scale Ollama, wait for model load
+3. Call `/api/h1/scenario-replay`, verify `gemma_modulated=True`, `bayes_pct` varies from 93.1
+4. Run `./scripts/gpu-stop.sh` immediately when done
 
-**Remaining for GPU validation test (next session with working GPU):**
-1. Confirm Ollama pod schedules and is 1/1 Running
-2. Call `/api/h1/scenario-replay` with Ollama online
-3. Verify: `gemma_modulated=True`, `bayes_pct` varies from 93.1 (LRs adjusted), `gemma_strength` = real classifications
+---
+
+## GPU State
+
+| Item | State |
+|---|---|
+| GPU pool | **0 nodes** — at rest, no billing |
+| gpu-pool zone | **us-east1-b only** (single-zone fix applied Session BO) |
+| gpu-start.sh | **Fixed** — provisions 1 node at $1.09/hr, no zone mismatch |
+| ollama-models-pvc | Bound, zone us-east1-b — matches node pool |
+| Ollama replicas | 0 |
 
 ---
 
 ## Known Integrity State
 
 | Item | Status | Note |
-|------|--------|------|
-| H1 Briefing — all 6 panels | ✅ DEPLOYED | Session AQ |
-| H1 Scenario replay | ✅ DEPLOYED | Session AP |
-| H2 Briefing panels (3 panels) | ✅ DEPLOYED — PARAFFIN | Session BG |
-| H2 Scenario Replay | ✅ DEPLOYED — PARAFFIN | Session BJ |
-| Sprint H3-E: pad-level dashboard | ✅ DEPLOYED | Session BH |
-| Sprint H3-F: selectable constraints + RAG | ✅ DEPLOYED | Session BI |
-| H3 briefing panel Hz values (66.0, 65.5, 59.7) | ⚠️ HARDCODED | From live API 2026-06-11 |
+|---|---|---|
+| H1–H3 all horizons | ✅ DEPLOYED | Paraffin, pad-level dashboard, Vizier |
+| Sprint L4 Gemma extraction | ✅ DEPLOYED — CPU FALLBACK VERIFIED | GPU path pending |
 | H1/H2 pgvector retrieval | ✅ REAL + DISCRIMINATING | Sprint L3 |
-| H1 Bayesian provenance band | ✅ DEPLOYED | Sprint L2 |
-| H2 doc modals (click to read) | ✅ DEPLOYED | Sprint L2 |
-| Sprint L4 Gemma extraction (app.py + index.html) | ✅ DEPLOYED — CPU FALLBACK VERIFIED | GPU path untested (us-east1 quota issue) |
-| H1_METHODOLOGY.md LRs 8/5/3/2→99.6% | ⚠️ STALE DOC | Code uses 3/2/1.6/1.4→93% |
+| H1_METHODOLOGY.md LRs | ⚠️ STALE DOC | Code 3/2/1.6/1.4→93%; doc says 8/5/3/2→99.6% |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended |
-| Pad Alpha RAG corpus (38 total rows) | ✅ SEEDED | Session BN |
-| SPE papers cited (SPE-174536, SPE-170776) | ⚠️ UNVERIFIED | Do not cite as hard facts |
-| **GPU cluster region** | ⛔ WRONG REGION | Cluster in us-east1 — no L4 GPU quota. GPU pool node (us-east1-d) left running by Session BO — run gpu-stop.sh |
+| SPE papers cited | ⚠️ UNVERIFIED | Do not cite as hard facts |
 
 ---
 
 ## Constraints (Permanent)
 
-- `terraform/gke.tf` must NOT be applied
+- `terraform/gke.tf` must NOT be applied (would destroy live cluster)
 - No `browser_action` (SSH remote, no browser)
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - `feature-trio-clean` branch — do NOT merge to main
-- `app.py` ~7,750 lines · `index.html` ~3,660 lines · `app.js` ~2,310 lines — grep first, targeted reads only
-- **Wireframes → sign-off → HTML** (always)
-- **No build/push/deploy without user walkthrough and verification**
-- MCP gdc-second-opinion: ⛔ DISABLED
-- **Ask inline questions — no option lists**
+- **No GPU start without announcing cost and getting confirmation**
 - **Deploy sequence:** `docker build` → `docker push` → `kubectl set image ... @sha256:<digest>` → `kubectl rollout status`
-- **GPU:** Do NOT run `gpu-start.sh` until the us-east1 zone mismatch is resolved. The ollama-models-pvc is zone-locked to us-east1-b; GPU nodes come up in us-east1-d.
+- Artifact Registry only — NOT gcr.io
