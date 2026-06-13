@@ -357,18 +357,18 @@ curl -s http://gdc-pm.bdau.io/api/assets | jq 'keys'
 
 # 3. H1 scenario replay
 curl -s "http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock" | \
-  python3 -c "import sys,json;d=json.load(sys.stdin);print('bayes_pct:',d['bayes_pct'],'gdc_detect_idx:',d['gdc_detect_idx'])"
-# Expected: bayes_pct ~93.1, gdc_detect_idx < scada_alarm_idx
+  python3 -c "import sys,json;d=json.load(sys.stdin);print('bayes_pct:',d['bayes_pct'],'gdc_detect_idx:',d['gdc_detect_idx'],'alarm_idx:',d['alarm_idx'])"
+# Expected: bayes_pct ~93.1, gdc_detect_idx < alarm_idx (field is alarm_idx, not scada_alarm_idx)
 
 # 4. H2 scenario replay
 curl -s "http://gdc-pm.bdau.io/api/h2/scenario-replay?asset=ESP-ALPHA-3" | \
   python3 -c "import sys,json;d=json.load(sys.stdin);print('scenario:',d.get('scenario'),'docs:',len(d.get('doc_reveals',[])))"
 # Expected: scenario: paraffin_wax_restriction, docs: 3
 
-# 5. H3 Vizier
-curl -s -X POST "http://gdc-pm.bdau.io/api/vizier/optimize" | \
-  python3 -c "import sys,json;d=json.load(sys.stdin);print('uplift_bpd:',d.get('uplift_bpd'))"
-# Expected: uplift_bpd ~77.9
+# 5. H3 Vizier (GET, not POST — POST returns 405)
+curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | \
+  python3 -c "import sys,json;d=json.load(sys.stdin);ji=d.get('joint_optimal',{});print('uplift_bbl_d:',ji.get('uplift_bbl_d'),'uplift_cash_90d:',ji.get('uplift_cash_90d'))"
+# Expected: uplift_bbl_d ~189.6, uplift_cash_90d ~725202 (field is uplift_bbl_d inside joint_optimal)
 
 # 6. mlops/status
 curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c \
