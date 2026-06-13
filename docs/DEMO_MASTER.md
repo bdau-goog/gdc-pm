@@ -29,9 +29,9 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 
 ## 3. CORE VALUE PROPOSITION — SOVEREIGN EDGE OF AN INDUSTRY-VALIDATED CAPABILITY
 
-**Version:** Session AU (June 11, 2026) — **LOCKED. Do not re-open.** See `docs/DEMO_STORY_AND_PATH.md §B` for the full stakeholder narrative.
+**Version:** Session AU (June 11, 2026) — **LOCKED. Do not re-open.** See `docs/DEMO_STORY_AND_PATH.md §B` for the full stakeholder narrative. · **Session BQ addendum:** PRIME DIRECTIVE patched — L2 reclaim hostile-pass: L2 detection quality, sovereignty-at-L2, and "your data" claims all FAIL; L2 contribution reframed as deployment simplicity. Two new rejected-claim rows added.
 
-**The PRIME DIRECTIVE for this section:** Concede sensors and L1/L2 completely and honestly. Win on WHERE the capability runs — not just what it does.
+**The PRIME DIRECTIVE for this section:** Concede L1 completely and honestly. Calibrate L2 by audience (see three-tier table) — genuine pre-threshold detection edge against threshold-only SCADA; convergence against best-of-breed APM. Win on deployment simplicity (zero legacy APM footprint) + L3 document fusion. WHERE is a platform-level claim — do NOT use it as a unique L2 differentiator; legacy APMs (SmartSignal/PRiSM/Mtell) have on-prem deployments too. (Session BQ gdc-second-opinion: L2 detection quality, sovereignty-at-L2, and "trained on your data" all FAIL hostile scrutiny.)
 
 #### The Locked Thesis — The Industry Is Building This. GDC Delivers It Inside the Perimeter.
 
@@ -105,7 +105,7 @@ This is not an oilfield trick. It is the structural gap in every industrial AI d
 | Tier | Architecture | What each tier reads | The honest GDC position |
 |---|---|---|---|
 | **L1 — Threshold alarms** | SCADA control layer — hard setpoints, rate rules | **Tags** (individual sensor values) | **Fully conceded.** SCADA trips the pump to protect it. GDC wins nothing here. Never imply SCADA lets the pump die. |
-| **L2 — Learned detection** | Threshold-based SCADA: hand-authored rules per well. Advanced predictive platforms (GE SmartSignal, AVEVA PRiSM, Aspen Mtell, SLB Lift IQ): adaptive ML, retraining workflows. | **Tag patterns** (multivariate sensor correlations) | **Contested ground — two distinct sub-tiers (calibrate by audience):** **(1) Against threshold-only SCADA** — the realistic baseline for ~85–95% of mid/small Permian independents (true ML PdM penetration ~5–15% per SPE maturity-matrix / GlobalData analysis; practitioner SME confirmed): XGBoost pre-threshold multivariate scoring is a **genuine, honest detection edge** — give it full credit. **(2) Against best-of-breed APM** (SmartSignal/PRiSM/Mtell/Lift IQ — ~5–15% with real ML): detection converges — **L3 document fusion remains the categorical moat.** ⚠ Never claim GDC out-detects best-of-breed APM on model quality. |
+| **L2 — Learned detection** | Threshold-based SCADA: hand-authored rules per well. Advanced predictive platforms (GE SmartSignal, AVEVA PRiSM, Aspen Mtell, SLB Lift IQ): adaptive ML, retraining workflows. | **Tag patterns** (multivariate sensor correlations) | **Contested ground — calibrate by audience:** **(1) Against threshold-only SCADA** — the realistic baseline for ~85–95% of mid/small Permian independents (true ML PdM penetration ~5–15% per SPE maturity-matrix / GlobalData analysis; practitioner SME confirmed): XGBoost pre-threshold multivariate scoring is a **genuine, honest detection edge** — give it full credit. **(2) Against best-of-breed APM** (SmartSignal/PRiSM/Mtell/Lift IQ — ~5–15% with real ML): detection converges — **L3 document fusion remains the categorical moat.** ⚠ Never claim GDC out-detects best-of-breed APM on model quality. **(3) Against any audience — deployment differentiator:** No PI/AF server. No 6-month consulting engagement. No thick-client licenses. GDC deploys containerized on a single edge appliance. (Session BQ gdc-second-opinion Fix #1.) |
 | **L3 — Context fusion** | No SCADA product, control-layer or APM, reads unstructured text into real-time fault diagnosis | **Documents** (shift notes, acoustic sonic logs, GOR reports, work orders) | **Categorical Moat.** GDC fuses unstructured field documents via pgvector RAG and chains them into the live diagnosis. The operator has the same documents — GDC's advantage is reading and correlating the entire corpus in seconds during a live process upset. Architecturally impossible for any current SCADA/APM product. |
 
 #### "Tags vs. Tag-Patterns vs. Documents" (centerpiece for How It Works)
@@ -117,7 +117,7 @@ This is not an oilfield trick. It is the structural gap in every industrial AI d
 #### Retraining & Drift — Settled Position (Session AF)
 
 - ❌ "SCADA/APM can't retrain" → **dead** (SmartSignal/PRiSM/Mtell do adaptive retraining — false claim).
-- ✅ **Sovereign MLOps lifecycle**: train on the operator's own fleet-failure history via Vertex AI → deploy to GDC edge → run on-prem. Data never leaves the operator's boundary. This is a *platform* claim (where and whose data), not a feature comparison.
+- ✅ **Sovereign MLOps lifecycle**: train on the operator's own fleet-failure history via Vertex AI → deploy to GDC edge → run on-prem. Data never leaves the operator's boundary. This is a *platform* claim (where and whose data), not a feature comparison. Requires operator data maturity; pre-trained fleet models ship with GDC for operators without labeled failure history. ⚠ Do NOT use "trained on your data" as a standalone L2 differentiator — all APMs (especially Mtell) train on operator-specific data (Session BQ FAILS).
 - ❌ Active **drift detection** → **not claimed** (not implemented; silent).
 
 #### Rejected claims — do not ship (Session AC / AF, permanently blocked)
@@ -131,8 +131,10 @@ This is not an oilfield trick. It is the structural gap in every industrial AI d
 - ❌ **"GDC is the only complete path for sovereign operators"** — False (SLB Lift IQ Edge, on-prem historian vendors, private cloud options all exist). Replace with: *"GDC is architecturally designed for on-prem AI from the ground up — not adapted from cloud."* (gdc-second-opinion Test A FAILS, Session BF)
 - ❌ **"Lift IQ is cloud-only / sends your data to SLB's cloud"** — False as a categorical claim. SLB has on-prem/hybrid Lift IQ Edge deployments. Reframe: *"Lift IQ was architected cloud-first and adapted for edge; GDC is sovereign-first by design."* (gdc-second-opinion Test B Axis 1 FAILS, Session BF)
 - ❌ **"Lift IQ covers SLB-contracted ESPs only"** — False. SLB Agora/Lift IQ can ingest non-SLB ESP data. Reframe: *"Lift IQ's core model depth concentrates in the SLB ecosystem; GDC is a native multi-OEM, multi-lift platform with no equipment bias."* (gdc-second-opinion Test B Axis 3 FAILS, Session BF)
+- ❌ **"On-prem/sovereign deployment is a unique L2 differentiator"** — False. SmartSignal/PRiSM/Mtell all have hardened on-prem deployments; Chevron/Oxy historically mandated them to avoid cloud egress. Sovereignty is a *platform-architecture* claim (sovereign-first by design), NOT an L2-specific detection differentiator. (Session BQ gdc-second-opinion FAILS.)
+- ❌ **"Fleet-trained on YOUR data is an L2 differentiator"** — False. All APMs train on operator-specific data; this is standard operating procedure for Mtell/PRiSM. The sovereign MLOps claim is about *where* training happens and data-governance boundaries, not model-quality differentiation. (Session BQ gdc-second-opinion FAILS.)
 
-**Conceding sensors makes the L3 context-moat more credible, not less.**
+**Conceding L2 detection quality, sovereignty-at-L2, and "trained on your data" makes the deployment-simplicity story and the L3 context-moat more credible, not less.**
 
 ---
 

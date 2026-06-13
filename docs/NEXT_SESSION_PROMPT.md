@@ -46,8 +46,8 @@ Grafana: **`34.45.194.92`**
 GPU path fully validated this session. `gemma_modulated: True`, `bayes_pct: 96.6`.  
 **No further L4 work needed.**
 
-### 3c — Product task (next code task)
-Reconcile DEMO_MASTER §3 two-tier APM concession (Session BF) vs Session AS/AT decision to reclaim L2 as genuine differentiator alongside L3. Target: **L2 (fleet-trained edge ML) + L3 (document fusion) = the sovereign AI stack**, not L3-only. Requires hostile-engineer pass before any §3 wording changes.
+### 3c — Product task ✅ COMPLETE (Session BQ)
+DEMO_MASTER §3 L2/APM-concession reconciliation done. Hostile-engineer pass run via Gemini API (ADC). Verdict: L2 reclaim FAILS on detection quality, sovereignty-at-L2, and "your data" claims. L2 contribution reframed as **deployment simplicity** (zero legacy footprint). PRIME DIRECTIVE patched; 2 new rejected-claim rows added. See SESSION_LOG for full decision record.
 
 ### 3d — H3-F (selectable constraint + RAG provenance) — queued
 
@@ -65,7 +65,7 @@ Reconcile DEMO_MASTER §3 two-tier APM concession (Session BF) vs Session AS/AT 
 | Autopilot rebuild (us-central1, T4) | ✅ COMPLETE — 7/7 pods Running |
 | H3-F (selectable constraint + RAG provenance) | ⏸ QUEUED |
 | H1_METHODOLOGY.md LR values | ⚠️ STALE DOC — code is correct (3/2/1.6/1.4→93%); doc says 8/5/3/2→99.6% |
-| DEMO_MASTER §3 L2/APM-concession reconciliation | ⏸ QUEUED |
+| DEMO_MASTER §3 L2/APM-concession reconciliation | ✅ COMPLETE (Session BQ) — hostile-pass run; PRIME DIRECTIVE patched |
 
 ---
 
