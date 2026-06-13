@@ -1,83 +1,83 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-**Date: June 13, 2026 (Session BO — Sprint L4 deployed; GPU fixed; cluster rebuild decision pending)**
-**git head:** `9572fa6` — fix(gpu): restrict gpu-pool to us-east1-b — single node $1.09/hr
-**fault-trigger-ui image:** `sha256:2d7f4c0349e34216c81b4ecb2b0c0905b706382d09252843b46d44b7cac98d05`
+**Date:** Session BP — June 13, 2026  
+**git head:** `09a27aa` — docs(session-bo-wrap): Autopilot decision agenda (last committed)  
+**Session BP docs (uncommitted):** deploy-from-scratch.md + AUTOPILOT_MIGRATION.md + this file  
 **Branch:** `feature-trio-clean` — do NOT merge to main
-
----
-
-## ⚠️ TOP PRIORITY NEXT SESSION — Two Decisions Required Before Development Continues
-
-### Decision 1: Deploy-from-Scratch Process
-Review `docs/runbooks/deploy-from-scratch.md` and verify it is complete and correct.
-If not: rewrite it so it covers the full stack (AlloyDB, RabbitMQ, inference-api, fault-trigger-ui, Ollama GPU pool).
-**Goal:** A new engineer (or a new session) can rebuild this cluster from zero using only this runbook.
-
-### Decision 2: Autopilot Migration
-Analyze whether GKE Autopilot can replace the current standard cluster. Key questions:
-1. Can Autopilot handle GPU requests for Ollama (gemma4:latest, ~6GB VRAM)? Which GPU types?
-2. Does Autopilot auto-scale-to-zero GPU when replicas=0? (This eliminates the billing problem completely)
-3. What must be migrated? AlloyDB PVC (data), ollama-models PVC (model cache), all k8s YAML
-4. What breaks? Any incompatible configs in current k8s YAML?
-5. Cost comparison: current standard cluster vs Autopilot at same workload
-6. Time estimate: how long to tear down and rebuild?
-
-**If Autopilot answers are favorable:** Tear down the current cluster and rebuild in Autopilot. Continue Sprint L4 GPU validation + Sprint L5+ on the new cluster.
-**If Autopilot has blocking issues:** Stay on standard GKE. Apply the L4→T4 migration (wider availability, $0.50/hr).
 
 ---
 
 ## STEP 1: Run These Commands First
 
 ```bash
-# 1. Verify GPU pool is at 0 (no billing)
-source .env && kubectl get nodes -l cloud.google.com/gke-accelerator=nvidia-l4 --no-headers | wc -l
+# 1. GPU pool at 0 (no billing)
+kubectl get nodes -l cloud.google.com/gke-accelerator=nvidia-l4 --no-headers | wc -l
 # Expected: 0
 
 # 2. Cluster health
-source .env && kubectl get pods -n gdc-pm --no-headers 2>/dev/null | awk '{print $3}' | sort | uniq -c
+kubectl get pods -n gdc-pm --no-headers 2>/dev/null | awk '{print $3}' | sort | uniq -c
+# Expected: 6 Running
 
-# 3. Quick status check
-source .env && curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | jq '{ollama_online, ollama_model}' 2>/dev/null || echo "API offline"
+# 3. API status
+curl -s --max-time 2 http://gdc-pm.bdau.io/api/mlops/status | \
+  python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))" \
+  2>/dev/null || echo "API offline"
+# Expected: ollama_online: False (correct dev default)
 ```
 
-**Expected:** 6 pods Running, 0 GPU nodes, ollama_online: false
+If anything is unexpected, **stop and ask** before writing any code.
 
 ---
 
-## STEP 2: Read DEMO_MASTER.md and deploy-from-scratch runbook
+## STEP 2: Read DEMO_MASTER.md
 
 ```bash
 cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
-cat /home/brian/gdc-pm/docs/runbooks/deploy-from-scratch.md
 ```
 
 ---
 
-## STEP 3: Sprint Work (after cluster decision)
+## STEP 3: Next Implementation Task — Autopilot + T4 Rebuild
 
-### ✅ SPRINT L1 — COMPLETE (Session BL)
-### ✅ SPRINT L2 — COMPLETE (Session BM)
-### ✅ SPRINT L3 — COMPLETE (Session BN)
-### ✅ SPRINT L4 — CODE DEPLOYED, GPU VALIDATION PENDING
+### The plan (decided Session BP)
 
-**Sprint L4 still needs (once cluster is sorted):**
-1. Run `./scripts/gpu-start.sh` — now provisions exactly 1 L4 node in us-east1-b at ~$1.09/hr
-2. Scale Ollama, wait for model load
-3. Call `/api/h1/scenario-replay`, verify `gemma_modulated=True`, `bayes_pct` varies from 93.1
-4. Run `./scripts/gpu-stop.sh` immediately when done
+1. **Pre-flight (before teardown):**
+   - `gcloud compute accelerator-types list --filter="zone:us-central1* AND name=nvidia-tesla-t4"` — confirm T4 available
+   - Apply companion code changes (see below) — THEN commit BEFORE tearing down old cluster
+
+2. **Companion code changes to YAML/scripts (do this first):**
+   | File | Change |
+   |---|---|
+   | `gke/ollama/k8s/ollama.yaml` | nodeSelector `nvidia-tesla-t4`, no taint/toleration, limits.memory 16Gi, fix 27b header |
+   | `gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml` | `OLLAMA_MODEL: "gemma4:latest"` (was "gemma:27b") |
+   | `scripts/gpu-start.sh` | Replace node-pool resize with `kubectl scale deployment ollama -n gdc-pm --replicas=1` |
+   | `scripts/gpu-stop.sh` | Replace node-pool resize with `kubectl scale deployment ollama -n gdc-pm --replicas=0` |
+
+3. **Teardown + Rebuild:** Follow `docs/runbooks/deploy-from-scratch.md` start to finish.  
+   Region: `us-central1` · Cluster type: Autopilot · GPU: T4 (~$0.35/hr, scale-to-zero)
+
+4. **Post-rebuild — verify then continue Sprint L4 GPU validation:**
+   - Run verification checklist (Step 13 in runbook)
+   - Announce "$0.35/hr T4 GPU cost" → get confirmation → `./scripts/gpu-start.sh`
+   - Verify `gemma_modulated=True`, `bayes_pct` varies from 93.1 (confirms Gemma Path A is live)
+   - `./scripts/gpu-stop.sh` immediately after
+
+5. **After L4 GPU validated — Product task (first after rebuild):**
+   Reconcile DEMO_MASTER §3 two-tier APM concession (Session BF) vs the Session AS/AT decision to reclaim L2 as genuine differentiator alongside L3. The target is: **L2 (fleet-trained edge ML) + L3 (document fusion) = the sovereign AI stack**, not L3-only. Requires hostile-engineer pass before any §3 wording changes.
 
 ---
 
-## GPU State
+## Current Dev State
 
-| Item | State |
+| Item | Status |
 |---|---|
-| GPU pool | **0 nodes** — at rest, no billing |
-| gpu-pool zone | **us-east1-b only** (single-zone fix applied Session BO) |
-| gpu-start.sh | **Fixed** — provisions 1 node at $1.09/hr, no zone mismatch |
-| ollama-models-pvc | Bound, zone us-east1-b — matches node pool |
-| Ollama replicas | 0 |
+| H1 Discern (Scenario Replay + Bayesian) | ✅ DEPLOYED |
+| H2 Classify (Paraffin scenario) | ✅ DEPLOYED |
+| H3 Optimize (Pad Alpha 6-well + Vizier) | ✅ DEPLOYED |
+| Sprint L1–L3 (weight metadata, pgvector, corpus) | ✅ COMPLETE |
+| Sprint L4 Gemma extraction + Path A modulation | ✅ CODE DEPLOYED — CPU fallback verified (bayes_pct=93.1) — **GPU path pending** |
+| H3-F (selectable constraint + RAG provenance) | ⏸ QUEUED — after rebuild |
+| H1_METHODOLOGY.md LR values | ⚠️ STALE DOC — code is correct (3/2/1.6/1.4→93%); doc says 8/5/3/2→99.6% |
+| DEMO_MASTER §3 L2/APM-concession reconciliation | ⏸ QUEUED — post-rebuild product task |
 
 ---
 
@@ -86,11 +86,11 @@ cat /home/brian/gdc-pm/docs/runbooks/deploy-from-scratch.md
 | Item | Status | Note |
 |---|---|---|
 | H1–H3 all horizons | ✅ DEPLOYED | Paraffin, pad-level dashboard, Vizier |
-| Sprint L4 Gemma extraction | ✅ DEPLOYED — CPU FALLBACK VERIFIED | GPU path pending |
+| Sprint L4 Gemma extraction | ✅ CPU FALLBACK VERIFIED | GPU path pending T4 rebuild |
 | H1/H2 pgvector retrieval | ✅ REAL + DISCRIMINATING | Sprint L3 |
-| H1_METHODOLOGY.md LRs | ⚠️ STALE DOC | Code 3/2/1.6/1.4→93%; doc says 8/5/3/2→99.6% |
+| `OLLAMA_MODEL: "gemma:27b"` in manifest | ❌ INTEGRITY VIOLATION | Companion code change needed (Session BP) |
 | MCP gdc-second-opinion | ⛔ DISABLED | Billing suspended |
-| SPE papers cited | ⚠️ UNVERIFIED | Do not cite as hard facts |
+| H1_METHODOLOGY.md LR values | ⚠️ STALE DOC | Fix post-rebuild |
 
 ---
 
@@ -100,6 +100,6 @@ cat /home/brian/gdc-pm/docs/runbooks/deploy-from-scratch.md
 - No `browser_action` (SSH remote, no browser)
 - **Batch all edits to same file in ONE `replace_in_file` call**
 - `feature-trio-clean` branch — do NOT merge to main
-- **No GPU start without announcing cost and getting confirmation**
+- **No GPU start without announcing cost (~$0.35/hr T4) and getting confirmation**
 - **Deploy sequence:** `docker build` → `docker push` → `kubectl set image ... @sha256:<digest>` → `kubectl rollout status`
 - Artifact Registry only — NOT gcr.io

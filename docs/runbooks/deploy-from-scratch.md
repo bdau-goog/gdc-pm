@@ -1,190 +1,382 @@
 # GDC-PM Deploy-from-Scratch Runbook
+**Version:** Session BP (June 13, 2026) — Autopilot + T4 rebuild  
+**Replaces:** Old Standard GKE + L4 runbook (incorrect Step 1 terraform, missing schema/seed, wrong model refs)
 
-This runbook provides step-by-step instructions for deploying the GDC-PM (Predictive Maintenance) simulation environment from scratch.
+This runbook is the **single authoritative procedure** for rebuilding the GDC-PM demo cluster from zero. A new engineer following it from the top should end with a fully operational cluster serving the H1/H2/H3 demo at `gdc-pm.bdau.io` with all data seeded.
 
-## Architecture Diagram Overview
+> ⚠️ **Do NOT run `terraform apply` on `terraform/gke.tf`** — it is barred by project rules and would destroy a live cluster. The cluster is provisioned via `gcloud` commands below, not Terraform.
 
-```mermaid
-flowchart TD
-    subgraph GKE["GKE Cluster (us-east1)"]
-        subgraph NP_Default["Default Node Pool"]
-            TS["Telemetry Simulator"]
-            EP["Event Processor"]
-            UI["Fault Trigger UI (FastAPI)"]
-            INF["Inference API (XGBoost)"]
-            GRAF["Grafana"]
-            
-            subgraph DB["AlloyDB Omni (PostgreSQL)"]
-                T_EVENTS[("telemetry_events")]
-                F_INTEL[("field_intel")]
-                R_DOCS[("rag_documents")]
-                F_SESSIONS[("fault_sessions")]
-            end
-            
-            RMQ{"RabbitMQ\n(telemetry exchange)"}
-        end
-        
-        subgraph NP_GPU["GPU Node Pool (gpu-pool)"]
-            OLLAMA["Ollama Pod (gemma:27b)"]
-        end
-    end
+---
 
-    subgraph AR["Artifact Registry (us-central1)"]
-        IMG["Docker Images"]
-    end
-    
-    subgraph VPC["VPC: gdc-pm-vpc"]
-        S_CENTRAL["subnet-gke (us-central1)"]
-        S_EAST["subnet-us-east1 (us-east1)"]
-    end
+## Architecture (post-migration)
 
-    %% Data Flow
-    TS -- "sensor.reading routing key" --> RMQ
-    RMQ --> EP
-    EP -- "Write readings" --> DB
-    UI -- "Read/Write" --> DB
-    EP -- "Predict health score" --> INF
-    UI -- "Generate context / Intel" --> OLLAMA
-    
-    %% Registry
-    IMG -.-> GKE
 ```
+GKE Autopilot Cluster (us-central1)
+├── Default node pools — managed by Autopilot (no user configuration)
+│   ├── fault-trigger-ui (FastAPI / Vue.js)  — LoadBalancer → gdc-pm.bdau.io
+│   ├── inference-api (XGBoost models)
+│   ├── event-processor (RabbitMQ consumer)
+│   ├── telemetry-simulator
+│   ├── grafana
+│   ├── alloydb-omni (AlloyDB on-cluster, PostgreSQL + pgvector)
+│   └── rabbitmq (RabbitMQ cluster via operator)
+└── GPU node — Autopilot-managed, NVIDIA T4 (16GB VRAM)
+    └── ollama (gemma4 / gemma3:12b, scale-to-zero when replicas=0)
+
+Artifact Registry: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/
+```
+
+**Key Autopilot GPU benefit:** When Ollama replicas=0, Autopilot provisions zero GPU nodes → zero GPU billing. No manual node-pool resize required.
+
+---
 
 ## Prerequisites
 
-- `gcloud`, `kubectl`, `terraform`, and `docker` installed.
-- Valid GCP credentials (`gcloud auth login` and `gcloud auth application-default login`).
-- Variables for project ID and cluster details configured in `gdc-pm/terraform/terraform.tfvars`.
+- `gcloud`, `kubectl`, `docker` installed and authenticated
+- `gcloud auth login && gcloud auth application-default login`
+- Project: `gdc-pm-v2`
+- Artifact Registry: `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models` (must already exist)
+- Git repo cloned to `~/gdc-pm`, branch `feature-trio-clean`
 
-## Deployment Steps
+---
 
-### 1. Provision Infrastructure via Terraform
-This step creates the GKE cluster (in `us-east1` with default + `gpu-pool` node pools), BigQuery datasets, and GCS buckets.
+## Step 0 — Environment variables
+
+Set these once in your shell before starting. All steps below use them.
 
 ```bash
-cd gdc-pm/terraform
-terraform init
-terraform apply -auto-approve
+export PROJECT_ID="gdc-pm-v2"
+export REGION="us-central1"
+export CLUSTER="gdc-edge-simulation"
+export NAMESPACE="gdc-pm"
+export REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
 ```
 
-### 2. Configure Kubectl & Namespace
-```bash
-# Retrieve credentials for the new cluster
-gcloud container clusters get-credentials gdc-edge-simulation --region us-east1 --project <YOUR_PROJECT_ID>
+---
 
-# Create the dedicated namespace
-kubectl create namespace gdc-pm
+## Step 1 — Create GKE Autopilot Cluster
+
+```bash
+gcloud container clusters create-auto ${CLUSTER} \
+  --region ${REGION} \
+  --project ${PROJECT_ID} \
+  --release-channel regular \
+  --workload-pool "${PROJECT_ID}.svc.id.goog"
 ```
 
-### 3. Create Secrets
-The applications require secrets for RabbitMQ and AlloyDB. Ensure your `.secrets/` directory is populated:
+**Wait ~5–10 minutes.** When complete:
 
 ```bash
-cd gdc-pm/gke
+gcloud container clusters get-credentials ${CLUSTER} \
+  --region ${REGION} \
+  --project ${PROJECT_ID}
 
-# AlloyDB Secret
-kubectl create secret generic alloydb-secret \
-  --namespace=gdc-pm \
-  --from-literal=password="$(cat ../.secrets/alloydb-password.txt)"
-
-# RabbitMQ Secret
-kubectl create secret generic rabbitmq-secret \
-  --namespace=gdc-pm \
-  --from-literal=username=gdc_user \
-  --from-literal=password="$(cat ../.secrets/rabbitmq-password.txt)" \
-  --from-literal=host="gdc-pm-rabbitmq.gdc-pm.svc.cluster.local" \
-  --from-literal=port="5672" \
-  --from-literal=vhost="gdc-pm"
+kubectl get nodes  # should show Autopilot-managed nodes appearing
 ```
 
-### 4. IAM Permissions for Artifact Registry
-The GKE compute service account needs permission to pull images from Artifact Registry (`us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models`).
+---
+
+## Step 2 — Namespace
 
 ```bash
-# Grant Artifact Registry Reader role to the default compute SA
-PROJECT_NUM=$(gcloud projects describe <YOUR_PROJECT_ID> --format="value(projectNumber)")
-gcloud projects add-iam-policy-binding <YOUR_PROJECT_ID> \
+kubectl create namespace ${NAMESPACE}
+```
+
+---
+
+## Step 3 — IAM: Artifact Registry Reader
+
+The GKE compute SA needs to pull images:
+
+```bash
+PROJECT_NUM=$(gcloud projects describe ${PROJECT_ID} --format="value(projectNumber)")
+gcloud projects add-iam-policy-binding ${PROJECT_ID} \
   --member="serviceAccount:${PROJECT_NUM}-compute@developer.gserviceaccount.com" \
   --role="roles/artifactregistry.reader"
 ```
 
-### 5. Patch k8s Manifests (Image URLs)
-Before deploying, patch the image placeholders in your Kubernetes manifests to use your actual Artifact Registry URLs.
+---
+
+## Step 4 — AlloyDB Omni (database + schema)
+
+The start script generates a password, saves it to `.secrets/`, creates the k8s secret, deploys AlloyDB, and runs `init-schema.yaml` (creates all tables + pgvector extension).
 
 ```bash
-REGISTRY="us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models"
-find gke -name "*.yaml" -type f -exec sed -i "s|GCR_IMAGE_PLACEHOLDER|${REGISTRY}|g" {} +
+cd ~/gdc-pm
+export PROJECT_ID=${PROJECT_ID}
+export REGION=${REGION}
+export CLUSTER_NAME=${CLUSTER}
+bash gke/alloydb-omni/start-alloydb-omni.sh
 ```
 
-### 6. Service Deployment Order
-Order is critical. Start with stateful services, then the messaging queue, then applications.
+**Verify:**
+```bash
+kubectl exec -n ${NAMESPACE} deployment/alloydb-omni -- \
+  psql -U postgres -d grid_reliability -c "\dt"
+# Should show: telemetry_events, field_intel, rag_documents, asset_registry
+```
 
-1. **AlloyDB Omni:**
-   ```bash
-   kubectl apply -f gke/alloydb-omni/
-   ```
-   *Wait for AlloyDB pod to become `Running`.*
+> The `init-schema.yaml` Job also installs the pgvector extension and creates the HNSW index on `rag_documents.embedding`. If the Job is still Running, wait for Completed before proceeding.
 
-2. **RabbitMQ:**
-   Use the provided deployment script to install the operator and cluster:
-   ```bash
-   bash gke/rabbitmq/start-rabbitmq.sh
-   ```
-   *Wait for RabbitMQ to be ready.*
+---
 
-3. **Applications & UI:**
-   Deploy the rest of the stack:
-   ```bash
-   kubectl apply -f gke/telemetry-simulator/
-   kubectl apply -f gke/inference-api/
-   kubectl apply -f gke/event-processor/
-   kubectl apply -f gke/fault-trigger-ui/
-   kubectl apply -f gke/grafana/
-   ```
+## Step 5 — RabbitMQ
 
-### 7. Deploy Ollama (GPU Workload)
-Finally, start the GPU node pool and Ollama workload:
+The start script installs the RabbitMQ Cluster Operator, generates credentials, saves them to `.secrets/`, and deploys the cluster:
 
 ```bash
-cd gdc-pm
+cd ~/gdc-pm
+export PROJECT_ID=${PROJECT_ID}
+export REGION=${REGION}
+export CLUSTER_NAME=${CLUSTER}
+bash gke/rabbitmq/start-rabbitmq.sh
+```
+
+**Verify:**
+```bash
+kubectl get rabbitmqcluster gdc-pm-rabbitmq -n ${NAMESPACE}
+# STATUS.CONDITIONS[AllReplicasReady] should be True
+```
+
+---
+
+## Step 6 — Build and push application images
+
+If images are already up to date in Artifact Registry (check digests), skip this step. Otherwise, for each service that needs a new image:
+
+```bash
+cd ~/gdc-pm
+
+# fault-trigger-ui (the main app — most frequently rebuilt)
+docker build -t ${REGISTRY}/fault-trigger-ui:latest gke/fault-trigger-ui/
+docker push ${REGISTRY}/fault-trigger-ui:latest
+DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' ${REGISTRY}/fault-trigger-ui:latest | cut -d@ -f2)
+echo "fault-trigger-ui digest: ${DIGEST}"
+
+# inference-api (rarely changes)
+docker build -t ${REGISTRY}/inference-api:latest gke/inference-api/
+docker push ${REGISTRY}/inference-api:latest
+
+# event-processor (rarely changes)
+docker build -t ${REGISTRY}/event-processor:latest gke/event-processor/
+docker push ${REGISTRY}/event-processor:latest
+
+# telemetry-simulator (rarely changes)
+docker build -t ${REGISTRY}/telemetry-simulator:latest gke/telemetry-simulator/
+docker push ${REGISTRY}/telemetry-simulator:latest
+```
+
+> **Deploy rule (from clinerules):** Always deploy by digest, not `:latest` tag:
+> `kubectl set image deployment/fault-trigger-ui fault-trigger-ui=${REGISTRY}/fault-trigger-ui@${DIGEST} -n ${NAMESPACE}`
+
+---
+
+## Step 7 — Fix the OLLAMA_MODEL integrity mismatch (before first deploy)
+
+The `fault-trigger-ui.yaml` manifest has a stale `OLLAMA_MODEL: "gemma:27b"` that doesn't match the actual model pulled by Ollama. Before applying manifests, patch it:
+
+```bash
+sed -i 's/value: "gemma:27b"/value: "gemma4:latest"/' \
+  gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml
+```
+
+Also update `GRAFANA_URL` to match the current Grafana IP once it's assigned (Step 8 will give you the IP):
+```bash
+# After Step 8, get the Grafana LoadBalancer IP and patch:
+# GRAFANA_IP=$(kubectl get svc grafana -n ${NAMESPACE} -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+# sed -i "s|value: \"http://.*\"|value: \"http://${GRAFANA_IP}\"|" gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml
+```
+
+---
+
+## Step 8 — Deploy application tier
+
+Order matters: inference-api first (event-processor depends on it), then event-processor, then the rest.
+
+```bash
+cd ~/gdc-pm
+
+kubectl apply -f gke/inference-api/k8s/
+kubectl rollout status deployment/inference-api -n ${NAMESPACE} --timeout=120s
+
+kubectl apply -f gke/event-processor/k8s/
+kubectl apply -f gke/telemetry-simulator/k8s/
+kubectl apply -f gke/fault-trigger-ui/k8s/
+kubectl apply -f gke/grafana/k8s/
+```
+
+**Verify all pods:**
+```bash
+kubectl get pods -n ${NAMESPACE}
+# Expected: inference-api, event-processor, telemetry-simulator, fault-trigger-ui, grafana, alloydb-omni, rabbitmq pod(s) — all Running
+```
+
+> **Troubleshooting: event-processor CrashLoopBackOff** — RabbitMQ wasn't fully ready when the pod started. Fix:
+> `kubectl delete pod -l app=event-processor -n ${NAMESPACE}`
+
+---
+
+## Step 9 — Data seeding (automatic)
+
+**No external seed script is needed for the O&G demo.** The `fault-trigger-ui` pod seeds everything automatically via background threads when it starts:
+
+| Thread | What it seeds | Table | Wait (from startup) |
+|---|---|---|---|
+| `h2-seed` | H2 paraffin docs (vendor log, PVT, pull record) | `rag_documents` | ~10s |
+| `h1-bayes-seed` | H1 Bayesian findings with LR metadata | `field_intel` | ~20s |
+| `pad-alpha-rag-seed` | H3 Pad Alpha docs | `rag_documents` | ~30s |
+| `l3-scenario-rag-seed` | 10 scenario RAG docs (H1 + H2, with noise mix) | `rag_documents` | ~55s |
+| `intel-generator` | Live field intel documents | `field_intel` | continuous |
+
+> **The `scripts/seed-*.py` files are legacy power-grid seeders (transformer/turbine/compressor).** Do NOT run them for the O&G demo.
+
+**Verify seeding (wait ~2 min after fault-trigger-ui is Running):**
+```bash
+kubectl exec -n ${NAMESPACE} deployment/alloydb-omni -- \
+  psql -U postgres -d grid_reliability \
+  -c "SELECT COUNT(*) FROM rag_documents; SELECT COUNT(*) FROM field_intel;"
+# rag_documents: ~18+ rows (grows as seeders run)
+# field_intel: ~8+ rows (grows as intel-generator runs)
+```
+
+---
+
+## Step 10 — Ingest OEM manuals into RAG corpus (optional but recommended)
+
+This adds the ESP, gas lift, mud pump, and top drive manuals to `rag_documents` for deeper H1/H2 retrieval. Takes ~5 min.
+
+```bash
+cd ~/gdc-pm
+# Get AlloyDB password from secrets
+ALLOYDB_PASS=$(cat .secrets/alloydb-password.txt)
+
+# Port-forward AlloyDB for local script access
+kubectl port-forward -n ${NAMESPACE} deployment/alloydb-omni 5432:5432 &
+PF_PID=$!
+sleep 3
+
+ALLOYDB_HOST=localhost ALLOYDB_PORT=5432 \
+  ALLOYDB_DB=grid_reliability ALLOYDB_USER=postgres \
+  ALLOYDB_PASS=${ALLOYDB_PASS} \
+  python3 scripts/ingest_manuals.py
+
+kill ${PF_PID}
+```
+
+---
+
+## Step 11 — DNS: wire gdc-pm.bdau.io
+
+The `fault-trigger-ui` Service is a LoadBalancer. Get its external IP:
+
+```bash
+kubectl get svc fault-trigger-ui -n ${NAMESPACE}
+# Copy the EXTERNAL-IP value
+```
+
+Update the `gdc-pm.bdau.io` A-record in your DNS provider to point to this IP. Propagation takes 1–5 minutes.
+
+**Verify:**
+```bash
+curl -s http://gdc-pm.bdau.io/api/assets | python3 -m json.tool | head -10
+```
+
+---
+
+## Step 12 — Ollama / GPU (on-demand only, not always-on)
+
+Ollama runs on a T4 GPU via Autopilot. It is **off by default (replicas=0, zero billing).** Only bring it up for showcase/record sessions.
+
+**Before starting:** GPU costs ~$0.35/hr on T4 Autopilot. Always run stop when done.
+
+```bash
+# Start (announce cost first — about $0.35/hr):
 ./scripts/gpu-start.sh
+
+# Stop (always pair — stops billing):
+./scripts/gpu-stop.sh
 ```
-- Provisions an `nvidia-l4` node in `us-east1`.
-- Scales Ollama deployment to 1 replica.
-- Pulls `gemma:27b` if not cached on PVC.
-- Verify status with:
-  ```bash
-  kubectl exec -n gdc-pm deployment/ollama -- curl -sf http://localhost:11434/api/tags
-  ```
 
-### 8. Verification Checklist
-- [ ] **Pods Running:** Run `kubectl get pods -n gdc-pm`. All pods should be `1/1 Running` (or `Completed` for schemas).
-- [ ] **RabbitMQ Connection:** Check Event Processor logs to ensure AMQP connection is successful (`kubectl logs -n gdc-pm deployment/event-processor`).
-- [ ] **AlloyDB Data:**
-  ```bash
-  kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM rag_documents;"
-  ```
-  *(Should return 11 rows).*
-- [ ] **Ollama Model:** The API endpoint `/api/mlops/status` should show `ollama_online: True` and `model: gemma:27b`.
-- [ ] **UI:** Access the live IP of the `fault-trigger-ui` Service on port 80 (or load balancer). Validate SCADA charts are loading and no errors are present.
+> On Autopilot, `gpu-start.sh` simply scales the Deployment to 1. Autopilot provisions the T4 node automatically. `gpu-stop.sh` scales back to 0 — the T4 node disappears and billing stops. No manual node-pool resize needed.
 
-## Troubleshooting / Potential Blockers
+**First-time GPU start:** Autopilot provisions a T4 node (~2–3 min), then Ollama's init container pulls `gemma4:latest` (~6GB, ~5–15 min). The model is cached on the PVC for subsequent starts.
 
-- **Event Processor CrashLoopBackOff:** If RabbitMQ is not fully ready when the `event-processor` pod starts, it may enter a `CrashLoopBackOff` state due to `socket.gaierror: [Errno -2] Name or service not known` or AMQP connection failures.
-  **Fix:** Wait for the `rabbitmq` pod to become ready, then delete the crashing pod to force a clean restart:
-  ```bash
-  kubectl delete pod -l app=event-processor -n gdc-pm
-  ```
+**Verify Ollama ready:**
+```bash
+curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c \
+  "import sys,json;d=json.load(sys.stdin);print('online:',d['ollama_online'],'model:',d['ollama_model'])"
+# Expected: online: True  model: gemma4:latest
+```
 
-- **Kubernetes Caching Stale Docker Images:** If you push a new image with the `:latest` tag and restart the deployment, nodes may not pull the new code if `imagePullPolicy` defaults to `IfNotPresent`.
-  **Fix:** Force GKE to always pull the image by patching the deployment:
-  ```bash
-  kubectl patch deployment fault-trigger-ui -n gdc-pm -p '{"spec": {"template": {"spec": {"containers": [{"name": "fault-trigger-ui", "imagePullPolicy": "Always"}]}}}}'
-  ```
-  (Do this for any other services like `inference-api` or `telemetry-simulator` if developing iteratively).
+---
 
-- **Inference API Returning 503:** If the `event-processor` starts throwing `503 Service Unavailable` when calling `inference-api`, the model might not be fully loaded into memory yet, or it may have crashed.
-  **Fix:** Restart the inference API deployment:
-  ```bash
-  kubectl rollout restart deployment/inference-api -n gdc-pm
-  ```
+## Step 13 — Verification checklist
+
+```bash
+# 1. All pods running
+kubectl get pods -n ${NAMESPACE} --no-headers | awk '{print $3}' | sort | uniq -c
+# Expected: all Running (or Completed for init jobs)
+
+# 2. API health
+curl -s http://gdc-pm.bdau.io/api/assets | jq 'keys'
+# Expected: ["ESP-ALPHA-1", "ESP-ALPHA-2", ..., "ESP-ALPHA-6"]
+
+# 3. H1 scenario replay
+curl -s "http://gdc-pm.bdau.io/api/h1/scenario-replay?fault=gas_lock" | \
+  python3 -c "import sys,json;d=json.load(sys.stdin);print('bayes_pct:',d['bayes_pct'],'gdc_detect_idx:',d['gdc_detect_idx'])"
+# Expected: bayes_pct ~93.1, gdc_detect_idx < scada_alarm_idx
+
+# 4. H2 scenario replay
+curl -s "http://gdc-pm.bdau.io/api/h2/scenario-replay?asset=ESP-ALPHA-3" | \
+  python3 -c "import sys,json;d=json.load(sys.stdin);print('scenario:',d.get('scenario'),'docs:',len(d.get('doc_reveals',[])))"
+# Expected: scenario: paraffin_wax_restriction, docs: 3
+
+# 5. H3 Vizier
+curl -s -X POST "http://gdc-pm.bdau.io/api/vizier/optimize" | \
+  python3 -c "import sys,json;d=json.load(sys.stdin);print('uplift_bpd:',d.get('uplift_bpd'))"
+# Expected: uplift_bpd ~77.9
+
+# 6. mlops/status
+curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c \
+  "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d['ollama_online'])"
+# Expected: ollama_online: False (correct default — GPU is off)
+```
+
+---
+
+## Troubleshooting
+
+**event-processor CrashLoopBackOff:** RabbitMQ not yet ready.
+```bash
+kubectl delete pod -l app=event-processor -n ${NAMESPACE}
+```
+
+**inference-api 503:** Model not yet loaded, or pod crashed.
+```bash
+kubectl rollout restart deployment/inference-api -n ${NAMESPACE}
+```
+
+**Ollama Pending (GPU not scheduling):** Autopilot may be provisioning the T4 node. Check events:
+```bash
+kubectl describe pod -l app=ollama -n ${NAMESPACE} | grep -A5 Events
+# If "no nodes available with nvidia.com/gpu", wait 3–5 min for Autopilot to provision
+```
+
+**Data not seeded after 3 min:** Check fault-trigger-ui logs for seed thread output:
+```bash
+kubectl logs -n ${NAMESPACE} deployment/fault-trigger-ui | grep -i "seed\|Sprint"
+```
+
+---
+
+## Companion code changes needed in the same session as the rebuild
+
+The following YAML/script changes were identified during Session BO/BP audit. Apply them *before* deploying to the new cluster:
+
+| File | Change | Why |
+|---|---|---|
+| `gke/ollama/k8s/ollama.yaml` | Change `nodeSelector: nvidia-l4` → `nvidia-tesla-t4`; update resource limits for T4 (16GB); remove taint/toleration (Autopilot manages); fix stale 27b header | L4→T4 migration |
+| `gke/fault-trigger-ui/k8s/fault-trigger-ui.yaml` | `OLLAMA_MODEL: "gemma4:latest"` (was `"gemma:27b"`) | Integrity: displayed value must match actual |
+| `scripts/gpu-start.sh` | Replace node-pool resize logic with `kubectl scale deployment ollama --replicas=1` | Autopilot: no node pool to resize |
+| `scripts/gpu-stop.sh` | Replace node-pool resize logic with `kubectl scale deployment ollama --replicas=0` | Same |
+| `gke/ollama/k8s/ollama-scheduler.yaml` | Comment: update cost to ~$0.35/hr T4 (was $1.09/hr L4) | Accuracy |
