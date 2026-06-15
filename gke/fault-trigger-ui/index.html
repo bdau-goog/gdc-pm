@@ -8,6 +8,7 @@
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" charset="utf-8"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
 </head>
 <body>
 
@@ -2164,6 +2165,7 @@
                       <div style="font-weight:700;margin-bottom:6px">&#x2718; PUMP PULL DESPITE GDC WARNING &#x2014; WAX STILL IN TUBING</div>
                       <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump pulled. Bearings worn &#x2014; confirms the symptom. Paraffin restriction remains. Pump will re-wear without hot-oil treatment on restart.<br><span style="font-size:0.48rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic panel</span></div>
                     </div>
+                  </template><!-- /h2-verdict-revealed -->
                 <!-- ZONE 2 RIGHT (30%): Vertical Document Stack — 3 paraffin provenance docs -->
                 <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
                   <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">FIELD DOCUMENT CORPUS &#x2014; AlloyDB on-cluster</div>
@@ -2256,6 +2258,7 @@
           </div><!-- /inner row -->
         </div><!-- /decision-col -->
       </div><!-- /main body -->
+
       <!-- ══ H2 SCENARIO DOC MODAL — Click-through full document (Sprint L2) ══ -->
       <div v-if="h2DocModalOpen" class="h1-modal-overlay" @click.self="h2DocModalOpen=false">
         <div class="h1-modal-box" style="max-width:640px;max-height:80vh;overflow-y:auto">
