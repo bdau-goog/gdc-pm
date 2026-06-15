@@ -1,9 +1,10 @@
 # GDC Operations Intelligence — Stakeholder Brief
 
 **Audience:** Customer executives and business stakeholders  
-**Version:** Session BE (June 11, 2026) — Sprint H3-D Part B  
+**Version:** Session BS+3 (June 15, 2026) — H2 Paraffin/Wax Scenario Confirmed  
 **Source of truth for value proposition language:** DEMO_MASTER.md §3 (locked)  
-**Claim compliance:** All hard figures are tagged OUR-CODE or TEXTBOOK (SURVIVES). Ranges marked as estimates are labeled accordingly.
+**Claim compliance:** All hard figures are tagged OUR-CODE or TEXTBOOK (SURVIVES). Ranges marked as estimates are labeled accordingly.  
+**H2 scenario status:** Paraffin/wax deposition narrative — passed hostile-engineer red-team (Session BG). Elastomer-seal scenario permanently retired.
 
 ---
 
