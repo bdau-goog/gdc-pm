@@ -2,7 +2,8 @@
     <div class="main-tab-content" :class="{active: mainTab==='horizon1'}">
 
       <!-- ══ H1 BRIEFING MODE ══ Sprint 2a — Panels 1 & 2 (Panels 3–6 in Sprint 2b–2e) -->
-      <div v-if="h1BriefingMode" style="display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:var(--bg)">
+      <div v-if="h1BriefingMode" id="h1-briefing-container" style="display:flex;flex:1;min-height:0;overflow:hidden;background:var(--bg);align-items:flex-start;justify-content:center">
+        <div :style="{width:'1440px',height:'810px',flexShrink:'0',transform:'scale('+h1BriefingScale+')',transformOrigin:'top center',display:'flex',flexDirection:'column'}">
 
         <!-- BRIEFING PROGRESS STRIP -->
         <div style="flex-shrink:0;padding:7px 20px;background:var(--surf2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
@@ -32,10 +33,7 @@
             <div>
               <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:#3b82f6;margin-bottom:6px">THE SCENARIO</div>
               <h2 style="font-size:1.7rem;font-weight:800;color:var(--text2);line-height:1.2;margin:0 0 8px">Same Signal. Two Causes. One Right Decision.</h2>
-              <p style="font-size:0.67rem;color:var(--muted);margin:0;line-height:1.7">A Permian ESP well goes into unloading at 06:23. The RTOC operator's screen shows the <strong style="color:#93c5fd">same sensor decline</strong> for two root causes with opposite correct actions &#x2014; one costs $2,500, the other risks $150,000.</p>
-            </div>
-            <div style="padding:11px 15px;border-left:3px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.63rem;color:var(--text2);line-height:1.75">
-              The RTOC has PIP, Amps, Winding Temp, and Vibration in real time. The full document corpus &#x2014; shift notes, sonic surveys, GOR lab reports, workover records &#x2014; is in AlloyDB. <strong style="color:#93c5fd">GDC reads and fuses it in seconds.</strong>
+              <p style="font-size:0.90rem;color:var(--text2);margin:0;line-height:1.6">A Permian ESP well goes into unloading at 06:23. The same sensor decline — <strong style="color:#93c5fd">two root causes, opposite correct actions</strong> — one costs $2,500, the other risks $150,000.</p>
             </div>
             <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.22);border-radius:8px;padding:16px 20px">
               <div style="font-family:var(--mono);font-size:0.68rem;color:#93c5fd;font-weight:700;margin-bottom:12px;letter-spacing:0.04em">WELL ESP-ALPHA-N · PAD ALPHA · PERMIAN BASIN</div>
@@ -186,10 +184,6 @@
               <div style="display:flex;justify-content:space-between;font-family:var(--mono);font-size:0.58rem"><span style="color:rgba(74,222,128,0.6)">~1.4 mm/s nominal</span><span style="color:rgba(148,163,184,0.6)">stays flat</span></div>
               <div style="font-size:0.60rem;color:var(--muted);line-height:1.55">No bearing-contact change during hydraulic unloading &#x2014; distinguishes this from bearing wear (H2 scenario)</div>
             </div>
-          </div>
-          <!-- Key insight callout -->
-          <div style="flex-shrink:0;padding:12px 18px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:6px;font-size:0.68rem;color:#93c5fd;line-height:1.7">
-            <strong>Key insight:</strong> PIP and Amps decline together while Temp and Vib stay flat. The cause &#x2014; gas lock or drawdown &#x2014; is not in any of these numbers. It lives in the field documents. <span style="color:var(--muted)">&#x2192; THE HOOK: one signature &middot; two opposite actions &#x2014; THE MOAT: STATE vs CONTEXT &#x2014; THE PLATFORM: universal pattern.</span>
           </div>
         </div><!-- /panel-2 -->
 
@@ -555,6 +549,7 @@
           </div>
         </div>
 
+        </div><!-- /stage-1440x810 -->
       </div><!-- /h1BriefingMode -->
 
       <!-- ══ SCENARIO REPLAY ══ (v-else: shown after briefing or Skip) -->

@@ -115,6 +115,7 @@ createApp({
       h1Dragging: false,
       h1BriefingMode: true,     // true=show animated briefing panels; false=scenario replay
       h1BriefingPanel: 1,       // 1=This Well, 2=What is an Unload? (panels 3-6 in Sprint 2b-2e)
+      h1BriefingScale: 1,       // CSS transform scale for 1440×810 slide stage; set by ResizeObserver
       h1P2Scrub: 0,             // 0=nominal → 100=fault; Panel 2 scrubber (resets on panel change)
       h1P3Scrub: 0,             // 0=nominal → 100=fault; Panel 3 scrubber (resets on panel change)
       h1SplitPercent: 56,
@@ -2304,7 +2305,21 @@ createApp({
     this._pollHorizon=setInterval(()=>this.fetchHorizonAlerts(),5000);
     this._pollMlops=setInterval(()=>this.fetchMlopsStatus(),15000);
     this.lastRefresh=new Date().toLocaleTimeString();
-    this.$nextTick(()=>this.initCanvasSplitter());
+    this.$nextTick(()=>{
+      this.initCanvasSplitter();
+      // H1 briefing: scale 1440×810 slide stage to fit available frame (reveal.js / Google Slides pattern)
+      const briefingEl = document.getElementById('h1-briefing-container');
+      if (briefingEl) {
+        const updateBriefingScale = () => {
+          const r = briefingEl.getBoundingClientRect();
+          if (r.width > 0 && r.height > 0) {
+            this.h1BriefingScale = Math.min(r.width / 1440, r.height / 810);
+          }
+        };
+        new ResizeObserver(updateBriefingScale).observe(briefingEl);
+        updateBriefingScale();
+      }
+    });
   },
 
   beforeUnmount() {
