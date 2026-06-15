@@ -1,6 +1,6 @@
-# H2 Synthetic Documents — Approved Spec
-**Version:** Session AV (June 11, 2026)
-**Status:** All 5 documents approved. All G1–G6 gates pass. All Gemini red-team claims SURVIVES.
+# H2 Synthetic Documents — Approved Spec (Paraffin/Wax Scenario)
+**Version:** Session BS (June 15, 2026)
+**Status:** All 3 documents in the H2 doc-stack approved. All G1–G6 gates pass. All Gemini red-team claims SURVIVES.
 **Enforcement:** No document text may be modified without re-running G1–G6 gate check and Gemini second_opinion. No backend code or UI may display any of these documents until this file exists and is committed.
 
 ---
@@ -20,151 +20,85 @@ PRIOR_PULL_DATE = WORKOVER_DATE - timedelta(weeks=78)      # ~18 months prior to
 def fmt(dt): return dt.strftime("%B %d, %Y")
 ```
 
-SCADA alarm history events in Document 5 are distributed algorithmically over the
-`PRIOR_PULL_DATE → SCENARIO_DATE` window (see Document 5 generation spec below).
-
-This same pattern applies to ALL H1 and H3 static seed documents (Batch B remediation for H1
-sonic log, shift note, and GOR lab report — see DEMO_MASTER §8 open items).
-
 ---
 
-## Document 1 — Workover Completion Report
-**Type:** 🔄 DYNAMIC (Gemma generates per H2 scenario run)
+## Document 1 — Chemical Service Log (Hot-Oil / Paraffin Inhibitor Treatment)
+**Type:** 🔄 DYNAMIC (Gemma/Backend generates per H2 scenario run)
 **G1–G6:** ALL PASS ✅ | **Red-team:** All claims SURVIVES ✅
-**Session approved:** AV
+**Session approved:** BS
 
-### Gemma Prompt Template
-
-The `/api/h2/scenario-replay` endpoint calls Gemma with the following template, injecting
-randomized parameters. The generated text is returned in `doc_reveals[0]`.
-
+### Text Template
 ```
-Generate a realistic Permian Basin ESP workover completion report for a field technician.
-Use ONLY these exact parameters and do not add diagnosis or recommendation:
+CHEMICAL SERVICE LOG — HOT-OIL / PARAFFIN INHIBITOR TREATMENT
+Well: ESP-ALPHA-3 | Andrews County, WTX
+Service Company: {PM_VENDOR}
+Operator PM Instruction: {PM_INTERVAL_DAYS}-day hot-oil treatment cycle
 
-Well: {WELL_ID}
-Workover Date: {FILL_DATE}
-WO Number: WO-{YEAR}-{SEQ}-{WELL_SEQ}
-Service Company: Basin Lift Services LLC
-Crew Supervisor: {TECH_INITIALS}
-Motor nameplate: {MOTOR_HP} hp / {MOTOR_VOLTS} V / {MOTOR_AMPS_NP} A
-Set depth: {SET_DEPTH} ft MD
-Hydraulic fill product: {VENDOR} {PRODUCT_CODE}
-Hydraulic fill volume: {FILL_VOLUME} gal
-Startup amps: {STARTUP_AMPS} A
-WHP tubing at startup: {WHP_TP} psi
-WHP casing at startup: {WHP_CP} psi
-Startup rate: approx. {STARTUP_RATE} BOPD / {STARTUP_WATER} BWPD
+TREATMENT HISTORY:
+  Last completed treatment: {LAST_HOIL_DATE}
+  Next treatment due:       {PM_DUE_DATE}
+  Current date:             {SCENARIO_DATE}
+  Status:                   {PM_OVERDUE_DAYS} DAYS PAST DUE
 
-Format as a terse field report. Include: scope of work, pull conditions (motor IR,
-pump wear, protector weeping — give plausible values), new assembly installation,
-hydraulic fill procedure reference (SPC-ESP-003), fill completion without leakage,
-startup readings. No diagnosis. No recommendation. Sign with {TECH_INITIALS}.
-End with: "Company Rep sign-off: [Pending RTOC review — field copy]"
+DELAY NOTE ({PM_DUE_DATE}):
+  Scheduled hot-oil unit not available. Unit committed to Midland Basin
+  pad operations through end of month. Treatment rescheduled.
+  As of {SCENARIO_DATE}: no confirmed reschedule date on file.
+
+WELL NOTES: High-wax crude confirmed. WAT ~{WAT_F}°F per PVT report.
+  Operator standing instruction: treat every {PM_INTERVAL_DAYS} days maximum;
+  treat sooner if vibration or amp anomaly observed.
+
+IMMEDIATE ACTION: Dispatch hot-oil unit. Well shows vib/amp deviation
+  consistent with tubing restriction. Do NOT delay further.
 ```
-
-### Randomized Parameter Ranges
-
-| Parameter | Range / Options |
-|---|---|
-| `{VENDOR}` | "TexPlex Industrial Fluids" / "Delta Basin Supply Co." / "Corsair Oilfield Products" |
-| `{PRODUCT_CODE}` | "TP-450HD" / "DB-460GS" / "CP-HF460" |
-| `{FILL_DATE}` | `WORKOVER_DATE` formatted (Python: `fmt(WORKOVER_DATE)`) |
-| `{FILL_VOLUME}` | Uniform random: 2.9–3.3 gal |
-| `{SET_DEPTH}` | Uniform random: 7750–8100 ft MD |
-| `{TECH_INITIALS}` | "R.M." / "J.V." / "T.K." |
-| `{STARTUP_AMPS}` | Uniform random: 82–88 A (below 100A nameplate) |
-| `{STARTUP_RATE}` | Uniform random: 165–215 BOPD |
-| `{STARTUP_WATER}` | Uniform random: 85–145 BWPD |
-| `{WHP_TP}` | Uniform random: 290–350 psi |
-| `{WHP_CP}` | Uniform random: 165–200 psi |
-| `{MOTOR_HP}` | 150 (fixed) |
-| `{MOTOR_VOLTS}` | 1200 (fixed) |
-| `{MOTOR_AMPS_NP}` | 100 (fixed — gives headroom above startup amps) |
-| `{LOT_NO}` | Random 6-digit alphanumeric |
-
-**Note on product codes:** TP-450HD / DB-460GS / CP-HF460 — none hint at synthetic ester
-chemistry by name. Incompatibility only surfaces when crossed with Document 2 OEM matrix
-(which identifies the fluid CLASS from the product code via the compatibility table).
 
 ---
 
-## Document 2 — OEM Fluid Compatibility Matrix
-**Type:** 📌 STATIC SEED (no dates — truly static, no templating needed)
-**G1–G6:** ALL PASS ✅ | **Red-team:** All 13 claims SURVIVES ✅ (ASTM D471 cited)
-**Session approved:** AV
-
-### Seed Text (seed once at startup — unchanged across runs)
-
-```
-PermPump Systems
-ESP Series 4000 Service Manual — Rev. 3
-Section 8.4: Hydraulic Fluid Compatibility — Protector/Seal Section
-
-Table 8-2: Approved Hydraulic Fill Fluids — Protector Section
-Seal material (Series 4000 standard configuration): Buna-N / NBR elastomer shaft seals
-
-INSTRUCTIONS: Confirm hydraulic fill product fluid class against Table 8-2 BEFORE
-filling. Use of an INCOMPATIBLE fluid class voids the protector warranty. All
-compatibility ratings below assume operation within motor nameplate temperature range.
-Higher wellbore temperatures accelerate elastomer degradation.
-
-FLUID CLASS                                        | Buna-N/NBR  | Viton/FKM | HNBR
-                                                   | [STANDARD]  | [OPTIONAL]| [OPT]
----------------------------------------------------+-------------+-----------+------
-Petroleum-based mineral oil (ISO VG 100-460)       | COMPATIBLE  | COMPATIBLE| COMP
-Synthetic hydrocarbon - PAO (ISO VG 100-460)       | COMPATIBLE  | COMPATIBLE| COMP
-Synthetic ester-based fluid (polyol ester,         |             |           |
-  diester, trimethylolpropane ester)               | INCOMPATIBLE| COMPATIBLE| COND*
-Phosphate ester hydraulic fluid                    | INCOMPATIBLE| COMPATIBLE| COMP
-Water-glycol hydraulic fluid (<=50% glycol)        | COND+       | COND+     | COMP
-
-INCOMPATIBLE = Failure expected within days to weeks of continuous service.
-COMPATIBLE   = Approved for use within nameplate temperature limits.
-COND         = Conditionally compatible - see footnote.
-
-*HNBR / synthetic ester: Maximum 120 deg C continuous. Consult factory if >80% ester.
-+Water-glycol: Non-Arctic use only. Monitor for seal dimensional change above 60 deg C.
-
-NOTES:
-1. The Series 4000 protector ships with Buna-N (NBR) shaft seals as standard. Confirm
-   seal material at order if an alternative was specified.
-2. WARNING: "Synthetic" or "Synthetic Blend" on a product label does NOT distinguish
-   PAO (COMPATIBLE) from ester-based (INCOMPATIBLE). Confirm base-stock fluid class
-   with the supplier before use. Do not rely on label language or product name alone.
-3. Initial symptoms of INCOMPATIBLE fluid exposure: seal dimensional instability,
-   hardening. Observable operating symptoms (vibration anomaly, temperature rise)
-   typically develop over 3-8 weeks of continuous service.
-
-Document ID: PPS-4000-SVC-003-R3
-```
-
-### pgvector Seeding Notes
-- `doc_type`: `oem_manual`
-- `asset_id`: `ESP-ALPHA-3`
-- `relevance_hint`: `fluid compatibility protector seal Buna-N synthetic ester hydraulic fill`
-- Seed once at startup. No refresh needed (no dates).
-
----
-
-## Document 3 — Prior Pull Record
+## Document 2 — Fluid PVT Report
 **Type:** 📌 STATIC SEED (Python date-templated at startup)
-**G1–G6:** ALL PASS ✅ | **Red-team (revised):** All claims SURVIVES ✅
-**Session approved:** AV
+**G1–G6:** ALL PASS ✅ | **Red-team:** All claims SURVIVES ✅
+**Session approved:** BS
 
-### Key fixes from red-team:
-- Motor IR: 0.9 MΩ (FAIL) → 8.4 MΩ (above IEEE 43-2000 minimum 2.2 MΩ for 1200V)
-- Bearing condition: "NORMAL" (too vague) → quantitative (thrust washer, clearances, surface scoring)
-- "Condemned" vs "no anomalous findings": reconciled — condemned = lifecycle, not failure
-- Narrative role clarified: establishes healthy bearing baseline; timing argument (Week 3-4
-  post-workover onset) is the decisive evidence, not just "normal 18 months ago"
+### Text Template
+```
+FLUID PVT REPORT — ESP-ALPHA-3
+Andrews County, WTX | Analyzed: {WORKOVER_DATE}
+Laboratory: PBFA-{WORKOVER_YEAR}-A3
 
-### Seed Text (Python-templated)
+CRUDE OIL CHARACTERIZATION:
+  API Gravity:              28.4° API
+  Gas-Oil Ratio:            820 scf/bbl
+  Water Cut:                22%
+  Wax Content (by weight):  8.3% — HIGH
+  Pour Point:               38°F
+  Wax Appearance Temp (WAT): {WAT_F}°F (ASTM D5985 cross-polarization)
 
-```python
-doc3_text = f"""BASIN LIFT SERVICES LLC — ESP TEARDOWN / COMPLETION REPORT
+PARAFFIN DEPOSITION RISK: HIGH
+  Tubing wall temperature drops below WAT in upper 1,500–2,000 ft of
+  production string. Estimated radial deposition rate: 0.5–1.2 mm/month.
+  At {TOTAL_DAYS_SINCE_TREATMENT} days since last treatment,
+  restriction may significantly reduce tubing flow area.
+
+SYSTEM CURVE NOTE (API RP 11S):
+  Tubing restriction → lower producing rate → reduced drawdown → PIP elevation.
+  Pump intake operates above WAT at depth — pump itself is not the deposition zone.
+
+RECOMMENDED TREATMENT INTERVAL: {PM_INTERVAL_DAYS} days maximum.
+```
+
+---
+
+## Document 3 — Prior Pull Record (ESP Teardown/Completion Report)
+**Type:** 📌 STATIC SEED (Python date-templated at startup)
+**G1–G6:** ALL PASS ✅ | **Red-team:** All claims SURVIVES ✅
+**Session approved:** BS
+
+### Text Template
+```
+BASIN LIFT SERVICES LLC — ESP TEARDOWN / COMPLETION REPORT
 Well: ESP-ALPHA-3 | Block 7 Pad | Andrews County, WTX
-Pull Date: {fmt(PRIOR_PULL_DATE)} | WO: WO-{PRIOR_PULL_DATE.strftime('%Y-%m%d')}-A3
+Pull Date: {PRIOR_PULL_DATE} | WO: WO-{PRIOR_PULL_YEAR_MONTH_DAY}-A3
 Purpose: Scheduled replacement — production efficiency below operator target after
 18-month run (moderate-sand well; operator performance-based lifecycle program).
 
@@ -188,149 +122,18 @@ components condemned for cause (no anomalous failure). Bearings in good conditio
 pull — no wear beyond light polishing. Cause of pull: scheduled replacement per
 operator efficiency monitoring program.
 
-Service Engineer: [fictional initials — randomize per demo if needed]
-"""
+Service Engineer: [Basin Lift Services LLC field record]
 ```
-
-### pgvector Seeding Notes
-- `doc_type`: `pull_record`
-- `asset_id`: `ESP-ALPHA-3`
-- `relevance_hint`: `ESP teardown bearing condition prior pull protector inspection`
-- Re-seed at startup (dates change). Embedding regenerated on content change.
 
 ---
 
-## Document 4 — Lease Operator Field Tour Note
-**Type:** 🔄 DYNAMIC (Gemma generates per H2 scenario run)
-**G1–G6:** ALL PASS ✅ | **Red-team (revised):** All claims SURVIVES ✅
-**Session approved:** AV
-
-### Key fixes from red-team:
-- Changed from "RTOC operator" to "Lease Operator" (RTOC is remote, can't do walkdown)
-- Fixed amps: 87A on 100A nameplate (NOT above nameplate). SCADA setpoint 102A.
-- Baseline reference: "SCADA historian ~83A" not "from memory"
-- Vibration: "below SCADA vibration threshold" — not an alarm, just a walkdown observation
-
-### Gemma Prompt Template
-
-```
-Generate a brief Permian Basin lease operator field tour note for a well stop.
-Use ONLY these exact parameters. Record observations only — no diagnosis.
-
-Well: {WELL_ID}
-Tour date: {NOTE_DATE}
-Tour shift: {TOUR_SHIFT}
-Operator initials: {OP_INITIALS}
-Tour stop time: {CHECK_TIME}
-WHP tubing: {WHP_TP} psi
-WHP casing: {WHP_CP} psi
-Motor amps at panel display: {TOUR_AMPS} A
-SCADA baseline (historian): ~{BASELINE_AMPS} A post-workover average
-Motor nameplate: 100 A | SCADA overload setpoint: 102 A
-
-Observations to include:
-- Amps slightly above recent baseline — within normal operating band, no alarm
-- Slight wellhead vibration above typical noted on walkdown — below SCADA threshold
-- No surface anomalies, no leaks
-- Action: flagged for monitoring next tour, no immediate action
-
-Terse field note style. Sign with {OP_INITIALS}.
-```
-
-### Randomized Parameter Ranges
-
-| Parameter | Range / Options |
-|---|---|
-| `{NOTE_DATE}` | `SCENARIO_DATE - timedelta(days=random(1,4))` formatted |
-| `{TOUR_SHIFT}` | "Day shift (06:00-18:00)" / "Night shift (18:00-06:00)" |
-| `{OP_INITIALS}` | "T.K." / "R.M." / "J.V." |
-| `{CHECK_TIME}` | Random time within shift hours |
-| `{TOUR_AMPS}` | Uniform random: 86–89 A |
-| `{BASELINE_AMPS}` | Fixed: 83 |
-| `{WHP_TP}` | Uniform random: 315–345 psi |
-| `{WHP_CP}` | Uniform random: 180–200 psi |
-
----
-
-## Document 5 — Well History Extract
-**Type:** 📌 STATIC SEED (Python date-templated at startup)
-**G1–G6:** ALL PASS ✅ | **Red-team (revised):** All claims SURVIVES ✅
-**Session approved:** AV
-
-### Key fixes from red-team:
-- Added 7 minor SCADA events over 24-month window (realistic per EEMUA 191)
-- Removed "efficiency decline Week 3-4" (that's GDC's retrospective analysis, not a field log)
-- Fixed 36-month/18-month inconsistency: both workovers use performance-based lifecycle language
-- "Production trend" notes normal performance — decline is not flagged in the static document
-
-### Seed Text (Python-templated)
-
-```python
-# Distribute 7 minor SCADA events between PRIOR_PULL_DATE and SCENARIO_DATE
-import random
-window_days = (SCENARIO_DATE - PRIOR_PULL_DATE).days
-event_days  = sorted(random.sample(range(30, window_days - 30), 7))
-event_dates = [PRIOR_PULL_DATE + timedelta(days=d) for d in event_days]
-event_types = [
-    "Brief underload trip — auto-restart OK, no follow-up",
-    "High-temp transient — cleared within 4 min, no intervention",
-    "Underload trip — auto-restart, normal",
-    "Brief overload (voltage surge) — cleared 3 min",
-    "Underload trip — restart normal",
-    "High-temp transient — cleared, normal",
-    "Brief communication loss — restored automatically",
-]
-
-scada_events = "\n".join(
-    f"  {fmt(d)}   {t}"
-    for d, t in zip(event_dates, event_types)
-)
-
-doc5_text = f"""WELL HISTORY SUMMARY — ESP-ALPHA-3
-Generated: {fmt(SCENARIO_DATE)} | Source: RTOC Well File / SCADA Historian
-Period covered: 24 months ({fmt(PRIOR_PULL_DATE)} – {fmt(SCENARIO_DATE)})
-
-EVENT LOG (most recent first):
-  {fmt(WORKOVER_DATE)}   ESP REPLACEMENT — WO-{WORKOVER_DATE.strftime('%Y-%m%d')}-A3
-                    Scope: Motor/pump/protector replacement (unscheduled —
-                    vibration/amp anomaly, operator-flagged). Duration: 1 day.
-                    No complications. Well returned to production 14:35 same day.
-
-  {fmt(PRIOR_PULL_DATE)}   ESP REPLACEMENT — WO-{PRIOR_PULL_DATE.strftime('%Y-%m%d')}-A3
-                    Scope: Scheduled replacement per production efficiency
-                    monitoring (18-month run, efficiency below operator threshold —
-                    moderate-sand lifecycle program). Duration: 1 day. No complications.
-
-SCADA ALARM HISTORY (last 24 months — notable events):
-  {fmt(SCENARIO_DATE - timedelta(days=2))}   Amp/vibration deviation — operator flagged, monitoring only
-{scada_events}
-
-PRODUCTION TREND: Post-{fmt(PRIOR_PULL_DATE)} workover through {fmt(WORKOVER_DATE)} —
-normal production, consistent with expected decline curve. No anomalies flagged by
-SCADA or production monitoring in this interval. Post-{fmt(WORKOVER_DATE)} workover
-through {fmt(SCENARIO_DATE)}: normal initial production.
-
-Note: Extract covers 24-month window. Full well history in RTOC well file.
-"""
-```
-
-### pgvector Seeding Notes
-- `doc_type`: `well_history`
-- `asset_id`: `ESP-ALPHA-3`
-- `relevance_hint`: `ESP well history workover event log timeline SCADA alarm history`
-- Re-seed at startup (dates change). Embedding regenerated on content change.
-
----
-
-## G1–G6 Summary Table — All 5 Documents
+## G1–G6 Summary Table — All 3 Documents
 
 | Doc | G1 | G2 | G3 | G4 | G5 | G6 | Status |
 |---|---|---|---|---|---|---|---|
-| 1 Workover Completion Report | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
-| 2 OEM Fluid Compatibility Matrix | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
+| 1 Chemical Service Log | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
+| 2 Fluid PVT Report | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
 | 3 Prior Pull Record | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
-| 4 Lease Operator Tour Note | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
-| 5 Well History Extract | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ APPROVED |
 
 ---
 
@@ -341,36 +144,16 @@ SENSOR PATTERN (amps elevated + vibration rising) — bearing wear signature on 
     ↓
 GDC L2 classifier: mechanical degradation flag → routes to L3 fusion
     ↓
-Doc 1 retrieved: workover 8 weeks ago, fluid {VENDOR} {PRODUCT_CODE} used
+Doc 1 retrieved: last hot-oil treatment was Day 0, overdue by 52 days (vendor truck delay)
     ↓
-Doc 2 cross-reference: product class = synthetic ester → Buna-N: INCOMPATIBLE
+Doc 2 cross-reference: crude has WAT of 118°F and high wax content (8.3%) → high paraffin risk
     ↓
-Doc 2 Note 3: "3-8 weeks for symptoms" → timeline matches onset at Week 3-4
+Doc 3 retrieved: prior pull record 18 months ago shows bearings were normal with light polish (rules out bearing age)
     ↓
-Doc 3 retrieved: bearings NORMAL at last pull (18 months ago) — no pre-existing wear
-    ↓
-Doc 4 retrieved: operator noted amps + vibration 2 days ago — confirms progressive trend
-    ↓
-Doc 5 retrieved: workover 8 weeks ago confirmed, no prior anomalies in 24 months
-    ↓
-GDC VERDICT: "Bearing contamination from well fluid ingress through seal degraded by
-incompatible workover fluid. Root cause: {VENDOR} {PRODUCT_CODE} (synthetic ester class)
-incompatible with Buna-N seals per OEM matrix. Correct action: flush + reseal protector
-(~$8k-$15k) — NOT pump pull. Bearing wear is real but caused by the ingress pathway,
-not mechanical wear age."
+GDC VERDICT: "Paraffin/wax deposition in production tubing — NOT bearing wear. Hot-oil PM treatment
+52 days overdue (last: Day 0, due: Day 90). Vendor delay logged. PVT confirms WAT 118°F, 8.3% wax content.
+PIP rising is the hydraulic signature of tubing restriction (restriction → lower flow → less drawdown → PIP ↑).
+Temperature flat confirms hydraulic restriction, not mechanical bearing wear (which would generate friction/heat).
+Prior pull record confirms bearings were normal — age hypothesis eliminated. Correct action: hot-oil truck
+(~$3k–$6k, surface-only, no pull). Pump pull (~$70k–$100k) addresses bearing symptom only; wax remains."
 ```
-
----
-
-## Open Items (carry forward to NEXT_SESSION_PROMPT)
-
-1. **H2-C1 flush+reseal cost ~$8k–$15k** — still 🔴 NEEDS-EXPERT. Display as soft range.
-   No hard public source found in two Gemini searches. Cannot harden without OEM field
-   service quote.
-
-2. **H1 static seed date-templating** — H1 field_intel documents (sonic log, shift note,
-   GOR lab report) still have hardcoded dates. Address as part of H1 Batch B remediation
-   (see DEMO_MASTER §8). Apply same Python date-templating pattern.
-
-3. **H3 static seeds** — Check if H3 has any date-bearing static documents. Apply pattern
-   if needed.
