@@ -1,3 +1,4 @@
+console.log("=== app.js executing ===");
 const { createApp } = Vue;
 
 const SITES = {
@@ -2303,3 +2304,4 @@ createApp({
     this.stopDegPoll();
   },
 }).mount('#app');
+console.log("=== app.js mounted successfully ===");
