@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-15 / git head: e1b51f6 / branch: feature-trio-clean
-Image: sha256:aac8fecc64ab962bab6dd9c20ce62d7438105eedacb2bd595b2c554dd438fa10
+Date: 2026-06-15 / git head: 6e42e35 / branch: feature-trio-clean
+Image: sha256:b2971a3fa40ad2eb9e8eafe54397547c561c6645c5032c698642d9b2338d972f
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -20,29 +20,29 @@ Expected when healthy:
 cat docs/DEMO_MASTER.md
 ```
 
-## STEP 3: Session Priority — H1 Briefing Panel Redesign (16:9 / video-ready)
+## STEP 3: Session Priority — H2 + H3 Briefing Panel Redesign (inherit H1 conventions)
 
-All panel changes spec'd this session. Locked conventions (H1 first, H2/H3 inherit):
+H1 briefing redesign complete and deployed (`6e42e35`). The locked conventions now apply to H2 and H3:
+
+**H1 conventions (locked — inherit for H2/H3):**
 - **16:9 slide-native**: scale body content to fill frame; title sizes unchanged
-- **Kicker = beat-name only** (drop "Panel N of M"): THE SCENARIO / THE EVENT / THE HOOK / THE MOAT / THE DECISION / THE PLATFORM
-- **Statements not quotes**: un-quote demo's own assertions; keep attributed quotes (shift notes)
-- **Entry panels top-anchored**: text top, scenario visual below; business lead-in merged into Panel 1
+- **Kicker = beat-name only**: H2 → THE WELL / THE SIGNATURE / THE DECISION; H3 → THE OPPORTUNITY / THE TRADEOFF / THE OPTIMIZATION
+- **Statements not quotes**: un-quote demo's own assertions; keep attributed quotes (shift notes, SME)
+- **Entry panels top-anchored**: text top, scenario visual below; business lead-in in Panel 1
 
-### Panel-by-panel (tab_h1.html):
-| Panel | Change |
-|---|---|
-| P1 | kicker→"THE SCENARIO", title→"Same Signal. Two Causes. One Right Decision.", top-anchored, business lead-in merged, metrics below text |
-| P2 | density fill (tiles too sparse; enlarge heights/text/bars) |
-| P3 | wellbore art: zoom to pump intake; gas-lock = dispersed bubbles at intake, annulus HIGH (NOT amber rect at top); drawdown = fluid level dropping below intake, sand only on VFD trim |
-| P4 | density fill (STATE/CONTEXT rows top-packed; grow to fill frame) |
-| P5 | density fill — CRITICAL MESSAGE; action cards much taller; closing = full-width hero line |
-| P6 | density fill; REMOVE centered "Run the Scenario" (keep footer nav button only) |
-| ⓘ | Integrity fix: retire "physically identical / no sensor can disambiguate" → "genuinely ambiguous on an intake-only string in the early decision window" (DEMO_MASTER §4.1 PREMISE ledger row) |
+### H2 panel-by-panel (tab_h2.html):
+| Panel | Kicker | Change |
+|---|---|---|
+| P1 | THE WELL | Top-anchored; well spec + WAT/wax chemistry card; business lead-in ($70k–$100k averted) |
+| P2 | THE SIGNATURE | Timeline strip density fill; 4 sensor tiles larger; two-tier SCADA/APM callout |
+| P3 | THE DECISION | GDC verdict card; action cards taller (hot-oil ~$3–6k vs pull ~$70–100k); doc stack |
 
-### 3-persona video plan (all personas cover H1+H2+H3):
-- P1 Business: Operator (ESPs, lifting costs) + Halliburton (market share capture)
-- P2 Product: capabilities customers need; HAL advantage if competitors lack them
-- P3 Technical: Google Cloud + GDC + Gemini — build better/easier/faster/cheaper
+### H3 panel-by-panel (tab_h3.html):
+| Panel | Kicker | Change |
+|---|---|---|
+| P1 | THE OPPORTUNITY | 6-well GOR table density fill |
+| P2 | THE TRADEOFF | Constraint stack taller; SCADA honest framing |
+| P3 | THE OPTIMIZATION | GOR-ranked Hz table; uplift card; closing "Cloud searches. Edge enforces." |
 
 ### Build / deploy commands:
 ```bash
@@ -57,7 +57,7 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
 ## Known Integrity Issues
 | Issue | Status |
 |-------|--------|
-| ⓘ Physics panel: "physically identical / no sensor can disambiguate" | 🔴 OPEN — fix next session |
+| ⓘ Physics panel: "physically identical / no sensor can disambiguate" | ✅ RESOLVED — `6e42e35` |
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
