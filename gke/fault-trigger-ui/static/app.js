@@ -1479,16 +1479,16 @@ createApp({
       if (!this.h1ReplayData) return;
       try {
         const t = this.h1ReplayData.t_min[idx] || 0;
-        // shapes[0] = alarm marker (red dashed), shapes[1] = cursor (grey dotted)
-        Plotly.relayout('h1-replay-chart', { 'shapes[1].x0': t, 'shapes[1].x1': t });
+        // shapes[0] = GDC detect (amber), shapes[1] = SCADA alarm (red), shapes[2] = cursor (grey)
+        Plotly.relayout('h1-replay-chart', { 'shapes[2].x0': t, 'shapes[2].x1': t });
       } catch(e) {}
     },
     _renderH1ReplayChart() {
       const d = this.h1ReplayData;
       if (!d || !d.psi || !d.amps) return;
       const cursorT = d.t_min[this.h1CursorIdx] || 0;
-      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;  // metadata only — not drawn as separate marker
-      const scadaT  = d.t_min[d.alarm_idx]        || 0;  // single shared alarm moment
+      const gdcT    = d.t_min[d.gdc_detect_idx]  || 0;  // amber pre-threshold detect marker
+      const scadaT  = d.t_min[d.alarm_idx]        || 0;  // red threshold alarm marker
       const xMax    = d.t_min[d.n - 1] || 30;
 
       // ── 4 stacked subplots sharing the same x-axis ───────────────────────
@@ -1507,8 +1507,11 @@ createApp({
           line: {color:'#a78bfa', width:1.8}, xaxis:'x', yaxis:'y4', showlegend:true },
       ];
 
-      // Single shared alarm marker spans all 4 subplots + grey cursor line
+      // shapes[0]=GDC detect (amber), shapes[1]=SCADA alarm (red), shapes[2]=cursor (grey)
+      // All span full paper height — visually cross all 4 sensor subplots
       const shapes = [
+        { type:'line', x0:gdcT,    x1:gdcT,    y0:0, y1:1, xref:'x', yref:'paper',
+          line:{color:'rgba(251,191,36,0.85)',  width:2, dash:'dash'} },
         { type:'line', x0:scadaT,  x1:scadaT,  y0:0, y1:1, xref:'x', yref:'paper',
           line:{color:'rgba(239,68,68,0.88)',   width:2, dash:'dash'} },
         { type:'line', x0:cursorT, x1:cursorT, y0:0, y1:1, xref:'x', yref:'paper',
@@ -1516,7 +1519,12 @@ createApp({
       ];
 
       const annotations = [
-        // Single alarm label — top of paper
+        // GDC pre-threshold multivariate detect (amber) — fires before any threshold is crossed
+        { x:gdcT, y:1.01, xref:'x', yref:'paper', text:'<b>GDC</b>',
+          showarrow:false, xanchor:'left', yanchor:'bottom',
+          font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
+        // SCADA threshold alarm (red) — fires when a hard setpoint is crossed
         { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>ALARM</b>',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
