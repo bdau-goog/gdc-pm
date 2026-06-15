@@ -20,16 +20,32 @@ Expected when healthy:
 cat docs/DEMO_MASTER.md
 ```
 
-## STEP 3: Next Implementation Task
-The app is restored and verified working (2026-06-15).
+## STEP 3: Session Priority Order (next session)
 
-### Critical issues resolved this session:
-1. **Blank page fix (DONE):** `app.js` was trapped in an inert `<template>` element because `<template v-if="h2VerdictRevealed">` at line ~2143 in the H2 scenario replay section was never properly closed, causing Chrome to treat all following content (including `</div><!-- #app -->` and `<script src="/static/app.js">`) as template content. **Fix:** moved `<script src="/static/app.js" defer></script>` to `<head>`. Defer scripts are immune to template trapping. Deployed and verified: `hasCloak=false`, `display=block`, `height=720` — Vue mounts.
-2. **Image pinning (DONE):** The running k8s deployment was pinned to a specific SHA digest. Fixed with `kubectl set image deployment/fault-trigger-ui ... :latest`.
+The app is restored and working (2026-06-15). Session priority order is fixed:
 
-### Next tasks (from DEMO_MASTER.md §12):
-- The H2 GDC Advisor view has structural HTML issues (unclosed `<template>` blocks in Zone 1 section). The app works but the H2 advisor view likely doesn't render correctly. Address in next session.
-- Review if a file split (index.html → separate tab files) should be prioritized to prevent recurrence.
+### Priority 1 — Tab Modularization (DO FIRST — prevents recurrence)
+Split `index.html` into per-tab template files to eliminate the unclosed-template trap permanently. The 3,700-line monolith is the root cause of this class of failures — a missing `</template>` on line 2143 of 3,700 silenced the entire app for 4 days.
+
+**Approach (no build pipeline needed):**
+- Extract H1, H2, H3, Architecture, Financials each into `gke/fault-trigger-ui/templates/tab_h1.html`, `tab_h2.html`, etc.
+- Modify `app.py`'s home route to assemble them at request time (Jinja2 includes or simple string concatenation)
+- Each tab file is now ~500 lines — manageable, readable, and independently verifiable
+- Add a `npm run verify` gate that uses Playwright to assert `hasCloak=false` after load — blocks any bad build
+
+### Priority 2 — UI Review
+After modularization, do a full tab-by-tab visual review of the live app:
+- Confirm H1 Discern briefing + scenario replay render correctly
+- Confirm H2 Classify briefing + paraffin/wax scenario render correctly (H2 GDC Advisor Zone 1 had a structural div issue — may not render perfectly)
+- Confirm H3 Optimize dashboard is functional
+- Note any visual regressions to fix
+
+### Priority 3 — Narrative Issues
+After UI review, fix any issues identified in the H1/H2/H3 narratives or scenario content.
+
+### What was fixed this session (for reference):
+1. **Blank page fix (DONE):** `app.js` moved to `<head defer>` — immune to template trapping. Verified: `hasCloak=false`, `display=block`, `height=720`, 6 tab panels in DOM.
+2. **Image pinning (DONE):** k8s deployment was SHA-pinned; fixed with `kubectl set image ... :latest`.
 
 ## Known Integrity Issues
 | Issue | Fix Deadline |
