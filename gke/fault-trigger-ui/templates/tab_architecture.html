@@ -1,0 +1,769 @@
+        <!-- ══ TAB: ARCHITECTURE ══ -->
+    <div id="tab-architecture" class="main-tab-content" :class="{active: mainTab==='architecture'}">
+      <div style="background:#1c1400;border:1px solid #78350f;color:#fbbf24;padding:6px 16px;font-size:0.72rem;font-weight:600;letter-spacing:0.04em;border-radius:0">
+        ⚠ Walkthrough Example — not live data · Values shown illustrate a single pipeline execution
+      </div>
+      <div class="arch-outer">
+
+        <!-- Sub-tab navigation bar -->
+        <div class="arch-sub-nav">
+          <div class="arch-sub-tab" :class="{active: archPane==='overview'}" @click="archPane='overview';archInfoOpen=false">
+            <span class="ast-num">1</span> System Overview
+          </div>
+          <div class="arch-sub-tab" :class="{active: archPane==='ingestion'}" @click="archPane='ingestion';archInfoOpen=false">
+            <span class="ast-num">2</span> Data Ingestion
+          </div>
+          <div class="arch-sub-tab" :class="{active: archPane==='detection'}" @click="archPane='detection';archInfoOpen=false">
+            <span class="ast-num">3</span> ML Detection
+          </div>
+          <div class="arch-sub-tab" :class="{active: archPane==='context'}" @click="archPane='context';archInfoOpen=false">
+            <span class="ast-num">4</span> Context Fusion
+          </div>
+          <div class="arch-sub-tab" :class="{active: archPane==='reasoning'}" @click="archPane='reasoning';archInfoOpen=false">
+            <span class="ast-num">5</span> AI Reasoning
+          </div>
+          <div class="arch-sub-tab" :class="{active: archPane==='operator'}" @click="archPane='operator';archInfoOpen=false">
+            <span class="ast-num">6</span> Operations
+          </div>
+        </div>
+
+        <!-- ── Pane 1: System Overview ── -->
+        <div class="arch-pane" :class="{active: archPane==='overview'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>GDC Edge AI — Complete Pipeline</h2>
+              <p>End-to-end view of how sensor telemetry becomes actionable maintenance intelligence, entirely on-cluster with no public cloud dependency.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 1 -->
+          <div v-if="archInfoOpen && archPane==='overview'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🌐 Deployment Location: Operator RTOC / Sovereign Data Center</div>
+              <ul>
+                <li>GDC runs on customer-provided hardware co-located inside the operator's <strong>Real-Time Operations Center (RTOC)</strong> or corporate data center — inside the IT/OT security perimeter, serving multiple assets over the existing production network.</li>
+                <li>The decision-maker authorizing a well shut-in or VFD trim sits in the RTOC, not at the pad. Shale pads are typically unmanned; lease operators run drive-by routes. VFD commands are executed remotely from the RTOC, or by dispatched field personnel.</li>
+                <li>All sensors stream to GDC over the <strong>existing production network</strong> at 5-second cadence. GDC transmits only insights (kilobytes) outbound — never raw telemetry.</li>
+                <li>The full document corpus (shift notes, lab reports, work orders, sonic surveys) converges naturally at the RTOC — the ideal ingestion point for L3 context fusion.</li>
+              </ul>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">⚙️ GKE Cluster Components (On-Prem)</div>
+              <ul>
+                <li><strong>RabbitMQ</strong> — Durable message broker; survives pod restarts without data loss</li>
+                <li><strong>Inference API</strong> — XGBoost ML model serving via FastAPI; deterministic, explainable anomaly detection</li>
+                <li><strong>AlloyDB Omni</strong> — PostgreSQL + pgvector; unified store for telemetry, ML outputs, and RAG documents</li>
+                <li><strong>Ollama + Gemma 4 8B</strong> — Local LLM on NVIDIA L4 GPU; RAG synthesis and fault reasoning</li>
+                <li><strong>Fault Trigger UI</strong> — Demo control console + live operator interface</li>
+                <li><strong>Event Processor</strong> — RabbitMQ consumer; routes telemetry to ML inference and AlloyDB</li>
+              </ul>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🔒 Why Sovereign — Not Public Cloud?</div>
+              <ul>
+                <li><strong>Pillar 1 — Isolation &amp; self-sufficiency (IEC 62443 / Purdue Model):</strong> OT/production data must not cross the public internet under the operator's OT-security policy. The AI must also keep functioning when the outside link is severed — a satellite or WAN drop during a process upset is a real scenario. Local corpus + local inference is outage-immune by design. <em>Note: NERC-CIP CIP-005/007 applies to Power &amp; Energy Bulk Electric System assets — not upstream O&amp;G.</em></li>
+                <li><strong>Pillar 2 — Data residency &amp; sovereignty:</strong> Reservoir and production data is commercially sensitive. Many NOCs and regulated jurisdictions require it to remain in-country and off public multi-tenant cloud. GDC co-locates compute with the data — it never moves.</li>
+                <li><strong>Pillar 3 — Governance &amp; IP:</strong> Open-weight Gemma on GDC means proprietary prompts (live telemetry + field documents) never transit a third-party model API and are never externally logged or exposed.</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+            <!-- Full-width flow diagram -->
+            <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap;margin-bottom:18px">
+
+              <div class="arch-stage stage-sensor" style="flex:1;min-width:110px;overflow:hidden">
+                <div class="arch-stage-title">📡 1. Field Sensors</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-blue"><span>Pump Intake Pressure</span></div>
+                  <div class="arch-chip chip-orange"><span>Winding Temp</span></div>
+                  <div class="arch-chip chip-orange"><span>Vibration</span></div>
+                  <div class="arch-chip chip-blue"><span>Motor Amps</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <div class="arch-stage stage-broker" style="flex:1;min-width:110px;overflow:hidden">
+                <div class="arch-stage-title">📨 2. Message Bus</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-orange"><span>RabbitMQ Broker</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <div class="arch-stage stage-ml" style="flex:1;min-width:110px;overflow:hidden">
+                <div class="arch-stage-title">⚡ 3. ML Anomaly Detection</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-orange"><span>XGBoost Health Score</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <div class="arch-stage stage-db" style="flex:1;min-width:110px;overflow:hidden">
+                <div class="arch-stage-title">🗄 4. Context Store</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:3px">
+                  <div class="arch-chip chip-purple"><span>Technical Library</span></div>
+                  <div class="arch-chip chip-blue"><span>Operations Reports</span></div>
+                  <div class="arch-chip chip-orange"><span>Model-Based RUL</span></div>
+                </div>
+                <div style="font-size:0.75rem;color:rgba(255,255,255,0.2);text-align:center;margin:3px 0">↓</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:3px">
+                  <div class="arch-chip chip-blue" style="border-width:2px"><span>AlloyDB</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <div class="arch-stage stage-llm" style="flex:1;min-width:110px;overflow:hidden">
+                <div class="arch-stage-title">🧠 5. AI Context Fusion</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-purple"><span>Gemma 4 8B</span></div>
+                </div>
+                <div style="font-size:1.1rem;color:rgba(255,255,255,0.2);text-align:center;margin:4px 0">↓</div>
+                <div style="display:flex;flex-direction:column;gap:3px">
+                  <div class="arch-chip chip-orange"><span>AI-Based RUL</span></div>
+                  <div class="arch-chip chip-green"><span>Actions</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <div class="arch-stage stage-ui" style="flex:1;min-width:110px;overflow:hidden">
+                <div class="arch-stage-title">👤 6. Operations</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Control Room HMI</span></div>
+                  <div class="arch-chip chip-orange"><span style="font-size:0.62rem">Early AI Alarms</span></div>
+                  <div class="arch-chip chip-green"><span style="font-size:0.62rem">HITL Decision</span></div>
+                  <div class="arch-chip chip-green"><span style="font-size:0.62rem">Proactive Dispatch</span></div>
+                </div>
+              </div>
+
+            </div><!-- flow row -->
+
+            <!-- ── SCADA Legacy Path (6-box mirrored) ── -->
+            <div style="display:flex;align-items:center;gap:10px;margin:14px 0 6px;padding:5px 14px;background:rgba(60,80,100,0.07);border:1px solid rgba(90,110,140,0.25);border-radius:6px">
+              <span style="font-size:0.63rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.09em">🛢 Traditional SCADA Path</span>
+              <span style="font-size:0.58rem;color:var(--muted);font-style:italic">— control-layer telemetry path · threshold alarms &amp; setpoints · advanced APM platforms add ML on top</span>
+            </div>
+
+            <div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap">
+
+              <!-- S1: Field Sensors (same hardware) -->
+              <div class="arch-stage stage-sensor" style="flex:1;min-width:110px;overflow:hidden;opacity:0.75">
+                <div class="arch-stage-title">📡 1. Field Sensors</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-blue"><span>Pump Intake Pressure</span></div>
+                  <div class="arch-chip chip-orange"><span>Winding Temp</span></div>
+                  <div class="arch-chip chip-orange"><span>Vibration</span></div>
+                  <div class="arch-chip chip-blue"><span>Motor Amps</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <!-- S2: Message Bus (slow WAN poll) -->
+              <div class="arch-stage stage-broker" style="flex:1;min-width:110px;overflow:hidden;opacity:0.75">
+                <div class="arch-stage-title">📨 2. Message Bus</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-orange"><span>RTU → WAN Backhaul</span></div>
+                  <div class="arch-chip chip-muted"><span style="font-size:0.62rem">15-min downsampled poll</span></div>
+                </div>
+              </div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <!-- S3: Empty placeholder — no ML -->
+              <div style="flex:1;min-width:110px;visibility:hidden"></div>
+
+              <div style="display:flex;align-items:center;font-size:1.4rem;padding-top:10px;visibility:hidden">→</div>
+
+              <!-- S4: Empty placeholder — no context -->
+              <div style="flex:1;min-width:110px;visibility:hidden"></div>
+
+              <div style="display:flex;align-items:center;font-size:1.4rem;padding-top:10px;visibility:hidden">→</div>
+
+              <!-- S5: Empty placeholder — no AI -->
+              <div style="flex:1;min-width:110px;visibility:hidden"></div>
+
+              <div style="display:flex;align-items:center;color:rgba(255,255,255,0.2);font-size:1.4rem;padding-top:10px">→</div>
+
+              <!-- S6: Operations (alarm-based) -->
+              <div class="arch-stage stage-ui" style="flex:1;min-width:110px;overflow:hidden;opacity:0.8">
+                <div class="arch-stage-title">🖥 6. Operations</div>
+                <div class="arch-stage-body" style="flex-direction:column;gap:4px">
+                  <div class="arch-chip chip-muted"><span style="font-size:0.62rem">SCADA Historian</span></div>
+                  <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Threshold Alerts</span></div>
+                  <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Operator Notification</span></div>
+                  <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Dispatch</span></div>
+                </div>
+              </div>
+
+            </div><!-- scada flow row -->
+
+            <!-- Key differentiator comparison cards (restored) -->
+            <div class="arch-compare-row" style="margin-top:16px">
+              <div class="arch-compare-card acc-scada">
+                <div class="acc-title acc-title-scada">🛢 Traditional SCADA Only</div>
+                <ul class="acc-items">
+                  <li class="no">Single-threshold alarm only</li>
+                  <li class="no">15-min downsampled WAN poll</li>
+                  <li class="no">No unstructured data fusion</li>
+                  <li class="no">Reactive emergency dispatch</li>
+                </ul>
+              </div>
+              <div class="arch-compare-card acc-gdc">
+                <div class="acc-title acc-title-gdc">⚡ GDC Edge AI (Sovereign RTOC)</div>
+                <ul class="acc-items">
+                  <li class="yes">Reads field documents (shift notes, sonic logs, GOR reports)</li>
+                  <li class="yes">Resolves physically ambiguous faults sensors alone cannot</li>
+                  <li class="yes">5s local stream — no WAN needed</li>
+                  <li class="yes">Learned risk scoring — not fixed thresholds</li>
+                </ul>
+              </div>
+            </div>
+            <div style="margin:6px 0 12px;padding:5px 14px;background:rgba(10,30,55,0.35);border:1px solid rgba(74,144,200,0.2);border-radius:5px;font-size:0.58rem;color:var(--muted);font-style:italic;text-align:center">Runs inside the operator's security perimeter — IEC 62443 / Purdue Model (O&amp;G, manufacturing) · NERC-CIP (Power &amp; Energy BES only) · sovereign, outage-immune</div>
+            <!-- Tags vs Tag-Patterns vs Documents — 3-tier comparison centerpiece -->
+            <div style="margin-top:14px;background:rgba(10,20,35,0.6);border:1px solid rgba(74,144,200,0.25);border-radius:6px;padding:12px 16px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:0.63rem;font-weight:700;color:#7ab8e8;letter-spacing:0.07em;margin-bottom:10px">TAGS vs. TAG-PATTERNS vs. DOCUMENTS — Three Detection Tiers</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <div style="background:rgba(60,80,100,0.12);border:1px solid rgba(100,140,180,0.18);border-radius:5px;padding:10px 12px">
+                  <div style="font-size:0.63rem;font-weight:700;color:#94a3b8;margin-bottom:4px">🛢 Threshold SCADA</div>
+                  <div style="font-size:0.59rem;color:#64748b;line-height:1.5">Monitors <strong style="color:#94a3b8">tags</strong> against fixed setpoints. Alarms when a threshold is crossed. Cannot distinguish gas lock from drawdown on the same PIP/Amps decline.</div>
+                </div>
+                <div style="background:rgba(60,80,100,0.12);border:1px solid rgba(100,140,180,0.18);border-radius:5px;padding:10px 12px">
+                  <div style="font-size:0.63rem;font-weight:700;color:#94a3b8;margin-bottom:4px">📊 Advanced APM Platforms</div>
+                  <div style="font-size:0.59rem;color:#64748b;line-height:1.5">Monitors <strong style="color:#94a3b8">tag patterns</strong> across sensors — adaptive ML, retraining workflows. Still cannot resolve a fault where the sensor signature is physically ambiguous.</div>
+                </div>
+                <div style="background:rgba(10,30,55,0.4);border:1px solid rgba(74,222,128,0.3);border-radius:5px;padding:10px 12px">
+                  <div style="font-size:0.63rem;font-weight:700;color:#4ade80;margin-bottom:4px">⚡ GDC Edge AI</div>
+                  <div style="font-size:0.59rem;color:#86efac;line-height:1.5">Monitors tags and patterns and <strong>reads the documents</strong> — the only tier that resolves a fault where the sensor signature is physically ambiguous. The disambiguation exists only in a field document.</div>
+                </div>
+              </div>
+              <div style="margin-top:8px;padding:6px 10px;border-top:1px solid rgba(74,144,200,0.15);font-size:0.58rem;color:var(--muted);font-style:italic">This pattern is not oilfield-specific — the same STATE-vs-CONTEXT gap applies wherever unstructured operational knowledge is the missing tier: Power &amp; Energy (transformer logs, loading plans), manufacturing (lubrication records, OEM bulletins), mining (service history, haul-road reports).</div>
+            </div>
+          </div>
+        </div><!-- pane overview -->
+
+        <!-- ── Pane 2: Data Ingestion ── -->
+        <div class="arch-pane" :class="{active: archPane==='ingestion'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>Data Ingestion — Regional Field Network to Edge Bus</h2>
+              <p>High-frequency telemetry from 38 ESP wells across 6 pads flows over the local field-mesh network to the RabbitMQ edge broker every 5 seconds, completely bypassing the slow WAN backhaul to central SCADA.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 2 -->
+          <div v-if="archInfoOpen && archPane==='ingestion'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">📡 Sensor Physics</div>
+              <ul>
+                <li><strong style="color:var(--blue)">Pump Intake Pressure (PIP)</strong> — Pump inlet pressure. Drop below 180 PSI indicates gas lock or low reservoir pressure (though positive reservoir pressure must be maintained to prevent pump cavitation). Nominal: 220–280 PSI.</li>
+                <li><strong style="color:var(--orange)">Winding Temp °F</strong> — Motor insulation health. Derated operating setpoint: 280°F (Class H insulation rated 356°F / 180°C, IEC 60085). Gas lock causes heat buildup as the motor runs dry.</li>
+                <li><strong style="color:var(--orange)">Vibration mm/s</strong> — Impeller/bearing wear indicator. Nominal: &lt;0.05 mm/s. Failure threshold: &gt;0.50 mm/s (ISO 10816-3).</li>
+                <li><strong style="color:var(--blue)">Motor Amps</strong> — VFD current draw. Rising trend = increasing mechanical resistance (sand ingress, scale buildup).</li>
+              </ul>
+              <div class="arch-callout callout-blue">All 4 sensors are correlated simultaneously by the XGBoost model. No single sensor in isolation is sufficient to detect faults early — it's the pattern across all four that matters.</div>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🔌 Why RabbitMQ?</div>
+              <ul>
+                <li>Durable queues survive pod restarts without data loss — critical for unattended well-pad operations</li>
+                <li>Topic exchange allows multiple consumers (ML inference, SCADA historian, Grafana) from the same message stream</li>
+                <li>Tested at 12 messages/second sustained throughput per pod on this cluster</li>
+              </ul>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">📶 Local Field Network vs. WAN</div>
+              <ul>
+                <li>The 5s telemetry stream is pulled over a local high-speed field-mesh network within the pad facility — no WAN link involved in data acquisition</li>
+                <li>Central SCADA in headquarters polls the field network over an existing WAN link — GDC's sovereign deployment means the AI decision never depends on that link being available</li>
+                <li>GDC protects the WAN link by transmitting only insights (kilobytes), not raw telemetry (gigabytes)</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+            <!-- Regional field network -->
+            <div class="arch-stage stage-sensor" style="margin-bottom:12px">
+              <div class="arch-stage-title">📡 Regional Field Network — 38 ESP Wells Aggregated</div>
+              <div class="arch-stage-body" style="flex-wrap:wrap;gap:6px">
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Alpha</span><span class="arch-chip-val">6 Wells</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Bravo</span><span class="arch-chip-val">8 Wells</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Charlie</span><span class="arch-chip-val">4 Wells</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Delta</span><span class="arch-chip-val">6 Wells</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Echo</span><span class="arch-chip-val">8 Wells</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Pad Foxtrot</span><span class="arch-chip-val">6 Wells</span></div>
+              </div>
+              <div style="font-size:0.6rem;color:var(--muted);margin-top:8px;font-style:italic">GDC Software Only on customer hardware · Operator RTOC or sovereign data center · Local production network (no public-cloud dependency)</div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">High-speed local field-mesh · 5s continuous telemetry stream · bypasses slow WAN backhaul</span></div>
+
+            <!-- Telemetry payload -->
+            <div class="arch-stage stage-db" style="margin-bottom:12px">
+              <div class="arch-stage-title">📦 Telemetry Payload (per reading, per well)</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Intake</span><span class="arch-chip-val">PSI</span></div>
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Winding</span><span class="arch-chip-val">Temp °F</span></div>
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Vibration</span><span class="arch-chip-val">mm/s</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">VFD</span><span class="arch-chip-val">Motor Amps</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Source</span><span class="arch-chip-val">asset_id</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Type</span><span class="arch-chip-val">fault_label</span></div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Published to sensor.reading routing key</span></div>
+
+            <!-- Broker -->
+            <div class="arch-stage stage-broker" style="margin-bottom:12px">
+              <div class="arch-stage-title">📨 RabbitMQ Edge Broker</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Exchange</span><span class="arch-chip-val">telemetry (topic)</span></div>
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Queue</span><span class="arch-chip-val">telemetry.events</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Durability</span><span class="arch-chip-val">Persistent</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Consumers</span><span class="arch-chip-val">Event Processor</span></div>
+              </div>
+            </div>
+
+            <!-- Two parallel consumers -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+
+              <!-- Path A: GDC AI -->
+              <div>
+                <div class="arch-connector" style="margin-bottom:8px">↓ <span class="arch-connector-label">GDC Edge AI path</span></div>
+                <div class="arch-stage stage-ml">
+                  <div class="arch-stage-title" style="font-size:0.65rem">⚡ Event Processor (GDC)</div>
+                  <div class="arch-stage-body" style="flex-direction:column;gap:4px;margin-top:4px">
+                    <div class="arch-chip chip-orange"><span style="font-size:0.62rem">XGBoost inference → AI-Based RUL</span></div>
+                    <div class="arch-chip chip-purple"><span style="font-size:0.62rem">RAG context → Gemma 4 8B</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Path B: SCADA HMI -->
+              <div>
+                <div class="arch-connector" style="margin-bottom:8px">↓ <span class="arch-connector-label">SCADA path (legacy)</span></div>
+                <div class="arch-stage stage-scada" style="opacity:0.85">
+                  <div class="arch-stage-title" style="font-size:0.65rem">🖥 SCADA RTU Subscriber</div>
+                  <div class="arch-stage-body" style="flex-direction:column;gap:4px;margin-top:4px">
+                    <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Downsampled 15-min averages</span></div>
+                    <div class="arch-chip chip-muted"><span style="font-size:0.62rem">Threshold alarms → Operator HMI</span></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Demo note -->
+            <div class="arch-stage stage-scada" style="opacity:0.65;border-style:dashed;margin-top:12px">
+              <div class="arch-stage-title" style="color:var(--muted)">⚙️ Fault Injector (Demo Only)</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-muted"><span>Overrides nominal sensor values to simulate fault conditions</span></div>
+                <div class="arch-chip chip-muted"><span>In production: replaced by real VFD/PLC OPC-UA feed</span></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- pane ingestion -->
+
+        <!-- ── Pane 3: ML Detection ── -->
+        <div class="arch-pane" :class="{active: archPane==='detection'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>ML Anomaly Detection — XGBoost Health Scoring</h2>
+              <p>A trained XGBoost model ingests 6 input features (4 sensor readings + 2 rolling rate-of-change slopes) and outputs a Health Score from 1.0 (nominal) to 0.0 (failure). Learned risk scoring — not fixed thresholds. Against best-of-breed predictive platforms, detection converges; document fusion is GDC's categorical edge.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 3 -->
+          <div v-if="archInfoOpen && archPane==='detection'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🤖 How XGBoost Works Here</div>
+              <ul>
+                <li>Trained on 10,000+ labelled fault signatures per asset class</li>
+                <li>Gradient-boosted decision trees — deterministic, explainable, not a neural network black-box</li>
+                <li>One model per asset class: <code style="font-family:var(--mono)">esp_health.ubj</code>, <code style="font-family:var(--mono)">gas_lift_health.ubj</code>, etc.</li>
+                <li>Health Score of 0.34 = 66% degraded. SCADA single-threshold alarm not triggered yet.</li>
+                <li>Key: SCADA uses absolute thresholds. XGBoost uses correlated trends across all 4 sensors simultaneously.</li>
+              </ul>
+              <div class="arch-callout callout-orange">PSI at 185 is "normal" in isolation. PSI declining at 2.4 PSI/min while temp and amps rise simultaneously is a gas_lock signature. XGBoost detects the pattern; SCADA cannot.</div>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">📐 RUL Calculation</div>
+              <ul>
+                <li>Health Score is converted to RUL via fault-physics degradation curves calibrated per fault type</li>
+                <li>Exponential weighted average (EWA) over 10 readings smooths out sensor noise</li>
+                <li>Base RUL = time until Health Score would reach the SCADA alarm threshold (0.15)</li>
+                <li>This Base RUL is then refined by the Edge LLM in Pane 5 using retrieved context</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+            <!-- Input features -->
+            <div class="arch-stage stage-sensor" style="margin-bottom:12px">
+              <div class="arch-stage-title">📥 Model Input — 6 Features per Reading</div>
+              <div class="arch-sensor-grid" style="margin-top:4px">
+                <div class="arch-sensor-row">
+                  <div class="asr-label">Intake PSI</div>
+                  <div class="asr-val asr-anomaly">185 PSI <span class="asr-trend">↘</span></div>
+                </div>
+                <div class="arch-sensor-row">
+                  <div class="asr-label">Winding Temp</div>
+                  <div class="asr-val asr-anomaly">218 °F <span class="asr-trend">↗</span></div>
+                </div>
+                <div class="arch-sensor-row">
+                  <div class="asr-label">Vibration</div>
+                  <div class="asr-val asr-anomaly">0.41 mm/s <span class="asr-trend">↗</span></div>
+                </div>
+                <div class="arch-sensor-row">
+                  <div class="asr-label">Motor Amps</div>
+                  <div class="asr-val asr-anomaly">63.2 A <span class="asr-trend">↗</span></div>
+                </div>
+                <div class="arch-sensor-row">
+                  <div class="asr-label">dPSI/dt (slope)</div>
+                  <div class="asr-val asr-anomaly">−2.4 PSI/min</div>
+                </div>
+                <div class="arch-sensor-row">
+                  <div class="asr-label">dTemp/dt (slope)</div>
+                  <div class="asr-val asr-anomaly">+1.8 °F/min</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">XGBoost inference — Inference API pod (FastAPI) · deterministic · explainable</span></div>
+
+            <!-- Model output -->
+            <div class="arch-stage stage-ml" style="margin-bottom:12px">
+              <div class="arch-stage-title">⚡ XGBoost Model Output</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Fault Label</span><span class="arch-chip-val">gas_lock</span></div>
+                <div class="arch-chip chip-red"><span class="arch-chip-label">Health Score</span><span class="arch-chip-val">0.34</span></div>
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Confidence</span><span class="arch-chip-val">91.4%</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Base RUL</span><span class="arch-chip-val">22.1 min</span></div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Written to AlloyDB telemetry_events + triggers context retrieval in Pane 4</span></div>
+
+            <!-- SCADA comparison -->
+            <div class="arch-compare-row">
+              <div class="arch-compare-card acc-scada">
+                <div class="acc-title acc-title-scada">SCADA Alarm at same time</div>
+                <ul class="acc-items">
+                  <li class="no">PSI: 185 PSI — Within normal range ✓</li>
+                  <li class="no">Temp: 218°F — Within normal range ✓</li>
+                  <li class="no">Vib: 0.41mm — Within normal range ✓</li>
+                  <li class="no">NO ALARM TRIGGERED</li>
+                </ul>
+              </div>
+              <div class="arch-compare-card acc-gdc">
+                <div class="acc-title acc-title-gdc">GDC ML at same time</div>
+                <ul class="acc-items">
+                  <li class="yes">Correlated 4-sensor degradation pattern</li>
+                  <li class="yes">Rising rate-of-change on 3 of 4 sensors</li>
+                  <li class="yes">91.4% gas_lock confidence</li>
+                  <li class="yes">22 min advance warning issued</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div><!-- pane detection -->
+
+        <!-- ── Pane 4: Context Fusion ── -->
+        <div class="arch-pane" :class="{active: archPane==='context'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>Context Fusion — Three Streams into AlloyDB</h2>
+              <p>AlloyDB Omni unifies three independent data streams: real-time ML assessments, static OEM manual embeddings (RAG), and dynamically-generated field intelligence. The LLM draws from all three simultaneously.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 4 -->
+          <div v-if="archInfoOpen && archPane==='context'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🔍 pgvector Similarity Search</div>
+              <ul>
+                <li>All manual sections are pre-embedded using <code style="font-family:var(--mono)">all-MiniLM-L6-v2</code> (384-dim vectors) at ingestion time</li>
+                <li>At query time: fault label + asset class is embedded, then cosine-similarity search retrieves top-3 relevant sections (<code style="font-family:var(--mono)">embedding <-> query_vec</code>)</li>
+                <li>HNSW index on AlloyDB ensures &lt;10ms retrieval as document count scales</li>
+              </ul>
+              <div class="arch-callout callout-purple">Keyword search for "gas lock" returns all gas lock entries. pgvector semantic search returns the sections most contextually relevant to the specific sensor profile of this fault instance.</div>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🏭 Operations Reports Generation</div>
+              <ul>
+                <li>A background thread generates realistic shift notes, lab reports, and work orders every 2–5 minutes, correlated to the active fault type and live sensor readings</li>
+                <li>This simulates the real-world context an operator would have: recent documentation from the field that augments the static OEM manuals</li>
+                <li>In production, this layer would be replaced by actual CMMS records (SAP PM, IBM Maximo) and real lab reports</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+
+            <!-- Three parallel input streams -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px">
+
+              <!-- Stream 1: Model-Based RUL -->
+              <div class="arch-stage stage-ml">
+                <div class="arch-stage-title" style="font-size:0.65rem">⚡ Stream 1 · Model-Based RUL</div>
+                <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+                  <div class="arch-chip chip-orange"><span style="font-size:0.62rem">gas_lock · Health 0.34 · Base RUL 22.1 min</span></div>
+                  <div class="arch-chip chip-muted"><span style="font-size:0.60rem">24h sensor history + prior detections</span></div>
+                </div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-align:center;margin-top:8px">↓</div>
+              </div>
+
+              <!-- Stream 2: RAG Documents -->
+              <div class="arch-stage stage-llm" style="background:rgba(179,136,255,0.05);border-color:rgba(179,136,255,0.3)">
+                <div class="arch-stage-title" style="font-size:0.65rem;color:#b388ff">📚 Stream 2 · Industry Corpus</div>
+                <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+                  <div class="arch-chip chip-purple"><span style="font-size:0.62rem">ESP System Overview</span></div>
+                  <div class="arch-chip chip-purple"><span style="font-size:0.62rem">Gas Lock — OEM Section</span></div>
+                  <div class="arch-chip chip-purple"><span style="font-size:0.62rem">Motor Current Diagnostics</span></div>
+                </div>
+                <div style="font-size:0.58rem;color:var(--muted);margin-top:4px">18 chunks · 4 manual types</div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-align:center;margin-top:8px">↓</div>
+              </div>
+
+              <!-- Stream 3: Operations Reports -->
+              <div class="arch-stage stage-sensor" style="background:rgba(30,144,255,0.05);border-color:rgba(30,144,255,0.3)">
+                <div class="arch-stage-title" style="font-size:0.65rem">📋 Stream 3 · Operations Reports</div>
+                <div style="display:flex;flex-direction:column;gap:4px;margin-top:6px">
+                  <div class="arch-chip chip-blue"><span style="font-size:0.62rem">Shift Note — GOR elevated</span></div>
+                  <div class="arch-chip chip-blue"><span style="font-size:0.62rem">Lab Report — 8.4% free gas at intake</span></div>
+                  <div class="arch-chip chip-blue"><span style="font-size:0.62rem">Work Order — Prior VFD service</span></div>
+                </div>
+                <div style="font-size:0.58rem;color:var(--muted);margin-top:4px">100+ rows · refreshed every 2–5 min</div>
+                <div style="font-size:0.6rem;font-weight:700;color:var(--muted);text-align:center;margin-top:8px">↓</div>
+              </div>
+            </div>
+
+            <!-- Converging arrows from 3 streams -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:4px">
+              <div style="text-align:center;font-size:1.2rem;color:rgba(255,109,0,0.5)">↓</div>
+              <div style="text-align:center;font-size:1.2rem;color:rgba(179,136,255,0.5)">↓</div>
+              <div style="text-align:center;font-size:1.2rem;color:rgba(30,144,255,0.5)">↓</div>
+            </div>
+            <div class="arch-connector" style="text-align:center;margin-bottom:8px"><span class="arch-connector-label">All three streams unified · semantic query via pgvector</span></div>
+
+            <!-- AlloyDB unified store -->
+            <div class="arch-stage stage-db" style="margin-bottom:12px">
+              <div class="arch-stage-title">🗄 AlloyDB Omni — Unified Context Store</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Table</span><span class="arch-chip-val">telemetry_events</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Table</span><span class="arch-chip-val">industry_corpus (18 rows)</span></div>
+                <div class="arch-chip chip-blue"><span class="arch-chip-label">Table</span><span class="arch-chip-val">ops_reports (100+ rows)</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Index</span><span class="arch-chip-val">HNSW · &lt;10ms retrieval</span></div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Top-3 semantically relevant sections retrieved via cosine similarity · assembled into LLM prompt</span></div>
+
+            <!-- Retrieved context assembled -->
+            <div class="arch-stage stage-llm">
+              <div class="arch-stage-title">📄 Context Assembled for Gemma Prompt</div>
+              <div class="arch-stage-body" style="flex-direction:column;gap:5px">
+                <div class="arch-chip chip-purple"><span>📚 [Industry Corpus] Gas Lock — causes pump cavitation via gas void fraction exceeding 30%...</span></div>
+                <div class="arch-chip chip-blue"><span>📋 [Shift Note] Operator noted elevated GOR on ESP-A1 during previous afternoon tour...</span></div>
+                <div class="arch-chip chip-blue"><span>📋 [Lab Report] Fluid analysis shows 8.4% free gas at pump intake, trending up from 5.1% last week...</span></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- pane context -->
+
+        <!-- ── Pane 5: AI Reasoning ── -->
+        <div class="arch-pane" :class="{active: archPane==='reasoning'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>AI Reasoning — Gemma 4 8B Edge LLM</h2>
+              <p>The assembled context (sensor data + ML prediction + retrieved documents) is submitted to Gemma 4 8B, running on an NVIDIA L4 GPU within the edge cluster, with no internet dependency.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 5 -->
+          <div v-if="archInfoOpen && archPane==='reasoning'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">💡 Why Edge LLM Matters</div>
+              <ul>
+                <li>Cloud LLM APIs (Vertex AI, OpenAI) require a WAN connection and introduce 2–5 second network latency — assuming the link is up</li>
+                <li>A wellsite with 4G failover may have packet loss during a storm — exactly when you need the AI most</li>
+                <li>Sensitive operational data (well test reports, production rates, lab results) never leaves the operator's sovereign boundary</li>
+              </ul>
+              <div class="arch-callout callout-purple">Gemma 4 8B on the L4 GPU achieves comparable reasoning quality to Gemini Flash for structured O&G fault diagnosis, with no public-cloud dependency and full offline operation.</div>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🎯 What the LLM Actually Does</div>
+              <ul>
+                <li>It is <strong style="color:var(--text)">not</strong> doing ML inference — the XGBoost model does that in Pane 3</li>
+                <li>It synthesizes structured sensor data with unstructured text documents to produce a <strong style="color:var(--text)">human-readable diagnosis and action recommendation</strong></li>
+                <li>It adjusts the Base RUL when retrieved context reveals conditions the ML model's training data didn't capture (e.g., accelerating free-gas trend from the lab report)</li>
+                <li>The recommendation is Gemma's output — not a hardcoded rule</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+            <!-- Prompt assembly -->
+            <div class="arch-stage stage-db" style="margin-bottom:12px">
+              <div class="arch-stage-title">📝 Prompt Assembly</div>
+              <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">
+                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span><strong>FAULT:</strong> gas_lock on ESP-ALPHA-1 · Health: 34% · Base RUL: 22.1 min</span></div>
+                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span><strong>SENSORS:</strong> PSI 185↘ · Temp 218°F↗ · Vib 0.41mm↗ · Amps 63.2A↗</span></div>
+                <div class="arch-chip chip-purple" style="font-size:0.65rem"><span><strong>STATIC CORPUS:</strong> [3 OEM manual sections — gas lock, motor current, system overview]</span></div>
+                <div class="arch-chip chip-blue" style="font-size:0.65rem"><span><strong>FIELD INTEL:</strong> Shift note (GOR elevated) + Lab report (8.4% free gas at intake)</span></div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Submitted to Ollama API · gemma4:latest · NVIDIA L4 GPU · on-cluster · no WAN</span></div>
+
+            <!-- GPU box -->
+            <div class="arch-stage stage-llm" style="margin-bottom:12px">
+              <div class="arch-stage-title">🧠 Gemma 4 8B (NVIDIA L4 GPU)</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Model</span><span class="arch-chip-val">gemma4:latest</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Backend</span><span class="arch-chip-val">Ollama (on-cluster)</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Latency</span><span class="arch-chip-val">< 8 seconds</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">WAN required</span><span class="arch-chip-val" style="color:var(--green)">None</span></div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Streaming response token-by-token</span></div>
+
+            <!-- LLM Assessment -->
+            <div class="arch-stage stage-ml" style="margin-bottom:12px">
+              <div class="arch-stage-title">📤 LLM Assessment</div>
+              <div style="margin-top:4px">
+                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span>"Pump Intake Pressure of 185 is declining at 2.4 PSI/min. Lab report confirms 8.4% free gas at intake — matches early-stage gas void fraction exceeding pump design limits..."</span></div>
+              </div>
+            </div>
+
+            <!-- Outputs -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:rgba(255,109,0,0.08);border:1px solid rgba(255,109,0,0.4);border-radius:8px;padding:12px 14px">
+                <div style="font-size:0.6rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">📊 Output — AI-Based RUL</div>
+                <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--orange)">14.2 min</div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Refined from Model Base RUL (22.1 min) using retrieved lab report context</div>
+              </div>
+              <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.35);border-radius:8px;padding:12px 14px">
+                <div style="font-size:0.6rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">✅ Output — Actions</div>
+                <div style="font-size:0.7rem;color:var(--text2);line-height:1.4">"Reduce VFD frequency from 52Hz to 44Hz immediately to allow gas to break out through the annulus before pump cavitation occurs."</div>
+              </div>
+            </div>
+          </div>
+        </div><!-- pane reasoning -->
+
+        <!-- ── Pane 6: Operator Value ── -->
+        <div class="arch-pane" :class="{active: archPane==='operator'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>Operations Interface — Human-in-the-Loop & ROI</h2>
+              <p>The AI recommendation is presented to the operator with full financial context. The human retains final control — but now has expert-level intelligence to inform every decision.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 6 -->
+          <div v-if="archInfoOpen && archPane==='operator'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">🤝 Human-in-the-Loop Design</div>
+              <ul>
+                <li>The AI recommends — the <strong style="color:var(--text)">operator decides</strong>. There is no automated actuation without human approval.</li>
+                <li>Three tiered options give the operator financial and time trade-offs before they commit</li>
+                <li>Every approved action is audit-logged to the <code style="font-family:var(--mono)">fault_sessions</code> table in AlloyDB for compliance and ROI tracking</li>
+              </ul>
+              <div class="arch-callout callout-green">HITL is not just a safety feature — it's what makes the ROI case credible. The financial ledger records what the operator chose, and what it saved. This is a provable, reproducible financial outcome.</div>
+            </div>
+            <div class="arch-info-section">
+              <div class="arch-info-title">💵 The ROI Equation</div>
+              <ul>
+                <li><strong style="color:var(--g-red)">Without GDC:</strong> SCADA alarms when the motor is already at risk. Emergency pull: $150,000 + 48hr downtime at $45k/day = <strong style="color:var(--g-red)">$366,000</strong></li>
+                <li><strong style="color:var(--g-green)">With GDC:</strong> Operator adjusts VFD 14 minutes early. Motor preserved. <strong style="color:var(--g-green)">Cost: $0</strong></li>
+                <li>Annualised ROI across 38-well field at current fault frequency: <strong style="color:var(--g-green)">$7.8M+</strong></li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+            <!-- Alert -->
+            <div class="arch-stage stage-ml" style="margin-bottom:12px">
+              <div class="arch-stage-title">⚡ AI Detection Alert</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-orange"><span class="arch-chip-label">Asset</span><span class="arch-chip-val">ESP-ALPHA-1</span></div>
+                <div class="arch-chip chip-red"><span class="arch-chip-label">Fault</span><span class="arch-chip-val">Gas Lock</span></div>
+                <div class="arch-chip chip-red"><span class="arch-chip-label">AI-Informed RUL</span><span class="arch-chip-val">14.2 min</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">SCADA</span><span class="arch-chip-val" style="color:var(--green)">No Alarm</span></div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Operator opens Deep Dive → consults Operations Agent</span></div>
+
+            <!-- Remediation tiers -->
+            <div class="arch-stage stage-db" style="margin-bottom:12px">
+              <div class="arch-stage-title">📋 Remediation Options (AI-Generated)</div>
+              <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+                <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.3);border-radius:6px;padding:10px 13px;display:grid;grid-template-columns:1fr auto;gap:8px">
+                  <div>
+                    <div style="font-size:0.64rem;font-weight:700;color:var(--green)">IMMEDIATE</div>
+                    <div style="font-size:0.68rem;color:var(--text2);margin-top:2px">Reduce VFD to 44Hz — allow gas breakout through annulus</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-size:0.7rem;font-weight:700;font-family:var(--mono);color:var(--green)">$0</div>
+                    <div style="font-size:0.57rem;color:var(--muted)">Instant</div>
+                  </div>
+                </div>
+                <div style="background:rgba(255,179,0,0.05);border:1px solid rgba(255,179,0,0.3);border-radius:6px;padding:10px 13px;display:grid;grid-template-columns:1fr auto;gap:8px">
+                  <div>
+                    <div style="font-size:0.64rem;font-weight:700;color:var(--yellow)">SCHEDULED</div>
+                    <div style="font-size:0.68rem;color:var(--text2);margin-top:2px">Inspect intake valve + gas separator</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-size:0.7rem;font-weight:700;font-family:var(--mono);color:var(--yellow)">~$2,000</div>
+                    <div style="font-size:0.57rem;color:var(--muted)">4 hours</div>
+                  </div>
+                </div>
+                <div style="background:rgba(244,67,54,0.05);border:1px solid rgba(244,67,54,0.25);border-radius:6px;padding:10px 13px;display:grid;grid-template-columns:1fr auto;gap:8px;opacity:0.6">
+                  <div>
+                    <div style="font-size:0.64rem;font-weight:700;color:var(--red)">EMERGENCY (SCADA PATH)</div>
+                    <div style="font-size:0.68rem;color:var(--text2);margin-top:2px">Emergency pull & full motor replacement</div>
+                  </div>
+                  <div style="text-align:right">
+                    <div style="font-size:0.7rem;font-weight:700;font-family:var(--mono);color:var(--red)">$150,000</div>
+                    <div style="font-size:0.57rem;color:var(--muted)">48 hours</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="arch-connector">↓ <span class="arch-connector-label">Operator selects Immediate tier → Approve & Execute</span></div>
+
+            <!-- Financial outcome -->
+            <div class="arch-stage stage-ui">
+              <div class="arch-stage-title">💰 Fleet Financials Ledger Update</div>
+              <div class="arch-stage-body">
+                <div class="arch-chip chip-green"><span class="arch-chip-label">Capital Preserved</span><span class="arch-chip-val">$150,000</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Cost Incurred</span><span class="arch-chip-val">$0</span></div>
+                <div class="arch-chip chip-green"><span class="arch-chip-label">Advance Warning</span><span class="arch-chip-val">14.2 min</span></div>
+                <div class="arch-chip chip-green"><span class="arch-chip-label">Outcome</span><span class="arch-chip-val">Unplanned downtime avoided</span></div>
+              </div>
+            </div>
+          </div>
+        </div><!-- pane operator -->
+
+      </div><!-- arch-outer -->
+    </div><!-- tab-architecture -->

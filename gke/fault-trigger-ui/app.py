@@ -7806,10 +7806,27 @@ async def h2_scenario_replay():
 GRAFANA_EXTERNAL_IP = os.environ.get("GRAFANA_URL", "http://136.115.220.48")
 
 
+# Tab template names — assembled in order into the shell index.html at request time.
+# Each file lives in /app/templates/ inside the container (COPY templates/ ./templates/).
+# Marker format in shell: <!-- @@INCLUDE:tab_h1@@ -->
+# No Jinja2 — plain string replace avoids {{ }} collision with Vue templates.
+_TAB_TEMPLATES = [
+    "tab_operations",
+    "tab_h1",
+    "tab_h2",
+    "tab_h3",
+    "tab_financials",
+    "tab_architecture",
+]
+
 @app.get("/", response_class=HTMLResponse)
 def index():
     with open("/app/index.html") as f:
         html = f.read()
+    # Assemble per-tab template files into the shell
+    for name in _TAB_TEMPLATES:
+        with open(f"/app/templates/{name}.html") as tf:
+            html = html.replace(f"<!-- @@INCLUDE:{name}@@ -->", tf.read())
     # Inject Grafana URL as a meta tag so the frontend doesn't have to guess
     html = html.replace(
         '<meta charset="UTF-8" />',

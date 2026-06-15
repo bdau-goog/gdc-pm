@@ -1,0 +1,304 @@
+    <!-- ══ TAB: OPERATIONS ══ -->
+    <div id="tab-operations" class="main-tab-content" :class="{active: mainTab==='operations'}">
+      <!-- ── DEEP DIVE VIEW ── -->
+      <div v-if="currentView === 'deepdive'" class="deepdive-view">
+
+        <!-- Deep Dive Header -->
+        <div class="dd-header">
+          <button class="dd-back-btn" @click="backToDashboard">← Fleet</button>
+          <span class="dd-asset-lbl">{{ ddAssetId }}</span>
+          <span v-if="ddFaultType" class="dd-fault-lbl">{{ FAULT_META[ddFaultType] ? FAULT_META[ddFaultType].label : ddFaultType }}</span>
+          <span v-if="degStatus && degStatus.horizon_label" class="dd-horizon-badge" :class="(degStatus.horizon_label||'').toLowerCase()">
+            {{ degStatus.horizon_label.toUpperCase() }} HORIZON
+          </span>
+          <span v-if="degStatus && degStatus.health_score" class="dd-health-lbl" style="display:flex;align-items:center;gap:12px;">
+            <span style="padding:2px 8px;border-radius:6px;background:rgba(30,144,255,0.1);border:1px solid rgba(30,144,255,0.3);color:var(--blue);">
+              Health: {{ (degStatus.health_score * 100).toFixed(1) }}%
+            </span>
+            <span v-if="degStatus.adjusted_rul_minutes !== null" style="padding:2px 8px;border-radius:6px;background:rgba(244,67,54,0.1);border:1px solid rgba(244,67,54,0.3);color:var(--red);">
+              AI-Informed RUL: {{ formatRulFull(degStatus.adjusted_rul_minutes) }}
+            </span>
+          </span>
+          <!-- Craft Fault Button -->
+          <button v-if="!injectionRunning && !hitlOutcome" @click="craftModalOpen=true"
+                  style="margin-left:auto;font-size:0.7rem;padding:4px 12px;border-radius:6px;border:1px solid rgba(30,144,255,0.4);background:rgba(30,144,255,0.08);color:var(--blue);cursor:pointer;transition:all 0.15s"
+                  onmouseover="this.style.background='rgba(30,144,255,0.18)'" onmouseout="this.style.background='rgba(30,144,255,0.08)'">
+            ⚡ Inject Fault
+          </button>
+        </div>
+
+        <!-- ── Sprint 5 v7: Side-by-Side Layout — Charts Left, Panels Right ── -->
+        <div class="dd-main-body">
+
+          <!-- LEFT: Charts column (GDC AI forecast + amber handle + SCADA) -->
+          <div class="dd-compare-col" :style="{width: compareColWidth + 'px'}" @click="showAiFactors=false">
+
+          <!-- TOP: GDC Edge AI Forecast chart -->
+          <div class="dd-view-panel dd-gdc-panel" :style="gdcPanelHeight ? {height: gdcPanelHeight + 'px', flex: 'none'} : {}">
+            <!-- Header row 1: title + status + asset + ⓘ -->
+            <div class="chart-view-hdr">
+              <span class="chart-view-title gdc-hdr-title">⚡ GDC Edge AI Forecast</span>
+              <span class="chart-view-status" :style="{color: injectionRunning && degStatus?.is_active ? 'var(--orange)' : 'var(--muted)'}">
+                {{ injectionRunning && degStatus?.is_active ? '⚡ ANOMALY DETECTED — RUL active' : 'Monitoring…' }}
+              </span>
+              <div style="flex:1;min-width:0"></div>
+              <span v-if="ddAssetId" style="font-family:var(--mono);font-size:0.62rem;color:var(--blue);white-space:nowrap;padding-right:4px">{{ ddAssetId }}</span>
+              <div style="position:relative;flex-shrink:0;margin-right:4px">
+                <button class="ai-factors-btn" :class="{active: showAiFactors}" @click.stop="showAiFactors=!showAiFactors" title="View AI input features">ⓘ</button>
+                <div v-if="showAiFactors" class="ai-factors-popover" @click.stop>
+                  <div class="afp-title">⚡ XGBoost RUL Model — Input Features</div>
+                  <div v-for="f in aiFactors" :key="f" class="afp-row">{{ f }}</div>
+                  <div v-if="aiFactors.length === 0" class="afp-row" style="color:var(--muted)">Open a fault deep-dive to see the input features.</div>
+                  <div class="afp-footer">Deterministic ML: multivariate sensor correlation, not single-threshold rules.</div>
+                </div>
+              </div>
+            </div>
+            <!-- Header row 2: Sensor tabs — standalone row, syncs both charts -->
+            <div style="flex-shrink:0;display:flex;align-items:stretch;height:30px;background:var(--surf2);border-bottom:1px solid var(--border);padding:0 10px">
+              <span style="font-size:0.55rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.07em;align-self:center;padding-right:8px;white-space:nowrap;border-right:1px solid var(--border);margin-right:4px">Sensor View</span>
+              <div class="sensor-tab" :class="{active: activeTab==='psi'}" @click="selectTab('psi')" :title="'Switch both charts to ' + sensorTabLabel('psi') + ' view'">{{ sensorTabLabel('psi') }}</div>
+              <div class="sensor-tab" :class="{active: activeTab==='temp'}" @click="selectTab('temp')" :title="'Switch both charts to ' + sensorTabLabel('temp') + ' view'">{{ sensorTabLabel('temp') }}</div>
+              <div class="sensor-tab" :class="{active: activeTab==='vib'}" @click="selectTab('vib')" :title="'Switch both charts to ' + sensorTabLabel('vib') + ' view'">{{ sensorTabLabel('vib') }}</div>
+              <div v-if="sensor4TabKey" class="sensor-tab" :class="{active: activeTab===sensor4TabKey}" @click="selectTab(sensor4TabKey)" :title="'Switch both charts to ' + sensor4Label + ' view'">{{ sensor4Label }}</div>
+            </div>
+            <div class="dd-chart-wrap">
+              <div v-if="!chartData" class="chart-placeholder">
+                <div class="ph-icon" style="color:#ff8c00;opacity:0.4">⚡</div>
+                <div class="ph-text">GDC AI forecast will appear here<br><span style="font-size:0.6rem;color:var(--muted)">SCADA Alarm → PNR → Failure timeline</span></div>
+              </div>
+              <div id="forecast-chart"></div>
+            </div>
+          </div>
+
+          <!-- ── Internal split handle — drag to redistribute GDC AI vs SCADA chart heights ── -->
+          <div class="gdc-scada-handle" ref="gdcScadaHandle" title="Drag to resize GDC AI / SCADA · Double-click to reset equal split"></div>
+
+          <!-- MIDDLE: Horizontal Time Advantage Bridge -->
+          <div class="dd-delta-bridge">
+            <template v-if="injectionRunning && degStatus && degStatus.time_to_scada_minutes > 0">
+              <div class="bridge-anchor">
+                <span class="bridge-anchor-lbl" style="color:var(--orange)">⚡ GDC Detected</span>
+                <span class="bridge-anchor-sub">AI lead established</span>
+              </div>
+              <div class="bridge-track">
+                <div class="bridge-bar-wrap">
+                  <div class="bridge-bar-fill" :style="{width: bridgeBarPct + '%'}"></div>
+                </div>
+                <div class="bridge-bar-label">{{ formatRulFull(degStatus.adjusted_rul_minutes || degStatus.time_to_scada_minutes) }} until SCADA detection — {{ formatRulFull(initialRulMinutes) }} advance notice given by GDC</div>
+              </div>
+              <div class="bridge-anchor">
+                <span class="bridge-anchor-lbl" style="color:var(--red)">⛔ SCADA Alarm</span>
+                <span class="bridge-anchor-sub">threshold breach</span>
+              </div>
+            </template>
+            <template v-else-if="injectionRunning">
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px">
+                <span style="font-size:14px">⚠</span>
+                <span style="font-size:0.62rem;font-weight:400;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em">SCADA alarm zone — GDC already resolved the ambiguous fault signal</span>
+              </div>
+            </template>
+            <template v-else>
+              <div style="flex:1;display:flex;align-items:center;justify-content:center;gap:8px;opacity:0.3">
+                <span style="font-size:12px">⏱</span>
+                <span style="font-size:0.6rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted)">Inject a fault to see GDC resolve ambiguous fault signals</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- BOTTOM: Traditional SCADA chart — historical only, no projection -->
+          <div class="dd-view-panel dd-scada-panel">
+            <div class="chart-view-hdr">
+              <span class="chart-view-title">📊 SCADA Metrics</span>
+              <span class="chart-view-status" :style="{color: injectionRunning ? 'var(--green)' : 'var(--muted)'}">
+                {{ injectionRunning ? '✓ STATUS NORMAL — No Alarms' : '' }}
+              </span>
+            </div>
+            <div class="dd-chart-wrap">
+              <div v-if="!chartData" class="chart-placeholder">
+                <div class="ph-icon" style="opacity:0.4">🛢</div>
+                <div class="ph-text">SCADA View — inject a fault to see the contrast<br><span style="font-size:0.6rem;color:var(--green)">✓ No alarms · all thresholds nominal</span></div>
+              </div>
+              <div id="scada-chart"></div>
+            </div>
+          </div>
+
+          </div><!-- dd-compare-col -->
+
+          <!-- Vertical EW handle — drag to resize chart column vs right panels -->
+          <div class="compare-col-resize-handle" ref="compareColHandle" title="Drag to resize charts vs panels · Double-click to reset"></div>
+
+          <!-- RIGHT: 3 stacked independently-resizable panels -->
+          <div class="dd-right-panels">
+
+            <!-- Panel 1: Intelligence Feed & Sensor Data -->
+            <div class="dd-intel-panel" :style="{height: intelPanelHeight + 'px'}">
+            <div class="dd-col-hdr">📊 Metrics & Intelligence
+              <template v-if="injectionRunning && ddFaultType">
+                <span class="live-dot" style="margin-left:6px"></span>
+                <span style="font-size:0.56rem;font-weight:600;color:var(--orange);margin-left:4px;text-transform:none">{{ FAULT_META[ddFaultType]?.label }}</span>
+              </template>
+              <button v-if="ddFaultType" @click="resetAsset" class="btn-reset" style="margin-left:auto;font-size:0.56rem;padding:2px 7px">↺ Reset</button>
+            </div>
+            <div class="fusion-body">
+              <!-- Sensor Grid -->
+              <div class="sv-grid">
+                <div class="sv-card" :class="{primary: sensorTabPrimary('psi')}">
+                  <div class="sv-lbl">{{ sensorLabel('psi') }}</div>
+                  <div class="sv-val" :class="{anomaly: isSensorAnomaly('psi')}">{{ lastSensorVals.psi || '—' }}<span class="sv-trend" :class="sensorTrend('psi')">{{ sensorTrendArrow('psi') }}</span></div>
+                </div>
+                <div class="sv-card" :class="{primary: sensorTabPrimary('temp')}">
+                  <div class="sv-lbl">{{ sensorLabel('temp') }}</div>
+                  <div class="sv-val" :class="{anomaly: isSensorAnomaly('temp')}">{{ lastSensorVals.temp || '—' }}<span class="sv-trend" :class="sensorTrend('temp')">{{ sensorTrendArrow('temp') }}</span></div>
+                </div>
+                <div class="sv-card" :class="{primary: sensorTabPrimary('vib')}">
+                  <div class="sv-lbl">{{ sensorLabel('vib') }}</div>
+                  <div class="sv-val" :class="{anomaly: isSensorAnomaly('vib')}">{{ lastSensorVals.vib || '—' }}<span class="sv-trend" :class="sensorTrend('vib')">{{ sensorTrendArrow('vib') }}</span></div>
+                </div>
+                <div class="sv-card" v-if="sensor4Label">
+                  <div class="sv-lbl">{{ sensor4Label }}</div>
+                  <div class="sv-val" :class="{anomaly: isSensorAnomaly('s4')}">{{ lastSensorVals.s4 || '—' }}<span class="sv-trend" :class="sensorTrend('s4')">{{ sensorTrendArrow('s4') }}</span></div>
+                </div>
+              </div>
+              <!-- Intel Feed -->
+              <div class="intel-feed-hdr">
+                📄 RAG Context Documents
+                <span style="font-family:var(--mono);font-size:0.58rem;color:var(--blue);font-weight:400">{{ visibleFeedItems.length }}/{{ feedItems.length }}</span>
+                <button class="drill-btn" @click="openFeedModal(null)">All ▾</button>
+              </div>
+              <div v-for="item in visibleFeedItems" :key="item.id" class="feed-item" :class="{anomaly: item.is_anomaly}" @click="openFeedModal(item)">
+                <div class="fi-top">
+                  <span class="fi-icon">{{ item.icon }}</span>
+                  <div style="flex:1">
+                    <div class="fi-headline">{{ item.headline }}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:1px">
+                      <span class="fi-source">{{ item.source }}</span>
+                      <span class="fi-ts">{{ item.ts_label }}</span>
+                    </div>
+                  </div>
+                </div>
+                <div v-if="item.is_anomaly" class="fi-relevance">{{ item.ai_relevance }}</div>
+              </div>
+              <div v-if="feedItems.length === 0 && ddFaultType && injectionRunning" style="color:var(--muted);font-size:0.7rem;font-style:italic;padding:6px 0">Ingesting unstructured data sources…</div>
+              <div v-if="gemmaFinding" class="gemma-finding">{{ gemmaFinding }}</div>
+            </div>
+
+            </div><!-- dd-intel-panel -->
+            <div class="row-resize-handle" ref="intelRowHandle" title="Drag to resize"></div>
+
+            <!-- Panel 2: GDC Operations Agent Chat -->
+            <div class="dd-agent-panel" :style="{height: agentPanelHeight + 'px'}">
+            <div class="copilot-hdr">
+              🤖 GDC Ops Agent
+              <span style="font-size:0.54rem;margin-left:3px;text-transform:none;font-weight:400"
+                    :style="{color: mlops.ollama_online === false ? 'var(--red)' : 'var(--muted)', opacity: mlops.ollama_online === false ? 1 : 0.7}">
+                {{ mlops.ollama_online === false ? '⛔ LLM offline — rule-based mode' : (mlops.ollama_model || 'gemma4:latest') + ' @ Edge' }}
+              </span>
+              <span v-if="agentTyping" style="font-size:0.54rem;color:var(--muted);text-transform:none;font-weight:400;margin-left:3px">streaming…</span>
+            </div>
+            <div class="chat-log" ref="chatLog">
+              <div v-for="(msg, i) in agentMessages.slice(-8)" :key="i" class="chat-msg" :class="msg.role">{{ msg.content }}</div>
+            </div>
+            <div class="agent-typing" v-if="agentTyping">{{ agentTypingText }}</div>
+            <div class="chat-input-row">
+              <input id="agent-input" type="text" v-model="agentInput" placeholder="Ask the Operations Agent…" @keydown.enter="sendAgentMessage" :disabled="agentTyping">
+              <button class="btn-send" @click="sendAgentMessage" :disabled="agentTyping || !agentInput.trim()">Send</button>
+            </div>
+
+            </div><!-- dd-agent-panel -->
+            <div class="row-resize-handle" ref="agentRowHandle" title="Drag to resize"></div>
+
+            <!-- Panel 3: Resolution & Action -->
+            <div class="dd-action-panel">
+            <div class="dd-col-hdr">⚙ Resolution & Action
+              <button @click="fetchJustification()" v-if="ddFaultType" style="margin-left:auto;font-size:0.55rem;padding:1px 6px;border-radius:4px;border:1px solid rgba(138,180,248,0.35);background:rgba(138,180,248,0.07);color:var(--g-blue);cursor:pointer">ⓘ Cost Basis</button>
+            </div>
+            <div style="flex:1;min-height:0;padding:10px 12px;overflow-y:auto">
+              <!-- Consult button -->
+              <div v-if="!hitlAction && !hitlOutcome">
+                <button class="hitl-consult-btn" :disabled="!ddFaultType || !injectionRunning || agentTyping" @click="consultAgent">💬 Consult Operations Agent</button>
+                <div v-if="!injectionRunning" style="font-size:0.62rem;color:var(--muted);text-align:center;margin-top:4px">Inject a fault first to enable agent consultation</div>
+              </div>
+              <!-- Remediation Tiers Grid -->
+              <div v-if="hitlAction && !hitlOutcome">
+                <div class="hitl-action-lbl">📋 Remediation Options</div>
+                <div v-if="remediationTiers" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
+                  <div v-for="(tier, tierKey) in remediationTiers" :key="tierKey"
+                       :style="{border: tier.is_active ? '2px solid rgba(30,144,255,0.7)' : (selectedTierKey===tierKey ? '2px solid rgba(0,230,118,0.6)' : '1px solid var(--border)'),borderRadius:'7px',padding:'7px 9px',background: selectedTierKey===tierKey ? 'rgba(0,230,118,0.05)' : (tier.is_active ? 'rgba(30,144,255,0.06)' : 'var(--bg)'),opacity:tier.dim?0.5:1,cursor:tier.dim?'default':'pointer'}"
+                       @click="!tier.dim && selectTierApprove(tierKey, tier)">
+                    <div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">
+                      <span style="font-size:0.6rem;font-weight:700;text-transform:uppercase" :style="{color: tier.is_active ? 'var(--blue)' : (selectedTierKey===tierKey ? 'var(--green)' : 'var(--muted)')}">{{ tierKey.replace('_',' ') }}</span>
+                      <span v-if="tier.is_active" style="font-size:0.5rem;padding:1px 4px;border-radius:3px;background:rgba(30,144,255,0.2);color:var(--blue);font-weight:700">ACTIVE</span>
+                      <span v-if="selectedTierKey===tierKey" style="font-size:0.5rem;padding:1px 4px;border-radius:3px;background:rgba(0,230,118,0.2);color:var(--green);font-weight:700">SELECTED</span>
+                      <span style="margin-left:auto;font-size:0.54rem;font-weight:700;padding:1px 5px;border-radius:3px" :style="{background: tier.viability_color + '22', color: tier.viability_color, border: '1px solid ' + tier.viability_color + '55'}">{{ tier.viability }}</span>
+                    </div>
+                    <div style="font-size:0.63rem;color:var(--text2);line-height:1.4;margin-bottom:3px">{{ tier.action }}</div>
+                    <div style="font-size:0.58rem;color:var(--muted)">⏱ {{ tier.time_to_execute }} · 💰 ${{ (tier.cost_incurred||0).toLocaleString() }}</div>
+                  </div>
+                </div>
+                <div v-if="!remediationTiers" style="border:1px solid rgba(30,144,255,0.35);border-radius:7px;padding:9px 11px;background:rgba(30,144,255,0.04);margin-bottom:8px">
+                  <div style="font-size:0.7rem;color:var(--text2);line-height:1.5;margin-bottom:7px">{{ hitlAction.action_text }}</div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn-approve" @click="approveHitl">✔ Approve & Execute</button>
+                  <button class="btn-reject" @click="rejectHitl">✖ Reject</button>
+                </div>
+              </div>
+              <!-- Outcome Card -->
+              <div v-if="hitlOutcome">
+                <div class="outcome-card">
+                  <div class="outcome-title">✅ Intervention Executed</div>
+                  <div class="outcome-text">{{ hitlOutcome.outcome_message }}</div>
+                  <div class="outcome-savings">${{ (hitlOutcome.net_savings||0).toLocaleString() }} net saved</div>
+                  <button @click="hitlOutcome=null;hitlAction=null;injectionRunning=false;ddFaultType=null;remediationTiers=null;selectedTierKey=null"
+                          style="margin-top:8px;font-size:0.65rem;padding:4px 10px;border-radius:5px;border:1px solid var(--border);background:var(--surf2);color:var(--muted);cursor:pointer">
+                    ↺ New Scenario
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            </div><!-- dd-action-panel -->
+
+          </div><!-- dd-right-panels -->
+        </div><!-- dd-main-body -->
+
+        <!-- ── CRAFT FAULT MODAL ── -->
+        <div v-if="craftModalOpen" @click.self="craftModalOpen=false"
+             style="position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.72);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+          <div style="background:var(--surf);border:1px solid var(--border2);border-radius:10px;padding:22px;width:460px;box-shadow:0 20px 50px rgba(0,0,0,0.6)">
+            <div style="font-size:0.85rem;font-weight:700;color:var(--text2);margin-bottom:14px;display:flex;align-items:center;gap:8px">
+              ✏️ Craft Custom Fault
+              <span style="font-family:var(--mono);font-size:0.72rem;color:var(--blue);font-weight:400">{{ ddAssetId }}</span>
+              <button @click="craftModalOpen=false" style="margin-left:auto;font-size:0.9rem;background:none;border:none;color:var(--muted);cursor:pointer">✕</button>
+            </div>
+            <div style="font-size:0.63rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Fault Type</div>
+            <div style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px">
+              <div v-for="ft in availableFaults" :key="ft" @click="craftFaultType=ft"
+                   style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;transition:all 0.15s"
+                   :style="{background: craftFaultType===ft ? 'rgba(30,144,255,0.1)' : 'var(--bg)', border: craftFaultType===ft ? '1px solid rgba(30,144,255,0.5)' : '1px solid var(--border)'}">
+                <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0" :style="{background: FAULT_META[ft]?.color || '#ff6d00'}"></span>
+                <span style="font-size:0.73rem;font-weight:600">{{ FAULT_META[ft]?.label || ft }}</span>
+                <span style="font-size:0.62rem;color:var(--muted);flex:1">{{ FAULT_META[ft]?.desc || '' }}</span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+              <div style="flex:1">
+                <div style="font-size:0.63rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px">Duration (seconds)</div>
+                <input type="number" v-model="craftDuration" min="60" max="28800" step="60"
+                       style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:5px;padding:6px 10px;font-size:0.78rem;font-family:var(--mono)">
+              </div>
+              <div style="font-size:0.65rem;color:var(--muted);padding-top:18px">= {{ Math.round(craftDuration/60) }} min</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button @click="executeCraftFault" :disabled="!craftFaultType"
+                      :style="{flex:1,padding:'9px',borderRadius:'6px',border:'none',background:'linear-gradient(135deg,#1565c0,#0d47a1)',color:'#fff',fontSize:'0.75rem',fontWeight:700,cursor:craftFaultType?'pointer':'default',opacity:craftFaultType?1:0.4}">
+                ⚡ Inject Custom Fault
+              </button>
+              <button @click="craftModalOpen=false" style="padding:9px 16px;border-radius:6px;border:1px solid var(--border);background:var(--surf2);color:var(--text2);font-size:0.73rem;cursor:pointer">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- deepdive-view -->
+
+    </div><!-- tab-operations -->
