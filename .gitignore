@@ -33,3 +33,16 @@ node_modules/
 package-lock.json
 smoke_screenshot.png
 smoke_chart_data.json
+
+# Debugging scripts from blank-page investigation sessions
+check-*.js
+compare-dom.js
+dump-live.js
+find-*.js
+fix-vue.js
+fw.json
+inspect-dom*.js
+live-dump.html
+parse-*.js
+temp_app.js
+test-*.js
