@@ -1,5 +1,5 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Session BS+2 — June 15, 2026 / git head: (post-fix) / image: `sha256:0225a07bae660a5956a55a7a47c4a1a0ca7181dcd5b803b2d36d47fb3b912199` / branch: `feature-trio-clean`
+Session BS+2 — June 15, 2026 / git head: `5702859` / image: `sha256:5f0d34d48695eca397a72decb324186d6ae5e3bba36f2cf78abc8936c538e553` / branch: `feature-trio-clean`
 
 ## STEP 1: Run These Four Commands First
 
@@ -18,11 +18,14 @@ cat /home/brian/gdc-pm/docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### Blank Page — RESOLVED
-The self-hosting commit (3a74460) switched Plotly and Vue from CDN to local `/static/` files.
-The local files caused Vue not to mount (blank dark page, v-cloak never removed).
-**Fix**: Reverted `index.html` to CDN URLs for both Plotly and Vue.
-Deployed image `sha256:0225a07...` — confirmed live.
+### Blank Page — RESOLVED ✅
+**Root cause (final):** Session BS+1 added two spurious `</div>` tags as "div balance fixes". But the self-hosting commit (3a74460) only changed script src attributes — it added ZERO new unclosed divs. The spurious closers broke Vue's template compilation even though the div count balanced.
+
+**Two fixes applied (both needed):**
+1. `c416068` — CDN URLs restored (Plotly + Vue)
+2. `5702859` — 2 spurious `</div>` tags removed from H2 GDC Advisor section
+
+**Deployed:** `sha256:5f0d34d...` — CDN URLs live, 0 spurious divs confirmed.
 
 ### Remaining Work (from DEMO_MASTER.md §12)
 - H2 paraffin/wax scenario: hostile red-team pass ("gdc-second-opinion") before any pixel changes
