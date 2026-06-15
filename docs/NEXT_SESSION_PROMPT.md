@@ -1,5 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-15 / git head: f011030 / branch: feature-trio-clean
+Date: 2026-06-15 / git head: e1b51f6 / branch: feature-trio-clean
+Image: sha256:aac8fecc64ab962bab6dd9c20ce62d7438105eedacb2bd595b2c554dd438fa10
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -8,11 +9,10 @@ kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
 curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
 kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
 ```
-
 Expected when healthy:
 - fault-trigger-ui: 1/1 Running
-- ollama replicas=0 (GPU off by default — DO NOT scale up unless running LLM test)
-- ollama_online: False, model: gemma4:latest (expected — GPU is off)
+- ollama replicas=0 (GPU off by default — DO NOT scale up)
+- ollama_online: False, model: gemma4:latest
 - field_intel/rag_documents: non-zero counts
 
 ## STEP 2: Read DEMO_MASTER.md
@@ -20,33 +20,31 @@ Expected when healthy:
 cat docs/DEMO_MASTER.md
 ```
 
-## STEP 3: Session Priority Order
+## STEP 3: Session Priority — H1 Briefing Panel Redesign (16:9 / video-ready)
 
-### Priority 1 — UI Review (DO FIRST)
-Tab modularization is COMPLETE and deployed. Do a full tab-by-tab visual review:
-- Confirm H1 Discern briefing (6 panels) + scenario replay render correctly
-- Confirm H2 Classify briefing (3 panels) + paraffin/wax scenario render correctly
-  - Zone 1 headline and Zone 2 action cards + doc stack should now display properly
-  - Two previously unclosed divs were fixed in this session
-- Confirm H3 Optimize dashboard is functional
-- Note any visual regressions
+All panel changes spec'd this session. Locked conventions (H1 first, H2/H3 inherit):
+- **16:9 slide-native**: scale body content to fill frame; title sizes unchanged
+- **Kicker = beat-name only** (drop "Panel N of M"): THE SCENARIO / THE EVENT / THE HOOK / THE MOAT / THE DECISION / THE PLATFORM
+- **Statements not quotes**: un-quote demo's own assertions; keep attributed quotes (shift notes)
+- **Entry panels top-anchored**: text top, scenario visual below; business lead-in merged into Panel 1
 
-### Priority 2 — Narrative / Scenario Issues
-After UI review, fix any issues identified in H1/H2/H3 narratives or scenario content.
+### Panel-by-panel (tab_h1.html):
+| Panel | Change |
+|---|---|
+| P1 | kicker→"THE SCENARIO", title→"Same Signal. Two Causes. One Right Decision.", top-anchored, business lead-in merged, metrics below text |
+| P2 | density fill (tiles too sparse; enlarge heights/text/bars) |
+| P3 | wellbore art: zoom to pump intake; gas-lock = dispersed bubbles at intake, annulus HIGH (NOT amber rect at top); drawdown = fluid level dropping below intake, sand only on VFD trim |
+| P4 | density fill (STATE/CONTEXT rows top-packed; grow to fill frame) |
+| P5 | density fill — CRITICAL MESSAGE; action cards much taller; closing = full-width hero line |
+| P6 | density fill; REMOVE centered "Run the Scenario" (keep footer nav button only) |
+| ⓘ | Integrity fix: retire "physically identical / no sensor can disambiguate" → "genuinely ambiguous on an intake-only string in the early decision window" (DEMO_MASTER §4.1 PREMISE ledger row) |
 
-### What was done this session (for reference):
-1. **Dead duplicate `app.js` removed:** Line 3715 `<script>` was dead (trapped in inert template) — removed. Only `<head defer>` copy at line 11 remains.
-2. **Tab modularization (DONE, deployed, verified live):**
-   - `index.html` slimmed to 159-line shell with 6 `<!-- @@INCLUDE:tabname@@ -->` markers
-   - 6 tab files extracted to `gke/fault-trigger-ui/templates/` (tab_operations, tab_h1, tab_h2, tab_h3, tab_financials, tab_architecture)
-   - `app.py` `index()` now assembles tabs at request time via plain string substitution (no Jinja2 — avoids `{{ }}` collision with Vue)
-   - `Dockerfile` updated with `COPY templates/ ./templates/`
-   - `scripts/verify_templates.py` gate: per-file `<template>` and `<div>` balance check + assembled output check
-   - **verify gate caught and fixed 2 unclosed `<div>` tags in tab_h2.html** (Zone 1 headline and Zone 2 LEFT) — these were the Known Integrity Issues from prior sessions
-   - **Live verification:** 1 script tag, v-cloak=1, 6 tab panels in DOM, 0 unresolved markers
-3. **NEXT_SESSION_PROMPT.md:** Updated to reflect completed work.
+### 3-persona video plan (all personas cover H1+H2+H3):
+- P1 Business: Operator (ESPs, lifting costs) + Halliburton (market share capture)
+- P2 Product: capabilities customers need; HAL advantage if competitors lack them
+- P3 Technical: Google Cloud + GDC + Gemini — build better/easier/faster/cheaper
 
-### Build / deploy commands (for reference):
+### Build / deploy commands:
 ```bash
 cd gke/fault-trigger-ui
 python3 ../../scripts/verify_templates.py   # must pass before build
@@ -58,17 +56,13 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
 
 ## Known Integrity Issues
 | Issue | Status |
-|-------|---------|
-| H2 GDC Zone 1 div not closed | ✅ RESOLVED — fixed this session (verify gate caught it) |
-| Unclosed outer `<template v-else>` | ✅ RESOLVED — `<template>` 20/20 balanced (verified) |
-| Dead duplicate `app.js` at old line 3715 | ✅ RESOLVED — removed this session |
+|-------|--------|
+| ⓘ Physics panel: "physically identical / no sensor can disambiguate" | 🔴 OPEN — fix next session |
 
 ## Constraints (Permanent)
-- `terraform/gke.tf` must NOT be applied — it would destroy the live cluster
-- All demo changes go into `gke/fault-trigger-ui/templates/*.html` (tabs) + `gke/fault-trigger-ui/app.py`
-  - The shell `index.html` (159 lines) rarely needs editing — only for head/footer/modal changes
-- After changes: run `verify_templates.py` first → then docker build → docker push → kubectl rollout restart
-- Source env: `source /home/brian/gdc-pm/.env` for correct project/kubeconfig
-- GPU: ollama is scale-to-zero; only start via `./scripts/gpu-start.sh` when needed
-- No Jinja2 in templates — Vue's `{{ }}` collides with Jinja2 template syntax
-- The 3700-line monolith is now modularized — never edit `index.html` directly for tab content again
+- `terraform/gke.tf` must NOT be applied
+- Tab content: `gke/fault-trigger-ui/templates/*.html` + `app.py` (index.html = shell only)
+- Run `verify_templates.py` before any template build
+- Source env: `source /home/brian/gdc-pm/.env`
+- GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` only for explicit LLM test
+- No Jinja2 in templates
