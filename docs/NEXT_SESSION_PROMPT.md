@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 5328b27 / branch: feature-trio-clean
-Image: sha256:8d1d9dda351297121b7f1ab5663b24258ecfc517e4ef1d06ef10880c80f28d2a
+Date: 2026-06-16 / git head: bae1dd9 / branch: feature-trio-clean
+Image: sha256:5ba6b2b5c3bea9ee100f1a37270562301cf11bbc1ecaf54236d0b26341feb1a5
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -26,9 +26,12 @@ cat docs/DEMO_MASTER.md
 All four briefing decks are **built, wired, deployed, and verified live**. The iframe
 architecture is working. This session's 10-step task order is fully complete.
 
-### What was verified live (commit 5328b27)
+### What was verified live (commit bae1dd9)
 - All 7 slide endpoints return 200: h1.html, h2.html, h3.html, intro.html,
   _shared/slide.js, _shared/terms.js, _shared/slide.css
+- **BUG FIXED (bae1dd9):** All 4 slide decks had `../_shared/` paths → 404 → serif font + all panels stacked.
+  Fixed to `_shared/` (relative to /slides/ mount). slide.css: 200, slide.js: 200, terms.js: 200 confirmed live.
+  NOTE: "No docker build needed for slides" in prior doc was WRONG — slides/ is baked into the image. Always rebuild.
 - All 4 iframes present in assembled app (0 unresolved @@INCLUDE markers)
 - 0 authored hard-$ in h1.html or h2.html (content policy passed)
 - P1 split handle in h1 (data-ls-key=h1.p1.split)
@@ -76,7 +79,7 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
 - Tab content: `gke/fault-trigger-ui/templates/*.html` + `app.py` (index.html = shell only)
-- Slides: `gke/fault-trigger-ui/slides/` — edit directly, no docker build needed for slides
+- Slides: `gke/fault-trigger-ui/slides/` — slides/ is **baked into the image** (COPY slides/ in Dockerfile). Always docker build + push + rollout restart after slide edits.
 - Run `verify_templates.py` before any template build
 - Source env: `source /home/brian/gdc-pm/.env`
 - GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` ONLY for explicit LLM test; ALWAYS pair with gpu-stop.sh
