@@ -1269,7 +1269,7 @@ _L3_SCENARIO_RAG_DOCS = [
             "Reducing VFD frequency 10–15% from nominal can allow gas pockets to vent up the\n"
             "casing-tubing annulus when the annulus fluid column is stable and fully submerged.\n"
             "Requires confirmation that casing fluid level is NOT declining (drawdown condition).\n"
-            "If fluid level is declining, VFD trim is contraindicated — shut-in and evaluate.\n\n"
+            "If fluid level is declining, do not trim below the sand-transport velocity floor. Reduce VFD in steps and verify fluid-level headroom from the most recent acoustic fluid-level survey before any further reduction or shut-in. Shut-in is appropriate when documents confirm low sand cut and standing-valve seal integrity.\n\n"
             "DISCRIMINATING GAS LOCK FROM FLUID DRAWDOWN:\n"
             "Both conditions produce similar amps and PIP decline on a sensor-only string.\n"
             "- Gas lock: casing pressure builds, fluid level stable, GOR elevated\n"

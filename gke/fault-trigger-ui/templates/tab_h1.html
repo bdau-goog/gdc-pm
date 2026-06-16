@@ -56,7 +56,7 @@
           <div>
             <div class="pp-section">
               <div class="pp-section-title">⚙ ESP Unloading Physics — Why Sensors Are Identical</div>
-              <p class="pp-text">Both Gas Lock and Fluid Drawdown produce identical PIP and Amps decline trajectories. Gas Lock: gas void fraction rises in pump stages — reducing hydraulic head. Drawdown: fluid level drops below pump intake — starving the impeller. <span class="pp-warn">No sensor can distinguish these — only external document context can.</span></p>
+              <p class="pp-text">Both Gas Lock and Fluid Drawdown produce identical PIP and Amps decline trajectories. Gas Lock: gas void fraction rises in pump stages — reducing hydraulic head. Drawdown: fluid level drops below pump intake — starving the impeller. <span class="pp-warn">Same sensor decline, two causes, opposite correct responses — cause unknown without document context.</span></p>
             </div>
             <div class="pp-section">
               <div class="pp-section-title">🔔 SCADA — 3-Rule ISA-18.2 Underload Trip Logic</div>
@@ -201,7 +201,7 @@
                     <div style="font-size:0.46rem;color:var(--muted);margin-top:2px">Unlocks after alarm</div>
                   </div>
                   <div style="border:1px solid var(--border);border-radius:5px;padding:7px;background:var(--surf)">
-                    <div style="font-size:0.56rem;font-weight:700;color:var(--muted)">🛑 Emergency Shut-In</div>
+                    <div style="font-size:0.56rem;font-weight:700;color:var(--muted)">🔒 Protective Default — Hold + Alert RTOC</div>
                     <div style="font-size:0.46rem;color:var(--muted);margin-top:2px">Unlocks after alarm</div>
                   </div>
                 </div>
@@ -253,8 +253,8 @@
                   <div class="h1-card-sub">52 → 44 Hz · Effective if gas lock · Riskier if drawdown</div>
                 </button>
                 <button @click="executeH1Shutdown()" class="h1-action-card h1-card-slate">
-                  <div class="h1-card-header">🛑 Emergency Shut-In</div>
-                  <div class="h1-card-sub">Standard protective policy — production deferred, restart required</div>
+                  <div class="h1-card-header">🔒 Protective Default — Hold + Alert RTOC</div>
+                  <div class="h1-card-sub">Underload protection holds the well — production deferred, restart required</div>
                 </button>
               </div>
               <!-- Outcomes -->
@@ -264,10 +264,10 @@
               </div>
               <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved" style="margin:0 10px 8px">
                 <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
-                <template v-else-if="h1FaultType==='fluid_drawdown'">
-                  <div style="font-weight:700;margin-bottom:4px">✅ SHUT-IN COMMAND ISSUED</div>
-                  <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Well offline · fluid recovery initiated · awaiting field confirmation<br><span style="color:rgba(74,222,128,0.7)">Pump condition assessed on controlled restart</span></div>
-                </template>
+                 <template v-else-if="h1FaultType==='fluid_drawdown'">
+                   <div style="font-weight:700;margin-bottom:4px">✅ STEP-DOWN COMMAND APPLIED</div>
+                   <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD stepping toward minimum flush Hz · wellbore response monitored<br><span style="color:rgba(74,222,128,0.7)">Production partially preserved · sonic survey check ordered</span></div>
+                 </template>
                 <template v-else>
                   <div style="font-weight:700;margin-bottom:4px">✅ VFD COMMAND SENT — 52→44 Hz</div>
                   <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD at 44 Hz · gas void venting up flooded annulus · monitoring wellbore response</div>
@@ -333,7 +333,7 @@
                     &nbsp;·&nbsp;P(drawdown) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
                 </div>
                 <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Acoustic Survey (06:00) + Separator GOR Lab · Dynamic level declining. No free gas at intake.</div>
-                <div style="color:var(--text2);font-size:0.58rem">VFD trim CONTRAINDICATED — drops velocity to 3.1 ft/s &lt; 4.2 ft/s critical lift (SPE-174536).</div>
+                <div style="color:var(--text2);font-size:0.58rem">VFD trim CONTRAINDICATED below the floor — aggressive trim drops velocity beneath this well's sand-transport floor (per current well model). Step down toward minimum flush Hz; do not trim below the floor.</div>
                 <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(251,146,60,0.2);color:rgba(251,146,60,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
                 <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
@@ -380,26 +380,34 @@
                 <!-- Post-RAG: action cards + outcomes -->
                 <template v-if="h1RagRevealed">
                   <div v-if="!h1Resolved && !h1Seized && h1FaultType==='gas_lock'" style="display:flex;flex-direction:column;gap:5px">
+                    <div style="font-size:0.44rem;color:rgba(167,139,250,0.8);letter-spacing:0.07em;text-transform:uppercase;display:flex;align-items:center;gap:5px">
+                      <span class="streaming-dot" style="background:rgba(167,139,250,0.8)"></span>
+                      GDC Agent · Action package ready · Awaiting RTOC approval
+                    </div>
                     <button @click="approveH1VFD()" class="h1-action-card h1-card-green">
-                      <div class="h1-card-header">✔ GDC RECOMMENDED: VFD Speed-Down</div>
+                      <div class="h1-card-header">✔ Approve &amp; Execute — VFD Trim</div>
                       <div class="h1-card-sub">52 → 44 Hz · 3,120 → 2,640 RPM · Zero downtime</div>
                       <div class="h1-card-desc">GVF 78% confirmed — casing annulus fully flooded. Gas void vents up submerged annulus. VFD trim safe.</div>
                     </button>
                     <button @click="executeH1Shutdown()"
                             style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.56rem;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
-                      ○ Conservative Fallback — Emergency Shut-In (deferred production + restart costs apply)
+                      ○ Shut-In — available if required (deferred production · restart costs apply)
                     </button>
                   </div>
-                  <!-- Drawdown: GDC recommends shut-in. No catastrophe path shown. -->
+                  <!-- Drawdown: GDC agent recommends step-down + hold, verify from sonic. Shut-in available if docs confirm low sand cut. -->
                   <div v-if="!h1Resolved && !h1Seized && h1FaultType==='fluid_drawdown'" style="display:flex;flex-direction:column;gap:5px">
+                    <div style="font-size:0.44rem;color:rgba(167,139,250,0.8);letter-spacing:0.07em;text-transform:uppercase;display:flex;align-items:center;gap:5px">
+                      <span class="streaming-dot" style="background:rgba(167,139,250,0.8)"></span>
+                      GDC Agent · Action package ready · Awaiting RTOC approval
+                    </div>
                     <button @click="executeH1Shutdown()" class="h1-action-card h1-card-green">
-                      <div class="h1-card-header">✔ GDC RECOMMENDED: Emergency Shut-In</div>
-                      <div class="h1-card-sub">Well offline · fluid recovery · pump preserved</div>
-                      <div class="h1-card-desc">Acoustic survey: dynamic fluid level 150 ft above intake (min 120 ft). Reservoir depleting — shut-in allows level recovery, controlled restart.</div>
+                      <div class="h1-card-header">✔ Approve &amp; Execute — Step-Down + Hold</div>
+                      <div class="h1-card-sub">VFD steps toward minimum flush Hz · sand-transport floor maintained</div>
+                      <div class="h1-card-desc">Acoustic survey confirms fluid level 150 ft above intake — critical but above dry-run threshold. Step VFD down toward minimum flush Hz and hold. Verified against sonic survey data. Shut-in available if completion record confirms low sand cut.</div>
                     </button>
                     <button @click="executeH1Shutdown()"
                             style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.56rem;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
-                      ○ Conservative Fallback — also Shut-In (GDC confirms this is the safe action for both fault types)
+                      ○ Shut-In — available if completion record confirms low sand cut and standing valve integrity
                     </button>
                   </div>
                   <div v-if="h1Seized" class="h1-outcome-seized">
@@ -409,8 +417,8 @@
                   <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
                     <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
                     <template v-else-if="h1FaultType==='fluid_drawdown'">
-                      <div style="font-weight:700;margin-bottom:4px">✅ SHUT-IN COMMAND ISSUED — GDC Recommendation</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Well offline · fluid recovery initiated · awaiting field confirmation<br><span style="color:rgba(74,222,128,0.7)">Pump condition assessed on controlled restart</span></div>
+                      <div style="font-weight:700;margin-bottom:4px">✅ APPROVED &amp; EXECUTING — GDC Agent</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD stepping toward minimum flush Hz · sand-transport floor maintained · production partially preserved<br><span style="color:rgba(74,222,128,0.7)">RTOC notified · command logged · sonic survey data applied</span></div>
                     </template>
                     <template v-else>
                       <div style="font-weight:700;margin-bottom:4px">✅ VFD COMMAND SENT — GDC Recommendation</div>
@@ -543,7 +551,7 @@
                       <animate attributeName="cy" values="160;180" dur="2.3s" repeatCount="indefinite"/>
                     </circle>
                   </g>
-                  <!-- Critical submergence line (SPE-174536 — 120 ft minimum) -->
+                  <!-- Critical submergence line (120 ft minimum — from acoustic survey log) -->
                   <line x1="13" y1="163" x2="31" y2="163" stroke="rgba(239,68,68,0.45)" stroke-width="0.9" stroke-dasharray="2,1.5"/>
                   <text x="32" y="164.5" fill="rgba(239,68,68,0.45)" font-size="2.8" font-family="monospace">min</text>
                   <!-- Pump block -->
@@ -593,13 +601,12 @@
             <p style="font-weight:700;color:var(--orange);font-size:0.62rem;margin:0 0 8px">Dynamic fluid level confirmed critically low by Acoustic Sonic Log (Tour 2, 06:00):</p>
             <ul style="font-size:0.61rem;color:var(--text2);line-height:1.7;padding-left:18px;margin:0 0 8px">
               <li>Measured dynamic fluid level: <strong>150 ft above intake</strong> (critical minimum: 120 ft)</li>
-              <li>Casing pressure flat — no free gas migration (this is NOT gas lock)</li>
-              <li>At 52 Hz, fluid transport velocity = 4.2 ft/s (above sand-transport minimum per SPE-174536)</li>
-              <li>Reducing to 44 Hz drops velocity to <strong>3.1 ft/s</strong> — below the 4.2 ft/s critical lift boundary</li>
+              <li>Casing pressure flat + GOR stable — no significant free gas migration (confirmed NOT gas lock)</li>
+              <li>Aggressive VFD trim drops velocity below this well's sand-transport floor (per current well model)</li>
               <li>Suspended sand and solids settle out, bridging the completion string → pump seizure</li>
-              <li>Representative consequence: ~<strong>$150,000 pull-rig + deferred production</strong></li>
+              <li>Representative consequence: a six-figure pull-rig job + deferred production</li>
             </ul>
-            <p style="font-size:0.59rem;color:var(--muted);margin:0">GDC recommends Emergency Shutdown. Override GDC and trim VFD anyway?</p>
+            <p style="font-size:0.59rem;color:var(--muted);margin:0">GDC recommends a controlled step-down to minimum flush Hz, not an aggressive trim. Override and trim below the sand-transport floor anyway?</p>
           </div>
           <div style="display:flex;gap:10px;justify-content:flex-end;padding:10px 14px;border-top:1px solid var(--border)">
             <button @click="h1OverrideModalOpen=false"
@@ -655,16 +662,16 @@
               <thead><tr><th>Parameter</th><th>Measured Value</th><th>Baseline (Tour 1)</th><th>Delta</th></tr></thead>
               <tbody>
                 <tr><td>Static Fluid Level</td><td>1,820 ft TVD</td><td>1,810 ft TVD</td><td>+10 ft</td></tr>
-                <tr><td>Dynamic Fluid Level</td><td>1,780 ft TVD (240 ft above intake)</td><td>1,750 ft TVD</td><td>−30 ft (moderate decline)</td></tr>
+                <tr><td>Dynamic Fluid Level</td><td>1,870 ft TVD (150 ft above intake)</td><td>1,750 ft TVD</td><td>−120 ft (critically low)</td></tr>
                 <tr><td>Pump Intake Depth</td><td>2,020 ft TVD</td><td>—</td><td>—</td></tr>
-                <tr><td>Minimum Submergence</td><td>240 ft (critical: 120 ft)</td><td>270 ft</td><td>−30 ft (within limits)</td></tr>
+                <tr><td>Minimum Submergence</td><td>150 ft (critical: 120 ft)</td><td>270 ft</td><td>−120 ft (critically low)</td></tr>
                 <tr><td>Casing Pressure</td><td>40 PSI (flat)</td><td>41 PSI</td><td>−1 PSI</td></tr>
                 <tr><td>Free Gas at Intake</td><td>None detected</td><td>None</td><td>—</td></tr>
               </tbody>
             </table>
             <hr style="border-color:var(--border);margin:10px 0"/>
             <div style="font-size:0.62rem;font-weight:700;color:var(--text2);margin-bottom:4px">SURVEYOR'S FIELD NOTES</div>
-            <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Dynamic fluid level measured at 240 ft above pump intake (minimum submergence limit: 120 ft). Fluid level has declined 30 ft vs prior survey baseline. Casing annulus pressure flat at 40 PSI; no free gas zone detected in annulus. Survey completed 06:00 Tour 2. Continued periodic monitoring recommended per operating procedure.</p>
+            <p style="font-size:0.60rem;color:var(--text2);line-height:1.7;margin:0 0 8px">Dynamic fluid level measured at 150 ft above pump intake — critically low (minimum submergence limit: 120 ft). Fluid level has declined 120 ft vs prior survey baseline. Casing annulus pressure flat at 40 PSI; no free gas zone detected in annulus. Survey completed 06:00 Tour 2. Reservoir depletion indicated — fluid-level monitoring and pump speed review recommended.</p>
             <hr style="border-color:var(--border);margin:8px 0"/>
             <div style="font-size:0.56rem;color:var(--muted)">GDC pgvector similarity score: 0.97 · AlloyDB on-cluster RAG · No public-cloud dependency — sovereign, outage-immune</div>
           </div>
