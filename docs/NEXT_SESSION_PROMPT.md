@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 8fa7d0f (pre-commit) / branch: feature-trio-clean
-Image: sha256:7cb896cbd996fb9a2771168b02ae9a3c74c9a3883d27caef71142663d5950a77
+Date: 2026-06-16 / git head: 653c528 / branch: feature-trio-clean
+Image: sha256:6c987b61114d17bec9c5269f4401b06ca95bca29b4315ee5f4425258f9033663
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -109,4 +109,5 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
 - GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` ONLY for explicit LLM test; ALWAYS pair with gpu-stop.sh
 - **NO ollama-scheduler CronJobs** — both deleted Session BS+9 (conflict with GPU discipline)
 - No Jinja2 in templates
-- Branch is 10+ commits ahead of origin — commit + push this session
+- Branch is 13 commits ahead of origin — push before session end
+- **Vizier:** 3 billing auto-triggers removed (Session BS+9). 64 orphaned studies deleted. One call per explicit ▶ Run click.
