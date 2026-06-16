@@ -2298,6 +2298,37 @@ createApp({
   },
 
   mounted() {
+    // ── App-level font zoom: +/= zoom in, - zoom out, 0 reset ──────────────
+    // Adjusts body font-size; all rem-based sizes scale proportionally.
+    // Persists to localStorage — survives reload. Active only on main app
+    // (slides own +/- inside their iframe and don't propagate to parent).
+    const _APP_BASE_FS = 13;
+    const _savedFs = parseInt(localStorage.getItem('gdc.app.fontsize') || _APP_BASE_FS, 10);
+    document.body.style.fontSize = _savedFs + 'px';
+    this._appZoomHandler = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      const fs = parseInt(document.body.style.fontSize || _APP_BASE_FS, 10);
+      if (e.key === '+' || e.key === '=') {
+        const nv = Math.min(22, fs + 1);
+        document.body.style.fontSize = nv + 'px';
+        localStorage.setItem('gdc.app.fontsize', nv);
+        this.showToast(`App zoom: ${Math.round(nv / _APP_BASE_FS * 100)}% (+/- to adjust, 0 = reset)`, 'var(--surf2)');
+        e.preventDefault();
+      } else if (e.key === '-' || e.key === '_') {
+        const nv = Math.max(9, fs - 1);
+        document.body.style.fontSize = nv + 'px';
+        localStorage.setItem('gdc.app.fontsize', nv);
+        this.showToast(`App zoom: ${Math.round(nv / _APP_BASE_FS * 100)}% (+/- to adjust, 0 = reset)`, 'var(--surf2)');
+        e.preventDefault();
+      } else if (e.key === '0') {
+        document.body.style.fontSize = _APP_BASE_FS + 'px';
+        localStorage.removeItem('gdc.app.fontsize');
+        this.showToast('App zoom: 100% (reset)', 'var(--surf2)');
+        e.preventDefault();
+      }
+    };
+    document.addEventListener('keydown', this._appZoomHandler);
+
     this.loadGrafana();
     this.fetchKpis();this.fetchHorizonAlerts();this.fetchMlopsStatus();
     this.fetchInjectionLog();
@@ -2324,6 +2355,7 @@ createApp({
     [this._pollKpis,this._pollHorizon,this._pollMlops].forEach(t=>t&&clearInterval(t));
     this.stopDegPoll();
     if (this._slideMsg) window.removeEventListener('message', this._slideMsg);
+    if (this._appZoomHandler) document.removeEventListener('keydown', this._appZoomHandler);
   },
 }).mount('#app');
 console.log("=== app.js mounted successfully ===");

@@ -172,24 +172,24 @@
               <!-- Live sensor tiles — nominal state, same data as GDC tab (ISA-101: shared telemetry) -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
                 <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(74,222,128,0.15);border-radius:4px;padding:5px 8px">
-                  <div style="font-size:0.40rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">PIP</div>
-                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.psi[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.psi[h1CursorIdx]).toFixed(0) : '—' }} <span style="font-size:0.40rem;font-weight:400">PSI</span></div>
-                  <div style="font-size:0.38rem;color:rgba(74,222,128,0.4)">NOMINAL</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">PIP</div>
+                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.psi[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.psi[h1CursorIdx]).toFixed(0) : '—' }} <span style="font-size:0.48rem;font-weight:400">PSI</span></div>
+                  <div style="font-size:0.48rem;color:rgba(74,222,128,0.55)">NOMINAL</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(74,222,128,0.15);border-radius:4px;padding:5px 8px">
-                  <div style="font-size:0.40rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">AMPS</div>
-                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.amps[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.amps[h1CursorIdx]).toFixed(1) : '—' }} <span style="font-size:0.40rem;font-weight:400">A</span></div>
-                  <div style="font-size:0.38rem;color:rgba(74,222,128,0.4)">NOMINAL</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">AMPS</div>
+                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.amps[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.amps[h1CursorIdx]).toFixed(1) : '—' }} <span style="font-size:0.48rem;font-weight:400">A</span></div>
+                  <div style="font-size:0.48rem;color:rgba(74,222,128,0.55)">NOMINAL</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(74,222,128,0.15);border-radius:4px;padding:5px 8px">
-                  <div style="font-size:0.40rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">TEMP</div>
-                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.temp[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.temp[h1CursorIdx]).toFixed(0) : '—' }} <span style="font-size:0.40rem;font-weight:400">°F</span></div>
-                  <div style="font-size:0.38rem;color:rgba(74,222,128,0.4)">NOMINAL</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">TEMP</div>
+                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.temp[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.temp[h1CursorIdx]).toFixed(0) : '—' }} <span style="font-size:0.48rem;font-weight:400">°F</span></div>
+                  <div style="font-size:0.48rem;color:rgba(74,222,128,0.55)">NOMINAL</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(74,222,128,0.15);border-radius:4px;padding:5px 8px">
-                  <div style="font-size:0.40rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">VIB</div>
-                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.vib[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.vib[h1CursorIdx]).toFixed(2) : '—' }} <span style="font-size:0.40rem;font-weight:400">mm/s</span></div>
-                  <div style="font-size:0.38rem;color:rgba(74,222,128,0.4)">NOMINAL</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:1px">VIB</div>
+                  <div style="font-size:0.82rem;font-weight:700;color:rgba(74,222,128,0.9);font-family:var(--mono)">{{ h1ReplayData.vib[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.vib[h1CursorIdx]).toFixed(2) : '—' }} <span style="font-size:0.48rem;font-weight:400">mm/s</span></div>
+                  <div style="font-size:0.48rem;color:rgba(74,222,128,0.55)">NOMINAL</div>
                 </div>
               </div>
               <!-- Greyed intervention preview — locked until alarm -->
@@ -226,24 +226,24 @@
               <!-- 2×2 industrial tag grid — monospace, ISA-101 HP-HMI style -->
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:8px 10px;flex-shrink:0">
                 <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.3);border-radius:4px;padding:7px 9px">
-                  <div style="font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">PIP</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">PIP</div>
                   <div style="font-size:0.95rem;font-weight:800;color:var(--yellow);font-family:var(--mono)">{{ h1ReplayData.psi[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.psi[h1CursorIdx]).toFixed(0) : '—' }} PSI</div>
-                  <div style="font-size:0.42rem;color:rgba(251,191,36,0.6)">SP: < 1020 PSI ALARM</div>
+                  <div style="font-size:0.50rem;color:rgba(251,191,36,0.7)">SP: &lt; 1020 PSI ALARM</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.3);border-radius:4px;padding:7px 9px">
-                  <div style="font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">AMPS</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">AMPS</div>
                   <div style="font-size:0.95rem;font-weight:800;color:var(--yellow);font-family:var(--mono)">{{ h1ReplayData.amps[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.amps[h1CursorIdx]).toFixed(1) : '—' }} A</div>
-                  <div style="font-size:0.42rem;color:rgba(251,191,36,0.6)">SP: < 50 A TRIP</div>
+                  <div style="font-size:0.50rem;color:rgba(251,191,36,0.7)">SP: &lt; 50 A TRIP</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:7px 9px">
-                  <div style="font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">TEMP</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">TEMP</div>
                   <div style="font-size:0.95rem;font-weight:800;color:var(--text1);font-family:var(--mono)">{{ h1ReplayData.temp[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.temp[h1CursorIdx]).toFixed(0) : '—' }}°F</div>
-                  <div style="font-size:0.42rem;color:var(--muted)">SP: 280°F TRIP</div>
+                  <div style="font-size:0.50rem;color:var(--text2)">SP: 280°F TRIP</div>
                 </div>
                 <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:7px 9px">
-                  <div style="font-size:0.44rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">VIB</div>
+                  <div style="font-size:0.52rem;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px">VIB</div>
                   <div style="font-size:0.95rem;font-weight:800;color:var(--text1);font-family:var(--mono)">{{ h1ReplayData.vib[h1CursorIdx] !== undefined ? parseFloat(h1ReplayData.vib[h1CursorIdx]).toFixed(2) : '—' }} mm/s</div>
-                  <div style="font-size:0.42rem;color:var(--muted)">SP: 7.5 mm/s TRIP</div>
+                  <div style="font-size:0.50rem;color:var(--text2)">SP: 7.5 mm/s TRIP</div>
                 </div>
               </div>
               <!-- ISA-101 action cards — slate outline only, not color-saturated (cause unknown) -->
@@ -283,7 +283,7 @@
             <!-- ZONE 1: Standalone Assessment Headline (full-width, monochrome border) -->
             <div style="flex-shrink:0;padding:7px 10px;border-bottom:1px solid var(--border)">
                   <!-- Before alarm: quiet baseline — health score visible as router context -->
-                  <div v-if="!h1FaultTypeRevealed" style="background:rgba(15,23,42,0.4);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;color:var(--muted)">
+                  <div v-if="!h1FaultTypeRevealed" style="background:rgba(15,23,42,0.4);border:1px solid rgba(100,116,139,0.2);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.62rem;color:var(--muted)">
                     WELL A-3 — BASELINE MONITORING<br>
                     <span style="color:rgba(74,222,128,0.65)">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}</span>
                     <span style="color:var(--muted)"> · XGBoost routing score · alarm threshold 0.65</span>
@@ -296,13 +296,13 @@
                 </div>
               </div>
               <!-- After RAG: GDC gas_lock verdict -->
-              <div v-if="h1RagRevealed && h1FaultType==='gas_lock'" style="background:rgba(16,36,22,0.55);border:1px solid rgba(74,222,128,0.28);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;line-height:1.7">
+              <div v-if="h1RagRevealed && h1FaultType==='gas_lock'" style="background:rgba(16,36,22,0.55);border:1px solid rgba(74,222,128,0.28);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.62rem;line-height:1.7">
                 <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS LOCK CONFIRMED
                   <span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}
                     &nbsp;·&nbsp;P(gas_lock) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
                 </div>
-                <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing annulus fully submerged. Gas pocket in pump stages.</div>
-                <div style="color:var(--text2);font-size:0.50rem">VFD trim (52→44 Hz) is safe. Motor cooling intact.</div>
+                <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing annulus fully submerged. Gas pocket in pump stages.</div>
+                <div style="color:var(--text2);font-size:0.58rem">VFD trim (52→44 Hz) is safe. Motor cooling intact.</div>
                 <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(74,222,128,0.2);color:rgba(74,222,128,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
                 <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
@@ -327,13 +327,13 @@
                 </div>
               </div>
               <!-- After RAG: GDC fluid_drawdown verdict -->
-              <div v-if="h1RagRevealed && h1FaultType==='fluid_drawdown'" style="background:rgba(40,20,5,0.55);border:1px solid rgba(251,146,60,0.3);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.54rem;line-height:1.7">
+              <div v-if="h1RagRevealed && h1FaultType==='fluid_drawdown'" style="background:rgba(40,20,5,0.55);border:1px solid rgba(251,146,60,0.3);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.62rem;line-height:1.7">
                 <div style="color:var(--orange);font-weight:700;font-size:0.60rem">⚠  FLUID DRAWDOWN CONFIRMED
                   <span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}
                     &nbsp;·&nbsp;P(drawdown) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
                 </div>
-                <div style="color:var(--text2);margin-top:3px;font-size:0.50rem">Docs fused: Acoustic Survey (06:00) + Separator GOR Lab · Dynamic level declining. No free gas at intake.</div>
-                <div style="color:var(--text2);font-size:0.50rem">VFD trim CONTRAINDICATED — drops velocity to 3.1 ft/s &lt; 4.2 ft/s critical lift (SPE-174536).</div>
+                <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Acoustic Survey (06:00) + Separator GOR Lab · Dynamic level declining. No free gas at intake.</div>
+                <div style="color:var(--text2);font-size:0.58rem">VFD trim CONTRAINDICATED — drops velocity to 3.1 ft/s &lt; 4.2 ft/s critical lift (SPE-174536).</div>
                 <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(251,146,60,0.2);color:rgba(251,146,60,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
                 <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
@@ -362,8 +362,8 @@
             <!-- ZONE 2 + ZONE 3: Middle + Wellbore strip (fills remaining height) -->
             <div style="flex:1;display:flex;min-height:0;overflow:hidden">
 
-              <!-- ZONE 2 LEFT ~58%: Action Cards + outcomes -->
-              <div style="flex:0 0 58%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 6px 7px 10px;gap:5px;border-right:1px solid var(--border)">
+              <!-- ZONE 2 LEFT ~56%: Action Cards + outcomes -->
+              <div style="flex:0 0 56%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 6px 7px 10px;gap:5px;border-right:1px solid var(--border)">
                 <!-- Pre-detect: locked -->
                 <div v-if="!h1FaultTypeRevealed" style="opacity:0.3;pointer-events:none">
                   <div style="border:1px solid var(--border);border-radius:6px;padding:9px;background:var(--surf)">
@@ -420,9 +420,9 @@
                 </template>
               </div><!-- /zone-2-left -->
 
-              <!-- ZONE 2 RIGHT ~30%: Vertical Document Stack (pgvector Evidence Panel) -->
-              <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
-                <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)</div>
+              <!-- ZONE 2 RIGHT ~28%: Vertical Document Stack (pgvector Evidence Panel) -->
+              <div style="flex:0 0 28%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
+                <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">RETRIEVED CONTEXT — AlloyDB pgvector (< 2s)</div>
                 <!-- Doc 1: primary shift note / sonic log (fires with RAG) -->
                 <div v-if="h1RagRevealed" class="h1-rag-doc-card"
                      @click="h1FaultType==='fluid_drawdown' ? h1SonicLogModalOpen=true : h1ShiftNoteModalOpen=true"
@@ -444,8 +444,8 @@
                     <text x="13" y="24.5" text-anchor="middle" font-size="3.5" fill="rgba(74,222,128,0.55)" font-family="monospace">NOTE</text>
                   </svg>
                   <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3" v-if="h1FaultType==='fluid_drawdown'">Dynamic Acoustic Sonic Log<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">06:00 Tour 2 · Fluid level 150 ft</span></div>
-                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3" v-else>Operator Shift Note<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">06:15 Tour 2 · GVF 78% at intake</span></div>
+                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3" v-if="h1FaultType==='fluid_drawdown'">Dynamic Acoustic Sonic Log<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">06:00 Tour 2 · Fluid level 150 ft</span></div>
+                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3" v-else>Operator Shift Note<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">06:15 Tour 2 · GVF 78% at intake</span></div>
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px;text-decoration:underline;cursor:pointer">View →</div>
                   </div>
                 </div>
@@ -461,7 +461,7 @@
                     <text x="13" y="3.5" text-anchor="middle" font-size="3.5" fill="rgba(96,165,250,0.6)" font-family="monospace">GOR↑</text>
                   </svg>
                   <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Separator Lab Report<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Well A-3 · GOR & Casing Pressure</span></div>
+                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3">Separator Lab Report<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">Well A-3 · GOR & Casing Pressure</span></div>
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px;text-decoration:underline;cursor:pointer">View →</div>
                   </div>
                 </div>
@@ -479,7 +479,7 @@
                     <text x="13" y="24.5" text-anchor="middle" font-size="3.5" fill="rgba(167,139,250,0.55)" font-family="monospace">OEM</text>
                   </svg>
                   <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;font-size:0.54rem;line-height:1.3">OEM Troubleshooting Guide<br><span style="font-weight:400;color:var(--muted);font-size:0.48rem">Gas Void Handling · Permian ESP Operational Manual</span></div>
+                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3">OEM Troubleshooting Guide<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">Gas Void Handling · Permian ESP Operational Manual</span></div>
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine {{ h1ReplayData.rag_sections && h1ReplayData.rag_sections[2] && h1ReplayData.rag_sections[2].similarity != null ? parseFloat(h1ReplayData.rag_sections[2].similarity).toFixed(2) : '—' }} &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
                   </div>
                 </div>
@@ -489,8 +489,8 @@
                 </div>
               </div><!-- /zone-2-right -->
 
-              <!-- ZONE 3: SVG Downhole Digital Twin strip (far right 15%, GDC only, cursor-reactive) -->
-              <div style="flex:0 0 15%;display:flex;flex-direction:column;padding:3px 3px;border-left:1px solid rgba(100,116,139,0.12);min-height:0;overflow:visible">
+              <!-- ZONE 3: SVG Downhole Digital Twin strip (far right 14%, GDC only, cursor-reactive) -->
+              <div style="flex:0 0 14%;display:flex;flex-direction:column;padding:3px 3px;border-left:1px solid rgba(100,116,139,0.12);min-height:0;overflow:visible">
                 <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">DOWNHOLE</div>
                 <!-- SVG wellbore — taller viewBox, cursor-reactive. Bubbles/sand: opacity 0→1 from gdc_detect_idx. -->
                 <svg viewBox="0 0 44 250" style="width:100%;flex:1;overflow:visible">
@@ -498,7 +498,7 @@
                   <rect x="17" y="2" width="10" height="3" rx="1" fill="rgba(100,116,139,0.5)" stroke="rgba(100,116,139,0.3)" stroke-width="0.5"/>
                   <rect x="15" y="5" width="14" height="2.5" rx="0.8" fill="rgba(100,116,139,0.4)"/>
                   <rect x="18" y="7.5" width="8" height="5" rx="1" fill="rgba(100,116,139,0.45)" stroke="rgba(100,116,139,0.3)" stroke-width="0.5"/>
-                  <text x="22" y="11.5" text-anchor="middle" fill="#64748b" font-size="3.5" font-family="Inter,sans-serif">X-MAS</text>
+                  <text x="22" y="11.5" text-anchor="middle" fill="#64748b" font-size="3.5" font-family="Inter,sans-serif">HEAD</text>
                   <!-- Casing strings -->
                   <line x1="15" y1="12.5" x2="15" y2="192" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
                   <line x1="29" y1="12.5" x2="29" y2="192" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
