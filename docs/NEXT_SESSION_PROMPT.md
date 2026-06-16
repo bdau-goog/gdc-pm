@@ -1,5 +1,5 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-15 / git head: e5381f6 / branch: feature-trio-clean
+Date: 2026-06-16 / git head: 8fa7d0f (pre-commit) / branch: feature-trio-clean
 Image: sha256:7cb896cbd996fb9a2771168b02ae9a3c74c9a3883d27caef71142663d5950a77
 
 ## STEP 1: Run These Four Commands First
@@ -11,7 +11,9 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ```
 Expected when healthy:
 - fault-trigger-ui: 1/1 Running
-- ollama replicas=0 (GPU off by default — DO NOT scale up)
+- **ollama replicas=0 (GPU OFF — DO NOT scale up)**
+  - ⚠️ ollama-scheduler CronJobs were DELETED this session (BS+9). If you see ollamaCronJobs re-appearing, they were re-applied from a stale manifest — delete them again.
+  - If ollama replicas=1 on startup: flag immediately (was it left running accidentally? GPU charges ~$0.35/hr)
 - ollama_online: False, model: offline (expected dev default)
 - field_intel=11, rag_documents=20
 
@@ -19,32 +21,68 @@ Expected when healthy:
 ```bash
 cat docs/DEMO_MASTER.md
 ```
+**ESPECIALLY read the new §7.5 BRIEFING ARCHITECTURE — this is the primary task for this session.**
 
-## STEP 3: Session Priority — H1 Briefing Panel Polish (Phase 2)
+## STEP 3: Next Implementation Task — Build Slides Foundation + All Four Decks
 
-**What shipped this session (Session BS+8):**
-- H1 briefing panels wrapped in a fixed **1440×810 slide stage** with `ResizeObserver` scale-to-fit — fills BenQ 5K at ~1.67× scale (reveal.js pattern). git f5d5c16.
-- **P1 redesigned as combined P1+P2**: left=well context (headline + well card, no metric tiles, no wellbore SVG), right=THE EVENT (scrubber + 2×2 sensor tiles showing nominal→fault transition). Old P2 removed. 5 progress dots. git e5381f6.
-- `docs/H1_BRIEFING_COPY.md` — verbatim archive of all verbose P1–P6 copy (reference before condensation).
+### Context (from Session BS+9)
+All architectural decisions are LOCKED in DEMO_MASTER §7.5. The decisions are universal — no per-deck decisions to make. Build the foundation ONCE, port all four decks.
 
-**Recording guidance confirmed:**
-- Record on BenQ PD2725U (5120×2880 native, 2560×1440 logical at 2× Retina). Scale-to-fit renders at ~1.67× — ideal for both video and live projection.
-- Delivery = video + live presentation. Type floor: body ≥ 1.0rem authored, labels ≥ 0.85rem.
+### Task Order
+```
+1. Build slides/_shared/ foundation (tokens.css + slide.css + slide.js + terms.js)
+2. Build slides/h1.html (5 panels — proves every lever)
+3. Wire iframe in tab_h1.html + postMessage handler + /slides/ route in app.py
+4. Remove H1 briefing block + scale machinery from tab_h1.html + app.js
+5. VERIFY LIVE: H1 renders, split drags, P3 animates, ▶ Run hands off to replay, app unchanged
+6. Port slides/intro.html (3 panels — port from docs/slides/gdc-intro-slides.html)
+7. Port slides/h2.html (3 panels — port from tab_h2.html briefing block)
+8. Port slides/h3.html (3 panels — port from tab_h3.html briefing block)
+9. Wire iframes for intro/h2/h3; remove their Vue briefing blocks + scale machinery
+10. VERIFY ALL FOUR LIVE; commit
+```
 
-### Next: Phase 2 — Per-Panel Content Fixes (P3–P6)
+### Foundation spec (from DEMO_MASTER §7.5)
+```
+gke/fault-trigger-ui/slides/
+  _shared/
+    tokens.css    ← :root design tokens (migrate app styles.css :root here too)
+    slide.css     ← fixed 1440×810 canvas + §4.5 card anatomy + graphic scale
+    slide.js      ← fit-to-viewport + ←→/dot nav + scrubber/▶Play (applyState)
+                    + CSS-grid split handles + localStorage + author-mode Copy-layout
+                    + terms.js dictionary injection
+    terms.js      ← content dictionary (pip, cost_trim, cost_pull, etc.)
+  intro.html, h1.html, h2.html, h3.html
+```
 
-**CONFIRM P1 FIRST:** User had not yet confirmed P1 looks correct at session end. Hard-refresh BenQ and review P1 before starting P3.
+### Key reference panels to build in h1.html
+- **P1 "Same Signal. Two Causes."** → demonstrates resizable Scenario↔Event split handle
+- **P3 "The Hook"** → demonstrates scrub/▶Play applyState(t) animation (wellbore + metric tiles)
+- Other panels: static with correct content + comparative-only copy
 
-| Panel | Priority fix |
-|---|---|
-| P3 (THE HOOK) | Body text 0.65rem→0.90rem; auto-play nominal→fault transition on panel entry (scrubber starts at 0, animates to 100 over ~2s) |
-| P4 (THE MOAT) | "PIP" → "Intake Pressure" in tag-list labels; replace 4-row tag-list with visual arc-gauge cluster |
-| P5 (THE DECISION) | Shorten action card bullets; add $2,500 ↔ $150,000 decision-fork graphic to fill the frame |
-| P6 (THE PLATFORM) | Add industry icons for O&G / P&E / MFG rows |
+### App wiring
+```python
+# app.py: add static mount for /slides/
+app.mount("/slides", StaticFiles(directory="slides"), name="slides")
+```
+```html
+<!-- tab_h1.html: replace briefing block with: -->
+<div v-if="h1BriefingMode" style="flex:1;min-height:0;overflow:hidden">
+  <iframe src="/slides/h1.html" style="width:100%;height:100%;border:none"
+    @load="$el.contentWindow.addEventListener('message', e => {
+      if(e.data==='run-h1'){h1BriefingMode=false;loadH1Scenario();}
+    })">
+  </iframe>
+</div>
+```
+- Remove `h1BriefingScale`, `h1BriefingScaleManual`, `_h1ComputeFit`, `_h1KeyZoom` from app.js
+- Remove the `ResizeObserver`/`Cmd±0` block for H1 from mounted() in app.js
+- Verify app renders identically after token migration before deploying
 
-**Phase 3 (independent — do any time):**
-- In `app.js`: raise h1ScenarioFetchTimeout from ~20s to 60s
-- On Panel 6 entry: fire warmup call so scenario loads before user clicks ▶
+### Content policy (LOCKED in DEMO_MASTER §7.5)
+- No authored hard $ in narrative copy → comparative phrases via terms.js
+- `pip` → `Pump Inlet Pressure` in all deck copy (61 old occurrences in app stay for deferred cleanup)
+- Live model outputs (health score, lead-time minutes, H3 bbl/d) retain real labeled numbers
 
 ### Build / deploy commands
 ```bash
@@ -59,13 +97,16 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
 ## Known Integrity Issues
 | Issue | Status |
 |-------|--------|
-| ⓘ Physics panel: "physically identical / no sensor can disambiguate" | ✅ RESOLVED — `6e42e35` |
+| `PIP` (61 occurrences) → `Pump Inlet Pressure` in app.js/app.py/templates | ⏸ Deferred — decks use terms.js; app gets a separate cleanup pass after decks verified |
+| Authored `~$2,500` / `~$150k` → comparative language in app templates | ⏸ Deferred — same pass as PIP cleanup |
+| Ledger rows C1/C3 (authored display costs) | ⏸ Retired as display values; constants remain in app.py as traceable source |
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
 - Tab content: `gke/fault-trigger-ui/templates/*.html` + `app.py` (index.html = shell only)
 - Run `verify_templates.py` before any template build
 - Source env: `source /home/brian/gdc-pm/.env`
-- GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` only for explicit LLM test
+- GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` ONLY for explicit LLM test; ALWAYS pair with gpu-stop.sh
+- **NO ollama-scheduler CronJobs** — both deleted Session BS+9 (conflict with GPU discipline)
 - No Jinja2 in templates
-- Branch is 9 commits ahead of origin — push before session end next time
+- Branch is 10+ commits ahead of origin — commit + push this session

@@ -656,6 +656,95 @@ Returns: `trials[]`, `scada_nominal`, `vizier_optimal`, `optimal_hz`, per-well b
 
 ---
 
+## 7.5 BRIEFING ARCHITECTURE — STANDALONE DECKS (Session BS+9, June 16 2026)
+
+**Status: LOCKED DESIGN DECISION — do not revert to inline Vue briefing panels.**
+
+### Root-cause problem (solved by this section)
+Embedding briefing/explainer panels *inside* the Vue SPA (`tab_h1.html` etc.) caused recurring blank-page failures, SVG overflow, div-balance bugs, and scale-machinery complexity. The architectural mismatch: a *fixed-canvas slide* needs its own document context; forcing it inside a live-data Vue component produced a class of bugs that 8+ sessions failed to fix with code changes.
+
+### Architecture: Standalone Decks behind `<iframe>` tabs
+
+```
+gke/fault-trigger-ui/slides/
+  _shared/
+    tokens.css    ← ALL design tokens (:root colors, fonts, radii) — SINGLE SOURCE OF TRUTH
+                    (app styles.css @imports or mirrors this; change a token = changes everywhere)
+    slide.css     ← slide layout + §4.5 card anatomy; @imports tokens.css
+    slide.js      ← runtime: fit-to-1440×810 · ← → / dot nav · scrubber + ▶ Play
+                    · resizable split-drag + localStorage + author-mode Copy-layout
+                    · terms.js dictionary injection
+    terms.js      ← content dictionary: volatile terms/phrases resolved at load time
+  intro.html      ← 3 sections: What is GDC / When / Deployment Models
+  h1.html         ← 5 sections: P1 · The Hook · The Moat · The Decision · The Platform
+  h2.html         ← 3 sections: The Well · The Signature · The Decision
+  h3.html         ← 3 sections: The Opportunity · The Tradeoff · The Optimization
+```
+
+Each `.html` deck is a **fully standalone document** (correct outside the app server, directly in a local browser). In the demo app, it is served as `<iframe src="/slides/h1.html">` inside the relevant tab. The final panel's **▶ Run the Scenario** button fires `window.parent.postMessage('run-h1')` to hand off to the Vue live-replay.
+
+### Five global-change levers (edit ONE place, all decks + app update)
+
+| Lever | Edit location | Example |
+|---|---|---|
+| **A — Color / font / radius** | `tokens.css` | Change `--blue` once → every deck + app |
+| **B — Slide layout / card anatomy** | `slide.css` | Change card padding → all 4 decks |
+| **C — All non-title content size** | `tokens.css` → `--content-scale: 1.0` | Set `1.15` → all body text +15%; titles locked |
+| **D — Individual element group size** | `--graphic-scale` on element/section | `--graphic-scale: 1.3` → wellbore SVG bigger |
+| **E — Term / number (vocabulary)** | `terms.js` | `pip: "Pump Inlet Pressure"` → PIP removed everywhere |
+
+### Resizable panel regions
+
+Panels with two logical regions (e.g., Scenario ↔ Event, explanation ↔ pump graphic) use CSS Grid with a custom-property split:
+
+```css
+.panel-grid { display:grid; grid-template-columns: var(--p1-split, 1fr) 6px 1fr; }
+```
+
+- Handle is a **6px gap, invisible at rest; faint blue line + ↔ cursor on hover.** Fully findable by sweeping the mouse to the region boundary.
+- **Drag → updates `--p1-split` → persists to `localStorage`** under key `gdc.slide.h1.p1.split`.
+- **Author mode** (`?author` URL param or ⚙ toggle): makes all handles visible + shows a "Copy layout" button that dumps current fractions as a `:root` block. Paste into the deck's `<style>` to bake as the new default.
+
+### Animation model
+
+Each animated panel exposes a single `applyState(t)` function (t = 0→1). The same function drives two inputs:
+- **Scrubber**: drag → sets `t` → calls `applyState(t)`
+- **▶ Play**: timer ramps `t` 0→1 over ~3s → calls same `applyState(t)`
+
+Both are built simultaneously (Play is ~8 lines on top of scrubber; retrofitting later wastes tokens). No API calls, no model — briefing animations are **scripted illustrations of the narrative**, not live model outputs.
+
+### Content policy: Comparative narrative, no authored hard numbers
+
+**Narrative/briefing copy: NO authored hard dollar figures.** Use comparative language:
+- ❌ `~$2,500` (VFD trim cost) → ✅ `"a low-cost control-room adjustment"`
+- ❌ `~$150,000` (workover) → ✅ `"a six-figure workover"` / `"pulling the pump"`
+
+These phrases live in `terms.js` (keyed constants), not inline in markup.
+
+**Exception — live model outputs:** Real computed numbers (XGBoost health score, lead-time in minutes, H3 uplift `+77.9 bbl/d`) MAY appear on screen *when they are live, labeled outputs of the running system* — never as authored rhetorical claims. Hard numbers in the simulation layer must trace to a running model output and must be labeled as such.
+
+**Ledger impact:** Claim Ledger rows C1 (`~$2,500`) and C3 (`~$150,000`) are retired as authored display values. They remain as sourced constants in `app.py` (their traceable origin). Comparative phrasing becomes the pixel-eligible form; no new ledger rows needed because comparative language is inherently not a falsifiable point claim.
+
+### Terminology change (mandatory)
+
+- **`PIP` → `Pump Inlet Pressure`** everywhere in new deck copy. 61 occurrences remain in `tab_h1/h2.html`, `tab_architecture.html`, `app.js`, `app.py` — these are a separate deferred cleanup pass after the decks are verified live.
+- In `terms.js`: `pip: "Pump Inlet Pressure"`, `pip_abbr: "Pump Inlet Pressure"` — no more bare `PIP` in deck markup.
+
+### URL model (development workflow)
+
+| Purpose | URL |
+|---|---|
+| Full demo (audience) | `gdc-pm.bdau.io` — tabbed app, unchanged |
+| Edit one panel | `gdc-pm.bdau.io/slides/h1.html#p4` — instant, no docker build |
+| Tune a whole deck | `gdc-pm.bdau.io/slides/h1.html` |
+| Local preview (zero infra) | `file:///…/slides/h1.html` (self-contained) |
+
+### Build sequencing: H1 first, proves shell, H2/H3/intro repeat
+
+The foundation (`slides/_shared/`) is written once and shared by all four decks. H1 is built first because it's where rough edges are discovered and fixed (iframe sizing, postMessage handoff, token migration). Once H1 is **verified live**, H2/H3/intro are content ports against a proven shell — done in the same session, back-to-back.
+
+---
+
 ## 8. DOCUMENT REALISM GATE — SYNTHETIC FIELD DOCUMENTS
 
 **Added: Session W (June 9, 2026). Enforcement: blocking — same level as PRIME DIRECTIVE.**

@@ -46,7 +46,10 @@ metadata:
   labels:
     app: ollama
 spec:
-  replicas: 1
+  replicas: 0   # DEFAULT=0: GPU is OFF unless explicitly scaled up. Never apply with replicas>0.
+                # To start: kubectl scale deployment ollama -n gdc-pm --replicas=1
+                # To stop:  ./scripts/gpu-stop.sh   (always pair start/stop)
+                # DO NOT re-enable the ollama-scheduler.yaml CronJobs — they fight manual GPU discipline.
   selector:
     matchLabels:
       app: ollama

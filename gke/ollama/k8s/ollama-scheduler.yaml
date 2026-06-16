@@ -1,6 +1,26 @@
+# ⚠️  RETIRED — 2026-06-16 (Session BS+9)
+# ============================================================================
+# DO NOT APPLY THIS FILE.
+#
+# This CronJob automation was deleted because it CONFLICTS with the GPU
+# discipline rule in .clinerules: "ollama replicas=0 is the EXPECTED dev
+# default. Do NOT scale ollama up just because it is down."
+#
+# The stand-up CronJob (0 6 * * 1-5 UTC) was silently scaling ollama to 1
+# every weekday morning at 06:00 UTC, provisioning a T4 GPU node and
+# accumulating charges while the developer was asleep. Deleted via:
+#   kubectl delete cronjob ollama-stand-up ollama-stand-down -n gdc-pm
+#
+# CORRECT GPU DISCIPLINE:
+#   Start (only for explicit LLM-test):  ./scripts/gpu-start.sh
+#   Stop  (always pair with start):      ./scripts/gpu-stop.sh
+#   ollama.yaml now has replicas:0 as the manifest default.
+#
+# This file is kept for reference only. Never re-apply.
+# ============================================================================
 ---
 # ============================================================================
-# Ollama Scheduler — Automated Stand-Up / Stand-Down CronJobs
+# Ollama Scheduler — Automated Stand-Up / Stand-Down CronJobs (RETIRED)
 #
 # Saves T4 GPU costs by scaling the ollama deployment to 0 replicas at 6 PM
 # UTC and back to 1 replica at 6 AM UTC (Mon–Fri only for stand-up).
