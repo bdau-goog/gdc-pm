@@ -1056,3 +1056,24 @@
     /* ── Sprint 2e: H1 Briefing — Panel 6 industry table row reveal ── */
     @keyframes h1-p6-rowin{from{opacity:0}to{opacity:1}}
     .h1-p6-row{animation:h1-p6-rowin 0.5s ease-out both}
+
+    /* ── Intro Tab — 3-slide GDC intro deck ── */
+    .intro-rainbow{height:4px;flex-shrink:0;background:linear-gradient(90deg,#ea4335 0%,#ea4335 25%,#fbbc04 25%,#fbbc04 50%,#34a853 50%,#34a853 75%,#4285f4 75%,#4285f4 100%)}
+    .intro-slide-hdr{flex-shrink:0;padding:28px 60px 0}
+    .intro-slide-hdr h2{font-size:2.4rem;font-weight:700;color:var(--text1);letter-spacing:-0.02em;line-height:1.2}
+    .intro-slide-hdr h2 em{font-style:normal;color:var(--blue)}
+    .intro-divider{height:2px;background:linear-gradient(90deg,rgba(59,130,246,0.5) 0%,transparent 80%);margin-top:10px}
+    .intro-body{flex:1;display:flex;min-height:0;padding:28px 60px;gap:40px}
+    .intro-glass{background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.22);border-radius:12px;padding:28px 30px}
+    .intro-mono-lbl{font-family:var(--mono);font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--blue);margin-bottom:10px}
+    .intro-nav-bar{flex-shrink:0;height:38px;display:flex;align-items:center;justify-content:center;gap:10px;background:rgba(14,22,38,0.9);border-top:1px solid var(--border);font-family:var(--mono);font-size:0.55rem;color:rgba(100,116,139,0.45)}
+    .intro-nav-dot{width:7px;height:7px;border-radius:50%;background:rgba(100,116,139,0.3);transition:background 0.25s;cursor:pointer}
+    .intro-nav-dot.on{background:var(--blue)}
+    .intro-s2-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:20px;width:100%}
+    .intro-s2-card{background:rgba(15,23,42,0.65);border-radius:12px;padding:32px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px}
+    .intro-s2-icon{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .intro-s3-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;width:100%}
+    .intro-s3-card{background:rgba(15,23,42,0.65);border-radius:12px;padding:28px 28px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:16px}
+    .intro-hw-box{width:180px;height:120px;display:flex;align-items:center;justify-content:center;border-radius:8px;flex-shrink:0}
+    @keyframes intro-slidein{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:none}}
+    .intro-slide-panel{animation:intro-slidein 0.35s ease-out both;flex:1;display:flex;flex-direction:column;min-height:0}

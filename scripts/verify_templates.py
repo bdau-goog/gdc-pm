@@ -26,6 +26,7 @@ TEMPLATES   = REPO_ROOT / "gke" / "fault-trigger-ui" / "templates"
 SHELL_HTML  = REPO_ROOT / "gke" / "fault-trigger-ui" / "index.html"
 
 EXPECTED_TABS = [
+    "tab_intro",
     "tab_operations",
     "tab_h1",
     "tab_h2",
@@ -131,6 +132,7 @@ def main():
 
     # Verify assembled HTML contains expected tab-panel signatures
     EXPECTED_SIGNATURES = [
+        ('tab-intro',        "mainTab==='intro'"),
         ('tab-operations',   'id="tab-operations"'),
         ('tab-horizon1',     "mainTab==='horizon1'"),
         ('tab-horizon2',     "mainTab==='horizon2'"),

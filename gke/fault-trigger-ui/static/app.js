@@ -117,6 +117,9 @@ createApp({
       h1BriefingPanel: 1,       // 1=This Well, 2=What is an Unload? (panels 3-6 in Sprint 2b-2e)
       h1BriefingScale: 1,       // CSS transform scale for 1440×810 slide stage; initial fit then manual
       h1BriefingScaleManual: false, // true once user has adjusted scale with Cmd+/-/0
+      introSlide: 0,            // 0-2: current intro slide index
+      introScale: 1,            // CSS transform scale for intro 1440×810 stage
+      introScaleManual: false,  // true once user has adjusted intro scale
       h1P2Scrub: 0,             // 0=nominal → 100=fault; Panel 2 scrubber (resets on panel change)
       h1P3Scrub: 0,             // 0=nominal → 100=fault; Panel 3 scrubber (resets on panel change)
       h1SplitPercent: 56,
@@ -2332,6 +2335,7 @@ createApp({
       }
       // Cmd/Ctrl +/-/0 → step h1BriefingScale ±0.05, override browser zoom
       this._h1KeyZoom = (e) => {
+        if (this.mainTab !== 'horizon1') return;
         if (!this.h1BriefingMode) return;
         const isMod = e.metaKey || e.ctrlKey;
         if (!isMod) return;
@@ -2350,6 +2354,37 @@ createApp({
         }
       };
       document.addEventListener('keydown', this._h1KeyZoom);
+      // Intro tab: arrow keys navigate slides; Cmd+/-/0 scale the stage
+      this._introKeyNav = (e) => {
+        if (this.mainTab !== 'intro') return;
+        const isMod = e.metaKey || e.ctrlKey;
+        if (isMod) {
+          if (e.key === '=' || e.key === '+') {
+            e.preventDefault();
+            this.introScaleManual = true;
+            this.introScale = Math.min(3, +(this.introScale + 0.05).toFixed(2));
+          } else if (e.key === '-') {
+            e.preventDefault();
+            this.introScaleManual = true;
+            this.introScale = Math.max(0.2, +(this.introScale - 0.05).toFixed(2));
+          } else if (e.key === '0') {
+            e.preventDefault();
+            this.introScaleManual = false;
+            this.introScale = this._introComputeFit ? this._introComputeFit() : 1;
+          }
+          return;
+        }
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.introSlide = Math.min(2, this.introSlide + 1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.introSlide = Math.max(0, this.introSlide - 1);
+        } else if (e.key === '1') { this.introSlide = 0; }
+        else if (e.key === '2') { this.introSlide = 1; }
+        else if (e.key === '3') { this.introSlide = 2; }
+      };
+      document.addEventListener('keydown', this._introKeyNav);
     });
   },
 
@@ -2357,6 +2392,7 @@ createApp({
     [this._pollKpis,this._pollHorizon,this._pollMlops].forEach(t=>t&&clearInterval(t));
     this.stopDegPoll();
     if (this._h1KeyZoom) document.removeEventListener('keydown', this._h1KeyZoom);
+    if (this._introKeyNav) document.removeEventListener('keydown', this._introKeyNav);
   },
 }).mount('#app');
 console.log("=== app.js mounted successfully ===");
