@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=1440">
-<title>H1 — Discern · ESP Fluid Unloading</title>
+<title>H1 — ESP Hydraulic Unloading · Ambiguous Telemetry</title>
 <link rel="stylesheet" href="_shared/slide.css">
 <style>
   /* ── Per-deck overrides ── */
@@ -21,23 +21,31 @@
   .tile-desc   { font-size:0.62rem; color:var(--muted); line-height:1.5; }
   .scrub-row   { flex-shrink:0; display:flex; align-items:center; gap:10px; }
   .scrub-label { font-family:var(--mono); font-size:0.52rem; white-space:nowrap; }
-  /* P3 STATE/CONTEXT layout */
-  .state-tile { display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:rgba(59,130,246,0.07); border:1px solid rgba(59,130,246,0.18); border-radius:5px; }
-  .ctx-item   { display:flex; align-items:flex-start; gap:9px; padding:8px 10px; background:rgba(251,146,60,0.07); border:1px solid rgba(251,146,60,0.2); border-radius:5px; }
-  .ctx-dot    { display:inline-block; width:9px; height:9px; background:rgba(251,146,60,0.8); border-radius:2px; flex-shrink:0; margin-top:3px; }
+  /* Decision outcome rows for P3 */
+  .dec-outcome { display:flex; align-items:flex-start; gap:10px; padding:9px 12px; border-radius:6px; }
+  .dec-check   { flex-shrink:0; font-size:0.80rem; line-height:1; margin-top:1px; }
+  /* Context doc items for P4 left column */
+  .ctx-doc { display:flex; align-items:flex-start; gap:10px; padding:9px 12px;
+              background:rgba(251,146,60,0.06); border:1px solid rgba(251,146,60,0.18); border-radius:6px; }
+  .ctx-doc-icon { flex-shrink:0; font-size:0.90rem; }
+  /* GDC step items for P4 right column */
+  .gdc-step { display:flex; align-items:flex-start; gap:10px; padding:9px 12px;
+               background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.18); border-radius:6px; }
+  .gdc-step-num { flex-shrink:0; width:20px; height:20px; border-radius:50%;
+                  background:rgba(59,130,246,0.25); color:#93c5fd; font-family:var(--mono);
+                  font-size:0.52rem; font-weight:700; display:flex; align-items:center; justify-content:center; }
 </style>
 </head>
 <body>
 <div id="slide-stage">
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 1: THE SCENARIO — Same Signal. Two Causes. One Right Decision.
+     SLIDE 1: THE SCENARIO
      Left: well context card | Right: 4-sensor scrubber tiles
-     Resizable split — drag the handle to resize columns.
+     Resizable split handle.
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide active" id="p1">
   <div class="rainbow-bar"></div>
-  <!-- The body IS the panel-grid (fills flex remainder above nav-bar) -->
   <div class="panel-grid" style="flex:1;min-height:0;padding:16px 48px 12px;gap:0;overflow:hidden">
 
     <!-- Left: well context -->
@@ -45,7 +53,7 @@
       <div>
         <div class="slide-kicker">THE SCENARIO</div>
         <h2 class="slide-title">Same Signal. Two Causes.<br>One Right Decision.</h2>
-        <p class="slide-sub">A Permian ESP well goes into unloading. The same sensor decline — <strong style="color:#93c5fd">two root causes, opposite correct actions</strong>.</p>
+        <p class="slide-sub">A Permian ESP well enters hydraulic unloading. The same Pump Inlet Pressure and Motor Amps decline — <strong style="color:#93c5fd">two root causes, opposite correct actions</strong>.</p>
       </div>
       <div class="glass-card" style="flex:1;overflow:hidden">
         <div class="mono-label">WELL ESP-ALPHA-N · PAD ALPHA · PERMIAN BASIN</div>
@@ -53,7 +61,7 @@
           <div class="well-row"><span class="well-label">Formation</span><span class="well-val">Mature Permian unconventional · <strong style="color:#f59e0b">moderate-sand</strong></span></div>
           <div class="well-row"><span class="well-label">Pump</span><span class="well-val">ESP · <strong style="color:#f59e0b">AR-trim impellers</strong> (abrasion-resistant)</span></div>
           <div class="well-row"><span class="well-label">Sensors</span><span class="well-val"><strong style="color:#f59e0b">Intake-only PDG</strong> — Pump Inlet Pressure, Motor Amps, Winding Temp, Vibration · <em>no discharge gauge</em></span></div>
-          <div class="well-row"><span class="well-label">Operating</span><span class="well-val">52 Hz · 3,120 RPM · nominal pressure ~1,245 PSI</span></div>
+          <div class="well-row"><span class="well-label">Operating</span><span class="well-val">52 Hz · 3,120 RPM · nominal ~1,245 PSI</span></div>
         </div>
       </div>
     </div>
@@ -65,7 +73,7 @@
     <div style="display:flex;flex-direction:column;gap:10px;overflow:hidden;padding-left:16px">
       <div style="flex-shrink:0">
         <div class="slide-kicker">THE EVENT</div>
-        <p class="slide-sub" style="margin-bottom:8px">Pump Inlet Pressure and Amps <strong style="color:#93c5fd">decline together</strong> — Winding Temp and Vibration stay flat.</p>
+        <p class="slide-sub" style="margin-bottom:8px">Pump Inlet Pressure and Motor Amps <strong style="color:#93c5fd">decline together</strong> — Winding Temp and Vibration stay flat.</p>
       </div>
       <!-- Scrubber -->
       <div class="scrub-row" style="flex-shrink:0">
@@ -113,21 +121,22 @@
       </div>
     </div>
   </div>
-</div><!-- /slide p1 -->
+</div><!-- /p1 -->
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 2: THE HOOK — One Signature, Two Causes
-     Scrubber + ▶ Play drives both wellbore diagrams simultaneously.
+     SLIDE 2: AMBIGUOUS TELEMETRY
+     Side-by-side animated wellbore SVGs: Gas Entrainment | Fluid Drawdown
+     Single shared scrubber drives both animations simultaneously.
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide" id="p2">
   <div class="rainbow-bar"></div>
   <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:10px;overflow:hidden">
 
     <div style="flex-shrink:0">
-      <div class="slide-kicker">THE HOOK</div>
-      <h2 class="slide-title">One Signature, Two Causes</h2>
-      <p class="slide-sub">Both failure modes produce the <strong style="color:#93c5fd">identical Pump Inlet Pressure + Amps decline</strong> on an intake-only sensor string. The cause — and the correct action — are not in these numbers.</p>
+      <div class="slide-kicker">AMBIGUOUS TELEMETRY</div>
+      <h2 class="slide-title">One Signature, Two Physical Realities</h2>
+      <p class="slide-sub">Gas Entrainment and Fluid Drawdown produce <strong style="color:#93c5fd">identical Pump Inlet Pressure and Amps decline</strong> on an intake-only sensor string. The cause — and the safe action — are not in these numbers.</p>
     </div>
 
     <!-- Scrubber -->
@@ -138,34 +147,41 @@
       <button class="panel-play" style="padding:3px 10px;border-radius:4px;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.12);color:#93c5fd;font-size:0.56rem;cursor:pointer;font-family:var(--sans)">▶ Play</button>
     </div>
 
-    <!-- Split: Gas Lock | Fluid Drawdown -->
+    <!-- Split: Gas Entrainment | Fluid Drawdown -->
     <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0">
 
-      <!-- Gas Lock -->
+      <!-- Gas Entrainment -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS INTERFERENCE · HIGH GVF</div>
-        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Free gas at pump intake — hydraulic unloading</div>
+        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS ENTRAINMENT · HIGH GVF</div>
+        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Free gas enters pump intake — wellbore stays fully flooded</div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
           <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:340px">
+            <!-- Tubing walls -->
             <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
+            <!-- Full fluid column — HIGH and STABLE (does NOT drop in gas entrainment) -->
             <rect x="20" y="14" width="22" height="128" fill="rgba(59,130,246,0.28)" stroke="rgba(59,130,246,0.22)" stroke-width="0.5"/>
+            <!-- Fluid level label: HIGH · STABLE -->
             <line x1="19" y1="14" x2="13" y2="14" stroke="rgba(96,165,250,0.45)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
-            <text x="12" y="13" text-anchor="end" fill="rgba(96,165,250,0.65)" font-size="3" font-family="monospace">HIGH</text>
-            <text x="12" y="17.5" text-anchor="end" fill="rgba(96,165,250,0.4)" font-size="2.6" font-family="monospace">STABLE</text>
-            <!-- Gas bubbles rising from formation through fluid column to pump intake -->
-            <circle class="wb-bubble" id="p2-bub1" cx="25" cy="134" r="2.2"/>
-            <circle class="wb-bubble" id="p2-bub2" cx="35" cy="128" r="1.6"/>
-            <circle class="wb-bubble" id="p2-bub3" cx="30" cy="139" r="1.9"/>
-            <circle class="wb-bubble" id="p2-bub4" cx="38" cy="134" r="1.3"/>
-            <circle class="wb-bubble" id="p2-bub5" cx="23" cy="126" r="1.5"/>
-            <circle class="wb-bubble" id="p2-bub6" cx="27" cy="165" r="1.8"/>
-            <circle class="wb-bubble" id="p2-bub7" cx="36" cy="157" r="1.4"/>
-            <circle class="wb-bubble" id="p2-bub8" cx="22" cy="150" r="1.7"/>
-            <circle class="wb-bubble" id="p2-bub9" cx="33" cy="108" r="1.5"/>
-            <circle class="wb-bubble" id="p2-bub10" cx="24" cy="95" r="1.3"/>
-            <circle class="wb-bubble" id="p2-bub11" cx="37" cy="80" r="1.4"/>
-            <circle class="wb-bubble" id="p2-bub12" cx="29" cy="68" r="1.2"/>
+            <text x="12" y="13"   text-anchor="end" fill="rgba(96,165,250,0.65)" font-size="3"   font-family="monospace">HIGH</text>
+            <text x="12" y="17.5" text-anchor="end" fill="rgba(96,165,250,0.4)"  font-size="2.6" font-family="monospace">STABLE</text>
+            <!-- Gas bubbles — distributed through full fluid column (formation → intake) -->
+            <!-- Lower zone: near formation -->
+            <circle class="wb-bubble" id="p2-bub1"  cx="25" cy="134" r="2.2"/>
+            <circle class="wb-bubble" id="p2-bub2"  cx="35" cy="128" r="1.6"/>
+            <circle class="wb-bubble" id="p2-bub3"  cx="30" cy="139" r="1.9"/>
+            <circle class="wb-bubble" id="p2-bub4"  cx="38" cy="132" r="1.3"/>
+            <circle class="wb-bubble" id="p2-bub5"  cx="23" cy="126" r="1.5"/>
+            <!-- Middle zone: rising through column -->
+            <circle class="wb-bubble" id="p2-bub6"  cx="27" cy="105" r="1.8"/>
+            <circle class="wb-bubble" id="p2-bub7"  cx="36" cy="97"  r="1.4"/>
+            <circle class="wb-bubble" id="p2-bub8"  cx="22" cy="82"  r="1.7"/>
+            <!-- Upper zone: approaching pump intake -->
+            <circle class="wb-bubble" id="p2-bub9"  cx="33" cy="68"  r="1.5"/>
+            <circle class="wb-bubble" id="p2-bub10" cx="24" cy="54"  r="1.3"/>
+            <circle class="wb-bubble" id="p2-bub11" cx="37" cy="41"  r="1.4"/>
+            <circle class="wb-bubble" id="p2-bub12" cx="29" cy="30"  r="1.2"/>
+            <!-- Pump / Motor -->
             <rect x="13" y="143" width="36" height="9" rx="1.5" fill="rgba(251,191,36,0.3)" stroke="rgba(251,191,36,0.55)" stroke-width="0.8"/>
             <text x="31" y="149.5" text-anchor="middle" fill="rgba(251,191,36,0.85)" font-size="4.2" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
             <rect x="13" y="154" width="36" height="12" rx="1.5" fill="rgba(16,185,129,0.22)" stroke="rgba(74,222,128,0.38)" stroke-width="0.8"/>
@@ -176,29 +192,32 @@
           </svg>
         </div>
         <div style="padding:6px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px;font-size:0.55rem;color:#93c5fd;line-height:1.5;flex-shrink:0">
-          <strong>✔ VFD trim 52→44 Hz</strong> — lowers intake draw, gas vents up the annulus. Well stays online. Zero-cost SCADA command.
+          <strong>✔ VFD trim 52→44 Hz</strong> — lowers intake rate, gas vents up the annulus. Well stays online. Zero-cost SCADA command.
         </div>
       </div>
 
       <!-- Fluid Drawdown -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(180,83,9,0.32);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">RESERVOIR DRAWDOWN · SAND RISK</div>
-        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Critically low dynamic fluid level — sand mobilization risk</div>
+        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">FLUID DRAWDOWN · RESERVOIR DEPLETION</div>
+        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Dynamic fluid level falls toward pump intake — sand mobilizes</div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
           <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:340px">
+            <!-- Tubing walls -->
             <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
-            <!-- Gas/vapor zone — most of wellbore above critically low fluid level -->
+            <!-- Gas/vapor void zone — above declining fluid level -->
             <rect x="20" y="14" width="22" height="127" fill="rgba(15,23,42,0.55)"/>
-            <text id="p2-gas-text" x="31" y="40" text-anchor="middle" fill="rgba(100,116,139,0.35)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0.35">GAS VOID</text>
-            <!-- Fluid column — CRITICALLY LOW, just above pump intake; animated via applyState -->
-            <rect id="p2-fluid" x="20" y="88" width="22" height="55" fill="rgba(120,53,15,0.4)" stroke="rgba(180,83,9,0.3)" stroke-width="0.5"/>
-            <line x1="19" y1="88" x2="13" y2="88" stroke="rgba(251,146,60,0.65)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
-            <text x="12" y="86" text-anchor="end" fill="rgba(251,146,60,0.8)" font-size="2.8" font-family="monospace">CRITICALLY</text>
-            <text x="12" y="90" text-anchor="end" fill="rgba(251,146,60,0.8)" font-size="2.8" font-family="monospace">LOW</text>
-            <!-- Sand at pump intake — pulled in by high intake velocity during drawdown -->
+            <text id="p2-gas-text" x="31" y="40" text-anchor="middle" fill="rgba(100,116,139,0.35)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0.25">GAS VOID</text>
+            <!-- Fluid column — starts high, drains toward pump intake as t increases -->
+            <rect id="p2-fluid" x="20" y="55" width="22" height="88" fill="rgba(120,53,15,0.4)" stroke="rgba(180,83,9,0.3)" stroke-width="0.5"/>
+            <!-- Fluid level indicator (animated with fluid column) -->
+            <line id="p2-fluid-line" x1="19" y1="55" x2="13" y2="55" stroke="rgba(251,146,60,0.65)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
+            <text id="p2-fluid-label1" x="12" y="53"   text-anchor="end" fill="rgba(251,146,60,0.8)" font-size="2.8" font-family="monospace">FLUID</text>
+            <text id="p2-fluid-label2" x="12" y="57.5" text-anchor="end" fill="rgba(251,146,60,0.8)" font-size="2.8" font-family="monospace">LEVEL</text>
+            <!-- Sand particles — hover/float at pump intake (drawn upward by suction) -->
             <rect id="p2-sand" x="20" y="135" width="22" height="7" fill="rgba(180,120,30,0.28)" stroke="rgba(180,120,30,0.38)" stroke-width="0.5" style="opacity:0"/>
             <text id="p2-sand-text" x="31" y="140" text-anchor="middle" fill="rgba(180,120,30,0.85)" font-size="3.0" font-family="monospace" style="opacity:0">SAND▶INTAKE</text>
+            <!-- Pump / Motor -->
             <rect x="13" y="143" width="36" height="9" rx="1.5" fill="rgba(239,68,68,0.28)" stroke="rgba(239,68,68,0.5)" stroke-width="0.8"/>
             <text x="31" y="149.5" text-anchor="middle" fill="rgba(239,68,68,0.85)" font-size="4.2" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
             <rect x="13" y="154" width="36" height="12" rx="1.5" fill="rgba(16,185,129,0.2)" stroke="rgba(74,222,128,0.32)" stroke-width="0.8"/>
@@ -209,7 +228,7 @@
           </svg>
         </div>
         <div style="padding:6px 10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:0.55rem;color:#fca5a5;line-height:1.5;flex-shrink:0">
-          <strong>✘ VFD trim</strong> — drops tubing velocity below transport limit; sand bridges above pump, blocking restart. <strong>✔ Reduce speed in steps, holding above minimum cooling-flow Hz · verify fluid level from last sonic survey before any further reduction.</strong>
+          <strong>✘ VFD trim</strong> — drops tubing velocity below sand-transport limit; sand bridges string. <strong>✔ Step down in stages; verify fluid level from last sonic survey.</strong>
         </div>
       </div>
     </div>
@@ -219,158 +238,299 @@
       <div style="flex-shrink:0;font-family:var(--mono);font-size:0.55rem;font-weight:700;color:rgba(148,163,184,0.65);white-space:nowrap;line-height:1.5">SAME SENSOR<br>OUTPUT ↓</div>
       <div style="flex:1;display:flex;flex-direction:column;gap:5px">
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:56px;flex-shrink:0">PRESSURE</span>
+          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:90px;flex-shrink:0">PRESSURE</span>
           <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-pip-fill" style="width:90%;background:linear-gradient(90deg,rgba(59,130,246,0.85),rgba(59,130,246,0.4))"></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:56px;flex-shrink:0">AMPS</span>
+          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:90px;flex-shrink:0">MOTOR AMPS</span>
           <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-amp-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
         </div>
       </div>
-      <div style="flex-shrink:0;font-size:0.65rem;color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:210px;line-height:1.45">Both produce the same polled-trend decline. The safe move depends on which well you're running — and that answer is in the documents.</div>
+      <div style="flex-shrink:0;font-size:0.65rem;color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:220px;line-height:1.45">Same polled-trend decline. The safe move depends on which well you're running — and that answer is in the documents.</div>
     </div>
   </div>
-</div><!-- /slide p2 -->
+</div><!-- /p2 -->
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 3: THE MOAT — STATE vs. CONTEXT
-     CSS staggered fade-in animations (no scrubber needed).
+     SLIDE 3: DECISION SUPPORT
+     Two decision cards: VFD Speed-Down vs. Emergency Shut-In
+     Physics-grounded outcome matrix for each fault type.
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide" id="p3">
   <div class="rainbow-bar"></div>
-  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:10px;overflow:hidden">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:12px;overflow:hidden">
     <div style="flex-shrink:0">
-      <div class="slide-kicker">THE MOAT</div>
-      <h2 class="slide-title">STATE vs. CONTEXT</h2>
-      <p class="slide-sub">Sensors report what the well is doing <em>right now</em>. The correct action depends on what <em>happened</em> — and that is categorically not a real-time measurement.</p>
+      <div class="slide-kicker" style="color:var(--amber)">DECISION SUPPORT</div>
+      <h2 class="slide-title">Gas Burnout vs. Sand-Bridge Seizure</h2>
+      <p class="slide-sub">An unloading well forces a blind trade-off: slow down to clear gas and risk sand settling, or shut in and risk sand fallback. <strong style="color:#fbbf24">Neither is safe without knowing the well's completion history.</strong></p>
     </div>
+
+    <!-- Two decision cards -->
     <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0">
 
-      <!-- STATE column -->
-      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:0;overflow:hidden;justify-content:space-between">
-        <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#60a5fa;letter-spacing:0.1em;text-align:center;padding-bottom:8px">STATE</div>
-        <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:8px">What the sensors report — right now</div>
-        <div class="anim-row" style="animation-delay:0.1s"><div class="state-tile"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">PUMP INLET PRESSURE</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">612 <span style="font-size:0.52rem;font-weight:400">PSI ↓</span></span></div></div>
-        <div class="anim-row" style="animation-delay:0.4s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">AMPS</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">34.2 <span style="font-size:0.52rem;font-weight:400">A ↓</span></span></div></div>
-        <div class="anim-row" style="animation-delay:0.7s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">WINDING TEMP</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">246 <span style="font-size:0.52rem;font-weight:400">°F —</span></span></div></div>
-        <div class="anim-row" style="animation-delay:1.0s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">VIBRATION</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">0.41 <span style="font-size:0.52rem;font-weight:400">in/s —</span></span></div></div>
-        <div class="anim-row" style="animation-delay:1.3s;padding-top:8px;border-top:1px solid rgba(59,130,246,0.12);margin-top:6px">
-          <p style="font-size:0.60rem;color:#93c5fd;line-height:1.65;font-style:italic;margin:0">Even a perfect gauge sharpens the STATE. It cannot report what happened last week.</p>
+      <!-- Card 1: VFD Speed-Down -->
+      <div class="anim-row" style="animation-delay:0.2s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:18px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:7px">VFD SPEED-DOWN <span style="font-weight:400;color:var(--muted)">52 → 44 Hz</span></div>
+        <div style="font-size:0.60rem;color:var(--muted);line-height:1.5">Reduces pump intake rate. Well stays online if gas is the cause.</div>
+        <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
+          <div class="dec-outcome" style="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.22)">
+            <span class="dec-check" style="color:#4ade80">✔</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#4ade80;margin-bottom:2px">Gas Entrainment — CORRECT ACTION</div>
+              <div style="font-size:0.55rem;color:var(--text2);line-height:1.5">Gas vents up the annulus. Pump recovers hydraulic load. Well stays on production at reduced rate. Zero incremental cost.</div>
+            </div>
+          </div>
+          <div class="dec-outcome" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.14)">
+            <span class="dec-check" style="color:#86efac">✔</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#86efac;margin-bottom:2px">Fluid Drawdown + Light Sand — ACCEPTABLE</div>
+              <div style="font-size:0.55rem;color:var(--text2);line-height:1.5">Safe only above minimum lift velocity <em>and</em> if sand cut confirmed low from completion record.</div>
+            </div>
+          </div>
+          <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
+            <span class="dec-check" style="color:#f87171">✘</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Fluid Drawdown + Moderate Sand — DANGEROUS</div>
+              <div style="font-size:0.55rem;color:var(--text2);line-height:1.5">Below ~48 Hz, tubing velocity drops under critical sand-transport limit. Sand settles and bridges the string. Pump seizes on restart.</div>
+            </div>
+          </div>
         </div>
+        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.54rem;color:rgba(251,191,36,0.85)">A zero-dollar VFD command triggers a six-figure workover if sand is present and unaccounted for.</div>
       </div>
 
-      <!-- CONTEXT column -->
-      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(251,146,60,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:0;overflow:hidden;justify-content:space-between">
-        <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#fb923c;letter-spacing:0.1em;text-align:center;padding-bottom:8px">CONTEXT</div>
-        <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:8px">What no sensor can report</div>
-        <div class="anim-row" style="animation-delay:1.6s"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">WORKOVER RECORD</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Last workover: 14 months ago · annulus condition unknown</div></div></div></div>
-        <div class="anim-row" style="animation-delay:2.2s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">GOR TREND</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Gas-Oil Ratio rising +18% over 60 days — reservoir depletion signal</div></div></div></div>
-        <div class="anim-row" style="animation-delay:2.8s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">OFFSET FRAC REPORT</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div></div></div></div>
-        <div class="anim-row" style="animation-delay:3.4s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">SHIFT NOTE</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div></div></div></div>
-        <div class="anim-row" style="animation-delay:4.0s;padding-top:8px;border-top:1px solid rgba(251,146,60,0.12);margin-top:6px">
-          <p style="font-size:0.60rem;color:#fb923c;line-height:1.65;font-style:italic;margin:0">The deciding context lives here — not on any sensor. The documents exist. Assembling them correctly, fast enough, under alarm load: that's what gets missed. GDC does it in seconds.</p>
+      <!-- Card 2: Emergency Shut-In -->
+      <div class="anim-row" style="animation-delay:0.8s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:18px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:7px">EMERGENCY SHUT-IN <span style="font-weight:400;color:var(--muted)">Stop Pump</span></div>
+        <div style="font-size:0.60rem;color:var(--muted);line-height:1.5">Stops pump completely. Eliminates immediate motor burnout risk — at a cost.</div>
+        <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
+          <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
+            <span class="dec-check" style="color:#f87171">✘</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Gas Entrainment — OVERKILL</div>
+              <div style="font-size:0.55rem;color:var(--text2);line-height:1.5">Unnecessary production deferral and restart risk (electrical inrush, hydraulic hammer). The asset was never in danger.</div>
+            </div>
+          </div>
+          <div class="dec-outcome" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.14)">
+            <span class="dec-check" style="color:#86efac">✔</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#86efac;margin-bottom:2px">Fluid Drawdown + Low Sand — LAST RESORT</div>
+              <div style="font-size:0.55rem;color:var(--text2);line-height:1.5">Acceptable only when completion record confirms low sand cut <em>and</em> standing valve integrity. Defers production.</div>
+            </div>
+          </div>
+          <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
+            <span class="dec-check" style="color:#f87171">✘</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Fluid Drawdown + Sand Present — DANGEROUS</div>
+              <div style="font-size:0.55rem;color:var(--text2);line-height:1.5">Stopping flow drops velocity to zero. Suspended sand falls back onto pump assembly. Sand-bridge seizure. Six-figure workover pull.</div>
+            </div>
+          </div>
         </div>
+        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.54rem;color:rgba(251,191,36,0.85)">Shut-in is not a conservative default — without sand context, it can be as damaging as the wrong trim.</div>
       </div>
     </div>
-    <div style="flex-shrink:0;padding:14px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <span style="font-size:0.88rem;font-weight:800;color:#e2e8f0;letter-spacing:0.01em">You cannot instrument your way out of a context gap.</span>
+
+    <!-- Bottom callout -->
+    <div class="anim-row" style="flex-shrink:0;animation-delay:1.4s;padding:13px 20px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+      <div style="font-size:0.85rem;font-weight:800;color:#e2e8f0;line-height:1.4">To make the safe call, the operator needs to know the sand history of the well.</div>
+      <div style="font-size:0.65rem;color:var(--muted);margin-top:5px;font-style:italic">SCADA cannot provide it. The answer is in the completion record — a document, not a sensor.</div>
     </div>
   </div>
-</div><!-- /slide p3 -->
+</div><!-- /p3 -->
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 4: THE DECISION — How Operators Decide Today
+     SLIDE 4: ADDING CONTEXT
+     Left: without GDC (manual, scattered, time-pressured)
+     Right: with GDC (edge-resident RAG, cited, HITL)
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide" id="p4">
   <div class="rainbow-bar"></div>
   <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:12px;overflow:hidden">
     <div style="flex-shrink:0">
-      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:2px">
-        <div class="slide-kicker">THE DECISION</div>
-        <span style="font-size:0.52rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.35);color:#fb923c;white-space:nowrap">moderate-sand well · AR-trim</span>
-      </div>
-      <h2 class="slide-title">How Operators Decide Today</h2>
+      <div class="slide-kicker" style="color:var(--orange)">ADDING CONTEXT</div>
+      <h2 class="slide-title">Fusing Telemetry and Unstructured Well History</h2>
+      <p class="slide-sub">The deciding context isn't hidden — it's scattered across the well file, the frac report, and the shift log. <strong style="color:#fb923c">GDC reads the documents. The confident call replaces the cautious default.</strong></p>
     </div>
-    <!-- Alarm banner -->
-    <div style="flex-shrink:0;padding:10px 16px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:7px;display:flex;align-items:center;gap:10px">
-      <span style="font-size:1rem;line-height:1;flex-shrink:0">⚠</span>
-      <div>
-        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:#fbbf24;letter-spacing:0.06em">ONE ALARM: UNDERLOAD</div>
-        <div style="font-size:0.58rem;color:var(--text2);margin-top:2px">Cause unknown — gas lock <strong style="color:#60a5fa">OR</strong> fluid drawdown?</div>
-      </div>
-    </div>
-    <!-- Decision cards -->
-    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0">
-      <div class="anim-row" style="animation-delay:0.2s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">VFD TRIM <span style="font-weight:400;color:var(--muted)">52 → 44 Hz</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Right for gas lock — stays online</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Preserves production — <span data-term="cost_trim_short">low-cost — a VFD command</span></div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#f87171;flex-shrink:0;font-weight:700">✘</span> Riskier if drawdown</div>
-          <div style="font-size:0.55rem;color:rgba(251,146,60,0.8);padding:5px 8px;background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.2);border-radius:4px;margin-top:2px">Sand makes it costly — velocity drops toward transport limit</div>
+
+    <!-- Two-column: Without GDC | With GDC -->
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0">
+
+      <!-- Without GDC -->
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:rgba(148,163,184,0.65);letter-spacing:0.08em;text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(100,116,139,0.12)">WITHOUT GDC</div>
+        <div style="font-size:0.58rem;color:var(--muted);text-align:center;margin-bottom:4px">Operator must manually locate and cross-reference four sources — under active alarm</div>
+        <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
+          <div class="anim-row ctx-doc" style="animation-delay:0.3s">
+            <span class="ctx-doc-icon">📁</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#94a3b8">Wellbore Completion File</div>
+              <div style="font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:1px">Sand screen mesh, historical sand cut, perforations. Might be in well database, paper binder, or field supervisor's laptop.</div>
+            </div>
+          </div>
+          <div class="anim-row ctx-doc" style="animation-delay:0.9s">
+            <span class="ctx-doc-icon">📋</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#94a3b8">Last Acoustic Fluid-Level Survey</div>
+              <div style="font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:1px">Dynamic submergence headroom. May be a PDF scan from last tour — emailed from field technician.</div>
+            </div>
+          </div>
+          <div class="anim-row ctx-doc" style="animation-delay:1.5s">
+            <span class="ctx-doc-icon">📝</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#94a3b8">Operator Shift Tour Log</div>
+              <div style="font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:1px">GOR trend, fluid slugging, roughness reports. Handwritten or in a separate field operations log system.</div>
+            </div>
+          </div>
+          <div class="anim-row ctx-doc" style="animation-delay:2.1s">
+            <span class="ctx-doc-icon">📊</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#94a3b8">Separator GOR Trend Report</div>
+              <div style="font-size:0.52rem;color:var(--muted);line-height:1.5;margin-top:1px">Rising GOR = gas migration. Stable GOR = drawdown. Hosted in production allocation system.</div>
+            </div>
+          </div>
         </div>
+        <div class="anim-row" style="animation-delay:2.7s;padding:7px 10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:0.55rem;color:#fca5a5;font-style:italic">Finding and assembling these correctly, under alarm load, before the window closes — this is what gets missed.</div>
       </div>
-      <div class="anim-row" style="animation-delay:0.8s;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.28);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">PROTECTIVE DEFAULT <span style="font-weight:400;color:var(--muted)">Hold + Alert RTOC</span></div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Avoids the worst immediate outcome on either cause</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">✘</span> Does not resolve the ambiguity</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">✘</span> Defers production while the team investigates</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2);padding-left:16px">+ <span data-term="cost_shutdown">trip and restart costs</span> — every time</div>
+
+      <!-- With GDC -->
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:#60a5fa;letter-spacing:0.08em;text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(59,130,246,0.12)">WITH GDC</div>
+        <div style="font-size:0.58rem;color:var(--muted);text-align:center;margin-bottom:4px">Edge-resident AlloyDB + Gemma: auto-retrieval, cited diagnosis, HITL approval</div>
+        <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
+          <div class="anim-row gdc-step" style="animation-delay:0.5s">
+            <span class="gdc-step-num">1</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#60a5fa">Anomaly Detected Pre-Threshold</div>
+              <div style="font-size:0.52rem;color:var(--text2);line-height:1.5;margin-top:1px">GDC's XGBoost model identifies hydraulic unloading pattern 14+ minutes before SCADA underload trip fires.</div>
+            </div>
+          </div>
+          <div class="anim-row gdc-step" style="animation-delay:1.1s">
+            <span class="gdc-step-num">2</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#60a5fa">Automatic Document Retrieval</div>
+              <div style="font-size:0.52rem;color:var(--text2);line-height:1.5;margin-top:1px">pgvector semantic search instantly retrieves completion record, sonic survey, and shift note from on-site AlloyDB — under 2 seconds.</div>
+            </div>
+          </div>
+          <div class="anim-row gdc-step" style="animation-delay:1.7s">
+            <span class="gdc-step-num">3</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#60a5fa">Gemma Context Fusion</div>
+              <div style="font-size:0.52rem;color:var(--text2);line-height:1.5;margin-top:1px">On-site Gemma reads the retrieved documents. Bayesian evidence chain produces a confidence-weighted differential diagnosis.</div>
+            </div>
+          </div>
+          <div class="anim-row gdc-step" style="animation-delay:2.3s">
+            <span class="gdc-step-num">4</span>
+            <div>
+              <div style="font-size:0.58rem;font-weight:700;color:#60a5fa">HITL — Operator Reviews &amp; Approves</div>
+              <div style="font-size:0.52rem;color:var(--text2);line-height:1.5;margin-top:1px">GDC surfaces the cited recommendation. The operator reviews the evidence and approves the action. GDC advised. The operator decided.</div>
+            </div>
+          </div>
         </div>
+        <div class="anim-row" style="animation-delay:2.9s;padding:7px 10px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.22);border-radius:5px;font-size:0.55rem;color:#93c5fd;font-style:italic">SCADA fires the alarm correctly. GDC reads the file. The call is confident, cited, and auditable.</div>
       </div>
     </div>
-    <div class="anim-row" style="flex-shrink:0;animation-delay:1.6s;padding:16px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <div style="font-size:0.82rem;font-weight:800;color:#e2e8f0;line-height:1.4">The deciding context isn't hidden — it's scattered across the well file, the frac report, and the shift log. SCADA fires the alarm correctly. GDC reads the file.</div>
-      <div style="font-size:0.62rem;color:var(--muted);margin-top:6px;font-style:italic">GDC reads the documents. The confident call replaces the cautious default.</div>
+
+    <!-- Bottom banner -->
+    <div class="anim-row" style="flex-shrink:0;animation-delay:3.5s;padding:12px 20px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+      <span style="font-size:0.85rem;font-weight:800;color:#e2e8f0">You cannot instrument your way out of a context gap.</span>
+      <span style="font-size:0.65rem;color:var(--muted);margin-left:12px;font-style:italic">GDC goes to the data — on-premises, in under 2 seconds.</span>
     </div>
   </div>
-</div><!-- /slide p4 -->
+</div><!-- /p4 -->
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 5: THE PLATFORM — This Pattern Is Universal
+     SLIDE 5: INDUSTRIAL APPLICATION
+     Three cross-industry STATE → CONTEXT examples.
+     Data Gravity + Sovereignty framing in bottom banner.
      Last slide → ▶ Run the Scenario fires run-h1 postMessage.
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide" id="p5">
   <div class="rainbow-bar"></div>
   <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 12px;gap:10px;overflow:hidden">
     <div style="flex-shrink:0">
-      <div class="slide-kicker">THE PLATFORM</div>
-      <h2 class="slide-title">This Pattern Is Universal</h2>
-      <p class="slide-sub">STATE is what every gauge reports. CONTEXT is what decides. This gap exists in every industry that runs physical assets.</p>
+      <div class="slide-kicker" style="color:var(--green)">INDUSTRIAL APPLICATION</div>
+      <h2 class="slide-title">Solving the Edge Context Gap — At Scale</h2>
+      <p class="slide-sub">Every industry running physical assets faces the same structural gap: <strong style="color:#4ade80">telemetry reports state; unstructured documents hold context</strong>. GDC brings AI/ML to the data — on-premises.</p>
     </div>
     <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden">
+
       <!-- O&G -->
-      <div class="anim-row" style="animation-delay:0.3s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.22);border-radius:7px;flex:1;min-height:0">
-        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">O&amp;G</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">ESP Well</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60a5fa;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Pump Inlet Pressure ↓ · Amps ↓</div><div style="font-size:0.60rem;color:var(--muted)">Intake-only PDG — identical on gas lock &amp; drawdown</div></div>
-        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Workover record · GOR trend</div><div style="font-size:0.60rem;color:var(--muted)">Shift note from tour operator</div></div>
+      <div class="anim-row" style="animation-delay:0.3s;display:flex;align-items:center;gap:12px;padding:11px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.22);border-radius:7px;flex:1;min-height:0">
+        <div style="flex:0 0 100px;text-align:center">
+          <div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">O&amp;G</div>
+          <div style="font-size:0.65rem;color:var(--text2);font-weight:600">ESP Well</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60a5fa;margin-bottom:2px">STATE</div>
+          <div style="font-size:0.70rem;color:var(--text2);font-weight:600">Pump Inlet Pressure ↓ · Motor Amps ↓</div>
+          <div style="font-size:0.58rem;color:var(--muted)">Intake-only PDG — identical on Gas Entrainment &amp; Fluid Drawdown</div>
+        </div>
+        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 6px">→</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+          <div style="font-size:0.70rem;color:var(--text2);font-weight:600">Sand-cut record · Acoustic fluid survey</div>
+          <div style="font-size:0.58rem;color:var(--muted)">Tour log on GOR trend · Workover history</div>
+        </div>
+        <div style="flex:0 0 185px;font-size:0.55rem;color:rgba(74,222,128,0.85);font-weight:600;line-height:1.45;text-align:right;padding-left:10px;border-left:1px solid rgba(74,222,128,0.12)">Gas Entrainment vs. Fluid Drawdown — opposite correct actions resolved by document context</div>
       </div>
-      <!-- P&E -->
-      <div class="anim-row" style="animation-delay:1.2s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(167,139,250,0.22);border-radius:7px;flex:1;min-height:0">
-        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#c4b5fd;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">P&amp;E</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">Transformer</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c4b5fd;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Load current ↑ · winding temp ↑</div><div style="font-size:0.60rem;color:var(--muted)">SCADA flags thermal exceedance</div></div>
-        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Loading plan · maintenance log</div><div style="font-size:0.60rem;color:var(--muted)">Seasonal demand forecast</div></div>
+
+      <!-- Power & Utilities -->
+      <div class="anim-row" style="animation-delay:1.2s;display:flex;align-items:center;gap:12px;padding:11px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(167,139,250,0.22);border-radius:7px;flex:1;min-height:0">
+        <div style="flex:0 0 100px;text-align:center">
+          <div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#c4b5fd;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">P&amp;U</div>
+          <div style="font-size:0.65rem;color:var(--text2);font-weight:600">Grid Transformer</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c4b5fd;margin-bottom:2px">STATE</div>
+          <div style="font-size:0.70rem;color:var(--text2);font-weight:600">Winding Temperature ↑ · Load Current ↑</div>
+          <div style="font-size:0.58rem;color:var(--muted)">SCADA thermal alarm — cannot distinguish cause on sensor alone</div>
+        </div>
+        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 6px">→</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+          <div style="font-size:0.70rem;color:var(--text2);font-weight:600">Maintenance log · Dielectric oil condition</div>
+          <div style="font-size:0.58rem;color:var(--muted)">Regional loading plan · Seasonal demand forecast</div>
+        </div>
+        <div style="flex:0 0 185px;font-size:0.55rem;color:rgba(167,139,250,0.85);font-weight:600;line-height:1.45;text-align:right;padding-left:10px;border-left:1px solid rgba(167,139,250,0.12)">Demand spike (reduce load) vs. insulation breakdown (isolate immediately) — wrong call costs asset and safety</div>
       </div>
-      <!-- MFG -->
-      <div class="anim-row" style="animation-delay:2.1s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(251,146,60,0.22);border-radius:7px;flex:1;min-height:0">
-        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.28);color:#fb923c;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">MFG</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">Factory motor</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Vibration ↑ · temperature nominal</div><div style="font-size:0.60rem;color:var(--muted)">Same signature as bearing wear</div></div>
-        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Lubrication record · OEM bulletin</div><div style="font-size:0.60rem;color:var(--muted)">Line throughput log</div></div>
+
+      <!-- Maritime -->
+      <div class="anim-row" style="animation-delay:2.1s;display:flex;align-items:center;gap:12px;padding:11px 16px;background:rgba(15,23,42,0.6);border:1px solid rgba(251,146,60,0.22);border-radius:7px;flex:1;min-height:0">
+        <div style="flex:0 0 100px;text-align:center">
+          <div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.28);color:#fb923c;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">MARITIME</div>
+          <div style="font-size:0.65rem;color:var(--text2);font-weight:600">Engine Crankshaft</div>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">STATE</div>
+          <div style="font-size:0.70rem;color:var(--text2);font-weight:600">Cylinder Vibration ↑ · RPM flat · Fuel rising</div>
+          <div style="font-size:0.58rem;color:var(--muted)">Same signature as bearing wear — sensor alone cannot distinguish</div>
+        </div>
+        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 6px">→</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div>
+          <div style="font-size:0.70rem;color:var(--text2);font-weight:600">Fuel analysis report · Asphaltene content</div>
+          <div style="font-size:0.58rem;color:var(--muted)">Sea-state log (12 hr high-swell) · OEM maintenance bulletin</div>
+        </div>
+        <div style="flex:0 0 185px;font-size:0.55rem;color:rgba(251,146,60,0.85);font-weight:600;line-height:1.45;text-align:right;padding-left:10px;border-left:1px solid rgba(251,146,60,0.12)">Fuel-quality knock (switch fuel) vs. bearing wear (hard shutdown) — prevents catastrophic open-water stall</div>
       </div>
     </div>
-    <div class="anim-row" style="flex-shrink:0;animation-delay:3.0s;padding:14px 18px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <div style="font-size:0.92rem;font-weight:800;color:#e2e8f0;margin-bottom:4px">This is not an oilfield trick. It is the structural gap in every industrial AI deployment.</div>
-      <div style="font-size:0.65rem;color:var(--muted);font-style:italic">The AI goes to the data.</div>
+
+    <!-- Bottom: Data Gravity + Sovereignty banner -->
+    <div class="anim-row" style="flex-shrink:0;animation-delay:3.0s;padding:11px 18px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;display:flex;align-items:center;gap:20px">
+      <div style="flex:1">
+        <div style="font-size:0.82rem;font-weight:800;color:#e2e8f0;margin-bottom:3px">Data must stay at the source. GDC goes to the data.</div>
+        <div style="font-size:0.60rem;color:var(--muted);line-height:1.55">Data gravity, data sovereignty, and sub-second latency requirements mean AI/ML must run on-premises — not cloud. Operational records, field histories, and production documents stay within the operator's physical perimeter.</div>
+      </div>
+      <div style="flex:0 0 auto;display:flex;flex-direction:column;gap:5px;text-align:right">
+        <span style="font-size:0.54rem;font-family:var(--mono);color:rgba(74,222,128,0.75)">✦ No data egress</span>
+        <span style="font-size:0.54rem;font-family:var(--mono);color:rgba(74,222,128,0.75)">✦ Field-resident AI/ML</span>
+        <span style="font-size:0.54rem;font-family:var(--mono);color:rgba(74,222,128,0.75)">✦ Operator always in control</span>
+      </div>
     </div>
   </div>
-</div><!-- /slide p5 -->
+</div><!-- /p5 -->
 
 
 <!-- ══ Navigation bar ══ -->
@@ -430,34 +590,42 @@ window.applyState = function (t, slideIdx) {
 
   if (slideIdx === 1) {
     // ── P2: wellbore animation ───────────────────────────────────────────
-    // Left — gas bubbles distributed through fluid column, fade in as GVF rises
-    var mults = [1.0, 0.85, 0.90, 0.70, 0.75, 0.80, 0.65, 0.72, 0.58, 0.50, 0.45, 0.40];
+    // Left (Gas Entrainment): bubbles distributed throughout full fluid column
+    // Staggered opacity — lower zone (formation) appears first, upper zone (intake) later
+    var mults = [1.0, 0.88, 0.92, 0.72, 0.78, 0.62, 0.57, 0.50, 0.44, 0.36, 0.28, 0.20];
     for (var i = 1; i <= 12; i++) {
       var b = document.getElementById('p2-bub' + i);
-      if (b) b.style.opacity = (t * mults[i-1]).toFixed(2);
+      if (b) b.style.opacity = Math.min(1, t * mults[i-1] * 1.5).toFixed(2);
     }
 
-    // Right — fluid ALREADY critically low; shows continued slight depletion
+    // Right (Fluid Drawdown): fluid column drops from high (y=55, h=88) to critically low (y=110, h=33)
     var fluid = document.getElementById('p2-fluid');
     if (fluid) {
-      var newH = Math.max(42, 55 - 13 * t);
+      var newH = Math.max(33, 88 - 55 * t);
       var newY = 143 - newH;
       fluid.setAttribute('height', newH.toFixed(1));
       fluid.setAttribute('y', newY.toFixed(1));
+      // Track fluid level indicator
+      var line = document.getElementById('p2-fluid-line');
+      if (line) { line.setAttribute('y1', newY.toFixed(1)); line.setAttribute('y2', newY.toFixed(1)); }
+      var lbl1 = document.getElementById('p2-fluid-label1');
+      if (lbl1) lbl1.setAttribute('y', (newY - 2).toFixed(1));
+      var lbl2 = document.getElementById('p2-fluid-label2');
+      if (lbl2) lbl2.setAttribute('y', (newY + 2.5).toFixed(1));
     }
 
-    // GAS VOID label brightens slightly as drawdown deepens
+    // GAS VOID label brightens as drawdown deepens
     var gasT = document.getElementById('p2-gas-text');
-    if (gasT) gasT.style.opacity = (0.35 + 0.25 * t).toFixed(2);
+    if (gasT) gasT.style.opacity = (0.20 + 0.55 * t).toFixed(2);
 
-    // SAND appears at t≥0.65 (velocity below transport threshold)
-    var sandOp = Math.min(1, t / 0.65);
+    // SAND particles hover/float at pump intake — appear at t≥0.5 (velocity draws sand upward)
+    var sandOp = t > 0.5 ? Math.min(1, (t - 0.5) / 0.35) : 0;
     var sand = document.getElementById('p2-sand');
     if (sand) sand.style.opacity = sandOp.toFixed(2);
     var sandTxt = document.getElementById('p2-sand-text');
     if (sandTxt) sandTxt.style.opacity = sandOp.toFixed(2);
 
-    // Bottom sensor bars (same signal on both causes)
+    // Bottom sensor bars — same decline on both causes (the key message)
     var pf2 = document.getElementById('p2-pip-fill');
     if (pf2) pf2.style.width = (90 - 60*t).toFixed(1) + '%';
     var af2 = document.getElementById('p2-amp-fill');
