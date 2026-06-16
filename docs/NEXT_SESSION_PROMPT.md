@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: a434a0e / branch: feature-trio-clean
-Image: sha256:299fdce394898f73e4cfe4c8a4a2642f8bec70082d0a877ff237daa90fea6539
+Date: 2026-06-16 / git head: 0691e4a / branch: feature-trio-clean
+Image: sha256:077a5209f1d4c8d6fd3a9b6dc97a02f20f19f5dd75ecf591ea59001460cb9177
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -80,7 +80,8 @@ Atomic fix rule: do all PIP in one batched call, all $ in a second batched call.
   - GDC Joint Optimal (mint bar: `rgba(74,222,128,0.08)`, `1px solid rgba(74,222,128,0.4)`)
   - `+77.9 bbl/d uplift` callout badge between bars
 
-**Deployment:** sha256:299fdce3 — verify_templates 20/20, 971/971 — pod rollout clean.
+**Deployment:** sha256:077a5209 — verify_templates 20/20, 971/971 — pod rollout clean.
+Includes in-session RT fixes (`0691e4a`): H2 "eliminates" → "reduces bearing-wear probability"; H3 "GOR-RANKED" → "JOINT OPTIMAL SETPOINT ALLOCATION".
 
 ## Known Integrity Issues
 | Issue | Status |
