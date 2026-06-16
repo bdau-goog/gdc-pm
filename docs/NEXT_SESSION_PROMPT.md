@@ -22,17 +22,47 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### Priority 1 — Live review of H2 and H3 decks on actual display
-Walk through gdc-pm.bdau.io/slides/h2.html and gdc-pm.bdau.io/slides/h3.html end-to-end:
-- Confirm 3-beat kicker arc is correct in both decks
-- Test `[Details: ON/OFF]` toggle — verify `.detail-element` blocks hide/show correctly
-- Visually confirm hot-oil truck SVG (green) and workover rig SVG (red) render correctly in H2 Slide 3
-- Confirm H3 Slide 3 shows SCADA (slate) vs GDC (mint) comparison bars with `+77.9 bbl/d uplift` badge
-- Note any copyediting or layout adjustments needed
+### Sprint BS+17 — Priority 1 (First thing next session)
+**Live review of all three decks end-to-end on the actual BenQ display:**
+| Deck | URL | Check |
+|---|---|---|
+| H1 Discern | gdc-pm.bdau.io/slides/h1.html | 4-slide arc, clocks, `.detail-element` toggle, wellbore SVGs |
+| H2 Classify | gdc-pm.bdau.io/slides/h2.html | 3-slide arc, hot-oil truck SVG, workover rig SVG, detail toggle |
+| H3 Optimize | gdc-pm.bdau.io/slides/h3.html | 3-slide arc, SCADA/GDC comparison bars, +77.9 bbl/d badge |
 
-### Priority 2 — Deferred tasks (do not start before P1 live review done)
-- BenQ screen flicker (Plotly poller throttle/VRR hypothesis)
-- Authored `PIP` / `$2,500` / `$150k` cleanup in app.js / app.py narrative sections
+After walk-through: note any copyediting, layout, or sizing issues. Make a list and batch into a single `replace_in_file` call per file before rebuilding.
+
+---
+
+### Sprint BS+18 — Priority 2 (after P1 live review sign-off)
+**BenQ screen flicker investigation:**
+- Hypothesis: Plotly poller (background `setInterval`) conflicts with VRR / adaptive-sync on BenQ PD2725U
+- Fix candidate: throttle Plotly relayout calls to ≤ 4 Hz; suppress relayout when tab is not active (`document.visibilityState`)
+- Files: `gke/fault-trigger-ui/static/app.js` (`_updateH1ReplayCursor`, `_renderH1ReplayChart`)
+- Verify: open slides deck AND the live replay tab simultaneously and confirm no flicker
+
+---
+
+### Sprint BS+19 — Priority 3 (after P2 verified)
+**Terminology & authored-$ cleanup pass (app.js / app.py / templates):**
+
+| Item | Count | Location | Fix |
+|---|---|---|---|
+| `PIP` bare abbreviation | 61 | app.js / app.py / tab templates | → `Pump Inlet Pressure` (or `PIP` used once, spelled out on first use) |
+| `~$2,500` authored figure | 7 | app.py narrative / tab_h1.html | → comparative language: `a low-cost control-room adjustment` |
+| `~$150k` / `$150,000` authored figure | 10+ | app.py / tab_h1.html / tab_architecture.html | → `a six-figure workover` where on demo path; Architecture tab deferred |
+
+Atomic fix rule: do all PIP in one batched call, all $ in a second batched call. Verify with grep before building.
+
+---
+
+### Sprint BS+20 — Priority 4 (deferred — do not start before P1–P3 done)
+**Demo video recording prep:**
+- GPU pre-flight: `./scripts/gpu-start.sh` (announce cost ~$0.35/hr before running)
+- Verify live Gemma path: `gemma_modulated: True` in `/api/h1/scenario-replay`
+- Walk through `docs/VIDEO_SCRIPT.md` narration scripts
+- Record four videos (Overview ~60s, H1/H2/H3 ~90–120s each)
+- GPU stop immediately after: `./scripts/gpu-stop.sh`
 
 ### What was completed in BS+16 (commit a434a0e)
 **H2 (Classify) `h2.html`:**
