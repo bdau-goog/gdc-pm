@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 31f3908 / branch: feature-trio-clean
-Image: sha256:2e975f0c31334447c52efb73265b8e96816729e871e4eb481e2016e2263b6b3c
+Date: 2026-06-16 / git head: 9ecb2d6 / branch: feature-trio-clean
+Image: sha256:5e2309a2aa0cd50681c9e30182449022e2358069ecfd3cefdc14e27a99acfdb8
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -35,6 +35,9 @@ architecture is working. This session's 10-step task order is fully complete.
 - **BUG FIXED (31f3908):** Inter font not downloading in iframe context (no Google Fonts link in slide pages).
   Added `@import url('https://fonts.googleapis.com/css2?family=Inter...')` to slide.css — one change covers all 4 decks.
   Also: pump SVG max-height on H1 P2 increased 260px → 340px for better visibility.
+- **FEATURE (9ecb2d6):** Keyboard zoom in slides. `+`/`=` zoom in, `-` zoom out, `0` reset to fit.
+  Persists to localStorage — survives page reload. No rebuild needed to adjust zoom after this point.
+  Range: 25%–300% of fit scale. Small toast shows current zoom % for 1.8s.
 - All 4 iframes present in assembled app (0 unresolved @@INCLUDE markers)
 - 0 authored hard-$ in h1.html or h2.html (content policy passed)
 - P1 split handle in h1 (data-ls-key=h1.p1.split)
