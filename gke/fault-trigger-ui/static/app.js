@@ -391,8 +391,8 @@ createApp({
     // ── Scenario Replay: advance state when cursor crosses detection thresholds ──
     h1CursorIdx(val) {
       if (!this.h1ReplayData) return;
-      // ── Scrub BACK past alarm → undo all revealed state ──────────────────────
-      if (val < this.h1ReplayData.alarm_idx && this.h1FaultTypeRevealed) {
+      // ── Scrub BACK past GDC detect → undo all revealed state ─────────────────
+      if (val < this.h1ReplayData.gdc_detect_idx && this.h1FaultTypeRevealed) {
         if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
         if (this.h1RagDoc2Timer)   { clearTimeout(this.h1RagDoc2Timer);   this.h1RagDoc2Timer   = null; }
         if (this.h1RagDoc3Timer)   { clearTimeout(this.h1RagDoc3Timer);   this.h1RagDoc3Timer   = null; }
@@ -407,8 +407,8 @@ createApp({
         // Note: h1FaultType intentionally kept (already drawn from replay data);
         // resetting it would cause the SVG wellbore to flicker during scrub.
       }
-      // Cross alarm threshold → reveal fault type on both views + schedule RAG reveal (1.5s)
-      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.alarm_idx) {
+      // Cross GDC detect threshold → reveal fault type on GDC Advisor + schedule RAG reveal (1.5s)
+      if (!this.h1FaultTypeRevealed && val >= this.h1ReplayData.gdc_detect_idx) {
         this.h1FaultTypeRevealed = true;
         this.h1FaultType = this.h1ReplayData.fault_type;
         if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
@@ -1526,7 +1526,7 @@ createApp({
           font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
         // SCADA threshold alarm (red) — fires when a hard setpoint is crossed
-        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>ALARM</b>',
+        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>Threshold SCADA ▲</b>',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
