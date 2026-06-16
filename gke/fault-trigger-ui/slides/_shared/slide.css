@@ -3,6 +3,7 @@
    Lever B (DEMO_MASTER §7.5): Slide layout / card anatomy.
    Change card padding here → all 4 decks update. */
 
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
 @import url('./tokens.css');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
