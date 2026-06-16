@@ -2509,6 +2509,7 @@ def publish_to_rabbitmq(reading: dict) -> None:
 # ── FastAPI App ────────────────────────────────────────────────────────────────
 app = FastAPI(title="GDC-PM Fault Trigger UI", version="3.0.0")
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
+app.mount("/slides", StaticFiles(directory="/app/slides"), name="slides")
 
 
 # ── Pydantic Models ────────────────────────────────────────────────────────────
@@ -7811,6 +7812,7 @@ GRAFANA_EXTERNAL_IP = os.environ.get("GRAFANA_URL", "http://136.115.220.48")
 # Marker format in shell: <!-- @@INCLUDE:tab_h1@@ -->
 # No Jinja2 — plain string replace avoids {{ }} collision with Vue templates.
 _TAB_TEMPLATES = [
+    "tab_intro",
     "tab_operations",
     "tab_h1",
     "tab_h2",

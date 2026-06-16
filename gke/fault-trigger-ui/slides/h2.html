@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>H2 — Classify · Maintenance Provenance</title>
+<link rel="stylesheet" href="../_shared/slide.css">
+<style>
+  .timeline-node { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .tl-dot { width:8px; height:8px; border-radius:50%; }
+  .tl-label { font-size:0.54rem; white-space:nowrap; margin-top:2px; }
+  .tl-day   { font-size:0.50rem; color:rgba(100,116,139,0.6); }
+  .sensor-tile { padding:10px 12px; background:rgba(15,23,42,0.65); border-radius:var(--radius); }
+  .tile-val   { font-family:var(--mono); font-size:0.85rem; font-weight:700; }
+  .tile-sub   { font-size:0.52rem; color:var(--muted); margin-top:3px; }
+  .doc-row    { font-size:0.58rem; color:var(--text2); line-height:1.5; }
+</style>
+</head>
+<body>
+<div id="slide-stage">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 1: THE WELL — Waxy Crude. Routine PM. Then Nothing.
+════════════════════════════════════════════════════════════════ -->
+<div class="slide active" id="p1">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;min-height:0;padding:16px 48px 12px;gap:28px;overflow:hidden;justify-content:center;align-items:center">
+    <!-- Left: asset card -->
+    <div style="flex:0 1 640px;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:14px;overflow:hidden">
+      <div>
+        <div class="slide-kicker">THE WELL</div>
+        <h2 class="slide-title">Waxy Crude. Routine PM. Then Nothing.</h2>
+        <p class="slide-sub">A Permian carbonate producer with a known paraffin problem — and a 52-day overdue treatment.</p>
+      </div>
+      <div class="glass-card">
+        <div class="mono-label">WELL ESP-ALPHA-3 · BLOCK 7 PAD · ANDREWS COUNTY, WTX</div>
+        <div style="display:flex;flex-direction:column;gap:9px;font-size:0.62rem;color:var(--text2)">
+          <div style="display:flex;gap:12px"><span style="color:#64748b;width:116px;flex-shrink:0">Asset type</span><span>Electric Submersible Pump (ESP)</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#64748b;width:116px;flex-shrink:0">Sensor string</span><span><strong style="color:#f59e0b">4-point:</strong> Pump Inlet Pressure · Motor Amps · Winding Temp · Single-Axis Vibration</span></div>
+          <div style="display:flex;gap:12px"><span style="color:#64748b;width:116px;flex-shrink:0">No discharge gauge</span><span>Standard Permian config — ~90% of producing ESP wells</span></div>
+        </div>
+      </div>
+      <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+        Paraffin deposition is endemic to Permian carbonate producers. As produced fluid rises up the tubing and cools below the Wax Appearance Temperature, crystals deposit on the tubing walls. The fix — a hot-oil truck job — is <span data-term="cost_hotoi">a low-cost surface truck job</span> if caught before pump damage. Missed treatments become expensive fast.
+      </div>
+    </div>
+    <!-- Right: production chemistry card -->
+    <div style="flex:0 0 240px;display:flex;flex-direction:column;justify-content:center;gap:12px">
+      <div style="padding:14px 16px;border-left:3px solid rgba(251,191,36,0.45);background:rgba(251,191,36,0.05);border-radius:0 8px 8px 0;display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(251,191,36,0.8)">Production chemistry — PVT report</div>
+        <div style="height:1px;background:rgba(251,191,36,0.15)"></div>
+        <div style="display:flex;flex-direction:column;gap:5px;font-size:0.62rem;color:var(--text2);line-height:1.65">
+          <span>Wax Appearance Temp: <strong style="color:rgba(251,191,36,0.9)">118°F</strong></span>
+          <span>Wax content: moderate–high</span>
+          <span>Hot-oil interval: <strong>90 days</strong></span>
+          <span>Formation: carbonate</span>
+          <span style="color:rgba(74,222,128,0.8)">Last treatment: Day 0 of this scenario.</span>
+        </div>
+        <div style="font-size:0.60rem;color:var(--muted);font-style:italic;margin-top:4px">Source: Permian Basin Fluid Analysis LLC — PVT Report (fictional)</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /p1 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 2: THE SIGNATURE — Fifty-Two Days Late. Bearings or Wax?
+════════════════════════════════════════════════════════════════ -->
+<div class="slide" id="p2">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 48px 12px;gap:14px;overflow-y:auto">
+    <div style="flex-shrink:0">
+      <div class="slide-kicker">THE SIGNATURE</div>
+      <h2 class="slide-title">Fifty-Two Days Late. Bearings or Wax?</h2>
+      <p class="slide-sub">The sensor pattern is real. On a 4-sensor string, what caused it is not obvious.</p>
+    </div>
+    <!-- Timeline -->
+    <div style="position:relative;display:flex;align-items:center;padding:12px 20px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:8px;flex-shrink:0">
+      <div style="position:absolute;left:20px;right:20px;top:50%;height:1px;background:rgba(251,191,36,0.22)"></div>
+      <div style="display:flex;justify-content:space-between;width:100%;position:relative">
+        <div class="timeline-node"><div class="tl-dot" style="background:rgba(74,222,128,0.7)"></div><span class="tl-label" style="color:rgba(74,222,128,0.8)">Treatment ✔</span><span class="tl-day">Day 0</span></div>
+        <div class="timeline-node"><div class="tl-dot" style="background:rgba(251,191,36,0.7)"></div><span class="tl-label" style="color:rgba(251,191,36,0.8)">PM Due ⚠</span><span class="tl-day">Day 90</span></div>
+        <div class="timeline-node"><div class="tl-dot" style="background:rgba(251,191,36,0.5)"></div><span class="tl-label" style="color:var(--muted)">Onset ↑</span><span class="tl-day">Day 106</span></div>
+        <div class="timeline-node"><div class="tl-dot" style="background:rgba(239,68,68,0.8);width:10px;height:10px"></div><span class="tl-label" style="color:rgba(239,68,68,0.85);font-weight:700">Alarm today</span><span class="tl-day" style="color:rgba(239,68,68,0.5)">Day 142</span></div>
+      </div>
+    </div>
+    <!-- Sensor tiles + two-tier callout -->
+    <div style="display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-width:260px">
+        <div class="sensor-tile anim-row" style="animation-delay:0s;border:1px solid rgba(251,191,36,0.22)">
+          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Efficiency</div>
+          <div class="tile-val" style="color:rgba(251,191,36,0.9)">~76% → ~66%</div>
+          <div class="tile-sub">↓ declining (pump off best-efficiency-point)</div>
+        </div>
+        <div class="sensor-tile anim-row" style="animation-delay:0.1s;border:1px solid rgba(239,68,68,0.22)">
+          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Vibration</div>
+          <div class="tile-val" style="color:rgba(239,68,68,0.9)">~1.0 → ~4.2 mm/s</div>
+          <div class="tile-sub" style="color:rgba(239,68,68,0.6)">↑ above ISA HI (4.0 mm/s)</div>
+        </div>
+        <div class="sensor-tile anim-row" style="animation-delay:0.2s;border:1px solid rgba(251,191,36,0.18)">
+          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Amps</div>
+          <div class="tile-val" style="color:rgba(251,191,36,0.7)">~65A → ~74A</div>
+          <div class="tile-sub">↑ +14% (pump working against restriction)</div>
+        </div>
+        <div class="sensor-tile anim-row" style="animation-delay:0.3s;border:1px solid rgba(100,116,139,0.22)">
+          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Pump Inlet Pressure</div>
+          <div class="tile-val" style="color:rgba(148,163,184,0.8)">~1,380 PSI</div>
+          <div class="tile-sub">→ stable–slight rise (less drawdown)</div>
+        </div>
+      </div>
+      <!-- Two-tier SCADA/APM callout -->
+      <div style="flex:1;min-width:240px;padding:14px 16px;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.28);border-radius:var(--radius);display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(100,116,139,0.7)">Two-Tier Response</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:0.62rem;color:var(--text2);line-height:1.6">
+          <div style="padding:6px 10px;background:rgba(251,191,36,0.05);border-left:2px solid rgba(251,191,36,0.35);border-radius:0 4px 4px 0">
+            <strong style="color:rgba(251,191,36,0.8)">Threshold SCADA</strong> (~85–95% of operators)<br>
+            <span style="font-size:0.58rem;color:var(--muted)">Vibration HI alarm fires. No root-cause hypothesis.</span>
+          </div>
+          <div style="padding:6px 10px;background:rgba(251,191,36,0.05);border-left:2px solid rgba(100,116,139,0.35);border-radius:0 4px 4px 0">
+            <strong style="color:rgba(148,163,184,0.8)">Best-of-breed APM</strong> (~5–15%)<br>
+            <span style="font-size:0.58rem;color:var(--muted)">Classifies pattern as bearing wear — correct symptom, wrong root cause.</span>
+          </div>
+        </div>
+        <div style="padding:10px 12px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:7px;margin-top:4px">
+          <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;font-style:italic">"Bearing wear. Pull the pump."</div>
+          <div style="font-size:0.55rem;color:var(--muted);margin-top:5px;line-height:1.55">The statistically correct prior — without the documents.<br><span style="font-size:0.50rem;opacity:0.6">51% of ESP failures trace to operational/maintenance factors — 2014 SPE AI Conference</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /p2 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 3: THE DECISION — Three Documents. One Truck. No Pull.
+     Last slide → ▶ Run the Scenario fires run-h2 postMessage.
+════════════════════════════════════════════════════════════════ -->
+<div class="slide" id="p3">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 48px 12px;gap:14px;overflow-y:auto">
+    <div style="flex-shrink:0">
+      <div class="slide-kicker">THE DECISION</div>
+      <h2 class="slide-title">Three Documents. One Truck. No Pull.</h2>
+      <p class="slide-sub">GDC fuses what no sensor carries. APM has four sensors. GDC adds three documents.</p>
+    </div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap;flex:1;min-height:0">
+      <!-- Left: verdict + action cards -->
+      <div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:10px">
+        <div style="padding:14px 16px;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.22);border-radius:var(--radius)">
+          <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(74,222,128,0.7);margin-bottom:8px">GDC Verdict</div>
+          <div style="display:flex;flex-direction:column;gap:5px;font-size:0.62rem;color:var(--text2);line-height:1.65">
+            <span><strong>Root cause:</strong> Paraffin wax deposition — NOT bearing wear</span>
+            <span><strong>Evidence:</strong> Vendor log (PM 52d overdue) + PVT report (WAT 118°F) + pull record (bearings NORMAL 18 months prior)</span>
+            <span><strong>Action:</strong> Dispatch hot-oil truck. Do NOT pull.</span>
+          </div>
+        </div>
+        <div style="padding:10px 14px;border-left:3px solid rgba(251,191,36,0.35);background:rgba(251,191,36,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+          "The vendor log says the PM is 52 days overdue. The PVT report confirms high-wax crude. The pull record says bearings were normal 18 months ago. GDC connected them. No sensor, no APM system reads a vendor portal."
+        </div>
+        <!-- Action cards -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div class="anim-row" style="animation-delay:0s;padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.22);border-radius:var(--radius)">
+            <div style="font-size:0.50rem;font-weight:700;color:rgba(74,222,128,0.8);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">✔ GDC Recommended</div>
+            <div style="font-size:0.65rem;font-weight:700;color:var(--text2);margin-bottom:4px">Hot-oil truck job</div>
+            <div style="font-size:0.60rem;color:rgba(74,222,128,0.8);font-weight:700;margin-bottom:6px"><span data-term="cost_hotoi">a low-cost surface truck job</span></div>
+            <div style="font-size:0.56rem;color:var(--muted);line-height:1.5"><span data-term="cost_hotoi_scope">surface-only · no rig · no wireline</span>. Well returns to nominal within hours.</div>
+          </div>
+          <div class="anim-row" style="animation-delay:0.1s;padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid rgba(239,68,68,0.22);border-radius:var(--radius)">
+            <div style="font-size:0.50rem;font-weight:700;color:rgba(239,68,68,0.7);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">✘ Averted</div>
+            <div style="font-size:0.65rem;font-weight:700;color:var(--text2);margin-bottom:4px">Pump-pull investigation</div>
+            <div style="font-size:0.60rem;color:rgba(239,68,68,0.8);font-weight:700;margin-bottom:6px"><span data-term="cost_pull_h2">pulling the pump on a wrong diagnosis</span></div>
+            <div style="font-size:0.56rem;color:var(--muted);line-height:1.5">Wrong root cause — bearings were healthy. The pull finds nothing.</div>
+          </div>
+        </div>
+        <div style="font-size:0.50rem;color:rgba(100,116,139,0.55);font-style:italic">⚠ Hot-oil truck = surface-only; no workover rig · confirm cost with field service vendor</div>
+      </div>
+      <!-- Right: doc stack + closing quote -->
+      <div style="flex:0 0 240px;display:flex;flex-direction:column;gap:10px">
+        <div style="padding:12px 14px;background:rgba(15,23,42,0.65);border:1px solid rgba(251,191,36,0.22);border-radius:var(--radius)">
+          <div style="font-size:0.52rem;font-weight:700;color:rgba(251,191,36,0.7);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Retrieved Context — L3 RAG</div>
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <div class="doc-row anim-row" style="animation-delay:0s"><strong style="color:rgba(251,191,36,0.7)">📄 Chemical vendor service log</strong><br><span style="color:var(--muted)">PM 52d overdue — vendor delay logged</span></div>
+            <div style="height:1px;background:rgba(100,116,139,0.15)"></div>
+            <div class="doc-row anim-row" style="animation-delay:0.15s"><strong style="color:rgba(251,191,36,0.7)">📄 Fluid PVT / lab report</strong><br><span style="color:var(--muted)">WAT 118°F · high wax · 90d interval confirmed</span></div>
+            <div style="height:1px;background:rgba(100,116,139,0.15)"></div>
+            <div class="doc-row anim-row" style="animation-delay:0.3s"><strong style="color:rgba(251,191,36,0.7)">📄 Prior pull record</strong><br><span style="color:var(--muted)">Bearings: NORMAL 18mo prior — eliminates wear</span></div>
+          </div>
+        </div>
+        <div style="padding:14px 16px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:var(--radius);text-align:center;flex:1;display:flex;flex-direction:column;justify-content:center">
+          <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0;font-style:italic;line-height:1.5">"The documents already existed.<br>GDC read them in seconds."</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /p3 -->
+
+
+<!-- ══ Navigation bar ══ -->
+<div class="nav-bar">
+  <button class="nav-skip" data-msg="run-h2">Skip ▶</button>
+  <span class="nav-spacer"></span>
+  <button class="nav-back">← Back</button>
+  <span class="nav-hint">← →</span>
+  <div id="nav-dots" style="display:flex;gap:6px;align-items:center"></div>
+  <span class="nav-counter">1 / 3</span>
+  <button class="nav-next">Next →</button>
+  <button class="nav-run" data-msg="run-h2" style="display:none">▶ Run the Scenario</button>
+  <span class="nav-spacer"></span>
+</div>
+
+</div><!-- /#slide-stage -->
+
+<script src="../_shared/terms.js"></script>
+<script src="../_shared/slide.js"></script>
+</body>
+</html>

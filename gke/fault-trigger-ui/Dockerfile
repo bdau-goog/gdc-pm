@@ -10,6 +10,7 @@ COPY index.html .
 COPY templates/ ./templates/
 COPY models/ ./models/
 COPY static/ ./static/
+COPY slides/ ./slides/
 
 EXPOSE 8080
 

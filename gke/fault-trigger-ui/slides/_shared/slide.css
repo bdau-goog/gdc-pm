@@ -1,0 +1,195 @@
+/* slide.css — GDC briefing deck layout + card anatomy
+   @imports tokens.css for all colour/font vars.
+   Lever B (DEMO_MASTER §7.5): Slide layout / card anatomy.
+   Change card padding here → all 4 decks update. */
+
+@import url('./tokens.css');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100vw; height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--text2);
+  font-family: var(--sans);
+  font-size: 16px;
+}
+
+/* ── Stage: fixed 1440×810 canvas, positioned + scaled by slide.js ── */
+#slide-stage {
+  position: fixed;
+  top: 0; left: 0;
+  width: 1440px; height: 810px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Slide shell ── */
+.slide {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  bottom: 40px;           /* nav-bar height */
+  display: none;
+  flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
+.slide.active { display: flex; }
+
+/* ── Google rainbow rule bar ── */
+.rainbow-bar {
+  height: 4px; flex-shrink: 0;
+  background: linear-gradient(90deg,
+    #ea4335 0%,  #ea4335 25%,
+    #fbbc04 25%, #fbbc04 50%,
+    #34a853 50%, #34a853 75%,
+    #4285f4 75%, #4285f4 100%);
+}
+
+/* ── Slide header ── */
+.slide-header {
+  flex-shrink: 0;
+  padding: 20px 48px 0;
+}
+.slide-kicker {
+  font-size: calc(0.58rem * var(--content-scale));
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--blue);
+  margin-bottom: 5px;
+}
+.slide-title {
+  font-size: calc(1.75rem * var(--content-scale));
+  font-weight: 800;
+  color: var(--text2);
+  line-height: 1.15;
+  margin: 0 0 6px;
+}
+.slide-sub {
+  font-size: calc(0.72rem * var(--content-scale));
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0;
+}
+.slide-divider {
+  height: 2px;
+  background: linear-gradient(90deg, rgba(59,130,246,0.5) 0%, transparent 80%);
+  margin-top: 8px;
+}
+
+/* ── Slide body ── */
+.slide-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+  padding: 16px 48px 12px;
+  gap: 24px;
+  overflow: hidden;
+}
+
+/* ── Navigation bar (sits below all slides, always visible) ── */
+.nav-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(14,22,38,0.96);
+  border-top: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 0.52rem;
+  color: rgba(100,116,139,0.5);
+  padding: 0 14px;
+  z-index: 10;
+}
+.nav-hint    { color: rgba(100,116,139,0.35); margin: 0 6px; }
+.nav-counter { min-width: 28px; text-align: right; color: rgba(100,116,139,0.4); }
+.nav-spacer  { flex: 1; }
+
+.nav-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: rgba(100,116,139,0.3);
+  border: none; outline: none;
+  cursor: pointer;
+  transition: background 0.25s;
+  padding: 0; flex-shrink: 0;
+}
+.nav-dot.active { background: var(--blue); }
+
+.nav-back, .nav-next, .nav-run, .nav-skip {
+  padding: 3px 13px;
+  border-radius: 5px;
+  font-size: 0.60rem;
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.nav-back  { border: 1px solid var(--border); background: transparent; color: var(--text2); }
+.nav-next  { border: 1px solid rgba(59,130,246,0.4); background: rgba(59,130,246,0.12); color: #93c5fd; font-weight: 700; }
+.nav-run   { border: none; background: linear-gradient(135deg,#1d4ed8,#1e3a8a); color: #fff; font-weight: 700; padding: 4px 18px; box-shadow: 0 2px 10px rgba(29,78,216,0.35); }
+.nav-skip  { border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 0.52rem; }
+
+/* ── Cards ── */
+.glass-card {
+  background: rgba(15,23,42,0.65);
+  border: 1px solid rgba(59,130,246,0.22);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.mono-label {
+  font-family: var(--mono);
+  font-size: calc(0.60rem * var(--content-scale));
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--blue);
+  margin-bottom: 8px;
+}
+
+/* ── Resizable split panels (Lever D — per-element group size) ── */
+.panel-grid {
+  display: grid;
+  grid-template-columns: var(--split, 1fr) 6px 1fr;
+  min-height: 0;
+  flex: 1;
+  gap: 0;
+}
+.split-handle {
+  background: transparent;
+  cursor: ew-resize;
+  transition: background 0.15s;
+  border-radius: 3px;
+  align-self: stretch;
+}
+.split-handle:hover         { background: rgba(59,130,246,0.3); }
+.author-mode .split-handle  { background: rgba(59,130,246,0.22); outline: 1px dashed rgba(59,130,246,0.4); }
+
+/* ── Bar fills (scrubber-driven) ── */
+.bar-track {
+  position: relative; height: 24px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px; overflow: hidden;
+}
+.bar-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.04s linear, background 0.04s linear;
+}
+
+/* ── Fade-in animation rows ── */
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: none; }
+}
+.anim-row {
+  opacity: 0;
+  animation: fadeSlideIn 0.4s ease forwards;
+}
+
+/* ── Wellbore SVG bubbles ── */
+.wb-bubble { fill: rgba(59,130,246,0.65); opacity: 0; transition: opacity 0.04s linear; }

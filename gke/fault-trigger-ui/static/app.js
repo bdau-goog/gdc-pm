@@ -115,11 +115,7 @@ createApp({
       h1Dragging: false,
       h1BriefingMode: true,     // true=show animated briefing panels; false=scenario replay
       h1BriefingPanel: 1,       // 1=This Well, 2=What is an Unload? (panels 3-6 in Sprint 2b-2e)
-      h1BriefingScale: 1,       // CSS transform scale for 1440×810 slide stage; initial fit then manual
-      h1BriefingScaleManual: false, // true once user has adjusted scale with Cmd+/-/0
-      introSlide: 0,            // 0-2: current intro slide index
-      introScale: 1,            // CSS transform scale for intro 1440×810 stage
-      introScaleManual: false,  // true once user has adjusted intro scale
+      introSlide: 0,            // 0-2: current intro slide index (kept; unused after iframe migration)
       h1P2Scrub: 0,             // 0=nominal → 100=fault; Panel 2 scrubber (resets on panel change)
       h1P3Scrub: 0,             // 0=nominal → 100=fault; Panel 3 scrubber (resets on panel change)
       h1SplitPercent: 56,
@@ -2311,88 +2307,23 @@ createApp({
     this.lastRefresh=new Date().toLocaleTimeString();
     this.$nextTick(()=>{
       this.initCanvasSplitter();
-      // H1 briefing: scale 1440×810 slide stage to fit available frame (initial only).
-      // Once the user adjusts with Cmd/Ctrl +/-/0 the ResizeObserver no longer overrides.
-      const briefingEl = document.getElementById('h1-briefing-container');
-      if (briefingEl) {
-        const computeFit = () => {
-          const r = briefingEl.getBoundingClientRect();
-          if (r.width > 0 && r.height > 0) {
-            return Math.min(r.width / 1440, r.height / 810);
-          }
-          return 1;
-        };
-        // Set initial fit scale
-        this.h1BriefingScale = computeFit();
-        // Store the fit-computer so Cmd+0 can snap back
-        this._h1ComputeFit = computeFit;
-        // ResizeObserver only fires when scale has NOT been manually adjusted
-        new ResizeObserver(() => {
-          if (!this.h1BriefingScaleManual) {
-            this.h1BriefingScale = computeFit();
-          }
-        }).observe(briefingEl);
-      }
-      // Cmd/Ctrl +/-/0 → step h1BriefingScale ±0.05, override browser zoom
-      this._h1KeyZoom = (e) => {
-        if (this.mainTab !== 'horizon1') return;
-        if (!this.h1BriefingMode) return;
-        const isMod = e.metaKey || e.ctrlKey;
-        if (!isMod) return;
-        if (e.key === '=' || e.key === '+') {
-          e.preventDefault();
-          this.h1BriefingScaleManual = true;
-          this.h1BriefingScale = Math.min(3, +(this.h1BriefingScale + 0.05).toFixed(2));
-        } else if (e.key === '-') {
-          e.preventDefault();
-          this.h1BriefingScaleManual = true;
-          this.h1BriefingScale = Math.max(0.2, +(this.h1BriefingScale - 0.05).toFixed(2));
-        } else if (e.key === '0') {
-          e.preventDefault();
-          this.h1BriefingScaleManual = false;
-          this.h1BriefingScale = this._h1ComputeFit ? this._h1ComputeFit() : 1;
-        }
+      // Slide postMessage handler — Session BS+10: briefing iframes hand off to Vue replay.
+      // run-h1 / run-h2 / run-h3: last panel ▶ button → dismiss briefing + start scenario.
+      // go-horizon1: intro deck "▶ View Demo →" → switch to H1 tab.
+      this._slideMsg = (e) => {
+        if      (e.data === 'run-h1')      { this.h1BriefingMode = false; this.loadH1Scenario(); }
+        else if (e.data === 'run-h2')      { this.h2BriefingMode = false; this.loadH2Scenario(); }
+        else if (e.data === 'run-h3')      { this.h3BriefingMode = false; this.runVizierOptimize(); }
+        else if (e.data === 'go-horizon1') { this.setMainTab('horizon1'); }
       };
-      document.addEventListener('keydown', this._h1KeyZoom);
-      // Intro tab: arrow keys navigate slides; Cmd+/-/0 scale the stage
-      this._introKeyNav = (e) => {
-        if (this.mainTab !== 'intro') return;
-        const isMod = e.metaKey || e.ctrlKey;
-        if (isMod) {
-          if (e.key === '=' || e.key === '+') {
-            e.preventDefault();
-            this.introScaleManual = true;
-            this.introScale = Math.min(3, +(this.introScale + 0.05).toFixed(2));
-          } else if (e.key === '-') {
-            e.preventDefault();
-            this.introScaleManual = true;
-            this.introScale = Math.max(0.2, +(this.introScale - 0.05).toFixed(2));
-          } else if (e.key === '0') {
-            e.preventDefault();
-            this.introScaleManual = false;
-            this.introScale = this._introComputeFit ? this._introComputeFit() : 1;
-          }
-          return;
-        }
-        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
-          e.preventDefault();
-          this.introSlide = Math.min(2, this.introSlide + 1);
-        } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-          e.preventDefault();
-          this.introSlide = Math.max(0, this.introSlide - 1);
-        } else if (e.key === '1') { this.introSlide = 0; }
-        else if (e.key === '2') { this.introSlide = 1; }
-        else if (e.key === '3') { this.introSlide = 2; }
-      };
-      document.addEventListener('keydown', this._introKeyNav);
+      window.addEventListener('message', this._slideMsg);
     });
   },
 
   beforeUnmount() {
     [this._pollKpis,this._pollHorizon,this._pollMlops].forEach(t=>t&&clearInterval(t));
     this.stopDegPoll();
-    if (this._h1KeyZoom) document.removeEventListener('keydown', this._h1KeyZoom);
-    if (this._introKeyNav) document.removeEventListener('keydown', this._introKeyNav);
+    if (this._slideMsg) window.removeEventListener('message', this._slideMsg);
   },
 }).mount('#app');
 console.log("=== app.js mounted successfully ===");

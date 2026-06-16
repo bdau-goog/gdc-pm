@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1440">
+<title>H1 — Discern · ESP Fluid Unloading</title>
+<link rel="stylesheet" href="../_shared/slide.css">
+<style>
+  /* ── Per-deck overrides ── */
+  .well-row   { display:flex; align-items:flex-start; gap:12px; }
+  .well-label { font-size:0.65rem; color:#64748b; width:116px; flex-shrink:0; }
+  .well-val   { font-size:0.65rem; color:var(--text2); line-height:1.5; }
+  .sensor-tile {
+    background:rgba(15,23,42,0.65);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    display:flex; flex-direction:column; gap:8px; overflow:hidden;
+  }
+  .tile-header { font-family:var(--mono); font-size:0.65rem; font-weight:700; display:flex; justify-content:space-between; }
+  .tile-range  { display:flex; justify-content:space-between; font-family:var(--mono); font-size:0.60rem; }
+  .tile-desc   { font-size:0.62rem; color:var(--muted); line-height:1.5; }
+  .scrub-row   { flex-shrink:0; display:flex; align-items:center; gap:10px; }
+  .scrub-label { font-family:var(--mono); font-size:0.52rem; white-space:nowrap; }
+  /* P3 STATE/CONTEXT layout */
+  .state-tile { display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:rgba(59,130,246,0.07); border:1px solid rgba(59,130,246,0.18); border-radius:5px; }
+  .ctx-item   { display:flex; align-items:flex-start; gap:9px; padding:8px 10px; background:rgba(251,146,60,0.07); border:1px solid rgba(251,146,60,0.2); border-radius:5px; }
+  .ctx-dot    { display:inline-block; width:9px; height:9px; background:rgba(251,146,60,0.8); border-radius:2px; flex-shrink:0; margin-top:3px; }
+</style>
+</head>
+<body>
+<div id="slide-stage">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 1: THE SCENARIO — Same Signal. Two Causes. One Right Decision.
+     Left: well context card | Right: 4-sensor scrubber tiles
+     Resizable split — drag the handle to resize columns.
+════════════════════════════════════════════════════════════════ -->
+<div class="slide active" id="p1">
+  <div class="rainbow-bar"></div>
+  <!-- The body IS the panel-grid (fills flex remainder above nav-bar) -->
+  <div class="panel-grid" style="flex:1;min-height:0;padding:16px 48px 12px;gap:0;overflow:hidden">
+
+    <!-- Left: well context -->
+    <div style="display:flex;flex-direction:column;gap:14px;overflow:hidden;padding-right:16px">
+      <div>
+        <div class="slide-kicker">THE SCENARIO</div>
+        <h2 class="slide-title">Same Signal. Two Causes.<br>One Right Decision.</h2>
+        <p class="slide-sub">A Permian ESP well goes into unloading. The same sensor decline — <strong style="color:#93c5fd">two root causes, opposite correct actions</strong>.</p>
+      </div>
+      <div class="glass-card" style="flex:1;overflow:hidden">
+        <div class="mono-label">WELL ESP-ALPHA-N · PAD ALPHA · PERMIAN BASIN</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div class="well-row"><span class="well-label">Formation</span><span class="well-val">Mature Permian unconventional · <strong style="color:#f59e0b">moderate-sand</strong></span></div>
+          <div class="well-row"><span class="well-label">Pump</span><span class="well-val">ESP · <strong style="color:#f59e0b">AR-trim impellers</strong> (abrasion-resistant)</span></div>
+          <div class="well-row"><span class="well-label">Sensors</span><span class="well-val"><strong style="color:#f59e0b">Intake-only PDG</strong> — Pump Inlet Pressure, Motor Amps, Winding Temp, Vibration · <em>no discharge gauge</em></span></div>
+          <div class="well-row"><span class="well-label">Operating</span><span class="well-val">52 Hz · 3,120 RPM · nominal pressure ~1,245 PSI</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drag handle -->
+    <div class="split-handle" data-ls-key="h1.p1.split"></div>
+
+    <!-- Right: sensor tiles + scrubber -->
+    <div style="display:flex;flex-direction:column;gap:10px;overflow:hidden;padding-left:16px">
+      <div style="flex-shrink:0">
+        <div class="slide-kicker">THE EVENT</div>
+        <p class="slide-sub" style="margin-bottom:8px">Pump Inlet Pressure and Amps <strong style="color:#93c5fd">decline together</strong> — Winding Temp and Vibration stay flat.</p>
+      </div>
+      <!-- Scrubber -->
+      <div class="scrub-row" style="flex-shrink:0">
+        <span class="scrub-label" style="color:rgba(148,163,184,0.55)">NOMINAL</span>
+        <input type="range" min="0" max="100" value="0" class="panel-scrub" style="flex:1;accent-color:#3b82f6;cursor:pointer;height:4px">
+        <span class="scrub-label" style="color:rgba(251,191,36,0.6)">FAULT</span>
+        <button class="panel-play" style="padding:3px 10px;border-radius:4px;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.12);color:#93c5fd;font-size:0.56rem;cursor:pointer;font-family:var(--sans)">▶ Play</button>
+      </div>
+      <!-- 2×2 sensor grid -->
+      <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:10px;min-height:0">
+        <!-- Pump Inlet Pressure -->
+        <div class="sensor-tile" id="p1-pip-card" style="border:1px solid rgba(74,222,128,0.28)">
+          <div class="tile-header" id="p1-pip-header" style="color:rgba(74,222,128,0.85)">
+            <span>PUMP INLET PRESSURE <span id="p1-pip-arrow">→</span></span>
+            <span style="font-size:0.50rem" id="p1-pip-status">NOMINAL</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="p1-pip-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
+          <div class="tile-range"><span style="color:rgba(74,222,128,0.6)">~1,245 PSI</span><span style="color:rgba(251,191,36,0.75)">→ ~850 PSI</span></div>
+          <div class="tile-desc">Gas enters pump stages or fluid level drops below intake — hydraulic head falls</div>
+        </div>
+        <!-- Motor Amps -->
+        <div class="sensor-tile" id="p1-amp-card" style="border:1px solid rgba(74,222,128,0.28)">
+          <div class="tile-header" id="p1-amp-header" style="color:rgba(74,222,128,0.85)">
+            <span>MOTOR AMPS <span id="p1-amp-arrow">→</span></span>
+            <span style="font-size:0.50rem" id="p1-amp-status">NOMINAL</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="p1-amp-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
+          <div class="tile-range"><span style="color:rgba(74,222,128,0.6)">~68 A</span><span style="color:rgba(251,191,36,0.75)">→ ~28 A</span></div>
+          <div class="tile-desc">VFD current drops as impeller loses hydraulic load — tracks Pressure decline</div>
+        </div>
+        <!-- Winding Temp -->
+        <div class="sensor-tile" style="background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.2)">
+          <div class="tile-header" style="color:#94a3b8"><span>WINDING TEMP →</span><span style="font-size:0.50rem;color:rgba(100,116,139,0.5)">FLAT EARLY</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:70%;background:linear-gradient(90deg,rgba(74,222,128,0.6),rgba(74,222,128,0.3))"></div></div>
+          <div style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~197°F · stays flat early</div>
+          <div class="tile-desc">Motor cooling still flowing — temp is the <em>lagging</em> signal (API RP 11S §4.2)</div>
+        </div>
+        <!-- Vibration -->
+        <div class="sensor-tile" style="background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.2)">
+          <div class="tile-header" style="color:#94a3b8"><span>VIBRATION →</span><span style="font-size:0.50rem;color:rgba(100,116,139,0.5)">FLAT</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:60%;background:linear-gradient(90deg,rgba(74,222,128,0.55),rgba(74,222,128,0.25))"></div></div>
+          <div style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~1.4 mm/s · stays flat</div>
+          <div class="tile-desc">No bearing contact change during hydraulic unloading — distinguishes from bearing wear</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div><!-- /slide p1 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 2: THE HOOK — One Signature, Two Causes
+     Scrubber + ▶ Play drives both wellbore diagrams simultaneously.
+════════════════════════════════════════════════════════════════ -->
+<div class="slide" id="p2">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:10px;overflow:hidden">
+
+    <div style="flex-shrink:0">
+      <div class="slide-kicker">THE HOOK</div>
+      <h2 class="slide-title">One Signature, Two Causes</h2>
+      <p class="slide-sub">Both failure modes produce the <strong style="color:#93c5fd">identical Pump Inlet Pressure + Amps decline</strong> on an intake-only sensor string. The cause — and the correct action — are not in these numbers.</p>
+    </div>
+
+    <!-- Scrubber -->
+    <div class="scrub-row" style="flex-shrink:0">
+      <span class="scrub-label" style="color:rgba(148,163,184,0.55)">NOMINAL</span>
+      <input type="range" min="0" max="100" value="0" class="panel-scrub" style="flex:1;accent-color:#3b82f6;cursor:pointer;height:4px">
+      <span class="scrub-label" style="color:rgba(251,191,36,0.6)">FAULT ONSET</span>
+      <button class="panel-play" style="padding:3px 10px;border-radius:4px;border:1px solid rgba(59,130,246,0.4);background:rgba(59,130,246,0.12);color:#93c5fd;font-size:0.56rem;cursor:pointer;font-family:var(--sans)">▶ Play</button>
+    </div>
+
+    <!-- Split: Gas Lock | Fluid Drawdown -->
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0">
+
+      <!-- Gas Lock -->
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS LOCK</div>
+        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus HIGH · Gas pocket at pump intake</div>
+        <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
+          <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:260px">
+            <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
+            <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
+            <rect x="20" y="14" width="22" height="128" fill="rgba(59,130,246,0.28)" stroke="rgba(59,130,246,0.22)" stroke-width="0.5"/>
+            <line x1="19" y1="14" x2="13" y2="14" stroke="rgba(96,165,250,0.45)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
+            <text x="12" y="13" text-anchor="end" fill="rgba(96,165,250,0.65)" font-size="3" font-family="monospace">HIGH</text>
+            <text x="12" y="17.5" text-anchor="end" fill="rgba(96,165,250,0.4)" font-size="2.6" font-family="monospace">STABLE</text>
+            <!-- Gas bubbles at pump INTAKE (correct physics: gas enters at depth, not surface) -->
+            <circle class="wb-bubble" id="p2-bub1" cx="25" cy="134" r="2.2"/>
+            <circle class="wb-bubble" id="p2-bub2" cx="35" cy="128" r="1.6"/>
+            <circle class="wb-bubble" id="p2-bub3" cx="30" cy="139" r="1.9"/>
+            <circle class="wb-bubble" id="p2-bub4" cx="38" cy="134" r="1.3"/>
+            <circle class="wb-bubble" id="p2-bub5" cx="23" cy="126" r="1.5"/>
+            <rect x="16" y="143" width="30" height="8" rx="1.5" fill="rgba(251,191,36,0.3)" stroke="rgba(251,191,36,0.55)" stroke-width="0.8"/>
+            <text x="31" y="149" text-anchor="middle" fill="rgba(251,191,36,0.85)" font-size="3.8" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
+            <rect x="16" y="153" width="30" height="11" rx="1.5" fill="rgba(16,185,129,0.22)" stroke="rgba(74,222,128,0.38)" stroke-width="0.8"/>
+            <text x="31" y="160.5" text-anchor="middle" fill="rgba(74,222,128,0.75)" font-size="3.5" font-family="Inter,sans-serif">MOTOR ✓</text>
+            <text x="31" y="172" text-anchor="middle" fill="rgba(100,116,139,0.4)" font-size="3.2" font-family="monospace">PERFS</text>
+            <rect x="10" y="174" width="42" height="11" rx="1.5" fill="rgba(120,80,20,0.15)" stroke="rgba(180,120,30,0.22)" stroke-width="0.7"/>
+            <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · HIGH GOR</text>
+          </svg>
+        </div>
+        <div style="padding:6px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px;font-size:0.55rem;color:#93c5fd;line-height:1.5;flex-shrink:0">
+          <strong>✔ Safe action:</strong> VFD trim 52→44 Hz — <span data-term="cost_trim">a low-cost control-room adjustment</span>.
+        </div>
+      </div>
+
+      <!-- Fluid Drawdown -->
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(180,83,9,0.32);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">FLUID DRAWDOWN</div>
+        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus DEPLETED · Dynamic fluid level falling</div>
+        <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
+          <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:260px">
+            <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
+            <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
+            <!-- Gas/vapor zone above fluid level -->
+            <rect x="20" y="14" width="22" height="127" fill="rgba(15,23,42,0.55)"/>
+            <text id="p2-gas-text" x="31" y="50" text-anchor="middle" fill="rgba(100,116,139,0.28)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0">GAS</text>
+            <!-- Fluid column — height/y animated via applyState -->
+            <rect id="p2-fluid" x="20" y="14" width="22" height="105" fill="rgba(120,53,15,0.4)" stroke="rgba(180,83,9,0.3)" stroke-width="0.5"/>
+            <line x1="19" y1="90" x2="13" y2="90" stroke="rgba(251,146,60,0.5)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
+            <text x="12" y="89" text-anchor="end" fill="rgba(251,146,60,0.65)" font-size="3" font-family="monospace">LOW</text>
+            <!-- Sand at pump intake (settles below critical transport velocity) -->
+            <rect id="p2-sand" x="20" y="131" width="22" height="10" fill="rgba(180,120,30,0.22)" stroke="rgba(180,120,30,0.28)" stroke-width="0.5" style="opacity:0"/>
+            <text id="p2-sand-text" x="31" y="138" text-anchor="middle" fill="rgba(180,120,30,0.65)" font-size="3.2" font-family="monospace" style="opacity:0">SAND</text>
+            <rect x="16" y="143" width="30" height="8" rx="1.5" fill="rgba(239,68,68,0.28)" stroke="rgba(239,68,68,0.5)" stroke-width="0.8"/>
+            <text x="31" y="149" text-anchor="middle" fill="rgba(239,68,68,0.85)" font-size="3.8" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
+            <rect x="16" y="153" width="30" height="11" rx="1.5" fill="rgba(16,185,129,0.2)" stroke="rgba(74,222,128,0.32)" stroke-width="0.8"/>
+            <text x="31" y="160.5" text-anchor="middle" fill="rgba(74,222,128,0.7)" font-size="3.5" font-family="Inter,sans-serif">MOTOR ✓</text>
+            <text x="31" y="172" text-anchor="middle" fill="rgba(100,116,139,0.4)" font-size="3.2" font-family="monospace">PERFS</text>
+            <rect x="10" y="174" width="42" height="11" rx="1.5" fill="rgba(120,80,20,0.15)" stroke="rgba(180,120,30,0.22)" stroke-width="0.7"/>
+            <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · LOW LEVEL</text>
+          </svg>
+        </div>
+        <div style="padding:6px 10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:0.55rem;color:#fca5a5;line-height:1.5;flex-shrink:0">
+          <strong>✘ VFD trim raises <span data-term="cost_pull_risk">workover-level risk</span></strong> — velocity drops toward sand-transport limit. Shut-in is the safer default for this well type.
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom: same sensor callout -->
+    <div style="flex-shrink:0;background:rgba(15,23,42,0.72);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:10px 18px;display:flex;align-items:center;gap:18px">
+      <div style="flex-shrink:0;font-family:var(--mono);font-size:0.55rem;font-weight:700;color:rgba(148,163,184,0.65);white-space:nowrap;line-height:1.5">SAME SENSOR<br>OUTPUT ↓</div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:56px;flex-shrink:0">PRESSURE</span>
+          <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-pip-fill" style="width:90%;background:linear-gradient(90deg,rgba(59,130,246,0.85),rgba(59,130,246,0.4))"></div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:56px;flex-shrink:0">AMPS</span>
+          <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-amp-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
+        </div>
+      </div>
+      <div style="flex-shrink:0;font-size:0.65rem;color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:210px;line-height:1.45">On this well's sensor,<br>the live decline looks the same.</div>
+    </div>
+  </div>
+</div><!-- /slide p2 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 3: THE MOAT — STATE vs. CONTEXT
+     CSS staggered fade-in animations (no scrubber needed).
+════════════════════════════════════════════════════════════════ -->
+<div class="slide" id="p3">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:10px;overflow:hidden">
+    <div style="flex-shrink:0">
+      <div class="slide-kicker">THE MOAT</div>
+      <h2 class="slide-title">STATE vs. CONTEXT</h2>
+      <p class="slide-sub">Sensors report what the well is doing <em>right now</em>. The correct action depends on what <em>happened</em> — and that is categorically not a real-time measurement.</p>
+    </div>
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0">
+
+      <!-- STATE column -->
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:0;overflow:hidden;justify-content:space-between">
+        <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#60a5fa;letter-spacing:0.1em;text-align:center;padding-bottom:8px">STATE</div>
+        <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:8px">What the sensors report — right now</div>
+        <div class="anim-row" style="animation-delay:0.1s"><div class="state-tile"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">PUMP INLET PRESSURE</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">612 <span style="font-size:0.52rem;font-weight:400">PSI ↓</span></span></div></div>
+        <div class="anim-row" style="animation-delay:0.4s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">AMPS</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">34.2 <span style="font-size:0.52rem;font-weight:400">A ↓</span></span></div></div>
+        <div class="anim-row" style="animation-delay:0.7s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">WINDING TEMP</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">246 <span style="font-size:0.52rem;font-weight:400">°F —</span></span></div></div>
+        <div class="anim-row" style="animation-delay:1.0s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">VIBRATION</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">0.41 <span style="font-size:0.52rem;font-weight:400">in/s —</span></span></div></div>
+        <div class="anim-row" style="animation-delay:1.3s;padding-top:8px;border-top:1px solid rgba(59,130,246,0.12);margin-top:6px">
+          <p style="font-size:0.60rem;color:#93c5fd;line-height:1.65;font-style:italic;margin:0">Even a perfect gauge sharpens the STATE. It cannot report what happened last week.</p>
+        </div>
+      </div>
+
+      <!-- CONTEXT column -->
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(251,146,60,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:0;overflow:hidden;justify-content:space-between">
+        <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#fb923c;letter-spacing:0.1em;text-align:center;padding-bottom:8px">CONTEXT</div>
+        <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:8px">What no sensor can report</div>
+        <div class="anim-row" style="animation-delay:1.6s"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">WORKOVER RECORD</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Last workover: 14 months ago · annulus condition unknown</div></div></div></div>
+        <div class="anim-row" style="animation-delay:2.2s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">GOR TREND</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Gas-Oil Ratio rising +18% over 60 days — reservoir depletion signal</div></div></div></div>
+        <div class="anim-row" style="animation-delay:2.8s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">OFFSET FRAC REPORT</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div></div></div></div>
+        <div class="anim-row" style="animation-delay:3.4s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">SHIFT NOTE</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div></div></div></div>
+        <div class="anim-row" style="animation-delay:4.0s;padding-top:8px;border-top:1px solid rgba(251,146,60,0.12);margin-top:6px">
+          <p style="font-size:0.60rem;color:#fb923c;line-height:1.65;font-style:italic;margin:0">The deciding context lives here. Not on any sensor.</p>
+        </div>
+      </div>
+    </div>
+    <div style="flex-shrink:0;padding:14px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+      <span style="font-size:0.88rem;font-weight:800;color:#e2e8f0;letter-spacing:0.01em">You cannot instrument your way out of a context gap.</span>
+    </div>
+  </div>
+</div><!-- /slide p3 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 4: THE DECISION — How Operators Decide Today
+════════════════════════════════════════════════════════════════ -->
+<div class="slide" id="p4">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:12px;overflow:hidden">
+    <div style="flex-shrink:0">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:2px">
+        <div class="slide-kicker">THE DECISION</div>
+        <span style="font-size:0.52rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(251,146,60,0.12);border:1px solid rgba(251,146,60,0.35);color:#fb923c;white-space:nowrap">moderate-sand well · AR-trim</span>
+      </div>
+      <h2 class="slide-title">How Operators Decide Today</h2>
+    </div>
+    <!-- Alarm banner -->
+    <div style="flex-shrink:0;padding:10px 16px;background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.3);border-radius:7px;display:flex;align-items:center;gap:10px">
+      <span style="font-size:1rem;line-height:1;flex-shrink:0">⚠</span>
+      <div>
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:#fbbf24;letter-spacing:0.06em">ONE ALARM: UNDERLOAD</div>
+        <div style="font-size:0.58rem;color:var(--text2);margin-top:2px">Cause unknown — gas lock <strong style="color:#60a5fa">OR</strong> fluid drawdown?</div>
+      </div>
+    </div>
+    <!-- Decision cards -->
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0">
+      <div class="anim-row" style="animation-delay:0.2s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">VFD TRIM <span style="font-weight:400;color:var(--muted)">52 → 44 Hz</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Right for gas lock — stays online</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Preserves production — <span data-term="cost_trim_short">low-cost — a VFD command</span></div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#f87171;flex-shrink:0;font-weight:700">✘</span> Riskier if drawdown</div>
+          <div style="font-size:0.55rem;color:rgba(251,146,60,0.8);padding:5px 8px;background:rgba(251,146,60,0.06);border:1px solid rgba(251,146,60,0.2);border-radius:4px;margin-top:2px">Sand makes it costly — velocity drops toward transport limit</div>
+        </div>
+      </div>
+      <div class="anim-row" style="animation-delay:0.8s;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.28);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">SHUT-IN <span style="font-weight:400;color:var(--muted)">Well offline</span></div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Safe for <strong>both</strong> causes</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Pump always protected</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">✘</span> Defers production</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2);padding-left:16px">+ <span data-term="cost_shutdown">trip and restart costs</span> — every time</div>
+        </div>
+      </div>
+    </div>
+    <div class="anim-row" style="flex-shrink:0;animation-delay:1.6s;padding:16px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+      <div style="font-size:0.82rem;font-weight:800;color:#e2e8f0;line-height:1.4">Safe is not free. The protective shut-in is paid on every ambiguous alarm — including the ones that were only gas lock.</div>
+      <div style="font-size:0.62rem;color:var(--muted);margin-top:6px;font-style:italic">GDC reads the documents. The confident call replaces the cautious default.</div>
+    </div>
+  </div>
+</div><!-- /slide p4 -->
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SLIDE 5: THE PLATFORM — This Pattern Is Universal
+     Last slide → ▶ Run the Scenario fires run-h1 postMessage.
+════════════════════════════════════════════════════════════════ -->
+<div class="slide" id="p5">
+  <div class="rainbow-bar"></div>
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 12px;gap:10px;overflow:hidden">
+    <div style="flex-shrink:0">
+      <div class="slide-kicker">THE PLATFORM</div>
+      <h2 class="slide-title">This Pattern Is Universal</h2>
+      <p class="slide-sub">STATE is what every gauge reports. CONTEXT is what decides. This gap exists in every industry that runs physical assets.</p>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden">
+      <!-- O&G -->
+      <div class="anim-row" style="animation-delay:0.3s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.22);border-radius:7px;flex:1;min-height:0">
+        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">O&amp;G</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">ESP Well</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60a5fa;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Pump Inlet Pressure ↓ · Amps ↓</div><div style="font-size:0.60rem;color:var(--muted)">Intake-only PDG — identical on gas lock &amp; drawdown</div></div>
+        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
+        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Workover record · GOR trend</div><div style="font-size:0.60rem;color:var(--muted)">Shift note from tour operator</div></div>
+      </div>
+      <!-- P&E -->
+      <div class="anim-row" style="animation-delay:1.2s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(167,139,250,0.22);border-radius:7px;flex:1;min-height:0">
+        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#c4b5fd;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">P&amp;E</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">Transformer</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c4b5fd;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Load current ↑ · winding temp ↑</div><div style="font-size:0.60rem;color:var(--muted)">SCADA flags thermal exceedance</div></div>
+        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
+        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Loading plan · maintenance log</div><div style="font-size:0.60rem;color:var(--muted)">Seasonal demand forecast</div></div>
+      </div>
+      <!-- MFG -->
+      <div class="anim-row" style="animation-delay:2.1s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(251,146,60,0.22);border-radius:7px;flex:1;min-height:0">
+        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.28);color:#fb923c;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">MFG</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">Factory motor</div></div>
+        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Vibration ↑ · temperature nominal</div><div style="font-size:0.60rem;color:var(--muted)">Same signature as bearing wear</div></div>
+        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
+        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Lubrication record · OEM bulletin</div><div style="font-size:0.60rem;color:var(--muted)">Line throughput log</div></div>
+      </div>
+    </div>
+    <div class="anim-row" style="flex-shrink:0;animation-delay:3.0s;padding:14px 18px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+      <div style="font-size:0.92rem;font-weight:800;color:#e2e8f0;margin-bottom:4px">This is not an oilfield trick. It is the structural gap in every industrial AI deployment.</div>
+      <div style="font-size:0.65rem;color:var(--muted);font-style:italic">The AI goes to the data.</div>
+    </div>
+  </div>
+</div><!-- /slide p5 -->
+
+
+<!-- ══ Navigation bar ══ -->
+<div class="nav-bar">
+  <button class="nav-skip" data-msg="run-h1">Skip ▶</button>
+  <span class="nav-spacer"></span>
+  <button class="nav-back">← Back</button>
+  <span class="nav-hint">← →</span>
+  <div id="nav-dots" style="display:flex;gap:6px;align-items:center"></div>
+  <span class="nav-counter">1 / 5</span>
+  <button class="nav-next">Next →</button>
+  <button class="nav-run" data-msg="run-h1" style="display:none">▶ Run the Scenario</button>
+  <span class="nav-spacer"></span>
+  <button id="author-copy" style="display:none;font-size:0.50rem;padding:2px 8px;border-radius:3px;border:1px dashed rgba(59,130,246,0.4);background:transparent;color:rgba(59,130,246,0.7);cursor:pointer;font-family:var(--sans)">Copy layout</button>
+</div>
+
+</div><!-- /#slide-stage -->
+
+<script src="../_shared/terms.js"></script>
+<script src="../_shared/slide.js"></script>
+<script>
+// ── Per-deck animation: P1 sensor tiles + P2 wellbore ──────────────────────
+window.applyState = function (t, slideIdx) {
+
+  if (slideIdx === 0) {
+    // ── P1: sensor tile scrubber ─────────────────────────────────────────
+    var amber = 'linear-gradient(90deg,rgba(251,191,36,0.85),rgba(251,191,36,0.4))';
+    var green = 'linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))';
+    var isF   = t > 0.5;
+
+    var pipFill = document.getElementById('p1-pip-fill');
+    if (pipFill) { pipFill.style.width = (90 - 60*t).toFixed(1) + '%'; pipFill.style.background = isF ? amber : green; }
+
+    var ampFill = document.getElementById('p1-amp-fill');
+    if (ampFill) { ampFill.style.width = (90 - 70*t).toFixed(1) + '%'; ampFill.style.background = isF ? amber : green; }
+
+    var pipH = document.getElementById('p1-pip-header');
+    if (pipH) pipH.style.color = isF ? 'var(--amber)' : 'rgba(74,222,128,0.85)';
+    var ampH = document.getElementById('p1-amp-header');
+    if (ampH) ampH.style.color = isF ? 'var(--amber)' : 'rgba(74,222,128,0.85)';
+
+    var pipSt = document.getElementById('p1-pip-status');
+    if (pipSt) { pipSt.textContent = isF ? 'DECLINING' : 'NOMINAL'; pipSt.style.color = isF ? 'var(--amber)' : 'rgba(74,222,128,0.85)'; }
+    var ampSt = document.getElementById('p1-amp-status');
+    if (ampSt) { ampSt.textContent = isF ? 'DECLINING' : 'NOMINAL'; ampSt.style.color = isF ? 'var(--amber)' : 'rgba(74,222,128,0.85)'; }
+
+    var pipAr = document.getElementById('p1-pip-arrow');
+    if (pipAr) pipAr.textContent = isF ? '↘' : '→';
+    var ampAr = document.getElementById('p1-amp-arrow');
+    if (ampAr) ampAr.textContent = isF ? '↘' : '→';
+
+    var pipCard = document.getElementById('p1-pip-card');
+    if (pipCard) pipCard.style.borderColor = isF ? 'rgba(251,191,36,0.32)' : 'rgba(74,222,128,0.28)';
+    var ampCard = document.getElementById('p1-amp-card');
+    if (ampCard) ampCard.style.borderColor = isF ? 'rgba(251,191,36,0.32)' : 'rgba(74,222,128,0.28)';
+  }
+
+  if (slideIdx === 1) {
+    // ── P2: wellbore animation ───────────────────────────────────────────
+    // Left — gas bubbles fade in at pump intake
+    var mults = [1.0, 0.85, 0.90, 0.70, 0.75];
+    for (var i = 1; i <= 5; i++) {
+      var b = document.getElementById('p2-bub' + i);
+      if (b) b.style.opacity = (t * mults[i-1]).toFixed(2);
+    }
+
+    // Right — fluid level drops (rect y rises, height shrinks)
+    var fluid = document.getElementById('p2-fluid');
+    if (fluid) {
+      var newH = Math.max(0, 105 * (1 - 0.85 * t));
+      var newY = 14 + (105 - newH);
+      fluid.setAttribute('height', newH.toFixed(1));
+      fluid.setAttribute('y', newY.toFixed(1));
+    }
+
+    // GAS text fades in as level drops
+    var gasT = document.getElementById('p2-gas-text');
+    if (gasT) gasT.style.opacity = t.toFixed(2);
+
+    // SAND appears at t≥0.65 (velocity below transport threshold)
+    var sandOp = Math.min(1, t / 0.65);
+    var sand = document.getElementById('p2-sand');
+    if (sand) sand.style.opacity = sandOp.toFixed(2);
+    var sandTxt = document.getElementById('p2-sand-text');
+    if (sandTxt) sandTxt.style.opacity = sandOp.toFixed(2);
+
+    // Bottom sensor bars (same signal on both causes)
+    var pf2 = document.getElementById('p2-pip-fill');
+    if (pf2) pf2.style.width = (90 - 60*t).toFixed(1) + '%';
+    var af2 = document.getElementById('p2-amp-fill');
+    if (af2) af2.style.width = (90 - 70*t).toFixed(1) + '%';
+  }
+};
+</script>
+</body>
+</html>

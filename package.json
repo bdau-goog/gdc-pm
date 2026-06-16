@@ -22,6 +22,12 @@
   },
   "homepage": "https://github.com/bdau-goog/gdc-pm#readme",
   "devDependencies": {
-    "playwright": "^1.60.0"
+    "jsdom": "^29.1.1",
+    "playwright": "^1.61.0"
+  },
+  "dependencies": {
+    "@vue/compiler-dom": "^3.5.38",
+    "htmlparser2": "^12.0.0",
+    "puppeteer": "^25.1.0"
   }
 }
