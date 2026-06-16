@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 4ed1c8c / branch: feature-trio-clean
-Image: sha256:7b4158a347ac131eec07c34befbd5aff97d64a859968498cee87a0d5cde4dd9f
+Date: 2026-06-16 / git head: 047c607 / branch: feature-trio-clean
+Image: sha256:a44ba16ba01dd8d0112d03ff76d938a4c4b128969cee459e2b9096c3bf48b6b7
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,36 +22,38 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### H1 slide deck now fully redesigned and deployed. Next priorities:
+### H1 slide deck readability pass complete (BS+15). Next priorities:
 
-**Priority 1 — Live review of H1 deck (5 slides)**
+**Priority 1 — Live review of updated H1 deck**
 Open `gdc-pm.bdau.io/slides/h1.html` on actual display and walk through all 5 slides:
-- Slide 1: THE SCENARIO — sensor tiles + resizable split
-- Slide 2: AMBIGUOUS TELEMETRY — wellbore SVG animation (scrubber: gas bubbles vs fluid drain + sand)
-- Slide 3: DECISION SUPPORT — Motor Burnout vs. Sand Bridging decision matrix
-- Slide 4: ADDING CONTEXT — Without GDC / With GDC two-column
-- Slide 5: INDUSTRIAL APPLICATION — O&G / P&U / Maritime + Data Gravity banner
-Also verify intro.html Slide 2 shows "Compliance & Sovereignty" and expanded Data Gravity copy.
+- Slide 2: Wellbore SVGs now 420px (larger), two bottom info boxes removed, new amber/red PUMP legend
+- Slide 3: Detail Toggle ON — see all outcome text; Details OFF — only bold headlines visible
+- Slide 4: Clock (ticking, red) left + Stopwatch (snaps 2s, blue) right; clock/stopwatch symmetric
+- Nav-bar: `[Details: ON/OFF]` button (green=ON, grey=OFF) — persists via localStorage
+Test: click Details OFF, confirm slide 3 shows only the 3 outcome headlines per card (not the sub-text)
 
 **Priority 2 — H2 hostile-engineer RT pass (gdc-second-opinion MCP)**
 Before any H2 UI work, run the paraffin/wax scenario through one hostile-engineer RT pass.
 Then write an H2_RESET.md (same format as H1_RESET.md) before touching h2.html.
 
-**Priority 3 — Authored $ cleanup in live replay (deferred twice)**
-61 occurrences of bare `PIP` and authored `~$2,500 / ~$150k` remain in:
-- `gke/fault-trigger-ui/static/app.js` and `app.py` narrative sections
-- These are NOT in the slide decks (decks clean via terms.js)
-Low urgency — decks are what the audience sees; app narrative is secondary.
+**Priority 3 — BenQ screen flicker (back-burner)**
+Hypothesis: Plotly 1s pollers trigger rapid window repaints which interact with BenQ VRR/G-Sync.
+Fix sprint: throttle/clamp pollers and limit Plotly redraws to only necessary repaints.
+DO NOT tackle this before H2 work — it is explicitly back-burnered.
 
-### What was completed this session (commits 2864d0a + 4ed1c8c)
-H1 slide deck 5-slide redesign per H1_RESET.md:
-- --content-scale 1.2 → 1.3 (global legibility lift)
-- Slide 2: AMBIGUOUS TELEMETRY (was THE HOOK) — correct gas-bubble physics (distributed column, fluid level stays HIGH/STABLE)
-- Slide 3 NEW: DECISION SUPPORT — **Motor Burnout vs. Sand Bridging** (2×2 matrix; terminology corrected in-session: "Gas Burnout" → "Motor Burnout" per API RP 11S §4.2; "Sand Bridging" = standard Permian field term)
-- Slide 4: ADDING CONTEXT (merged old slides 3+4) — Manual context search vs GDC 4-step RAG
-- Slide 5: INDUSTRIAL APPLICATION (was THE PLATFORM) — new O&G/P&U/Maritime examples
-- intro.html: Compliance & Sovereignty + expanded Data Gravity copy
-- docs/H1_RESET.md: immutable design spec for H1 (with terminology correction note)
+**Priority 4 — Authored $ cleanup in live replay (deferred)**
+61 occurrences of bare `PIP` and authored `~$2,500 / ~$150k` in app.js / app.py narrative sections.
+Low urgency — decks clean via terms.js; app narrative is secondary.
+
+### What was completed this session (commit 047c607)
+BS+15 readability pass on H1 slide deck:
+- tokens.css: --content-scale 1.3→1.4 (all 4 decks updated simultaneously)
+- slide.css: `.detail-element`/`.hide-details` toggle CSS; analog clock + stopwatch keyframes
+- slide.js: `initDetailsToggle()` — [Details: ON/OFF] nav-bar button (localStorage persistence)
+- h1.html Slide 2: wellbore SVGs 340→420px; two bottom info boxes removed; amber/red PUMP legend added
+- h1.html Slide 3: 6 outcome descriptions wrapped in `.detail-element` — toggled by Details button
+- h1.html Slide 4: analog clock (ticking, red, "MINUTES TO HOURS") + stopwatch (snaps 2s, blue, "< 2 SECONDS") added as symmetric column headers
+- h1.html: CSS readability lifts on outcome/doc/step title font sizes (0.60→0.70rem, 0.58→0.66rem)
 
 ## Known Integrity Issues
 | Issue | Status |
