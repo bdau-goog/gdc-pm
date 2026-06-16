@@ -259,11 +259,11 @@
         <div class="h3-slider-row">
           <div class="h3-slider-container">
             <div class="h3-slider-label"><span>Oil Price ($/bbl)</span><span style="font-family:var(--mono);color:var(--blue)">${{ oilPriceSlider }}</span></div>
-            <input type="range" v-model.number="oilPriceSlider" min="60" max="160" step="5" @change="runVizierOptimize">
+            <input type="range" v-model.number="oilPriceSlider" min="60" max="160" step="5">
           </div>
           <div class="h3-slider-container">
             <div class="h3-slider-label"><span>Operating Horizon (Days)</span><span style="font-family:var(--mono);color:var(--blue)">{{ horizonSlider }}d</span></div>
-            <input type="range" v-model.number="horizonSlider" min="30" max="365" step="15" @change="runVizierOptimize">
+            <input type="range" v-model.number="horizonSlider" min="30" max="365" step="15">
           </div>
           <div class="h3-slider-container">
             <div class="h3-slider-label"><span>Net Cash Flow Model</span><span style="font-family:var(--mono);color:var(--green)">Live</span></div>

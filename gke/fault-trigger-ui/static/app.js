@@ -1254,9 +1254,9 @@ createApp({
       if (tab === 'horizon2' && !this.h2ReplayData && !this.h2ReplayLoading) {
         this.$nextTick(() => this.loadH2Scenario());
       }
-      if (tab === 'horizon3' && this.optTrials.length === 0) {
-        this.$nextTick(() => this.runVizierOptimize());
-      }
+      // Vizier intentionally NOT auto-fired on tab open — explicit ▶ Run button only.
+      // Auto-fire created a new Vizier study (+ 15 billed trials) on every page load/tab click.
+      // (removed Session BS+9 to stop unintended billing)
     },
     
     // ── Horizon 1: Pad Triage — Ingest Pad Anomalies (Comparative Detection Scenario) ──
