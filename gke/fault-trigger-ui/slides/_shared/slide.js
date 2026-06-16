@@ -20,12 +20,41 @@
   var cur    = 0;
   var playRaf = null, playT0 = null;
 
+  // ── Zoom — persists to localStorage; +/= zoom in, - zoom out, 0 reset ────
+  var zoomFactor = parseFloat(localStorage.getItem('gdc.slide.zoom') || '1.0');
+  var zoomToast = null;
+
+  function showZoomHint() {
+    var pct = Math.round(zoomFactor * 100);
+    // Reuse or create a tiny overlay
+    if (!zoomToast) {
+      zoomToast = document.createElement('div');
+      zoomToast.style.cssText = 'position:fixed;bottom:52px;right:14px;z-index:999;' +
+        'background:rgba(14,22,38,0.92);border:1px solid rgba(59,130,246,0.4);' +
+        'color:#93c5fd;font-family:monospace;font-size:11px;padding:3px 9px;' +
+        'border-radius:5px;pointer-events:none;transition:opacity 0.3s';
+      document.body.appendChild(zoomToast);
+    }
+    zoomToast.textContent = 'Zoom ' + pct + '% (+/- to adjust, 0 = fit)';
+    zoomToast.style.opacity = '1';
+    clearTimeout(zoomToast._t);
+    zoomToast._t = setTimeout(function () { zoomToast.style.opacity = '0'; }, 1800);
+  }
+
+  function adjustZoom(delta) {
+    zoomFactor = parseFloat(Math.max(0.25, Math.min(3.0, zoomFactor + delta)).toFixed(2));
+    localStorage.setItem('gdc.slide.zoom', String(zoomFactor));
+    fit();
+    showZoomHint();
+  }
+
   // ── 1. Fit to viewport ────────────────────────────────────────────────────
   function fit() {
     if (!stage) return;
-    var s  = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H);
-    var tx = Math.max(0, (window.innerWidth  - STAGE_W * s) / 2);
-    var ty = Math.max(0, (window.innerHeight - STAGE_H * s) / 2);
+    var base = Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H);
+    var s    = base * zoomFactor;
+    var tx   = (window.innerWidth  - STAGE_W * s) / 2;
+    var ty   = (window.innerHeight - STAGE_H * s) / 2;
     stage.style.transform       = 'scale(' + s + ')';
     stage.style.transformOrigin = 'top left';
     stage.style.left            = tx + 'px';
@@ -97,6 +126,10 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goTo(cur + 1); }
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); goTo(cur - 1); }
+    // Zoom: + / = zoom in, - zoom out, 0 reset to fit
+    if (e.key === '+' || e.key === '=') { e.preventDefault(); adjustZoom(+0.05); return; }
+    if (e.key === '-' || e.key === '_') { e.preventDefault(); adjustZoom(-0.05); return; }
+    if (e.key === '0') { e.preventDefault(); zoomFactor = 1.0; localStorage.setItem('gdc.slide.zoom', '1.0'); fit(); showZoomHint(); return; }
     var n = parseInt(e.key, 10);
     if (n >= 1 && n <= N) goTo(n - 1);
   });
