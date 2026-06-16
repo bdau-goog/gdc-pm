@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 6f5bbf4 / branch: feature-trio-clean
-Image: sha256:c7ba64ebf11b7af9ca60bdd2bcc09213b9b67bce71ffceff0044077b6d8138bc
+Date: 2026-06-16 / git head: 2864d0a / branch: feature-trio-clean
+Image: sha256:542e61a5c6146bbdf57dbfe6ecf9deedc23c62f46b5ee8f865116aa959a15d9b
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,55 +22,48 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### H1 scenario is now fully harmonized and deployed. Next priorities:
+### H1 slide deck now fully redesigned and deployed. Next priorities:
 
-**Priority 1 — CxO narrative validation (discuss first, don't code)**
-The RT pass (Session BS+13) returned SCENARIO VERDICT: KEEP but flagged two CxO narrative
-weaknesses:
-1. "HITL/Agentic" framing is now on screen (GDC Agent badge + Approve & Execute buttons) ✅
-2. The "same sensor signal, two opposite correct actions, documents resolve which" story needs
-   live review on a display — ask user to pull up gdc-pm.bdau.io H1 tab and confirm the
-   narrative lands before proceeding to H2/H3.
+**Priority 1 — Live review of H1 deck (5 slides)**
+Open `gdc-pm.bdau.io/slides/h1.html` on actual display and walk through all 5 slides:
+- Slide 1: THE SCENARIO — sensor tiles + resizable split
+- Slide 2: AMBIGUOUS TELEMETRY — wellbore SVG animation (scrubber: gas bubbles vs fluid drain + sand)
+- Slide 3: DECISION SUPPORT — Gas Burnout vs. Sand-Bridge Seizure decision matrix
+- Slide 4: ADDING CONTEXT — Without GDC / With GDC two-column
+- Slide 5: INDUSTRIAL APPLICATION — O&G / P&U / Maritime + Data Gravity banner
+Also verify intro.html Slide 2 shows "Compliance & Sovereignty" and expanded Data Gravity copy.
 
-**Priority 2 — Live deck + live replay review**
-Open all 4 slides + the H1 live replay on the actual display. Verify:
-- H1 slide deck P4 "PROTECTIVE DEFAULT · Hold + Alert RTOC" matches the live replay card
-- H1 live replay shows "GDC Agent · Action package ready · Awaiting RTOC approval" badge
-- Drawdown action card shows "Approve & Execute — Step-Down + Hold"
-- Override modal shows "step-down to minimum flush Hz, not an aggressive trim"
-- Sonic log modal shows "150 ft above intake" (not 240 ft)
-
-**Priority 3 — H2 second-opinion hostile pass (gdc-second-opinion MCP)**
+**Priority 2 — H2 hostile-engineer RT pass (gdc-second-opinion MCP)**
 Before any H2 UI work, run the paraffin/wax scenario through one hostile-engineer RT pass.
-The paraffin scenario passed gates 1-5 but has not been RT-tested on the current live
-scenario text (tab_h2.html). Run pass, then code.
+Then write an H2_RESET.md (same format as H1_RESET.md) before touching h2.html.
 
-**Priority 4 — Authored $ cleanup in live replay (deferred twice)**
+**Priority 3 — Authored $ cleanup in live replay (deferred twice)**
 61 occurrences of bare `PIP` and authored `~$2,500 / ~$150k` remain in:
 - `gke/fault-trigger-ui/static/app.js` and `app.py` narrative sections
 - These are NOT in the slide decks (decks clean via terms.js)
 Low urgency — decks are what the audience sees; app narrative is secondary.
 
-### What was verified live (commit 6f5bbf4)
-- 19 new H1 strings live: GDC Agent, Step-Down + Hold, Approve & Execute, six-figure, etc.
-- Emergency Shut-In: 0 in H1 drawdown decision path
-- SPE-174536: 0 on any live screen
-- "$150,000" in override modal: 0 (→ "six-figure")
-- Sonic log modal: 150 ft (was 240 ft — integrity fix)
-- Remaining 3 × "$150,000": Architecture tab (pre-existing deferred, not H1)
-- verify_templates.py: 20/20 templates, 971/971 divs ✅
+### What was completed this session (commit 2864d0a)
+H1 slide deck 5-slide redesign per H1_RESET.md:
+- --content-scale 1.2 → 1.3 (global legibility lift)
+- Slide 2: AMBIGUOUS TELEMETRY (was THE HOOK) — correct gas-bubble physics (distributed column, fluid level stays HIGH/STABLE)
+- Slide 3 NEW: DECISION SUPPORT — Gas Burnout vs. Sand-Bridge Seizure (2×2 matrix)
+- Slide 4: ADDING CONTEXT (merged old slides 3+4) — Manual context search vs GDC 4-step RAG
+- Slide 5: INDUSTRIAL APPLICATION (was THE PLATFORM) — new O&G/P&U/Maritime examples
+- intro.html: Compliance & Sovereignty + expanded Data Gravity copy
+- docs/H1_RESET.md: immutable design spec for H1
 
 ## Known Integrity Issues
 | Issue | Status |
 |-------|--------|
-| `PIP` (61 occurrences) → `Pump Inlet Pressure` in app.js/app.py/templates | ⏸ Deferred — decks use terms.js; app gets a separate cleanup pass |
+| `PIP` (61 occurrences) → `Pump Inlet Pressure` in app.js/app.py/templates | ⏸ Deferred — decks use terms.js; slides use full name; app gets a separate cleanup pass |
 | Authored `~$2,500` / `~$150k` → comparative language in app replay sections | ⏸ Deferred — decks are clean; live replay narrative still has authored $ |
 | `$150,000` × 3 in tab_architecture.html (ROI Equation + Fleet Financials Ledger) | ⏸ Deferred — Architecture tab, not H1 demo path |
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
 - Tab content: `gke/fault-trigger-ui/templates/*.html` + `app.py` (index.html = shell only)
-- Slides: `gke/fault-trigger-ui/slides/` — slides/ is **baked into the image** (COPY slides/ in Dockerfile). Always docker build + push + rollout restart after slide edits.
+- Slides: `gke/fault-trigger-ui/slides/` — **baked into the image** (COPY slides/ in Dockerfile). Always docker build + push + rollout restart after slide edits.
 - Run `verify_templates.py` before any template build
 - Source env: `source /home/brian/gdc-pm/.env`
 - GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` ONLY for explicit LLM test; ALWAYS pair with gpu-stop.sh
