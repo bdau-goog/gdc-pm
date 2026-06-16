@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 72a332a / branch: feature-trio-clean
-Image: sha256:77cea2c71a15920ef879a80d0ced0dfdc1ece44f607b6479224cf909ab97978e
+Date: 2026-06-16 / git head: e80fc4b / branch: feature-trio-clean
+Image: sha256:24ed283b66283e3907be368ae7a031ccf12fb174f4eded393de06d0206d01b93
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -39,10 +39,14 @@ architecture is working. This session's 10-step task order is fully complete.
   Persists to localStorage — survives page reload. No rebuild needed to adjust zoom after this point.
   Range: 25%–300% of fit scale. Small toast shows current zoom % for 1.8s.
 - **FIX (1cbfc06):** GDC Advisor activates at `gdc_detect_idx`; red marker renamed "Threshold SCADA ▲".
-- **FEAT (72a332a):** H1 legibility pass — 0.52-0.62rem font floor throughout Decision Console.
-  Zone widths corrected 58/30/15 → 56/28/14 (wellbore SVG no longer clipped). X-MAS → HEAD in SVG.
-  App-level +/- zoom: keydown handler adjusts body font-size (all rem sizes scale); persists localStorage;
-  toast shows zoom %. `0` resets to 100%. Range 69%–169%. No conflict with slide +/- (iframes capture those).
+- **FEAT (72a332a):** H1 Decision Console legibility pass. App-level +/- zoom (body font-size, localStorage).
+- **FEAT (e80fc4b):** H1 slide deck overhaul:
+  - Global `--content-scale: 1.25` bumps all body text ~25% across all 4 decks; `.slide-title` pinned at 1.75rem.
+  - P3 redesign: left=4 animated SVG dial gauges (PIP+Amps sweep to alarm zone, Temp+Vib stay nominal);
+    right=document stream cards → GDC core callout. Replaces static two-column text layout.
+  - P5 redesign: three illustrated industry cards (O&G derrick, P&E transformer, MFG motor+gear SVGs),
+    each with STATE/CONTEXT columns. Replaces 3 text rows. Animated blinking sensor dots.
+  - P2: wellbore SVG max-height 340→460px (taller = proportionally wider casing display).
 - All 4 iframes present in assembled app (0 unresolved @@INCLUDE markers)
 - 0 authored hard-$ in h1.html or h2.html (content policy passed)
 - P1 split handle in h1 (data-ls-key=h1.p1.split)
