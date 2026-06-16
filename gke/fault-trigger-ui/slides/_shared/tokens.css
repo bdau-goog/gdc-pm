@@ -32,5 +32,5 @@
   /* Lever C — non-title body content scale.
      1.0 = authored default.  1.15 inflates all body text +15%; titles locked.
      Change here → all four decks update simultaneously. */
-  --content-scale: 1.0;
+  --content-scale: 1.25;
 }

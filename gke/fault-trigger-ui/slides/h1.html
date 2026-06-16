@@ -6,25 +6,33 @@
 <title>H1 — Discern · ESP Fluid Unloading</title>
 <link rel="stylesheet" href="_shared/slide.css">
 <style>
-  /* ── Per-deck overrides ── */
+  /* ── Per-deck overrides — font-sizes scale with --content-scale ── */
   .well-row   { display:flex; align-items:flex-start; gap:12px; }
-  .well-label { font-size:0.65rem; color:#64748b; width:116px; flex-shrink:0; }
-  .well-val   { font-size:0.65rem; color:var(--text2); line-height:1.5; }
+  .well-label { font-size:calc(0.65rem * var(--content-scale)); color:#94a3b8; width:120px; flex-shrink:0; }
+  .well-val   { font-size:calc(0.65rem * var(--content-scale)); color:var(--text2); line-height:1.55; }
   .sensor-tile {
-    background:rgba(15,23,42,0.65);
-    border-radius:var(--radius);
-    padding:14px 16px;
-    display:flex; flex-direction:column; gap:8px; overflow:hidden;
+    background:rgba(15,23,42,0.65); border-radius:var(--radius);
+    padding:14px 16px; display:flex; flex-direction:column; gap:8px; overflow:hidden;
   }
-  .tile-header { font-family:var(--mono); font-size:0.65rem; font-weight:700; display:flex; justify-content:space-between; }
-  .tile-range  { display:flex; justify-content:space-between; font-family:var(--mono); font-size:0.60rem; }
-  .tile-desc   { font-size:0.62rem; color:var(--muted); line-height:1.5; }
+  .tile-header { font-family:var(--mono); font-size:calc(0.65rem * var(--content-scale)); font-weight:700; display:flex; justify-content:space-between; }
+  .tile-range  { display:flex; justify-content:space-between; font-family:var(--mono); font-size:calc(0.60rem * var(--content-scale)); }
+  .tile-desc   { font-size:calc(0.62rem * var(--content-scale)); color:var(--muted); line-height:1.5; }
   .scrub-row   { flex-shrink:0; display:flex; align-items:center; gap:10px; }
-  .scrub-label { font-family:var(--mono); font-size:0.52rem; white-space:nowrap; }
-  /* P3 STATE/CONTEXT layout */
-  .state-tile { display:flex; justify-content:space-between; align-items:center; padding:7px 10px; background:rgba(59,130,246,0.07); border:1px solid rgba(59,130,246,0.18); border-radius:5px; }
-  .ctx-item   { display:flex; align-items:flex-start; gap:9px; padding:8px 10px; background:rgba(251,146,60,0.07); border:1px solid rgba(251,146,60,0.2); border-radius:5px; }
-  .ctx-dot    { display:inline-block; width:9px; height:9px; background:rgba(251,146,60,0.8); border-radius:2px; flex-shrink:0; margin-top:3px; }
+  .scrub-label { font-family:var(--mono); font-size:calc(0.52rem * var(--content-scale)); white-space:nowrap; }
+  /* P3 dial gauge animations — PIP+Amps peg at alarm, Temp+Vib stay nominal */
+  @keyframes sweepAlarm   { from { transform:rotate(-75deg); } to { transform:rotate(68deg); } }
+  @keyframes sweepNominal { from { transform:rotate(-75deg); } to { transform:rotate(0deg); } }
+  @keyframes sweepFlat    { from { transform:rotate(-75deg); } to { transform:rotate(-28deg); } }
+  .dn1,.dn2,.dn3,.dn4 { transform:rotate(-75deg); transform-box:fill-box; transform-origin:center bottom; }
+  .slide.active .dn1 { animation:sweepAlarm   1.6s 0.1s ease-out forwards; }
+  .slide.active .dn2 { animation:sweepAlarm   1.6s 0.6s ease-out forwards; }
+  .slide.active .dn3 { animation:sweepNominal 1.6s 1.1s ease-out forwards; }
+  .slide.active .dn4 { animation:sweepFlat    1.6s 1.5s ease-out forwards; }
+  /* P3 context stream */
+  .ctx-item { display:flex; align-items:flex-start; gap:10px; padding:9px 12px; background:rgba(251,146,60,0.07); border:1px solid rgba(251,146,60,0.2); border-radius:5px; }
+  .ctx-dot  { display:inline-block; width:10px; height:10px; background:rgba(251,146,60,0.8); border-radius:2px; flex-shrink:0; margin-top:4px; }
+  /* P5 industry card */
+  .ind-card { background:rgba(15,23,42,0.65); border-radius:var(--radius); padding:14px 12px; display:flex; flex-direction:column; align-items:center; gap:7px; overflow:hidden; }
 </style>
 </head>
 <body>
@@ -100,14 +108,14 @@
         <div class="sensor-tile" style="background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.2)">
           <div class="tile-header" style="color:#94a3b8"><span>WINDING TEMP →</span><span style="font-size:0.50rem;color:rgba(100,116,139,0.5)">FLAT EARLY</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:70%;background:linear-gradient(90deg,rgba(74,222,128,0.6),rgba(74,222,128,0.3))"></div></div>
-          <div style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~197°F · stays flat early</div>
+          <div style="font-family:var(--mono);font-size:calc(0.60rem * var(--content-scale));color:rgba(74,222,128,0.6)">~197°F · stays flat early</div>
           <div class="tile-desc">Motor cooling still flowing — temp is the <em>lagging</em> signal (API RP 11S §4.2)</div>
         </div>
         <!-- Vibration -->
         <div class="sensor-tile" style="background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.2)">
           <div class="tile-header" style="color:#94a3b8"><span>VIBRATION →</span><span style="font-size:0.50rem;color:rgba(100,116,139,0.5)">FLAT</span></div>
           <div class="bar-track"><div class="bar-fill" style="width:60%;background:linear-gradient(90deg,rgba(74,222,128,0.55),rgba(74,222,128,0.25))"></div></div>
-          <div style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~1.4 mm/s · stays flat</div>
+          <div style="font-family:var(--mono);font-size:calc(0.60rem * var(--content-scale));color:rgba(74,222,128,0.6)">~1.4 mm/s · stays flat</div>
           <div class="tile-desc">No bearing contact change during hydraulic unloading — distinguishes from bearing wear</div>
         </div>
       </div>
@@ -143,10 +151,10 @@
 
       <!-- Gas Lock -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS LOCK</div>
-        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus HIGH · Gas pocket at pump intake</div>
+        <div style="font-family:var(--mono);font-size:calc(0.62rem * var(--content-scale));font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS LOCK</div>
+        <div style="font-size:calc(0.54rem * var(--content-scale));color:#94a3b8;text-align:center">Annulus HIGH · Gas pocket at pump intake</div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
-          <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:340px">
+          <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:460px">
             <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <rect x="20" y="14" width="22" height="128" fill="rgba(59,130,246,0.28)" stroke="rgba(59,130,246,0.22)" stroke-width="0.5"/>
@@ -168,17 +176,17 @@
             <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · HIGH GOR</text>
           </svg>
         </div>
-        <div style="padding:6px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px;font-size:0.55rem;color:#93c5fd;line-height:1.5;flex-shrink:0">
+        <div style="padding:7px 11px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px;font-size:calc(0.55rem * var(--content-scale));color:#93c5fd;line-height:1.5;flex-shrink:0">
           <strong>✔ Safe action:</strong> VFD trim 52→44 Hz — <span data-term="cost_trim">a low-cost control-room adjustment</span>.
         </div>
       </div>
 
       <!-- Fluid Drawdown -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(180,83,9,0.32);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">FLUID DRAWDOWN</div>
-        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus DEPLETED · Dynamic fluid level falling</div>
+        <div style="font-family:var(--mono);font-size:calc(0.62rem * var(--content-scale));font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">FLUID DRAWDOWN</div>
+        <div style="font-size:calc(0.54rem * var(--content-scale));color:#94a3b8;text-align:center">Annulus DEPLETED · Dynamic fluid level falling</div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
-          <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:340px">
+          <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:460px">
             <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <!-- Gas/vapor zone above fluid level -->
@@ -200,7 +208,7 @@
             <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · LOW LEVEL</text>
           </svg>
         </div>
-        <div style="padding:6px 10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:0.55rem;color:#fca5a5;line-height:1.5;flex-shrink:0">
+        <div style="padding:7px 11px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:calc(0.55rem * var(--content-scale));color:#fca5a5;line-height:1.5;flex-shrink:0">
           <strong>✘ VFD trim raises <span data-term="cost_pull_risk">workover-level risk</span></strong> — velocity drops toward sand-transport limit. Shut-in is the safer default for this well type.
         </div>
       </div>
@@ -208,65 +216,137 @@
 
     <!-- Bottom: same sensor callout -->
     <div style="flex-shrink:0;background:rgba(15,23,42,0.72);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:10px 18px;display:flex;align-items:center;gap:18px">
-      <div style="flex-shrink:0;font-family:var(--mono);font-size:0.55rem;font-weight:700;color:rgba(148,163,184,0.65);white-space:nowrap;line-height:1.5">SAME SENSOR<br>OUTPUT ↓</div>
+      <div style="flex-shrink:0;font-family:var(--mono);font-size:calc(0.55rem * var(--content-scale));font-weight:700;color:rgba(148,163,184,0.65);white-space:nowrap;line-height:1.5">SAME SENSOR<br>OUTPUT ↓</div>
       <div style="flex:1;display:flex;flex-direction:column;gap:5px">
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:56px;flex-shrink:0">PRESSURE</span>
-          <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-pip-fill" style="width:90%;background:linear-gradient(90deg,rgba(59,130,246,0.85),rgba(59,130,246,0.4))"></div></div>
+          <span style="font-size:calc(0.58rem * var(--content-scale));font-family:var(--mono);color:#94a3b8;width:64px;flex-shrink:0">PRESSURE</span>
+          <div class="bar-track" style="flex:1;height:14px"><div class="bar-fill" id="p2-pip-fill" style="width:90%;background:linear-gradient(90deg,rgba(59,130,246,0.85),rgba(59,130,246,0.4))"></div></div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:0.47rem;font-family:var(--mono);color:#64748b;width:56px;flex-shrink:0">AMPS</span>
-          <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-amp-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
+          <span style="font-size:calc(0.58rem * var(--content-scale));font-family:var(--mono);color:#94a3b8;width:64px;flex-shrink:0">AMPS</span>
+          <div class="bar-track" style="flex:1;height:14px"><div class="bar-fill" id="p2-amp-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
         </div>
       </div>
-      <div style="flex-shrink:0;font-size:0.65rem;color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:210px;line-height:1.45">On this well's sensor,<br>the live decline looks the same.</div>
+      <div style="flex-shrink:0;font-size:calc(0.65rem * var(--content-scale));color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:230px;line-height:1.45">On this well's sensor,<br>the live decline looks the same.</div>
     </div>
   </div>
 </div><!-- /slide p2 -->
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 3: THE MOAT — STATE vs. CONTEXT
-     CSS staggered fade-in animations (no scrubber needed).
+     SLIDE 3: THE MOAT — Gauge Wall vs. Document Stream
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide" id="p3">
   <div class="rainbow-bar"></div>
-  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:10px;overflow:hidden">
-    <div style="flex-shrink:0">
-      <div class="slide-kicker">THE MOAT</div>
-      <h2 class="slide-title">STATE vs. CONTEXT</h2>
-      <p class="slide-sub">Sensors report what the well is doing <em>right now</em>. The correct action depends on what <em>happened</em> — and that is categorically not a real-time measurement.</p>
-    </div>
-    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0">
+  <div style="flex:1;display:flex;min-height:0;padding:14px 48px 10px;gap:22px;overflow:hidden">
 
-      <!-- STATE column -->
-      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:0;overflow:hidden;justify-content:space-between">
-        <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#60a5fa;letter-spacing:0.1em;text-align:center;padding-bottom:8px">STATE</div>
-        <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:8px">What the sensors report — right now</div>
-        <div class="anim-row" style="animation-delay:0.1s"><div class="state-tile"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">PUMP INLET PRESSURE</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">612 <span style="font-size:0.52rem;font-weight:400">PSI ↓</span></span></div></div>
-        <div class="anim-row" style="animation-delay:0.4s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">AMPS</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">34.2 <span style="font-size:0.52rem;font-weight:400">A ↓</span></span></div></div>
-        <div class="anim-row" style="animation-delay:0.7s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">WINDING TEMP</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">246 <span style="font-size:0.52rem;font-weight:400">°F —</span></span></div></div>
-        <div class="anim-row" style="animation-delay:1.0s"><div class="state-tile" style="margin-top:6px"><span style="font-family:var(--mono);font-size:0.58rem;color:#94a3b8;letter-spacing:0.06em">VIBRATION</span><span style="font-family:var(--mono);font-size:0.72rem;font-weight:700;color:#60a5fa">0.41 <span style="font-size:0.52rem;font-weight:400">in/s —</span></span></div></div>
-        <div class="anim-row" style="animation-delay:1.3s;padding-top:8px;border-top:1px solid rgba(59,130,246,0.12);margin-top:6px">
-          <p style="font-size:0.60rem;color:#93c5fd;line-height:1.65;font-style:italic;margin:0">Even a perfect gauge sharpens the STATE. It cannot report what happened last week.</p>
+    <!-- LEFT 44%: Gauge wall (STATE) -->
+    <div style="flex:0 0 43%;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+      <div style="flex-shrink:0">
+        <div class="slide-kicker">THE MOAT</div>
+        <h2 class="slide-title">STATE vs. CONTEXT</h2>
+        <p class="slide-sub">Sensors report what's happening now. Documents hold the why.</p>
+      </div>
+      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:12px 14px;flex:1;display:flex;flex-direction:column;gap:6px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:calc(0.68rem * var(--content-scale));font-weight:700;color:#60a5fa;letter-spacing:0.1em;text-align:center;flex-shrink:0">STATE — What the sensors say</div>
+        <!-- 2×2 dial gauge grid -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;flex:1;min-height:0">
+          <!-- PIP — LO alarm (underload) -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 5px;background:rgba(15,23,42,0.55);border:1px solid rgba(239,68,68,0.28);border-radius:6px">
+            <div style="font-family:var(--mono);font-size:calc(0.60rem * var(--content-scale));font-weight:700;color:#60a5fa">PIP (PSI)</div>
+            <svg viewBox="0 0 100 68" style="width:100%;max-height:80px;overflow:visible">
+              <path d="M 6,62 A 44,44 0 0,0 94,62" stroke="rgba(100,116,139,0.2)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 6,62 A 44,44 0 0,0 65,21" stroke="rgba(74,222,128,0.3)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 84,34 A 44,44 0 0,0 94,62" stroke="rgba(239,68,68,0.6)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <rect class="dn1" x="49" y="20" width="2.5" height="42" rx="1" fill="#e2e8f0"/>
+              <circle cx="50" cy="62" r="4" fill="#60a5fa"/>
+            </svg>
+            <div style="font-family:var(--mono);font-size:calc(0.72rem * var(--content-scale));font-weight:800;color:#f87171">↓ 612 PSI</div>
+            <div style="font-size:calc(0.48rem * var(--content-scale));color:rgba(239,68,68,0.75);font-weight:700">UNDERLOAD ALARM</div>
+          </div>
+          <!-- AMPS — LO alarm -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 5px;background:rgba(15,23,42,0.55);border:1px solid rgba(239,68,68,0.28);border-radius:6px">
+            <div style="font-family:var(--mono);font-size:calc(0.60rem * var(--content-scale));font-weight:700;color:#4ade80">AMPS (A)</div>
+            <svg viewBox="0 0 100 68" style="width:100%;max-height:80px;overflow:visible">
+              <path d="M 6,62 A 44,44 0 0,0 94,62" stroke="rgba(100,116,139,0.2)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 6,62 A 44,44 0 0,0 65,21" stroke="rgba(74,222,128,0.3)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 84,34 A 44,44 0 0,0 94,62" stroke="rgba(239,68,68,0.6)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <rect class="dn2" x="49" y="20" width="2.5" height="42" rx="1" fill="#e2e8f0"/>
+              <circle cx="50" cy="62" r="4" fill="#4ade80"/>
+            </svg>
+            <div style="font-family:var(--mono);font-size:calc(0.72rem * var(--content-scale));font-weight:800;color:#f87171">↓ 34 A</div>
+            <div style="font-size:calc(0.48rem * var(--content-scale));color:rgba(239,68,68,0.75);font-weight:700">UNDERCURRENT</div>
+          </div>
+          <!-- TEMP — nominal (flat) -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 5px;background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.18);border-radius:6px">
+            <div style="font-family:var(--mono);font-size:calc(0.60rem * var(--content-scale));font-weight:700;color:#fb923c">TEMP (°F)</div>
+            <svg viewBox="0 0 100 68" style="width:100%;max-height:80px;overflow:visible">
+              <path d="M 6,62 A 44,44 0 0,0 94,62" stroke="rgba(100,116,139,0.2)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 6,62 A 44,44 0 0,0 65,21" stroke="rgba(74,222,128,0.3)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 84,34 A 44,44 0 0,0 94,62" stroke="rgba(239,68,68,0.6)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <rect class="dn3" x="49" y="20" width="2.5" height="42" rx="1" fill="#e2e8f0"/>
+              <circle cx="50" cy="62" r="4" fill="#fb923c"/>
+            </svg>
+            <div style="font-family:var(--mono);font-size:calc(0.72rem * var(--content-scale));font-weight:800;color:#94a3b8">— 246°F</div>
+            <div style="font-size:calc(0.48rem * var(--content-scale));color:rgba(100,116,139,0.6);font-weight:700">NOMINAL</div>
+          </div>
+          <!-- VIB — nominal (flat) -->
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 5px;background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.18);border-radius:6px">
+            <div style="font-family:var(--mono);font-size:calc(0.60rem * var(--content-scale));font-weight:700;color:#a78bfa">VIB (in/s)</div>
+            <svg viewBox="0 0 100 68" style="width:100%;max-height:80px;overflow:visible">
+              <path d="M 6,62 A 44,44 0 0,0 94,62" stroke="rgba(100,116,139,0.2)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 6,62 A 44,44 0 0,0 65,21" stroke="rgba(74,222,128,0.3)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <path d="M 84,34 A 44,44 0 0,0 94,62" stroke="rgba(239,68,68,0.6)" stroke-width="9" fill="none" stroke-linecap="round"/>
+              <rect class="dn4" x="49" y="20" width="2.5" height="42" rx="1" fill="#e2e8f0"/>
+              <circle cx="50" cy="62" r="4" fill="#a78bfa"/>
+            </svg>
+            <div style="font-family:var(--mono);font-size:calc(0.72rem * var(--content-scale));font-weight:800;color:#94a3b8">— 0.41</div>
+            <div style="font-size:calc(0.48rem * var(--content-scale));color:rgba(100,116,139,0.6);font-weight:700">NOMINAL</div>
+          </div>
+        </div>
+        <!-- STATE conclusion -->
+        <div style="flex-shrink:0;padding:8px 10px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.18);border-radius:5px;text-align:center">
+          <div style="font-size:calc(0.70rem * var(--content-scale));color:#93c5fd;font-style:italic;font-weight:600">PIP and Amps peg at alarm. Temp and Vib say nothing.</div>
+          <div style="font-size:calc(0.58rem * var(--content-scale));color:#64748b;margin-top:2px">Even a perfect gauge can't report what happened last week.</div>
         </div>
       </div>
+    </div>
 
-      <!-- CONTEXT column -->
-      <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(251,146,60,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:0;overflow:hidden;justify-content:space-between">
-        <div style="font-family:var(--mono);font-size:0.7rem;font-weight:700;color:#fb923c;letter-spacing:0.1em;text-align:center;padding-bottom:8px">CONTEXT</div>
-        <div style="font-size:0.52rem;color:#64748b;text-align:center;margin-bottom:8px">What no sensor can report</div>
-        <div class="anim-row" style="animation-delay:1.6s"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">WORKOVER RECORD</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Last workover: 14 months ago · annulus condition unknown</div></div></div></div>
-        <div class="anim-row" style="animation-delay:2.2s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">GOR TREND</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Gas-Oil Ratio rising +18% over 60 days — reservoir depletion signal</div></div></div></div>
-        <div class="anim-row" style="animation-delay:2.8s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">OFFSET FRAC REPORT</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div></div></div></div>
-        <div class="anim-row" style="animation-delay:3.4s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">SHIFT NOTE</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div></div></div></div>
-        <div class="anim-row" style="animation-delay:4.0s;padding-top:8px;border-top:1px solid rgba(251,146,60,0.12);margin-top:6px">
-          <p style="font-size:0.60rem;color:#fb923c;line-height:1.65;font-style:italic;margin:0">The deciding context lives here. Not on any sensor.</p>
+    <!-- RIGHT 57%: Context document stream -->
+    <div style="flex:1;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+      <div style="flex-shrink:0;padding-top:2px">
+        <div style="font-family:var(--mono);font-size:calc(0.68rem * var(--content-scale));font-weight:700;color:#fb923c;letter-spacing:0.1em">CONTEXT — What no sensor carries</div>
+        <div style="font-size:calc(0.58rem * var(--content-scale));color:#64748b;margin-top:2px">Off-sensor records that resolve the ambiguity</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:7px;overflow:hidden">
+        <div class="anim-row ctx-item" style="animation-delay:1.2s">
+          <span class="ctx-dot"></span>
+          <div><div style="font-size:calc(0.70rem * var(--content-scale));font-weight:700;color:#fb923c;letter-spacing:0.04em">📋 WORKOVER RECORD</div>
+          <div style="font-size:calc(0.62rem * var(--content-scale));color:#94a3b8;line-height:1.5;margin-top:2px">Last workover: 14 months ago · annulus condition unknown</div></div>
+        </div>
+        <div class="anim-row ctx-item" style="animation-delay:1.9s">
+          <span class="ctx-dot"></span>
+          <div><div style="font-size:calc(0.70rem * var(--content-scale));font-weight:700;color:#fb923c;letter-spacing:0.04em">📊 GOR TREND</div>
+          <div style="font-size:calc(0.62rem * var(--content-scale));color:#94a3b8;line-height:1.5;margin-top:2px">Gas-Oil Ratio +18% over 60 days — reservoir depletion signal</div></div>
+        </div>
+        <div class="anim-row ctx-item" style="animation-delay:2.6s">
+          <span class="ctx-dot"></span>
+          <div><div style="font-size:calc(0.70rem * var(--content-scale));font-weight:700;color:#fb923c;letter-spacing:0.04em">📄 OFFSET FRAC REPORT</div>
+          <div style="font-size:calc(0.62rem * var(--content-scale));color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div></div>
+        </div>
+        <div class="anim-row ctx-item" style="animation-delay:3.3s">
+          <span class="ctx-dot"></span>
+          <div><div style="font-size:calc(0.70rem * var(--content-scale));font-weight:700;color:#fb923c;letter-spacing:0.04em">✍ SHIFT NOTE</div>
+          <div style="font-size:calc(0.62rem * var(--content-scale));color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div></div>
+        </div>
+        <div class="anim-row" style="animation-delay:4.2s;flex-shrink:0;padding:14px 18px;background:rgba(15,23,42,0.88);border:1px solid rgba(251,146,60,0.3);border-radius:var(--radius);text-align:center">
+          <div style="font-family:var(--mono);font-size:calc(0.56rem * var(--content-scale));color:#fb923c;font-weight:700;letter-spacing:0.08em;margin-bottom:5px">⬆ RETRIEVED BY GDC · pgvector RAG · AlloyDB on-cluster</div>
+          <div style="font-size:calc(0.82rem * var(--content-scale));font-weight:800;color:#e2e8f0;font-style:italic">The deciding context lives here.<br>Not on any sensor.</div>
         </div>
       </div>
-    </div>
-    <div style="flex-shrink:0;padding:14px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <span style="font-size:0.88rem;font-weight:800;color:#e2e8f0;letter-spacing:0.01em">You cannot instrument your way out of a context gap.</span>
+      <div class="anim-row" style="flex-shrink:0;animation-delay:5.2s;padding:10px 16px;background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.07);border-radius:7px;text-align:center">
+        <div style="font-size:calc(0.85rem * var(--content-scale));font-weight:800;color:#e2e8f0">You cannot instrument your way out of a context gap.</div>
+      </div>
     </div>
   </div>
 </div><!-- /slide p3 -->
@@ -323,43 +403,125 @@
 
 
 <!-- ═══════════════════════════════════════════════════════════════
-     SLIDE 5: THE PLATFORM — This Pattern Is Universal
+     SLIDE 5: THE PLATFORM — Three Illustrated Industry Cards
      Last slide → ▶ Run the Scenario fires run-h1 postMessage.
 ════════════════════════════════════════════════════════════════ -->
 <div class="slide" id="p5">
   <div class="rainbow-bar"></div>
-  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 12px;gap:10px;overflow:hidden">
+  <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:12px 48px 10px;gap:10px;overflow:hidden">
     <div style="flex-shrink:0">
       <div class="slide-kicker">THE PLATFORM</div>
       <h2 class="slide-title">This Pattern Is Universal</h2>
-      <p class="slide-sub">STATE is what every gauge reports. CONTEXT is what decides. This gap exists in every industry that runs physical assets.</p>
+      <p class="slide-sub">STATE is what every gauge reports. CONTEXT is what decides. The gap exists in every industry that runs physical assets.</p>
     </div>
-    <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden">
-      <!-- O&G -->
-      <div class="anim-row" style="animation-delay:0.3s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(59,130,246,0.22);border-radius:7px;flex:1;min-height:0">
-        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">O&amp;G</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">ESP Well</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60a5fa;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Pump Inlet Pressure ↓ · Amps ↓</div><div style="font-size:0.60rem;color:var(--muted)">Intake-only PDG — identical on gas lock &amp; drawdown</div></div>
-        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Workover record · GOR trend</div><div style="font-size:0.60rem;color:var(--muted)">Shift note from tour operator</div></div>
+    <!-- Three illustrated industry cards -->
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;min-height:0">
+
+      <!-- O&G Card — ESP derrick illustration -->
+      <div class="anim-row ind-card" style="animation-delay:0.3s;border:1px solid rgba(59,130,246,0.28)">
+        <svg viewBox="0 0 120 70" style="width:100%;max-height:70px;flex-shrink:0">
+          <polygon points="60,4 82,64 38,64" fill="none" stroke="rgba(59,130,246,0.55)" stroke-width="2"/>
+          <line x1="44" y1="44" x2="76" y2="44" stroke="rgba(59,130,246,0.35)" stroke-width="1.2"/>
+          <line x1="48" y1="57" x2="72" y2="57" stroke="rgba(59,130,246,0.35)" stroke-width="1.2"/>
+          <line x1="52" y1="30" x2="60" y2="44" stroke="rgba(59,130,246,0.22)" stroke-width="1"/>
+          <line x1="68" y1="30" x2="60" y2="44" stroke="rgba(59,130,246,0.22)" stroke-width="1"/>
+          <line x1="28" y1="64" x2="92" y2="64" stroke="rgba(100,116,139,0.3)" stroke-width="2"/>
+          <rect x="52" y="60" width="16" height="7" rx="1.5" fill="rgba(59,130,246,0.4)" stroke="rgba(59,130,246,0.6)" stroke-width="0.8"/>
+          <circle cx="60" cy="40" r="5.5" fill="rgba(59,130,246,0.18)" stroke="rgba(59,130,246,0.4)" stroke-width="1"/>
+          <text x="60" y="43.5" text-anchor="middle" fill="rgba(59,130,246,0.8)" font-size="5.5" font-family="monospace">ESP</text>
+          <circle cx="60" cy="20" r="2.5" fill="#60a5fa"><animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/></circle>
+          <circle cx="50" cy="54" r="2" fill="#60a5fa"><animate attributeName="opacity" values="1;0.3;1" dur="2.3s" repeatCount="indefinite"/></circle>
+        </svg>
+        <div style="text-align:center">
+          <div style="font-size:calc(0.68rem * var(--content-scale));font-weight:800;padding:2px 9px;border-radius:4px;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;letter-spacing:0.06em;display:inline-block;margin-bottom:3px">O&amp;G</div>
+          <div style="font-size:calc(0.82rem * var(--content-scale));font-weight:600;color:var(--text2)">ESP Well</div>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:4px;flex:1">
+          <div style="font-size:calc(0.56rem * var(--content-scale));font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#60a5fa">STATE</div>
+          <div style="font-size:calc(0.78rem * var(--content-scale));color:var(--text2);font-weight:600">PIP ↓ · Amps ↓</div>
+          <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted);margin-bottom:5px">Identical on gas lock &amp; drawdown</div>
+          <div style="font-size:calc(0.56rem * var(--content-scale));font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c">CONTEXT</div>
+          <div style="font-size:calc(0.78rem * var(--content-scale));color:var(--text2);font-weight:600">Workover record · GOR trend</div>
+          <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted)">Shift note from tour operator</div>
+        </div>
       </div>
-      <!-- P&E -->
-      <div class="anim-row" style="animation-delay:1.2s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(167,139,250,0.22);border-radius:7px;flex:1;min-height:0">
-        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#c4b5fd;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">P&amp;E</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">Transformer</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c4b5fd;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Load current ↑ · winding temp ↑</div><div style="font-size:0.60rem;color:var(--muted)">SCADA flags thermal exceedance</div></div>
-        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Loading plan · maintenance log</div><div style="font-size:0.60rem;color:var(--muted)">Seasonal demand forecast</div></div>
+
+      <!-- P&E Card — transformer illustration -->
+      <div class="anim-row ind-card" style="animation-delay:1.2s;border:1px solid rgba(167,139,250,0.28)">
+        <svg viewBox="0 0 120 70" style="width:100%;max-height:70px;flex-shrink:0">
+          <line x1="2" y1="22" x2="30" y2="22" stroke="rgba(167,139,250,0.5)" stroke-width="2.2"/>
+          <line x1="2" y1="35" x2="30" y2="35" stroke="rgba(167,139,250,0.5)" stroke-width="2.2"/>
+          <line x1="2" y1="48" x2="30" y2="48" stroke="rgba(167,139,250,0.35)" stroke-width="1.5"/>
+          <rect x="30" y="8" width="60" height="58" rx="4" fill="rgba(167,139,250,0.07)" stroke="rgba(167,139,250,0.45)" stroke-width="1.5"/>
+          <circle cx="48" cy="32" r="13" fill="none" stroke="rgba(167,139,250,0.55)" stroke-width="2"/>
+          <circle cx="72" cy="32" r="13" fill="none" stroke="rgba(167,139,250,0.55)" stroke-width="2"/>
+          <rect x="58" y="19" width="4" height="26" fill="rgba(167,139,250,0.3)"/>
+          <line x1="36" y1="54" x2="36" y2="63" stroke="rgba(167,139,250,0.28)" stroke-width="2"/>
+          <line x1="46" y1="54" x2="46" y2="63" stroke="rgba(167,139,250,0.28)" stroke-width="2"/>
+          <line x1="56" y1="54" x2="56" y2="63" stroke="rgba(167,139,250,0.28)" stroke-width="2"/>
+          <line x1="66" y1="54" x2="66" y2="63" stroke="rgba(167,139,250,0.28)" stroke-width="2"/>
+          <line x1="76" y1="54" x2="76" y2="63" stroke="rgba(167,139,250,0.28)" stroke-width="2"/>
+          <line x1="86" y1="54" x2="86" y2="63" stroke="rgba(167,139,250,0.28)" stroke-width="2"/>
+          <line x1="90" y1="22" x2="118" y2="22" stroke="rgba(167,139,250,0.5)" stroke-width="2.2"/>
+          <line x1="90" y1="35" x2="118" y2="35" stroke="rgba(167,139,250,0.5)" stroke-width="2.2"/>
+          <circle cx="82" cy="32" r="3.5" fill="rgba(251,146,60,0.75)"><animate attributeName="opacity" values="1;0.4;1" dur="1.4s" repeatCount="indefinite"/></circle>
+        </svg>
+        <div style="text-align:center">
+          <div style="font-size:calc(0.68rem * var(--content-scale));font-weight:800;padding:2px 9px;border-radius:4px;background:rgba(167,139,250,0.12);border:1px solid rgba(167,139,250,0.3);color:#c4b5fd;letter-spacing:0.06em;display:inline-block;margin-bottom:3px">P&amp;E</div>
+          <div style="font-size:calc(0.82rem * var(--content-scale));font-weight:600;color:var(--text2)">Transformer</div>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:4px;flex:1">
+          <div style="font-size:calc(0.56rem * var(--content-scale));font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#c4b5fd">STATE</div>
+          <div style="font-size:calc(0.78rem * var(--content-scale));color:var(--text2);font-weight:600">Load current ↑ · Temp ↑</div>
+          <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted);margin-bottom:5px">SCADA flags thermal exceedance</div>
+          <div style="font-size:calc(0.56rem * var(--content-scale));font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c">CONTEXT</div>
+          <div style="font-size:calc(0.78rem * var(--content-scale));color:var(--text2);font-weight:600">Loading plan · maintenance log</div>
+          <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted)">Seasonal demand forecast</div>
+        </div>
       </div>
-      <!-- MFG -->
-      <div class="anim-row" style="animation-delay:2.1s;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(15,23,42,0.6);border:1px solid rgba(251,146,60,0.22);border-radius:7px;flex:1;min-height:0">
-        <div style="flex:0 0 94px;text-align:center"><div style="font-size:0.60rem;font-weight:800;padding:2px 7px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.28);color:#fb923c;letter-spacing:0.06em;display:inline-block;margin-bottom:4px">MFG</div><div style="font-size:0.65rem;color:var(--text2);font-weight:600">Factory motor</div></div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">STATE</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Vibration ↑ · temperature nominal</div><div style="font-size:0.60rem;color:var(--muted)">Same signature as bearing wear</div></div>
-        <div style="font-size:1.4rem;color:rgba(148,163,184,0.35);flex-shrink:0;padding:0 5px">→</div>
-        <div style="flex:1;min-width:0"><div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c;margin-bottom:2px">CONTEXT</div><div style="font-size:0.70rem;color:var(--text2);font-weight:600">Lubrication record · OEM bulletin</div><div style="font-size:0.60rem;color:var(--muted)">Line throughput log</div></div>
+
+      <!-- MFG Card — motor+gear illustration -->
+      <div class="anim-row ind-card" style="animation-delay:2.1s;border:1px solid rgba(251,146,60,0.28)">
+        <svg viewBox="0 0 120 70" style="width:100%;max-height:70px;flex-shrink:0">
+          <rect x="8" y="14" width="52" height="42" rx="4" fill="rgba(251,146,60,0.07)" stroke="rgba(251,146,60,0.45)" stroke-width="1.5"/>
+          <line x1="8" y1="23" x2="2" y2="23" stroke="rgba(251,146,60,0.3)" stroke-width="2"/>
+          <line x1="8" y1="32" x2="2" y2="32" stroke="rgba(251,146,60,0.3)" stroke-width="2"/>
+          <line x1="8" y1="41" x2="2" y2="41" stroke="rgba(251,146,60,0.3)" stroke-width="2"/>
+          <line x1="8" y1="50" x2="2" y2="50" stroke="rgba(251,146,60,0.3)" stroke-width="2"/>
+          <line x1="60" y1="35" x2="76" y2="35" stroke="rgba(251,146,60,0.55)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="90" cy="35" r="23" fill="rgba(251,146,60,0.05)" stroke="rgba(251,146,60,0.4)" stroke-width="2"/>
+          <circle cx="90" cy="35" r="14" fill="none" stroke="rgba(251,146,60,0.28)" stroke-width="1.5"/>
+          <circle cx="90" cy="35" r="4" fill="rgba(251,146,60,0.55)"/>
+          <line x1="90" y1="10" x2="90" y2="15" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="112" y1="18" x2="108" y2="22" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="115" y1="35" x2="110" y2="35" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="112" y1="52" x2="108" y2="48" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="90" y1="58" x2="90" y2="53" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="68" y1="52" x2="72" y2="48" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="65" y1="35" x2="70" y2="35" stroke="rgba(251,146,60,0.42)" stroke-width="3" stroke-linecap="round"/>
+          <text x="34" y="39" text-anchor="middle" fill="rgba(251,146,60,0.6)" font-size="10" font-family="Inter,sans-serif" font-weight="700">M</text>
+          <circle cx="112" cy="24" r="2.5" fill="rgba(251,146,60,0.75)"><animate attributeName="opacity" values="1;0.2;1" dur="0.7s" repeatCount="indefinite"/></circle>
+          <circle cx="117" cy="35" r="2" fill="rgba(251,146,60,0.65)"><animate attributeName="opacity" values="1;0.2;1" dur="0.5s" repeatCount="indefinite"/></circle>
+        </svg>
+        <div style="text-align:center">
+          <div style="font-size:calc(0.68rem * var(--content-scale));font-weight:800;padding:2px 9px;border-radius:4px;background:rgba(251,146,60,0.1);border:1px solid rgba(251,146,60,0.28);color:#fb923c;letter-spacing:0.06em;display:inline-block;margin-bottom:3px">MFG</div>
+          <div style="font-size:calc(0.82rem * var(--content-scale));font-weight:600;color:var(--text2)">Factory Motor</div>
+        </div>
+        <div style="width:100%;display:flex;flex-direction:column;gap:4px;flex:1">
+          <div style="font-size:calc(0.56rem * var(--content-scale));font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c">STATE</div>
+          <div style="font-size:calc(0.78rem * var(--content-scale));color:var(--text2);font-weight:600">Vibration ↑ · Temp nominal</div>
+          <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted);margin-bottom:5px">Same signature as bearing wear</div>
+          <div style="font-size:calc(0.56rem * var(--content-scale));font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#fb923c">CONTEXT</div>
+          <div style="font-size:calc(0.78rem * var(--content-scale));color:var(--text2);font-weight:600">Lube record · OEM bulletin</div>
+          <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted)">Line throughput log</div>
+        </div>
       </div>
+
     </div>
-    <div class="anim-row" style="flex-shrink:0;animation-delay:3.0s;padding:14px 18px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <div style="font-size:0.92rem;font-weight:800;color:#e2e8f0;margin-bottom:4px">This is not an oilfield trick. It is the structural gap in every industrial AI deployment.</div>
-      <div style="font-size:0.65rem;color:var(--muted);font-style:italic">The AI goes to the data.</div>
+    <!-- Bottom callout -->
+    <div class="anim-row" style="flex-shrink:0;animation-delay:3.0s;padding:14px 20px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
+      <div style="font-size:calc(0.92rem * var(--content-scale));font-weight:800;color:#e2e8f0;margin-bottom:4px">This is not an oilfield trick. It is the structural gap in every industrial AI deployment.</div>
+      <div style="font-size:calc(0.65rem * var(--content-scale));color:var(--muted);font-style:italic">The AI goes to the data. GDC makes that operationally real.</div>
     </div>
   </div>
 </div><!-- /slide p5 -->
