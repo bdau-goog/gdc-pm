@@ -73,7 +73,8 @@ Each slide has three text elements: **Kicker** (small, monospace, colored), **Ti
 
 ### Slide 3: DECISION SUPPORT
 *   **Kicker:** `DECISION SUPPORT`
-*   **Title:** Gas Burnout vs. Sand-Bridge Seizure
+*   **Title:** Motor Burnout vs. Sand Bridging
+    *(Correction BS+14: "Gas Burnout" is not standard field terminology. "Motor burnout" = winding failure from loss of cooling flow, per API RP 11S §4.2. "Sand bridging" = sand settling and packing in tubing string, standard Permian term.)*
 *   **Sub-title:** An unloading well forces a blind trade-off: slow down to clear gas and risk sand settling, or shut-in and risk sand fallback. Neither is safe without knowing the well's history.
 
 ### Slide 4: ADDING CONTEXT
