@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 1c19e31 / branch: feature-trio-clean
-Image: sha256:a44ba16ba01dd8d0112d03ff76d938a4c4b128969cee459e2b9096c3bf48b6b7
+Date: 2026-06-16 / git head: a434a0e / branch: feature-trio-clean
+Image: sha256:299fdce394898f73e4cfe4c8a4a2642f8bec70082d0a877ff237daa90fea6539
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,65 +22,35 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### H2/H3 Consistency Refinement Plan (BS+16). Next priorities:
+### Priority 1 — Live review of H2 and H3 decks on actual display
+Walk through gdc-pm.bdau.io/slides/h2.html and gdc-pm.bdau.io/slides/h3.html end-to-end:
+- Confirm 3-beat kicker arc is correct in both decks
+- Test `[Details: ON/OFF]` toggle — verify `.detail-element` blocks hide/show correctly
+- Visually confirm hot-oil truck SVG (green) and workover rig SVG (red) render correctly in H2 Slide 3
+- Confirm H3 Slide 3 shows SCADA (slate) vs GDC (mint) comparison bars with `+77.9 bbl/d uplift` badge
+- Note any copyediting or layout adjustments needed
 
-**Priority 1 — Implement H2 (Classify) static slide improvements in `h2.html`**
-
-*Kicker/Title Alignment (matches H1 three-beat arc):*
-- Slide 1: `THE WELL` → **`THE SCENARIO`** (sub: unchanged)
-- Slide 2: `THE SIGNATURE` → **`AMBIGUOUS TELEMETRY`** (sub: unchanged)
-- Slide 3: `THE DECISION` → **`ADDING CONTEXT`** (sub: unchanged)
-
-*Details Toggle Integration:*
-- Slide 2: Wrap sensor tile sub-text (e.g., `↓ declining (pump off best-efficiency-point)`) and full APM response sub-paragraphs in `.detail-element` tags.
-- Slide 3: Wrap document excerpt detail text and action card footnote in `.detail-element` tags.
-
-*Symmetrical Visual Anchors (desaturated, match H1 aesthetic):*
-- Slide 2: Enlarge wellbore SVGs to `max-height:420px` to match H1.
-- Slide 3: Replace text-heavy action cards with two custom inline desaturated SVG thumbnails:
-  - **Green card**: Chemical service hot-oil truck pumping down the casing annulus
-  - **Red card**: Workover derrick/rig extracting the entire completion string
-  - *Color palette*: Desaturated strokes only — no filled saturated color blocks. Truck: `rgba(74,222,128,0.45)` stroke. Rig: `rgba(239,68,68,0.38)` stroke.
-
-**Priority 2 — Implement H3 (Optimize) static slide improvements in `h3.html`**
-
-*Kicker/Title Alignment:*
-- Slide 1: `THE OPPORTUNITY` → **`THE SCENARIO`** (sub: unchanged)
-- Slide 2: `THE TRADEOFF` → **`DECISION SUPPORT`** (sub: unchanged)
-- Slide 3: `THE OPTIMIZATION` → **`PAD OPTIMIZATION`** (sub: unchanged)
-
-*Details Toggle Integration:*
-- Slide 1: Wrap GOR table Character column descriptions in `.detail-element`.
-- Slide 2: Wrap all constraint-row explanatory sub-text in `.detail-element` — leaving only the bold headers (e.g., `GAS TAKEAWAY CEILING — 8.0 MMscfd`) visible when toggled OFF.
-- Slide 3: Wrap the detailed setpoint values and constraint provenance in `.detail-element`.
-
-*Symmetrical Visual Anchor (desaturated horizontal comparison bars):*
-- Slide 3: Add a compact side-by-side comparison track between the setpoint table and the results card:
-  - **SCADA Uniform Throttle** (slate bar): `background:rgba(148,163,184,0.1); border:1px solid rgba(148,163,184,0.3)`
-  - **GDC Joint Optimal** (mint bar): `background:rgba(74,222,128,0.08); border:1px solid rgba(74,222,128,0.4)`
-  - Label above the gap: **+77.9 bbl/d uplift**
-
-**Priority 3 — Verify, Build, and Deploy the Whole Suite**
-- `python3 scripts/verify_templates.py` (must pass 20/20)
-- Docker build + push + rollout restart
-- Walk through h1.html, h2.html, and h3.html on actual display to confirm consistency
-
-**Priority 4 — Deferred tasks (do not start before P1–P3 done)**
+### Priority 2 — Deferred tasks (do not start before P1 live review done)
 - BenQ screen flicker (Plotly poller throttle/VRR hypothesis)
 - Authored `PIP` / `$2,500` / `$150k` cleanup in app.js / app.py narrative sections
 
-### Red-Team Results (in-session hostile-engineer check, Session BS+15+plan)
-*H2 Rig Pull claim attack:* "An operator won't automatically pull; they'll try hot-oil first." → SURVIVES: Best-of-breed APM (SmartSignal/Mtell) pattern-classifies the EFF+VIB signature as **bearing wear** and generates a high-severity work order for a downhole pull. GDC's L3 fusion (vendor log 52d overdue + PVT WAT 118°F + prior pull record bearings NORMAL) reclassifies to paraffin restriction, preventing the expensive pull. The RT pass found no flaw in the causal chain.
-*H3 "Spreadsheet is enough" attack:* "Gas ceiling alone is an LP problem." → SURVIVES: Gas + thermal polynomial + RUL exponential decay = non-convex, non-linear joint search. GP Bandit is mathematically required.
+### What was completed in BS+16 (commit a434a0e)
+**H2 (Classify) `h2.html`:**
+- Kickers realigned: `THE SCENARIO` / `AMBIGUOUS TELEMETRY` / `ADDING CONTEXT`
+- `.detail-element` on 4 sensor tile subs, 2 SCADA/APM sub-paragraphs, verdict quote, doc sub-rows ×3, action card footnote
+- Slide 3 action cards: custom inline desaturated SVG thumbnails
+  - Green card: Chemical hot-oil truck pumping down casing annulus (`rgba(74,222,128,0.45)` stroke)
+  - Red card: Workover derrick extracting ESP completion string (`rgba(239,68,68,0.38)` stroke)
 
-### What was completed in BS+15 (commits 047c607 + 1c19e31)
-- tokens.css: `--content-scale` 1.3→1.4 (all 4 decks)
-- slide.css: `.detail-element`/`.hide-details` toggle; analog clock + stopwatch keyframes
-- slide.js: `initDetailsToggle()` — `[Details: ON/OFF]` nav-bar button (localStorage)
-- h1.html Slide 2: SVGs 340→420px; info boxes removed; amber/red PUMP legend
-- h1.html Slide 3: 6 outcome descriptions wrapped in `.detail-element`
-- h1.html Slide 4: Analog clock (red, ticking) + Stopwatch (blue, 2s snap) symmetric column headers
-- h1.html: CSS readability lifts (0.60→0.70rem outcomes, 0.58→0.66rem docs/steps)
+**H3 (Optimize) `h3.html`:**
+- Kickers realigned: `THE SCENARIO` / `DECISION SUPPORT` / `PAD OPTIMIZATION`
+- `.detail-element` on GOR character column descriptions, all 3 constraint row explanations, results card ceiling note
+- Slide 3: compact side-by-side production comparison track
+  - SCADA Uniform Throttle (slate bar: `rgba(148,163,184,0.1)`, `1px solid rgba(148,163,184,0.3)`)
+  - GDC Joint Optimal (mint bar: `rgba(74,222,128,0.08)`, `1px solid rgba(74,222,128,0.4)`)
+  - `+77.9 bbl/d uplift` callout badge between bars
+
+**Deployment:** sha256:299fdce3 — verify_templates 20/20, 971/971 — pod rollout clean.
 
 ## Known Integrity Issues
 | Issue | Status |
