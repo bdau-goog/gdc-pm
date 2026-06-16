@@ -143,8 +143,8 @@
 
       <!-- Gas Lock -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS LOCK</div>
-        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus HIGH · Gas pocket at pump intake</div>
+        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#60a5fa;text-align:center;letter-spacing:0.06em">GAS INTERFERENCE · HIGH GVF</div>
+        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Free gas at pump intake — hydraulic unloading</div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
           <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:340px">
             <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
@@ -153,55 +153,63 @@
             <line x1="19" y1="14" x2="13" y2="14" stroke="rgba(96,165,250,0.45)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
             <text x="12" y="13" text-anchor="end" fill="rgba(96,165,250,0.65)" font-size="3" font-family="monospace">HIGH</text>
             <text x="12" y="17.5" text-anchor="end" fill="rgba(96,165,250,0.4)" font-size="2.6" font-family="monospace">STABLE</text>
-            <!-- Gas bubbles at pump INTAKE (correct physics: gas enters at depth, not surface) -->
+            <!-- Gas bubbles rising from formation through fluid column to pump intake -->
             <circle class="wb-bubble" id="p2-bub1" cx="25" cy="134" r="2.2"/>
             <circle class="wb-bubble" id="p2-bub2" cx="35" cy="128" r="1.6"/>
             <circle class="wb-bubble" id="p2-bub3" cx="30" cy="139" r="1.9"/>
             <circle class="wb-bubble" id="p2-bub4" cx="38" cy="134" r="1.3"/>
             <circle class="wb-bubble" id="p2-bub5" cx="23" cy="126" r="1.5"/>
-            <rect x="16" y="143" width="30" height="8" rx="1.5" fill="rgba(251,191,36,0.3)" stroke="rgba(251,191,36,0.55)" stroke-width="0.8"/>
-            <text x="31" y="149" text-anchor="middle" fill="rgba(251,191,36,0.85)" font-size="3.8" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
-            <rect x="16" y="153" width="30" height="11" rx="1.5" fill="rgba(16,185,129,0.22)" stroke="rgba(74,222,128,0.38)" stroke-width="0.8"/>
-            <text x="31" y="160.5" text-anchor="middle" fill="rgba(74,222,128,0.75)" font-size="3.5" font-family="Inter,sans-serif">MOTOR ✓</text>
+            <circle class="wb-bubble" id="p2-bub6" cx="27" cy="165" r="1.8"/>
+            <circle class="wb-bubble" id="p2-bub7" cx="36" cy="157" r="1.4"/>
+            <circle class="wb-bubble" id="p2-bub8" cx="22" cy="150" r="1.7"/>
+            <circle class="wb-bubble" id="p2-bub9" cx="33" cy="108" r="1.5"/>
+            <circle class="wb-bubble" id="p2-bub10" cx="24" cy="95" r="1.3"/>
+            <circle class="wb-bubble" id="p2-bub11" cx="37" cy="80" r="1.4"/>
+            <circle class="wb-bubble" id="p2-bub12" cx="29" cy="68" r="1.2"/>
+            <rect x="13" y="143" width="36" height="9" rx="1.5" fill="rgba(251,191,36,0.3)" stroke="rgba(251,191,36,0.55)" stroke-width="0.8"/>
+            <text x="31" y="149.5" text-anchor="middle" fill="rgba(251,191,36,0.85)" font-size="4.2" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
+            <rect x="13" y="154" width="36" height="12" rx="1.5" fill="rgba(16,185,129,0.22)" stroke="rgba(74,222,128,0.38)" stroke-width="0.8"/>
+            <text x="31" y="161.5" text-anchor="middle" fill="rgba(74,222,128,0.75)" font-size="4.0" font-family="Inter,sans-serif">MOTOR ✓</text>
             <text x="31" y="172" text-anchor="middle" fill="rgba(100,116,139,0.4)" font-size="3.2" font-family="monospace">PERFS</text>
             <rect x="10" y="174" width="42" height="11" rx="1.5" fill="rgba(120,80,20,0.15)" stroke="rgba(180,120,30,0.22)" stroke-width="0.7"/>
             <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · HIGH GOR</text>
           </svg>
         </div>
         <div style="padding:6px 10px;background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);border-radius:5px;font-size:0.55rem;color:#93c5fd;line-height:1.5;flex-shrink:0">
-          <strong>✔ Safe action:</strong> VFD trim 52→44 Hz — <span data-term="cost_trim">a low-cost control-room adjustment</span>.
+          <strong>✔ VFD trim 52→44 Hz</strong> — lowers intake draw, gas vents up the annulus. Well stays online. Zero-cost SCADA command.
         </div>
       </div>
 
       <!-- Fluid Drawdown -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(180,83,9,0.32);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:6px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">FLUID DRAWDOWN</div>
-        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Annulus DEPLETED · Dynamic fluid level falling</div>
+        <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#f97316;text-align:center;letter-spacing:0.06em">RESERVOIR DRAWDOWN · SAND RISK</div>
+        <div style="font-size:0.54rem;color:#94a3b8;text-align:center">Critically low dynamic fluid level — sand mobilization risk</div>
         <div style="flex:1;display:flex;justify-content:center;align-items:center;min-height:0">
           <svg viewBox="0 0 62 200" style="width:auto;height:100%;max-height:340px">
             <line x1="19" y1="0" x2="19" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
-            <!-- Gas/vapor zone above fluid level -->
+            <!-- Gas/vapor zone — most of wellbore above critically low fluid level -->
             <rect x="20" y="14" width="22" height="127" fill="rgba(15,23,42,0.55)"/>
-            <text id="p2-gas-text" x="31" y="50" text-anchor="middle" fill="rgba(100,116,139,0.28)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0">GAS</text>
-            <!-- Fluid column — height/y animated via applyState -->
-            <rect id="p2-fluid" x="20" y="14" width="22" height="105" fill="rgba(120,53,15,0.4)" stroke="rgba(180,83,9,0.3)" stroke-width="0.5"/>
-            <line x1="19" y1="90" x2="13" y2="90" stroke="rgba(251,146,60,0.5)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
-            <text x="12" y="89" text-anchor="end" fill="rgba(251,146,60,0.65)" font-size="3" font-family="monospace">LOW</text>
-            <!-- Sand at pump intake (settles below critical transport velocity) -->
-            <rect id="p2-sand" x="20" y="131" width="22" height="10" fill="rgba(180,120,30,0.22)" stroke="rgba(180,120,30,0.28)" stroke-width="0.5" style="opacity:0"/>
-            <text id="p2-sand-text" x="31" y="138" text-anchor="middle" fill="rgba(180,120,30,0.65)" font-size="3.2" font-family="monospace" style="opacity:0">SAND</text>
-            <rect x="16" y="143" width="30" height="8" rx="1.5" fill="rgba(239,68,68,0.28)" stroke="rgba(239,68,68,0.5)" stroke-width="0.8"/>
-            <text x="31" y="149" text-anchor="middle" fill="rgba(239,68,68,0.85)" font-size="3.8" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
-            <rect x="16" y="153" width="30" height="11" rx="1.5" fill="rgba(16,185,129,0.2)" stroke="rgba(74,222,128,0.32)" stroke-width="0.8"/>
-            <text x="31" y="160.5" text-anchor="middle" fill="rgba(74,222,128,0.7)" font-size="3.5" font-family="Inter,sans-serif">MOTOR ✓</text>
+            <text id="p2-gas-text" x="31" y="40" text-anchor="middle" fill="rgba(100,116,139,0.35)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0.35">GAS VOID</text>
+            <!-- Fluid column — CRITICALLY LOW, just above pump intake; animated via applyState -->
+            <rect id="p2-fluid" x="20" y="88" width="22" height="55" fill="rgba(120,53,15,0.4)" stroke="rgba(180,83,9,0.3)" stroke-width="0.5"/>
+            <line x1="19" y1="88" x2="13" y2="88" stroke="rgba(251,146,60,0.65)" stroke-width="0.7" stroke-dasharray="1.5,1.5"/>
+            <text x="12" y="86" text-anchor="end" fill="rgba(251,146,60,0.8)" font-size="2.8" font-family="monospace">CRITICALLY</text>
+            <text x="12" y="90" text-anchor="end" fill="rgba(251,146,60,0.8)" font-size="2.8" font-family="monospace">LOW</text>
+            <!-- Sand at pump intake — pulled in by high intake velocity during drawdown -->
+            <rect id="p2-sand" x="20" y="135" width="22" height="7" fill="rgba(180,120,30,0.28)" stroke="rgba(180,120,30,0.38)" stroke-width="0.5" style="opacity:0"/>
+            <text id="p2-sand-text" x="31" y="140" text-anchor="middle" fill="rgba(180,120,30,0.85)" font-size="3.0" font-family="monospace" style="opacity:0">SAND▶INTAKE</text>
+            <rect x="13" y="143" width="36" height="9" rx="1.5" fill="rgba(239,68,68,0.28)" stroke="rgba(239,68,68,0.5)" stroke-width="0.8"/>
+            <text x="31" y="149.5" text-anchor="middle" fill="rgba(239,68,68,0.85)" font-size="4.2" font-family="Inter,sans-serif" font-weight="600">PUMP ⚠</text>
+            <rect x="13" y="154" width="36" height="12" rx="1.5" fill="rgba(16,185,129,0.2)" stroke="rgba(74,222,128,0.32)" stroke-width="0.8"/>
+            <text x="31" y="161.5" text-anchor="middle" fill="rgba(74,222,128,0.7)" font-size="4.0" font-family="Inter,sans-serif">MOTOR ✓</text>
             <text x="31" y="172" text-anchor="middle" fill="rgba(100,116,139,0.4)" font-size="3.2" font-family="monospace">PERFS</text>
             <rect x="10" y="174" width="42" height="11" rx="1.5" fill="rgba(120,80,20,0.15)" stroke="rgba(180,120,30,0.22)" stroke-width="0.7"/>
-            <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · LOW LEVEL</text>
+            <text x="31" y="181" text-anchor="middle" fill="rgba(180,120,30,0.48)" font-size="3.2" font-family="monospace">FORMATION · HIGH DRAWDOWN</text>
           </svg>
         </div>
         <div style="padding:6px 10px;background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.2);border-radius:5px;font-size:0.55rem;color:#fca5a5;line-height:1.5;flex-shrink:0">
-          <strong>✘ VFD trim raises <span data-term="cost_pull_risk">workover-level risk</span></strong> — velocity drops toward sand-transport limit. Shut-in is the safer default for this well type.
+          <strong>✘ VFD trim</strong> — drops tubing velocity below transport limit; sand bridges above pump, blocking restart. <strong>✔ Reduce speed in steps, holding above minimum cooling-flow Hz · verify fluid level from last sonic survey before any further reduction.</strong>
         </div>
       </div>
     </div>
@@ -219,7 +227,7 @@
           <div class="bar-track" style="flex:1;height:12px"><div class="bar-fill" id="p2-amp-fill" style="width:90%;background:linear-gradient(90deg,rgba(74,222,128,0.7),rgba(74,222,128,0.35))"></div></div>
         </div>
       </div>
-      <div style="flex-shrink:0;font-size:0.65rem;color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:210px;line-height:1.45">On this well's sensor,<br>the live decline looks the same.</div>
+      <div style="flex-shrink:0;font-size:0.65rem;color:#e2e8f0;font-weight:700;font-style:italic;text-align:right;max-width:210px;line-height:1.45">Both produce the same polled-trend decline. The safe move depends on which well you're running — and that answer is in the documents.</div>
     </div>
   </div>
 </div><!-- /slide p2 -->
@@ -261,7 +269,7 @@
         <div class="anim-row" style="animation-delay:2.8s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">OFFSET FRAC REPORT</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">Adjacent frac 8 days ago · pressure transient still propagating</div></div></div></div>
         <div class="anim-row" style="animation-delay:3.4s;margin-top:6px"><div class="ctx-item"><span class="ctx-dot"></span><div><div style="font-size:0.58rem;font-weight:700;color:#fb923c;letter-spacing:0.04em">SHIFT NOTE</div><div style="font-size:0.52rem;color:#94a3b8;line-height:1.5;margin-top:2px">"Pumping rough for 3 days — no change in surface rate" — Night crew, 06:00</div></div></div></div>
         <div class="anim-row" style="animation-delay:4.0s;padding-top:8px;border-top:1px solid rgba(251,146,60,0.12);margin-top:6px">
-          <p style="font-size:0.60rem;color:#fb923c;line-height:1.65;font-style:italic;margin:0">The deciding context lives here. Not on any sensor.</p>
+          <p style="font-size:0.60rem;color:#fb923c;line-height:1.65;font-style:italic;margin:0">The deciding context lives here — not on any sensor. The documents exist. Assembling them correctly, fast enough, under alarm load: that's what gets missed. GDC does it in seconds.</p>
         </div>
       </div>
     </div>
@@ -305,17 +313,17 @@
         </div>
       </div>
       <div class="anim-row" style="animation-delay:0.8s;background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.28);border-radius:var(--radius);padding:22px 20px;display:flex;flex-direction:column;gap:12px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">SHUT-IN <span style="font-weight:400;color:var(--muted)">Well offline</span></div>
+        <div style="font-family:var(--mono);font-size:0.65rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px">PROTECTIVE DEFAULT <span style="font-weight:400;color:var(--muted)">Hold + Alert RTOC</span></div>
         <div style="display:flex;flex-direction:column;gap:6px">
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Safe for <strong>both</strong> causes</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Pump always protected</div>
-          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">✘</span> Defers production</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#4ade80;flex-shrink:0;font-weight:700">✔</span> Avoids the worst immediate outcome on either cause</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">✘</span> Does not resolve the ambiguity</div>
+          <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2)"><span style="color:#fbbf24;flex-shrink:0;font-weight:700">✘</span> Defers production while the team investigates</div>
           <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.6rem;color:var(--text2);padding-left:16px">+ <span data-term="cost_shutdown">trip and restart costs</span> — every time</div>
         </div>
       </div>
     </div>
     <div class="anim-row" style="flex-shrink:0;animation-delay:1.6s;padding:16px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <div style="font-size:0.82rem;font-weight:800;color:#e2e8f0;line-height:1.4">Safe is not free. The protective shut-in is paid on every ambiguous alarm — including the ones that were only gas lock.</div>
+      <div style="font-size:0.82rem;font-weight:800;color:#e2e8f0;line-height:1.4">The deciding context isn't hidden — it's scattered across the well file, the frac report, and the shift log. SCADA fires the alarm correctly. GDC reads the file.</div>
       <div style="font-size:0.62rem;color:var(--muted);margin-top:6px;font-style:italic">GDC reads the documents. The confident call replaces the cautious default.</div>
     </div>
   </div>
@@ -422,25 +430,25 @@ window.applyState = function (t, slideIdx) {
 
   if (slideIdx === 1) {
     // ── P2: wellbore animation ───────────────────────────────────────────
-    // Left — gas bubbles fade in at pump intake
-    var mults = [1.0, 0.85, 0.90, 0.70, 0.75];
-    for (var i = 1; i <= 5; i++) {
+    // Left — gas bubbles distributed through fluid column, fade in as GVF rises
+    var mults = [1.0, 0.85, 0.90, 0.70, 0.75, 0.80, 0.65, 0.72, 0.58, 0.50, 0.45, 0.40];
+    for (var i = 1; i <= 12; i++) {
       var b = document.getElementById('p2-bub' + i);
       if (b) b.style.opacity = (t * mults[i-1]).toFixed(2);
     }
 
-    // Right — fluid level drops (rect y rises, height shrinks)
+    // Right — fluid ALREADY critically low; shows continued slight depletion
     var fluid = document.getElementById('p2-fluid');
     if (fluid) {
-      var newH = Math.max(0, 105 * (1 - 0.85 * t));
-      var newY = 14 + (105 - newH);
+      var newH = Math.max(42, 55 - 13 * t);
+      var newY = 143 - newH;
       fluid.setAttribute('height', newH.toFixed(1));
       fluid.setAttribute('y', newY.toFixed(1));
     }
 
-    // GAS text fades in as level drops
+    // GAS VOID label brightens slightly as drawdown deepens
     var gasT = document.getElementById('p2-gas-text');
-    if (gasT) gasT.style.opacity = t.toFixed(2);
+    if (gasT) gasT.style.opacity = (0.35 + 0.25 * t).toFixed(2);
 
     // SAND appears at t≥0.65 (velocity below transport threshold)
     var sandOp = Math.min(1, t / 0.65);
