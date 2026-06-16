@@ -62,7 +62,7 @@ html, body {
   margin-bottom: 5px;
 }
 .slide-title {
-  font-size: 1.75rem;   /* pinned — content-scale bumps body but not the headline */
+  font-size: calc(1.75rem * var(--content-scale));
   font-weight: 800;
   color: var(--text2);
   line-height: 1.15;
