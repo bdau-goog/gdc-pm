@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 2864d0a / branch: feature-trio-clean
-Image: sha256:542e61a5c6146bbdf57dbfe6ecf9deedc23c62f46b5ee8f865116aa959a15d9b
+Date: 2026-06-16 / git head: 4ed1c8c / branch: feature-trio-clean
+Image: sha256:7b4158a347ac131eec07c34befbd5aff97d64a859968498cee87a0d5cde4dd9f
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -28,7 +28,7 @@ cat docs/DEMO_MASTER.md
 Open `gdc-pm.bdau.io/slides/h1.html` on actual display and walk through all 5 slides:
 - Slide 1: THE SCENARIO — sensor tiles + resizable split
 - Slide 2: AMBIGUOUS TELEMETRY — wellbore SVG animation (scrubber: gas bubbles vs fluid drain + sand)
-- Slide 3: DECISION SUPPORT — Gas Burnout vs. Sand-Bridge Seizure decision matrix
+- Slide 3: DECISION SUPPORT — Motor Burnout vs. Sand Bridging decision matrix
 - Slide 4: ADDING CONTEXT — Without GDC / With GDC two-column
 - Slide 5: INDUSTRIAL APPLICATION — O&G / P&U / Maritime + Data Gravity banner
 Also verify intro.html Slide 2 shows "Compliance & Sovereignty" and expanded Data Gravity copy.
@@ -43,15 +43,15 @@ Then write an H2_RESET.md (same format as H1_RESET.md) before touching h2.html.
 - These are NOT in the slide decks (decks clean via terms.js)
 Low urgency — decks are what the audience sees; app narrative is secondary.
 
-### What was completed this session (commit 2864d0a)
+### What was completed this session (commits 2864d0a + 4ed1c8c)
 H1 slide deck 5-slide redesign per H1_RESET.md:
 - --content-scale 1.2 → 1.3 (global legibility lift)
 - Slide 2: AMBIGUOUS TELEMETRY (was THE HOOK) — correct gas-bubble physics (distributed column, fluid level stays HIGH/STABLE)
-- Slide 3 NEW: DECISION SUPPORT — Gas Burnout vs. Sand-Bridge Seizure (2×2 matrix)
+- Slide 3 NEW: DECISION SUPPORT — **Motor Burnout vs. Sand Bridging** (2×2 matrix; terminology corrected in-session: "Gas Burnout" → "Motor Burnout" per API RP 11S §4.2; "Sand Bridging" = standard Permian field term)
 - Slide 4: ADDING CONTEXT (merged old slides 3+4) — Manual context search vs GDC 4-step RAG
 - Slide 5: INDUSTRIAL APPLICATION (was THE PLATFORM) — new O&G/P&U/Maritime examples
 - intro.html: Compliance & Sovereignty + expanded Data Gravity copy
-- docs/H1_RESET.md: immutable design spec for H1
+- docs/H1_RESET.md: immutable design spec for H1 (with terminology correction note)
 
 ## Known Integrity Issues
 | Issue | Status |
