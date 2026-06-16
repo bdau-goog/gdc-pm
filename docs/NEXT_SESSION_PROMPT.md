@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 01fec04 / branch: feature-trio-clean
-Image: sha256:77cea2c71a15920ef879a80d0ced0dfdc1ece44f607b6479224cf909ab97978e
+Date: 2026-06-16 / git head: bd9b234 / branch: feature-trio-clean
+Image: sha256:6f79a6a5929860ff2e5c1f61202c9ea87517bee0fd749b556379c2b3769c2413
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -40,8 +40,16 @@ architecture is working. This session's 10-step task order is fully complete.
   Range: 25%–300% of fit scale. Small toast shows current zoom % for 1.8s.
 - **FIX (1cbfc06):** GDC Advisor activates at `gdc_detect_idx`; red marker renamed "Threshold SCADA ▲".
 - **FEAT (72a332a):** H1 Decision Console legibility pass. App-level +/- zoom (body font-size, localStorage).
-- **REVERTED (01fec04):** e80fc4b H1 slide deck overhaul was reverted in full.
-  slides/_shared/slide.css, tokens.css, h1.html restored to state at 72a332a.
+- **REVERTED (01fec04):** e80fc4b H1 slide deck overhaul reverted.
+- **STYLE (85b6813):** Legibility pass — body 13→14px; `--muted` #475569→#94a3b8; slide content-scale 1.0→1.2; slide-title pinned at 1.75rem.
+- **FEAT (bd9b234):** H1 P2/P3/P4 narrative overhaul — 3-pass RT-hardened (3 hostile-engineer Gemini passes):
+  - P2 Left: "GAS INTERFERENCE · HIGH GVF"; 12 bubbles distributed full column; wider pump/motor rects
+  - P2 Right: "RESERVOIR DRAWDOWN · SAND RISK"; fluid starts CRITICALLY LOW (pump submerged, barely); "SAND▶INTAKE" label; drawdown action = reduce speed in steps, hold above min cooling-flow Hz, verify from last sonic survey
+  - P2 banner: "Both produce the same polled-trend decline. The safe move is in the documents."
+  - P3 context footer: "Assembling them correctly, fast enough, under alarm load — that's what gets missed."
+  - P4 right card: "PROTECTIVE DEFAULT · Hold + Alert RTOC" — drops "Pump always protected"
+  - P4 banner: "SCADA fires the alarm correctly. GDC reads the file."
+  - DEMO_MASTER §4 line 190: "Emergency shutdown" → controlled step-down with sonic verification
 - All 4 iframes present in assembled app (0 unresolved @@INCLUDE markers)
 - 0 authored hard-$ in h1.html or h2.html (content policy passed)
 - P1 split handle in h1 (data-ls-key=h1.p1.split)
