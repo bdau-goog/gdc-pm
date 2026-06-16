@@ -275,6 +275,40 @@
     });
   }
 
+  // ── 7. Detail-level toggle (BS+15) ───────────────────────────────────────
+  // Injects a [Details: ON/OFF] button into the nav-bar.
+  // Toggles body.hide-details; CSS hides .detail-element when OFF.
+  // State persists to localStorage('gdc.slide.details').
+  function initDetailsToggle() {
+    var nav = document.querySelector('.nav-bar');
+    if (!nav) return;
+
+    var detailsOn = localStorage.getItem('gdc.slide.details') !== 'false';
+    document.body.classList.toggle('hide-details', !detailsOn);
+
+    var btn = document.createElement('button');
+    btn.className = 'toggle-details-btn';
+
+    function sync() {
+      btn.textContent   = 'Details: ' + (detailsOn ? 'ON' : 'OFF');
+      btn.style.borderColor = detailsOn ? 'rgba(74,222,128,0.45)' : 'rgba(148,163,184,0.28)';
+      btn.style.color       = detailsOn ? '#86efac' : '#94a3b8';
+    }
+    sync();
+
+    btn.addEventListener('click', function () {
+      detailsOn = !detailsOn;
+      localStorage.setItem('gdc.slide.details', String(detailsOn));
+      document.body.classList.toggle('hide-details', !detailsOn);
+      sync();
+    });
+
+    // Insert just before the author-copy button (or append)
+    var authorBtn = document.getElementById('author-copy');
+    if (authorBtn) { nav.insertBefore(btn, authorBtn); }
+    else            { nav.appendChild(btn); }
+  }
+
   // ── Init ─────────────────────────────────────────────────────────────────
   function init() {
     fit();
@@ -285,6 +319,7 @@
     initSplits();
     initAuthorMode();
     wireNavButtons();
+    initDetailsToggle();
   }
 
   if (document.readyState === 'loading') {

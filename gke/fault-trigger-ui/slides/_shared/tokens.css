@@ -32,6 +32,7 @@
   /* Lever C — non-title body content scale.
      1.0 = authored default.  1.15 inflates all body text +15%; titles locked.
      Change here → all four decks update simultaneously.
-     BS+14: raised 1.2 → 1.3 for back-of-room legibility. */
-  --content-scale: 1.3;
+     BS+14: raised 1.2 → 1.3 for back-of-room legibility.
+     BS+15: raised 1.3 → 1.4 for back-of-room legibility. */
+  --content-scale: 1.4;
 }
