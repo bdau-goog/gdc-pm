@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: bae1dd9 / branch: feature-trio-clean
-Image: sha256:5ba6b2b5c3bea9ee100f1a37270562301cf11bbc1ecaf54236d0b26341feb1a5
+Date: 2026-06-16 / git head: 31f3908 / branch: feature-trio-clean
+Image: sha256:2e975f0c31334447c52efb73265b8e96816729e871e4eb481e2016e2263b6b3c
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -26,12 +26,15 @@ cat docs/DEMO_MASTER.md
 All four briefing decks are **built, wired, deployed, and verified live**. The iframe
 architecture is working. This session's 10-step task order is fully complete.
 
-### What was verified live (commit bae1dd9)
+### What was verified live (commit 31f3908)
 - All 7 slide endpoints return 200: h1.html, h2.html, h3.html, intro.html,
   _shared/slide.js, _shared/terms.js, _shared/slide.css
 - **BUG FIXED (bae1dd9):** All 4 slide decks had `../_shared/` paths → 404 → serif font + all panels stacked.
   Fixed to `_shared/` (relative to /slides/ mount). slide.css: 200, slide.js: 200, terms.js: 200 confirmed live.
   NOTE: "No docker build needed for slides" in prior doc was WRONG — slides/ is baked into the image. Always rebuild.
+- **BUG FIXED (31f3908):** Inter font not downloading in iframe context (no Google Fonts link in slide pages).
+  Added `@import url('https://fonts.googleapis.com/css2?family=Inter...')` to slide.css — one change covers all 4 decks.
+  Also: pump SVG max-height on H1 P2 increased 260px → 340px for better visibility.
 - All 4 iframes present in assembled app (0 unresolved @@INCLUDE markers)
 - 0 authored hard-$ in h1.html or h2.html (content policy passed)
 - P1 split handle in h1 (data-ls-key=h1.p1.split)
