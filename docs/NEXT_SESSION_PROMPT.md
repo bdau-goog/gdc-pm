@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-16 / git head: 1cbfc06 / branch: feature-trio-clean
-Image: sha256:b4c138e44f8444a78df7590dfe9a28c4185df963de834e1e4bfed2b23b6672c1
+Date: 2026-06-16 / git head: 72a332a / branch: feature-trio-clean
+Image: sha256:77cea2c71a15920ef879a80d0ced0dfdc1ece44f607b6479224cf909ab97978e
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -38,9 +38,11 @@ architecture is working. This session's 10-step task order is fully complete.
 - **FEATURE (9ecb2d6):** Keyboard zoom in slides. `+`/`=` zoom in, `-` zoom out, `0` reset to fit.
   Persists to localStorage — survives page reload. No rebuild needed to adjust zoom after this point.
   Range: 25%–300% of fit scale. Small toast shows current zoom % for 1.8s.
-- **FIX (1cbfc06):** GDC Advisor in H1 scenario now activates at `gdc_detect_idx` (the amber GDC line),
-  not at `alarm_idx` (the red SCADA threshold). Red marker + scrubber label renamed "Threshold SCADA ▲".
-  SCADA panel views stay on alarm_idx (correct — SCADA only reacts at threshold). 3 app.js + 1 template change.
+- **FIX (1cbfc06):** GDC Advisor activates at `gdc_detect_idx`; red marker renamed "Threshold SCADA ▲".
+- **FEAT (72a332a):** H1 legibility pass — 0.52-0.62rem font floor throughout Decision Console.
+  Zone widths corrected 58/30/15 → 56/28/14 (wellbore SVG no longer clipped). X-MAS → HEAD in SVG.
+  App-level +/- zoom: keydown handler adjusts body font-size (all rem sizes scale); persists localStorage;
+  toast shows zoom %. `0` resets to 100%. Range 69%–169%. No conflict with slide +/- (iframes capture those).
 - All 4 iframes present in assembled app (0 unresolved @@INCLUDE markers)
 - 0 authored hard-$ in h1.html or h2.html (content policy passed)
 - P1 split handle in h1 (data-ls-key=h1.p1.split)
@@ -48,11 +50,6 @@ architecture is working. This session's 10-step task order is fully complete.
 - postMessage handler wired in app.js (run-h1 / run-h2 / run-h3 / go-horizon1)
 
 ### Remaining polish items (next session priority order)
-0. **H1 legibility pass (HIGH PRIORITY)** — user flagged grey-on-grey text throughout the Decision Console.
-   Key offenders: font-size:0.42rem (6.7px), font-size:0.54rem (8.6px) in GDC Advisor panel.
-   Plan: audit tab_h1.html for sub-0.58rem inline sizes + low-contrast color values, batch-increase to 0.62rem min.
-   Also: browser zoom (cmd+/-) DOES work on the main app (regular HTML), but the Plotly charts have fixed SVG
-   sizing — charts need `responsive:true` + container flex to reflow. Check if already set before changing.
 1. **Live review of all four decks** — open each at gdc-pm.bdau.io and verify:
    - H1 P1: drag split handle, scrub sensor tiles, ▶ Play → hands off to replay
    - H1 P2: scrub wellbore animation (gas bubbles + fluid level drop), ▶ Play
