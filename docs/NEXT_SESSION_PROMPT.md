@@ -22,19 +22,9 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Confirm flicker fix on BenQ display (BS+21 + BS+22 + BS+23)
-Three-phase flicker mitigation is now deployed:
-- BS+21 (`1f3b0e8`): background lift out of FRC near-black dithering band
-- BS+22 (`f9e4164`): animation throttle + Page Visibility API pause
-- BS+23 (`b3b1aa8`, sha256:8a8d2858): rAF play loop + GPU compositor layer isolation + all chart bgcolor lift
+### PRIORITY 1 — Live review of H1 slides on BenQ display ✅ FLICKER RESOLVED
+BS+21 + BS+22 + BS+23 flicker fix **confirmed working on BenQ** (no flicker in H1 full-screen play mode).
 
-Review on BenQ:
-- Open `gdc-pm.bdau.io` → H1 tab → load scenario → press ▶ Play (full screen if possible)
-- Flicker should be gone or dramatically reduced (all 4 root causes addressed)
-- If any residual: last suspect is Plotly's 5s polling interval driving `renderChart()`;
-  next step would be raising the `_pollChart` interval from 5s to 15s in `startDegPoll()`
-
-### PRIORITY 2 — Live review of H1 slides on BenQ display (same as before)
 - `gdc-pm.bdau.io/slides/h1.html` — Slide 1 scrub NOMINAL→FAULT:
   - PIP + Amps decline (amber at threshold)
   - Temp rises gently 197→225°F (green, sub-trip, ↗ arrow, "Rising but lagging")
@@ -42,8 +32,8 @@ Review on BenQ:
 - Slide 2: CASING GAS label (right wellbore, drawdown) brightens as fluid drops
 - App landing opens on `Intro` tab ✓
 
-### PRIORITY 3 — H2/H3 readability pass
-Once H1 confirmed on display, apply equivalent improvements to `slides/h2.html` and `slides/h3.html`.
+### PRIORITY 2 — H2/H3 readability pass
+Apply equivalent improvements to `slides/h2.html` and `slides/h3.html` (same structural treatment as H1 slide pass).
 
 ---
 
