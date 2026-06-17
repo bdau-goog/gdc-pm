@@ -6,11 +6,11 @@
 <title>H3 — Optimize · Pad Alpha</title>
 <link rel="stylesheet" href="_shared/slide.css">
 <style>
-  .well-table { width:100%; border-collapse:collapse; font-size:0.62rem; }
+  .well-table { width:100%; border-collapse:collapse; font-size:0.76rem; }
   .well-table th { padding:6px 14px; text-align:left; color:var(--muted); font-weight:600; background:rgba(15,23,42,0.5); }
   .well-table td { padding:6px 14px; border-top:1px solid rgba(100,116,139,0.12); }
   .constraint-row { padding:12px 16px; border-radius:7px; }
-  .opt-table  { width:100%; border-collapse:collapse; font-size:0.60rem; }
+  .opt-table  { width:100%; border-collapse:collapse; font-size:0.72rem; }
   .opt-table th { padding:5px 12px; text-align:left; color:var(--muted); font-weight:600; background:rgba(15,23,42,0.5); }
   .opt-table td { padding:5px 12px; border-top:1px solid rgba(100,116,139,0.12); }
 </style>
@@ -29,7 +29,7 @@
       <div>
         <div class="slide-kicker">THE SCENARIO</div>
         <h2 class="slide-title">Maximum Production. Maximum Care.</h2>
-        <p class="slide-sub">Oil price is up. Pad Alpha has 6 wells. The instinct is: run everything faster. But these wells are not equal.</p>
+        <p class="slide-sub">Oil price is up. Pad Alpha has 6 wells. The instinct is to run everything faster.<br><span style="color:#fbbf24">But these wells are not equal — and the gas budget forces a choice.</span></p>
       </div>
       <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
         Every oil well produces associated gas — gas the reservoir controls, not you. GOR (Gas-Oil Ratio) tells you how much gas per barrel. A well with GOR 1,350 produces 3× more gas per barrel than a well with GOR 450. You cannot change that. But you can choose which wells get the gas budget.
@@ -73,7 +73,7 @@
     <div style="flex-shrink:0">
       <div class="slide-kicker">DECISION SUPPORT</div>
       <h2 class="slide-title">Three Ceilings You Cannot Ignore.</h2>
-      <p class="slide-sub">Push all 6 wells harder and you hit the midstream gas contract. Push the wrong ones too hard and you burn out the motors.</p>
+      <p class="slide-sub">Push all 6 wells harder and you hit the midstream gas contract.<br><span style="color:#fbbf24">Push the wrong ones too hard and you burn out the motors.</span></p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
       <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">ACTIVE CONSTRAINTS — PAD ALPHA</div>
@@ -127,7 +127,7 @@
       <div>
         <div class="slide-kicker">PAD OPTIMIZATION</div>
         <h2 class="slide-title">Cloud Searches. Edge Enforces.</h2>
-        <p class="slide-sub">Vertex AI Vizier explores the 6-well setpoint space. The on-prem thermal model holds the safety constraint — even if the satellite link drops.</p>
+        <p class="slide-sub">Vertex AI Vizier explores the 6-well setpoint space.<br><span style="color:#fbbf24">The on-prem thermal model holds the safety constraint — even if the satellite link drops.</span></p>
       </div>
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:var(--radius);overflow:hidden">
         <div style="font-family:var(--mono);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8)">JOINT OPTIMAL SETPOINT ALLOCATION — PAD ALPHA</div>

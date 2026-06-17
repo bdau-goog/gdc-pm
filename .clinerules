@@ -227,3 +227,28 @@ Before writing any wireframe or Claim Ledger row for a new scenario claim, I mus
 - The thermal-path kill shot (RTD in motor, bearing in pump/protector, thermally separated) was NOT web-searched — it was domain reasoning. Same model, hostile persona, adversarial framing = qualitatively different output.
 - "Most of your unstructured data isn't unstructured" (choke position = SCADA tag; GOR = production DB) — a critical narrowing that I missed by not interrogating the claim from the inside.
 - The persona gap is the dominant driver of quality differences between Cline sessions and external chat sessions with the same model. Web access (citations) is the secondary gap, fixable with the MCP server planned for the next session.
+
+---
+
+## Settled-Decision Fidelity — No Revisiting Without Evidence (added Session BS+26)
+
+**The root cause:** Sonnet 4.6 (all versions) has a strong "deference bias": it defaults to writing whatever will please the immediate user request, including "creative improvements" or alternative wording that overwrites hard-won engineering consensus documented in SESSION_LOG.md and DEMO_MASTER.md. This has caused recurring token-expensive regressions (BS+18 physics regression, BS+19 flat-pinning regression, etc.) that required multi-session repair.
+
+**The fix — mandatory before writing ANY code:**
+
+1. **The Settled-Issue Gate:** Before generating any diff, silently check: "Does this edit alter or conflict with any decision in the last 5 SESSION_LOG.md entries or a tagged section of DEMO_MASTER.md?" If YES → stop, alert the user, explain the conflict. If NO → proceed.
+
+2. **Verbatim Implementation Rule:** If a physical value, terminology, or layout is documented as "locked," "approved," or "RT-hardened" in DEMO_MASTER.md or SESSION_LOG.md, it must be implemented VERBATIM. No substitutions, no "improvements," no alternative phrasings. Examples of locked values that MUST NOT be changed without an explicit user directive:
+   - `lag_onset = 0.55` — Temp/Vib stay near-nominal through first 55% of replay
+   - `temp_end: 218–228°F`, `vib_end: 2.8–3.5 mm/s` — sub-trip, green throughout
+   - `Gas Volume Fraction` (not Gas Void Fraction), `Motor Burnout` (not Gas Burnout)
+   - `indistinguishable on an intake-only string` (not `identical`)
+   - `JOINT OPTIMAL SETPOINT ALLOCATION` (not `GOR-RANKED`)
+
+3. **Minimal Diff Rule:** Every code change must be the minimum number of lines required to accomplish the stated task. Refactoring, renaming, reorganizing, or "improving" adjacent code that was not explicitly requested is a blocking violation, not a virtue.
+
+4. **Zero Vague Handoffs:** NEXT_SESSION_PROMPT.md must name exact files, line numbers (via grep -n), and precise implementation constraints for every next task. "Improve readability" is NOT an acceptable task description. "Raise font-size 0.62rem → 0.80rem in .tile-sub of slides/h2.html Slide 2 sensor tiles" IS acceptable.
+
+5. **Creative Features are Bugs:** Any animation, visual element, or copy that was not explicitly requested and is not already present in DEMO_MASTER.md or the user's current request is a bug, not an improvement. The default answer to "should I add this?" is NO.
+
+**The non-negotiable outcome:** The user should NEVER have to spend tokens re-explaining a settled physics decision, re-reverting a terminology change, or re-fixing a regression introduced by an unsolicited "improvement." Violating these rules consumes finite context budget on zero-value rework.

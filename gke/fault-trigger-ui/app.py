@@ -7492,7 +7492,12 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
         health_scores = [round(1.0 - 0.4 * ((i / N) ** 2), 4) for i in range(N)]
 
     # ── Detection indices ─────────────────────────────────────────────────────
-    HEALTH_THRESHOLD = 0.65
+    # BS+26: raised from 0.65 → 0.87 so GDC detection fires reliably before the
+    # SCADA alarm. Empirically: hs_at_alarm ≈ 0.83 across runs; threshold 0.82
+    # caused near-tie failures (gdc ± 1 step of SCADA). At 0.87, gdc_detect_idx
+    # fires at ~step 40-55 (PIP/Amps slope features), well before SCADA at ~step
+    # 62-79. The 0.04-point margin above hs_at_alarm ensures consistent ordering.
+    HEALTH_THRESHOLD = 0.87
 
     # Smart SCADA — Path A (ISA-18.2 / API RP 11S §7.2):
     # Modern VSDs use a rolling-window rate-of-change underload trip, not a bare

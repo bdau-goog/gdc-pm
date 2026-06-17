@@ -11,9 +11,9 @@
   .tl-label { font-size:0.54rem; white-space:nowrap; margin-top:2px; }
   .tl-day   { font-size:0.50rem; color:rgba(100,116,139,0.6); }
   .sensor-tile { padding:10px 12px; background:rgba(15,23,42,0.65); border-radius:var(--radius); }
-  .tile-val   { font-family:var(--mono); font-size:0.85rem; font-weight:700; }
-  .tile-sub   { font-size:0.52rem; color:var(--muted); margin-top:3px; }
-  .doc-row    { font-size:0.58rem; color:var(--text2); line-height:1.5; }
+  .tile-val   { font-family:var(--mono); font-size:1.05rem; font-weight:700; }
+  .tile-sub   { font-size:0.68rem; color:var(--muted); margin-top:3px; }
+  .doc-row    { font-size:0.70rem; color:var(--text2); line-height:1.5; }
 </style>
 </head>
 <body>
@@ -30,7 +30,7 @@
       <div>
         <div class="slide-kicker">THE SCENARIO</div>
         <h2 class="slide-title">Waxy Crude. Routine PM. Then Nothing.</h2>
-        <p class="slide-sub">A Permian carbonate producer with a known paraffin problem — and a 52-day overdue treatment.</p>
+        <p class="slide-sub">A Permian carbonate producer with a known paraffin problem.<br><span style="color:#fbbf24">52-day overdue treatment. The vendor delay was logged. Not in SCADA.</span></p>
       </div>
       <div class="glass-card">
         <div class="mono-label">WELL ESP-ALPHA-3 · BLOCK 7 PAD · ANDREWS COUNTY, WTX</div>
@@ -72,7 +72,7 @@
     <div style="flex-shrink:0">
       <div class="slide-kicker">AMBIGUOUS TELEMETRY</div>
       <h2 class="slide-title">Fifty-Two Days Late. Bearings or Wax?</h2>
-      <p class="slide-sub">The sensor pattern is real. On a 4-sensor string, what caused it is not obvious.</p>
+      <p class="slide-sub">The sensor pattern is real.<br><span style="color:#fbbf24">On a 4-sensor string, bearing wear and paraffin restriction are indistinguishable.</span></p>
     </div>
     <!-- Timeline -->
     <div style="position:relative;display:flex;align-items:center;padding:12px 20px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.18);border-radius:8px;flex-shrink:0">
@@ -88,22 +88,22 @@
     <div style="display:flex;gap:12px;flex-wrap:wrap;flex-shrink:0">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;min-width:260px">
         <div class="sensor-tile anim-row" style="animation-delay:0s;border:1px solid rgba(251,191,36,0.22)">
-          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Efficiency</div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Efficiency</div>
           <div class="tile-val" style="color:rgba(251,191,36,0.9)">~76% → ~66%</div>
           <div class="tile-sub detail-element">↓ declining (pump off best-efficiency-point)</div>
         </div>
         <div class="sensor-tile anim-row" style="animation-delay:0.1s;border:1px solid rgba(239,68,68,0.22)">
-          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Vibration</div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Vibration</div>
           <div class="tile-val" style="color:rgba(239,68,68,0.9)">~1.0 → ~4.2 mm/s</div>
           <div class="tile-sub detail-element" style="color:rgba(239,68,68,0.6)">↑ above ISA HI (4.0 mm/s)</div>
         </div>
         <div class="sensor-tile anim-row" style="animation-delay:0.2s;border:1px solid rgba(251,191,36,0.18)">
-          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Amps</div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Motor Amps</div>
           <div class="tile-val" style="color:rgba(251,191,36,0.7)">~65A → ~74A</div>
           <div class="tile-sub detail-element">↑ +14% (pump working against restriction)</div>
         </div>
         <div class="sensor-tile anim-row" style="animation-delay:0.3s;border:1px solid rgba(100,116,139,0.22)">
-          <div style="font-size:0.50rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Pump Inlet Pressure</div>
+          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Pump Inlet Pressure</div>
           <div class="tile-val" style="color:rgba(148,163,184,0.8)">~1,380 PSI</div>
           <div class="tile-sub detail-element">→ stable–slight rise (less drawdown)</div>
         </div>
@@ -141,7 +141,7 @@
     <div style="flex-shrink:0">
       <div class="slide-kicker">ADDING CONTEXT</div>
       <h2 class="slide-title">Three Documents. One Truck. No Pull.</h2>
-      <p class="slide-sub">GDC fuses what no sensor carries. APM has four sensors. GDC adds three documents.</p>
+      <p class="slide-sub">GDC fuses what no sensor carries.<br><span style="color:#fbbf24">APM has four sensors. GDC adds three documents.</span></p>
     </div>
     <div style="display:flex;gap:14px;flex-wrap:wrap;flex:1;min-height:0">
       <!-- Left: verdict + action cards -->
