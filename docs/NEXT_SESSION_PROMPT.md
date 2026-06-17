@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: 989a61a / branch: feature-trio-clean
-Image: sha256:593b8d3eab8fab822254707ea949f002865e7ab520a621540e22f9cd445f7a52
+Date: 2026-06-17 / git head: f7eb1de / branch: feature-trio-clean
+Image: sha256:5ded295e2621c48bd05e01c2e9334f84c8707d2e21030c7d6d4e957b2ec49728
 
 ## STEP 1: Run These Four Commands First
 ```bash
