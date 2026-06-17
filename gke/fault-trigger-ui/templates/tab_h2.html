@@ -186,7 +186,7 @@
               <!-- Pre-alarm: quiet ISA-101 slate -->
               <div v-if="h2CursorIdx < h2ReplayData.scada_alarm_idx"
                    style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:20px">
-                <div style="font-family:var(--mono);font-size:0.56rem;color:rgba(100,116,139,0.5);letter-spacing:0.10em;text-align:center;line-height:2.2">
+                <div style="font-family:var(--mono);font-size:0.65rem;color:rgba(100,116,139,0.5);letter-spacing:0.10em;text-align:center;line-height:2.2">
                   WELL A-3 &#x2014; SURVEILLANCE ACTIVE<br>
                   ALL SENSORS WITHIN CONFIGURED LIMITS<br>
                   EFF {{ h2ReplayData.efficiency && h2ReplayData.efficiency[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.efficiency[h2CursorIdx]).toFixed(1) : '&#x2014;' }}% &nbsp;|&nbsp; VIB {{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }} mm/s
@@ -202,48 +202,48 @@
                 <!-- 2×2 monospace tag grid -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:8px">
                   <div style="background:var(--surf);border:1px solid rgba(251,191,36,0.4);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">VIB (mm/s) &middot; H ALARM</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.9)">{{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">H:4.0 &middot; HH:5.0</div>
+                    <div style="font-family:var(--mono);font-size:0.50rem;color:var(--muted);letter-spacing:0.06em">VIB (mm/s) &middot; H ALARM</div>
+                    <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(251,191,36,0.9)">{{ h2ReplayData.vib[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.vib[h2CursorIdx]).toFixed(2) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.46rem;color:var(--muted)">H:4.0 &middot; HH:5.0</div>
                   </div>
                   <div style="background:var(--surf);border:1px solid rgba(251,191,36,0.25);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">EFF (%) &middot; DECLINING</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.75)">{{ h2ReplayData.efficiency && h2ReplayData.efficiency[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.efficiency[h2CursorIdx]).toFixed(1) : '&#x2014;' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">NOM:~76 &middot; SUB-ALARM</div>
+                    <div style="font-family:var(--mono);font-size:0.50rem;color:var(--muted);letter-spacing:0.06em">EFF (%) &middot; DECLINING</div>
+                    <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(251,191,36,0.75)">{{ h2ReplayData.efficiency && h2ReplayData.efficiency[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.efficiency[h2CursorIdx]).toFixed(1) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.46rem;color:var(--muted)">NOM:~76 &middot; SUB-ALARM</div>
                   </div>
                   <div style="background:var(--surf);border:1px solid rgba(100,116,139,0.3);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">AMPS (A) &middot; ELEVATED &#x2191;</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(251,191,36,0.65)">{{ h2ReplayData.amps[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.amps[h2CursorIdx]).toFixed(1) : '&#x2014;' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">NOM:~83 &middot; OL:102</div>
+                    <div style="font-family:var(--mono);font-size:0.50rem;color:var(--muted);letter-spacing:0.06em">AMPS (A) &middot; ELEVATED &#x2191;</div>
+                    <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(251,191,36,0.65)">{{ h2ReplayData.amps[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.amps[h2CursorIdx]).toFixed(1) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.46rem;color:var(--muted)">NOM:~83 &middot; OL:102</div>
                   </div>
                   <div style="background:var(--surf);border:1px solid rgba(74,222,128,0.2);border-radius:4px;padding:6px 8px">
-                    <div style="font-family:var(--mono);font-size:0.38rem;color:var(--muted);letter-spacing:0.06em">TEMP (&#xB0;F) &middot; NOMINAL</div>
-                    <div style="font-family:var(--mono);font-size:0.70rem;font-weight:700;color:rgba(74,222,128,0.8)">{{ h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '&#x2014;' }}</div>
-                    <div style="font-family:var(--mono);font-size:0.34rem;color:var(--muted)">HL:280 &middot; NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.50rem;color:var(--muted);letter-spacing:0.06em">TEMP (&#xB0;F) &middot; NOMINAL</div>
+                    <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:rgba(74,222,128,0.8)">{{ h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) : '&#x2014;' }}</div>
+                    <div style="font-family:var(--mono);font-size:0.46rem;color:var(--muted)">HL:280 &middot; NOMINAL</div>
                   </div>
                 </div>
                 <!-- SCADA action cards: bearing wear assumption -->
                 <div v-if="!h2Resolved && !h2PullOutcome" style="display:grid;grid-template-columns:1fr 1fr;gap:5px">
                   <button @click="h2Pause(); h2PullOutcome='pump_pull'" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
-                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">&#x1F527; Request Pump Pull</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Mobilize workover rig</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Investigate downhole</div>
+                    <div style="font-size:0.65rem;font-weight:700;margin-bottom:4px">&#x1F527; Request Pump Pull</div>
+                    <div style="font-size:0.52rem;color:var(--muted)">Mobilize workover rig</div>
+                    <div style="font-size:0.52rem;color:var(--muted)">Investigate downhole</div>
                   </button>
                   <button @click="h2Resolved=true" style="background:transparent;border:1px solid rgba(100,116,139,0.35);border-radius:6px;padding:10px 8px;cursor:pointer;text-align:center;color:var(--text2)">
-                    <div style="font-size:0.56rem;font-weight:700;margin-bottom:4px">&#x1F4CA; Continue Monitoring</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Flag for next tour</div>
-                    <div style="font-size:0.44rem;color:var(--muted)">Monitor trend</div>
+                    <div style="font-size:0.65rem;font-weight:700;margin-bottom:4px">&#x1F4CA; Continue Monitoring</div>
+                    <div style="font-size:0.52rem;color:var(--muted)">Flag for next tour</div>
+                    <div style="font-size:0.52rem;color:var(--muted)">Monitor trend</div>
                   </button>
                 </div>
                 <!-- Pump-pull outcome — paraffin: wax still in tubing -->
                 <div v-if="h2PullOutcome==='pump_pull'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
-                  <div style="font-size:0.58rem;font-weight:700;color:var(--red);margin-bottom:5px">&#x2718; PUMP PULL INITIATED &#x2014; ROOT CAUSE NOT ADDRESSED</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Pump pulled and bearings confirmed worn &#x2014; but the cause was paraffin restriction, not bearing failure. Wax still in tubing. Pump will re-wear on restart without hot-oil treatment.<br><span style="font-size:0.44rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic</span></div>
+                  <div style="font-size:0.65rem;font-weight:700;color:var(--red);margin-bottom:5px">&#x2718; PUMP PULL INITIATED &#x2014; ROOT CAUSE NOT ADDRESSED</div>
+                  <div style="font-size:0.58rem;color:var(--text2);line-height:1.6">Pump pulled and bearings confirmed worn &#x2014; but the cause was paraffin restriction, not bearing failure. Wax still in tubing. Pump will re-wear on restart without hot-oil treatment.<br><span style="font-size:0.50rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic</span></div>
                 </div>
                 <!-- Monitoring outcome — paraffin: wax restriction deepening -->
                 <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px">
-                  <div style="font-size:0.58rem;font-weight:700;color:rgba(251,191,36,0.8);margin-bottom:4px">&#x23F3; MONITORING &#x2014; WAX RESTRICTION DEEPENING</div>
-                  <div style="font-size:0.50rem;color:var(--text2);line-height:1.6">Passive monitoring. Root cause (paraffin PM overdue) remains unknown without document fusion. Wax restriction deepens &#x2014; pump damage risk rising.</div>
+                  <div style="font-size:0.65rem;font-weight:700;color:rgba(251,191,36,0.8);margin-bottom:4px">&#x23F3; MONITORING &#x2014; WAX RESTRICTION DEEPENING</div>
+                  <div style="font-size:0.58rem;color:var(--text2);line-height:1.6">Passive monitoring. Root cause (paraffin PM overdue) remains unknown without document fusion. Wax restriction deepens &#x2014; pump damage risk rising.</div>
                 </div>
               </div>
             </div><!-- /scada-view -->
@@ -255,20 +255,20 @@
               <div style="flex-shrink:0;padding:5px 8px 4px;border-bottom:1px solid var(--border)">
                 <!-- Quiet baseline: before GDC detect -->
                 <div v-if="h2CursorIdx < h2ReplayData.gdc_detect_idx"
-                     style="font-family:var(--mono);font-size:0.44rem;color:rgba(100,116,139,0.45);letter-spacing:0.08em;line-height:1.6">
+                     style="font-family:var(--mono);font-size:0.60rem;color:rgba(100,116,139,0.45);letter-spacing:0.08em;line-height:1.6">
                   WELL A-3 &#x2014; GDC SCANNING &middot; EFFICIENCY TREND OBSERVED &middot; VIBRATION RISING &middot; TEMPERATURE NOMINAL
                 </div>
                 <!-- Scanning: at gdc_detect_idx, before verdict reveal -->
                 <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2VerdictRevealed"
-                     style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.44rem;color:#93c5fd;letter-spacing:0.06em">
+                     style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.60rem;color:#93c5fd;letter-spacing:0.06em">
                   <span class="streaming-dot"></span>
                   HEALTH {{ h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0) : '&#x2014;' }}% &middot; RETRIEVING FIELD CONTEXT VIA PGVECTOR RAG&#x2026;
                 </div>
                 <!-- GDC verdict: paraffin scenario -->
                 <div v-if="h2VerdictRevealed"
                      style="background:rgba(21,50,80,0.4);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px">
-                  <div style="font-family:var(--mono);font-size:0.50rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">&#x26A1; PARAFFIN/WAX RESTRICTION &#x2014; NOT BEARING WEAR</div>
-                  <div style="font-size:0.44rem;color:var(--text2);margin-top:2px;line-height:1.5">
+                  <div style="font-family:var(--mono);font-size:0.62rem;font-weight:700;color:#93c5fd;letter-spacing:0.06em">&#x26A1; PARAFFIN/WAX RESTRICTION &#x2014; NOT BEARING WEAR</div>
+                  <div style="font-size:0.56rem;color:var(--text2);margin-top:2px;line-height:1.5">
                     Root cause: PM {{ h2ReplayData.pm_overdue_days }}d overdue &#x2192; wax buildup in tubing &#x2192; restriction &#x2192; PIP&#x2191; amps&#x2191; vib&#x2191; &middot; temp flat
                     <span style="color:rgba(251,191,36,0.7);margin-left:8px">&middot; WAT {{ h2ReplayData.wat_f }}&#xB0;F confirmed &middot; PVT high-wax crude</span>
                     <span style="color:rgba(74,222,128,0.7);margin-left:8px">&middot; health {{ h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0) : '&#x2014;' }}%</span>
@@ -284,10 +284,10 @@
                   <!-- Pre-detect: locked -->
                   <div v-if="h2CursorIdx < h2ReplayData.gdc_detect_idx" style="opacity:0.3;pointer-events:none">
                     <div style="border:1px solid var(--border);border-radius:6px;padding:9px;background:var(--surf)">
-                      <div style="font-size:0.56rem;font-weight:700;color:var(--green)">&#x2714; Context-aware provenance analysis</div>
-                      <div style="font-size:0.48rem;color:var(--muted);margin-top:3px">Available after health score crosses detection threshold</div>
+                      <div style="font-size:0.65rem;font-weight:700;color:var(--green)">&#x2714; Context-aware provenance analysis</div>
+                      <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Available after health score crosses detection threshold</div>
                     </div>
-                    <div style="font-size:0.44rem;color:rgba(100,116,139,0.4);text-align:center;margin-top:5px">&#x1F512; GDC health score building&hellip;</div>
+                    <div style="font-size:0.54rem;color:rgba(100,116,139,0.4);text-align:center;margin-top:5px">&#x1F512; GDC health score building&hellip;</div>
                   </div>
                   <!-- Post-detect, pre-RAG: scanning -->
                   <div v-if="h2CursorIdx >= h2ReplayData.gdc_detect_idx && !h2VerdictRevealed" class="h1-rag-pending">
@@ -323,29 +323,29 @@
                 </div><!-- /zone-2-left -->
                 <!-- ZONE 2 RIGHT (30%): Vertical Document Stack — 3 paraffin provenance docs -->
                 <div style="flex:0 0 30%;display:flex;flex-direction:column;overflow-y:auto;padding:7px 5px;gap:4px">
-                  <div style="font-size:0.42rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">FIELD DOCUMENT CORPUS &#x2014; AlloyDB on-cluster</div>
+                  <div style="font-size:0.54rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:rgba(74,222,128,0.55);margin-bottom:3px;flex-shrink:0">FIELD DOCUMENT CORPUS &#x2014; AlloyDB on-cluster</div>
                   <!-- Doc 1: Chemical Vendor Service Log (fires with RAG verdict) -->
                   <div v-if="h2VerdictRevealed" class="h1-rag-doc-card" @click="h2DocModalOpen=true; h2DocModalItem=h2ReplayData.doc_reveals[0]" title="Click to read full document" style="cursor:pointer">
                     <span style="font-size:0.9rem;flex-shrink:0">&#x1F4CB;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Chemical Service Log<br><span style="font-weight:400;color:rgba(239,68,68,0.8);font-size:0.48rem">PM {{ h2ReplayData.pm_overdue_days }}d overdue &#x2014; vendor delay</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">&#x1F4CC; corpus doc &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
+                      <div style="font-weight:700;font-size:0.64rem;line-height:1.3">Chemical Service Log<br><span style="font-weight:400;color:rgba(239,68,68,0.8);font-size:0.56rem">PM {{ h2ReplayData.pm_overdue_days }}d overdue &#x2014; vendor delay</span></div>
+                      <div style="font-size:0.52rem;color:rgba(74,222,128,0.65);margin-top:2px">&#x1F4CC; corpus doc &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
                     </div>
                   </div>
                   <!-- Doc 2: Fluid PVT Report (+2s) -->
                   <div v-if="h2RagDoc2Shown" class="h1-rag-doc-card" @click="h2DocModalOpen=true; h2DocModalItem=h2ReplayData.doc_reveals[1]" title="Click to read full document" style="cursor:pointer">
                     <span style="font-size:0.9rem;flex-shrink:0">&#x1F9EA;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Fluid PVT Report<br><span style="font-weight:400;color:rgba(251,191,36,0.8);font-size:0.48rem">WAT {{ h2ReplayData.wat_f }}&#xB0;F &middot; high wax &middot; 90d cycle confirmed</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">&#x1F4CC; corpus doc &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
+                      <div style="font-weight:700;font-size:0.64rem;line-height:1.3">Fluid PVT Report<br><span style="font-weight:400;color:rgba(251,191,36,0.8);font-size:0.56rem">WAT {{ h2ReplayData.wat_f }}&#xB0;F &middot; high wax &middot; 90d cycle confirmed</span></div>
+                      <div style="font-size:0.52rem;color:rgba(74,222,128,0.65);margin-top:2px">&#x1F4CC; corpus doc &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
                     </div>
                   </div>
                   <!-- Doc 3: Prior Pull Record (+3.5s) -->
                   <div v-if="h2RagDoc3Shown" class="h1-rag-doc-card" @click="h2DocModalOpen=true; h2DocModalItem=h2ReplayData.doc_reveals[2]" title="Click to read full document" style="cursor:pointer">
                     <span style="font-size:0.9rem;flex-shrink:0">&#x1F4C1;</span>
                     <div style="flex:1;min-width:0">
-                      <div style="font-weight:700;font-size:0.54rem;line-height:1.3">Prior Pull Record<br><span style="font-weight:400;color:rgba(74,222,128,0.7);font-size:0.48rem">Bearings: NORMAL &#x2014; age hypothesis eliminated</span></div>
-                      <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">&#x1F4CC; corpus doc &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
+                      <div style="font-weight:700;font-size:0.64rem;line-height:1.3">Prior Pull Record<br><span style="font-weight:400;color:rgba(74,222,128,0.7);font-size:0.56rem">Bearings: NORMAL &#x2014; age hypothesis eliminated</span></div>
+                      <div style="font-size:0.52rem;color:rgba(74,222,128,0.65);margin-top:2px">&#x1F4CC; corpus doc &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
                     </div>
                   </div>
                   <!-- Placeholder skeletons before RAG fires -->
@@ -423,7 +423,7 @@
             <button @click="h2DocModalOpen=false" style="margin-left:auto;background:none;border:none;color:var(--muted);font-size:1rem;cursor:pointer">✕</button>
           </div>
           <div class="h1-modal-body h1-field-doc" v-if="h2DocModalItem">
-            <pre style="white-space:pre-wrap;font-family:var(--mono);font-size:0.56rem;line-height:1.7;color:var(--text2);margin:0">{{ h2DocModalItem.text }}</pre>
+            <pre style="white-space:pre-wrap;font-family:var(--mono);font-size:0.63rem;line-height:1.7;color:var(--text2);margin:0">{{ h2DocModalItem.text }}</pre>
           </div>
           <div style="font-size:0.56rem;color:var(--muted);margin-top:10px;border-top:1px solid var(--border);padding-top:8px" v-if="h2DocModalItem">
             &#x1F4CC; Scenario corpus document &nbsp;·&nbsp; AlloyDB on-cluster &nbsp;·&nbsp; H2 Paraffin/Wax Deposition scenario

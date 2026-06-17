@@ -37,49 +37,49 @@
         <div v-if="optTrials.length > 0">
           <!-- ── BINDING CONSTRAINT SELECTOR ──────────────────────────── -->
           <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:0.55rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);flex-shrink:0">Binding Constraint</span>
+            <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);flex-shrink:0">Binding Constraint</span>
             <div style="display:flex;gap:6px">
               <button @click="h3ActiveConstraint='gas';runVizierOptimize()"
                 :style="{background: h3ActiveConstraint==='gas' ? 'rgba(251,191,36,0.15)' : 'rgba(15,23,42,0.5)',
                          border: h3ActiveConstraint==='gas' ? '1px solid rgba(251,191,36,0.6)' : '1px solid var(--border)',
                          color: h3ActiveConstraint==='gas' ? '#fbbf24' : 'var(--muted)'}"
-                style="font-size:0.57rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
+                style="font-size:0.67rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
                 GAS TAKEAWAY
               </button>
               <button @click="h3ActiveConstraint='thermal';runVizierOptimize()"
                 :style="{background: h3ActiveConstraint==='thermal' ? 'rgba(239,68,68,0.12)' : 'rgba(15,23,42,0.5)',
                          border: h3ActiveConstraint==='thermal' ? '1px solid rgba(239,68,68,0.5)' : '1px solid var(--border)',
                          color: h3ActiveConstraint==='thermal' ? '#ef4444' : 'var(--muted)'}"
-                style="font-size:0.57rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
+                style="font-size:0.67rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
                 THERMAL LIMIT
               </button>
               <button @click="h3ActiveConstraint='rul';runVizierOptimize()"
                 :style="{background: h3ActiveConstraint==='rul' ? 'rgba(139,92,246,0.12)' : 'rgba(15,23,42,0.5)',
                          border: h3ActiveConstraint==='rul' ? '1px solid rgba(139,92,246,0.5)' : '1px solid var(--border)',
                          color: h3ActiveConstraint==='rul' ? '#8b5cf6' : 'var(--muted)'}"
-                style="font-size:0.57rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
+                style="font-size:0.67rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
                 RUL HORIZON
               </button>
             </div>
-            <span style="font-size:0.52rem;color:rgba(100,116,139,0.5);font-style:italic">Re-runs Vizier with selected binding constraint</span>
+            <span style="font-size:0.60rem;color:rgba(100,116,139,0.5);font-style:italic">Re-runs Vizier with selected binding constraint</span>
           </div>
           <!-- ── PAD ALPHA · JOINT FIELD UPLIFT card ─────────────────── -->
           <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px 20px;margin-bottom:12px">
-            <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(74,222,128,0.8);margin-bottom:10px">⚡ PAD ALPHA · JOINT FIELD UPLIFT — vs per-pump independent baseline (no cross-well coordination)</div>
+            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(74,222,128,0.8);margin-bottom:10px">⚡ PAD ALPHA · JOINT FIELD UPLIFT — vs per-pump independent baseline (no cross-well coordination)</div>
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
               <div style="text-align:center">
                 <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:rgba(74,222,128,0.9)">+{{ (optJointOptimal.uplift_bbl_d||0).toFixed(1) }}<span style="font-size:0.8rem;font-weight:400"> bbl/d</span></div>
-                <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Oil production uplift</div>
-                <div style="font-size:0.52rem;color:rgba(100,116,139,0.6);margin-top:1px">joint optimal vs uniform throttle</div>
+                <div style="font-size:0.66rem;color:var(--muted);margin-top:3px">Oil production uplift</div>
+                <div style="font-size:0.60rem;color:rgba(100,116,139,0.6);margin-top:1px">joint optimal vs uniform throttle</div>
               </div>
               <div style="text-align:center;border-left:1px solid rgba(100,116,139,0.2);border-right:1px solid rgba(100,116,139,0.2);padding:0 10px">
                 <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ Math.round(optJointOptimal.uplift_cash_90d||0).toLocaleString() }}</div>
-                <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Cash uplift / {{ horizonSlider }}d horizon</div>
-                <div style="font-size:0.52rem;color:rgba(100,116,139,0.6);margin-top:1px">at ${{ oilPriceSlider }}/bbl · scales with sliders</div>
+                <div style="font-size:0.66rem;color:var(--muted);margin-top:3px">Cash uplift / {{ horizonSlider }}d horizon</div>
+                <div style="font-size:0.60rem;color:rgba(100,116,139,0.6);margin-top:1px">at ${{ oilPriceSlider }}/bbl · scales with sliders</div>
               </div>
               <div style="text-align:center">
                 <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--blue)">{{ (optConstraintStack.gas_ceiling||{}).joint_mmscfd||'—' }} <span style="font-size:0.8rem;font-weight:400;color:var(--muted)">/ {{ (optConstraintStack.gas_ceiling||{}).value_mmscfd||8.0 }} MMscfd</span></div>
-                <div style="font-size:0.56rem;color:var(--muted);margin-top:3px">Gas ceiling ✔ respected</div>
+                <div style="font-size:0.66rem;color:var(--muted);margin-top:3px">Gas ceiling ✔ respected</div>
                 <div style="font-size:0.52rem;font-weight:700;margin-top:1px"
                      :style="{color: h3ActiveConstraint==='thermal' ? 'rgba(239,68,68,0.85)' : h3ActiveConstraint==='rul' ? 'rgba(139,92,246,0.85)' : 'rgba(251,191,36,0.8)'}">
                   BINDING: {{ h3ActiveConstraint==='thermal' ? 'THERMAL LIMIT' : h3ActiveConstraint==='rul' ? 'RUL HORIZON' : 'GAS TAKEAWAY' }}
@@ -91,19 +91,19 @@
           <div v-if="constraintDoc && constraintDoc.found" style="background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.22);border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start">
             <div style="font-size:1.0rem;flex-shrink:0;margin-top:2px;opacity:0.8">&#x1F4C4;</div>
             <div style="flex:1;min-width:0">
-              <div style="font-size:0.53rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(100,116,139,0.65);margin-bottom:4px">&#x1F50D; Constraint Source &#x2014; Retrieved from AlloyDB pgvector</div>
-              <div style="font-size:0.63rem;font-weight:600;color:var(--text2);margin-bottom:5px">{{ constraintDoc.title }}</div>
-              <div style="font-size:0.58rem;color:var(--muted);line-height:1.65;word-break:break-word;max-height:72px;overflow:hidden">{{ constraintDoc.excerpt }}</div>
-              <div style="font-size:0.50rem;color:rgba(100,116,139,0.45);margin-top:5px">Source: {{ constraintDoc.source }} &middot; asset_class: esp &middot; semantic similarity search</div>
+              <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(100,116,139,0.65);margin-bottom:4px">&#x1F50D; Constraint Source &#x2014; Retrieved from AlloyDB pgvector</div>
+              <div style="font-size:0.73rem;font-weight:600;color:var(--text2);margin-bottom:5px">{{ constraintDoc.title }}</div>
+              <div style="font-size:0.68rem;color:var(--muted);line-height:1.65;word-break:break-word;max-height:72px;overflow:hidden">{{ constraintDoc.excerpt }}</div>
+              <div style="font-size:0.58rem;color:rgba(100,116,139,0.45);margin-top:5px">Source: {{ constraintDoc.source }} &middot; asset_class: esp &middot; semantic similarity search</div>
             </div>
           </div>
           <!-- ── PAD ALPHA · 6-WELL OPTIMAL ALLOCATION table ─────────── -->
           <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:10px;overflow:hidden;margin-bottom:12px">
-            <div style="font-family:var(--mono);font-size:0.56rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center">
+            <div style="font-family:var(--mono);font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center">
               <span>PAD ALPHA · 6-WELL OPTIMAL ALLOCATION</span>
-              <span style="font-weight:400;color:rgba(100,116,139,0.55);font-size:0.51rem">Baseline = per-pump independent max (no cross-well coordination)</span>
+              <span style="font-weight:400;color:rgba(100,116,139,0.55);font-size:0.60rem">Baseline = per-pump independent max (no cross-well coordination)</span>
             </div>
-            <table style="width:100%;border-collapse:collapse;font-size:0.60rem">
+            <table style="width:100%;border-collapse:collapse;font-size:0.70rem">
               <thead>
                 <tr style="background:rgba(15,23,42,0.5)">
                   <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Well</th>
@@ -126,7 +126,7 @@
                       :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.joint_hz||0).toFixed(2) }} Hz</td>
                   <td style="padding:6px 14px;text-align:right;font-family:var(--mono);font-weight:700"
                       :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.8)'}">{{ (w.joint_hz - w.independent_hz) >= 0 ? '+' : '' }}{{ (w.joint_hz - w.independent_hz).toFixed(2) }}</td>
-                  <td style="padding:6px 14px;font-size:0.57rem"
+                  <td style="padding:6px 14px;font-size:0.65rem"
                       :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
                     <span v-if="w.joint_hz >= w.independent_hz">Priority · runs max &#x2191;</span>
                     <span v-else>Marginal · gives way &#x2193;</span>
@@ -139,12 +139,12 @@
         <div class="h3-main-body" v-if="optTrials.length > 0">
           <!-- Pareto Chart -->
           <div class="h3-chart-pane">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ Pareto Frontier — VFD Hz vs Net Cash Flow ({{ optTrials.length }} Bayesian Trials)</div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ Pareto Frontier — VFD Hz vs Net Cash Flow ({{ optTrials.length }} Bayesian Trials)</div>
             <div id="vizier-pareto-chart" style="height:350px"></div>
           </div>
           <!-- Trials Log -->
           <div class="h3-trials-pane">
-            <div style="font-size:0.62rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">📊 Bayesian Optimization Trial Log</div>
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">📊 Bayesian Optimization Trial Log</div>
             <div style="overflow-y:auto;flex:1">
               <table class="h3-trials-table">
                 <thead><tr><th>#</th><th>Hz</th><th>Flow (bbl/d)</th><th>Temp (°F)</th><th>RUL (d)</th><th>Net Cash Flow</th></tr></thead>
