@@ -29,11 +29,22 @@ BS+25: `esp_health.ubj` retrained on lag_onset=0.55 trajectory. H1 replay trajec
 - Temp end: 220.2°F / Vib end: 2.936 mm/s — sub-trip, green ✅
 - PIP leading: 1237→959 PSI / Amps leading: 83.8→69.3 A ✅
 - model_used: esp_health.ubj / Bayes: 93.1% ✅
-- gdc_detect_idx note: On some runs gdc_detect_idx > alarm_idx (expected — SCADA fires just before lag onset;
-  model's full feature set doesn't contribute until after lag onset). gdc_detect_idx is metadata-only per BS+20.
-  Visual story is the health curve declining throughout the window.
+- **🔴 OPEN BUG:** GDC dashed marker fires AFTER "Threshold SCADA ▲" in the replay chart.
+  The agreed contract: GDC (XGBoost multivariate model) ALWAYS detects before threshold SCADA.
+  We conceded Advanced APM *might* match GDC. We never conceded threshold SCADA beats GDC.
 
-Review on BenQ: H1 → load scenario → ▶ Play — confirm temp/vib ~flat through decision window, then gentle rise.
+  Root cause: HEALTH_THRESHOLD=0.65 is too low. With lag_onset=0.55, SCADA fires at ~step 63
+  (52.5% of window, just before lag onset at 55%). The XGBoost health score at step 63 is ~0.84
+  (healthy by training standards — full feature set hasn't contributed yet). Threshold 0.65
+  isn't crossed until step ~76 → gdc_detect_idx > alarm_idx.
+
+  Fix (ONE line in h1_scenario_replay): raise HEALTH_THRESHOLD from 0.65 → 0.82 so detection
+  fires at ~step 50 on PIP/Amps slope features alone, before the SCADA alarm at step 63.
+  Also verify on fluid_drawdown fault type.
+
+Review on BenQ after fix: H1 → load scenario → ▶ Play — confirm:
+  - GDC dashed line fires BEFORE Threshold SCADA line
+  - Temp/Vib flat through decision window, then gentle sub-trip rise
 - App landing opens on `Intro` tab ✓
 
 ### PRIORITY 2 — H2/H3 readability pass
