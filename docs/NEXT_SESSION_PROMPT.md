@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: b3edc13 / branch: feature-trio-clean
-Image: sha256:4666e99e5912c0b149dc0b2edb5ad8e45968221aed097fbdc11ae66d0af2d7dd
+Date: 2026-06-17 / git head: 628f7e7 / branch: feature-trio-clean
+Image: sha256:fe84e1f15398df3e401f2f35061621a22664b74cc928384964640271ecfb510d
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,15 +22,14 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Live review of updated slides on BenQ display
-After the Session BS+17 readability spec was fully implemented this session, the next task is a live review of both `slides/intro.html` and `slides/h1.html` on the actual BenQ display to confirm the changes landed correctly and identify any remaining adjustments.
+### PRIORITY 1 — Live review of updated H1 slides on BenQ display
+Session BS+19 overhauled slides/h1.html. Review on live display before further changes:
+- `gdc-pm.bdau.io/slides/h1.html` — Slide 1: scrub from NOMINAL → FAULT (PIP/Amps decline, Temp/Vib stay flat green, PIP crosses 1020 PSI at ~57%, Amps crosses 50A at ~45%)
+- Slide 4: subtitle split, larger WITHOUT/WITH GDC headers, concise footer in yellow
+- Slide 5: new 3-column vertical use-case cards (O&G / P&U / Maritime)
 
-Review checklist:
-- `gdc-pm.bdau.io/slides/intro.html` — Slide 1 (larger text card + bullets), Slide 2 (all 3 words blue, bigger icons + pillars), Slide 3 (bigger hw-boxes + text)
-- `gdc-pm.bdau.io/slides/h1.html` — Slide 1 (well-label/val bigger, range LOW←HIGH, Temp/Vib animate on scrub), Slide 2 (two-sentence sub), Slide 3 (CHOICE: headers, bigger callout), Slide 4 (< 10 SECONDS, "GDC does the research", plain bottom statements), Slide 5 (column headers, no STATE/CONTEXT labels, bigger row text)
-
-### PRIORITY 2 — After live review: h2.html and h3.html same readability pass
-Once H1/Intro are confirmed on display, apply equivalent readability improvements to `slides/h2.html` and `slides/h3.html` (review each file for font-size opportunities consistent with the H1 uplift).
+### PRIORITY 2 — After live review: h2.html and h3.html same readability/structure pass
+Once H1 Discern slides confirmed on display, apply equivalent improvements to `slides/h2.html` and `slides/h3.html`.
 
 ---
 
