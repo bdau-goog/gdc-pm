@@ -188,6 +188,13 @@
     .sensor-tab .pri-badge{font-size:0.5rem;margin-left:2px;color:#ff8c00;vertical-align:middle}
     .chart-wrap{flex:1;min-height:0;position:relative;background:var(--bg)}
     #forecast-chart{width:100%;height:100%}
+    /* BS+23 GPU compositor layer isolation for all Plotly chart containers.
+       Each chart renders on its own GPU composited layer — pixel updates in the
+       chart area do not stress FRC dithering on adjacent screen regions.
+       Works correctly on any display (8-bit, 8-bit+FRC, 10-bit, HiDPI). */
+    #h1-replay-chart,#h2-replay-chart,#vizier-pareto-chart,
+    #forecast-chart,#scada-chart,#h2-gdc-chart,#h2-scada-chart
+    {will-change:transform;transform:translateZ(0);isolation:isolate}
     .chart-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--muted);pointer-events:none}
     .chart-placeholder .ph-icon{font-size:36px;opacity:0.3}
     .chart-placeholder .ph-text{font-size:0.72rem;text-align:center;line-height:1.6}

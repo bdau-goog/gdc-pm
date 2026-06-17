@@ -650,8 +650,8 @@ createApp({
       // ── Build gdcLayout FIRST (hoisted to outer scope so SCADA block can access it) ──
       const gdcLayout = JSON.parse(JSON.stringify(s.layout));
       // Override layout to ensure dark background and no padding issues
-      gdcLayout.paper_bgcolor = '#0b0c10';
-      gdcLayout.plot_bgcolor  = '#0b0c10';
+      gdcLayout.paper_bgcolor = '#131d31';
+      gdcLayout.plot_bgcolor  = '#131d31';
       gdcLayout.margin = gdcLayout.margin || {l:48,r:10,t:10,b:36};
       if (gdcLayout.annotations) {
         gdcLayout.annotations = gdcLayout.annotations.filter(a =>
@@ -697,8 +697,8 @@ createApp({
           return tc;
         });
         const scadaLayout = {
-          paper_bgcolor: '#0b0c10',
-          plot_bgcolor:  '#0b0c10',
+          paper_bgcolor: '#131d31',
+          plot_bgcolor:  '#131d31',
           margin: {l:48, r:10, t:8, b:36},
           font: {color: '#a0b0c0', size: 11},
           xaxis: {
@@ -1441,15 +1441,26 @@ createApp({
       if (!this.h1ReplayData) return;
       this.h1Pause();
       this.h1Playing = true;
-      const ms = fast ? 30 : 100;
-      this.h1PlayTimer = setInterval(() => {
-        if (this.h1CursorIdx >= this.h1ReplayData.n - 1) { this.h1Pause(); return; }
-        this.h1CursorIdx++;
-      }, ms);
+      // BS+23: requestAnimationFrame replaces setInterval — cursor advances are
+      // locked to the display's actual frame rate (≤60fps). setInterval at 10Hz
+      // was GPU-burst-firing Plotly relayout() calls independently of the display
+      // refresh, causing FRC dithering chaos on HiDPI/8-bit+FRC panels full-screen.
+      const interval = fast ? 30 : 100;
+      let lastTs = 0;
+      const step = (ts) => {
+        if (!this.h1Playing) return;
+        if (ts - lastTs >= interval) {
+          lastTs = ts;
+          if (this.h1CursorIdx >= this.h1ReplayData.n - 1) { this.h1Pause(); return; }
+          this.h1CursorIdx++;
+        }
+        this.h1PlayTimer = requestAnimationFrame(step);
+      };
+      this.h1PlayTimer = requestAnimationFrame(step);
     },
     h1Pause() {
       this.h1Playing = false;
-      if (this.h1PlayTimer) { clearInterval(this.h1PlayTimer); this.h1PlayTimer = null; }
+      if (this.h1PlayTimer) { cancelAnimationFrame(this.h1PlayTimer); this.h1PlayTimer = null; }
     },
     h1Reset() {
       this.h1Pause();
@@ -1538,7 +1549,7 @@ createApp({
       const xRange = xMax > 30 ? [xMax - 30, xMax] : [0, Math.max(30, xMax)];
 
       Plotly.newPlot('h1-replay-chart', traces, {
-        paper_bgcolor:'#0b0c10', plot_bgcolor:'#0f1318',
+        paper_bgcolor:'#131d31', plot_bgcolor:'#131d31',
         font:{color:'#e0e0e0', family:'Inter,sans-serif', size:9},
         margin:{l:48, r:12, t:18, b:30},
         // 4-row grid — Plotly manages subplot spacing automatically
@@ -2151,7 +2162,7 @@ createApp({
       ];
 
       Plotly.newPlot('h2-replay-chart', traces, {
-        paper_bgcolor:'#0b0c10', plot_bgcolor:'#0f1318',
+        paper_bgcolor:'#131d31', plot_bgcolor:'#131d31',
         font:{color:'#e0e0e0', family:'Inter,sans-serif', size:9},
         margin:{l:50, r:52, t:18, b:36},
         xaxis:  {gridcolor:'#1e2a38', zeroline:false, range:[0, xMax],
@@ -2210,7 +2221,7 @@ createApp({
     },
     _renderH2Charts(d) {
       const s=d.sensors?.vib; if(!s) return;
-      const darkLayout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e2a38'},yaxis:{gridcolor:'#1e2a38',title:'Vibration (mm/s)'}};
+      const darkLayout={paper_bgcolor:'#131d31',plot_bgcolor:'#131d31',font:{color:'#a0b0c0',size:11},margin:{l:40,r:10,t:8,b:36},xaxis:{gridcolor:'#1e2a38'},yaxis:{gridcolor:'#1e2a38',title:'Vibration (mm/s)'}};
       const gdcEl=document.getElementById('h2-gdc-chart');
       if(gdcEl){ Plotly.react(gdcEl,s.traces,{...darkLayout,...(s.layout||{})},{displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(gdcEl,s.traces,darkLayout,{displayModeBar:false,responsive:true})); }
       const scadaEl=document.getElementById('h2-scada-chart');
@@ -2265,7 +2276,7 @@ createApp({
         {type:'scatter',mode:'markers',x:optimal.map(t=>t.vfd_hz),y:optimal.map(t=>t.cash_flow),name:'⭐ Optimal',customdata:optimal.map(t=>t.rul_days),hovertemplate:'<b>⭐ OPTIMAL: %{x} Hz</b><br>Cash Flow: $%{y:,.0f}<br>RUL: %{customdata}d<extra>Vizier Optimal</extra>',marker:{color:'#ff8c00',size:16,symbol:'star'}},
         {type:'scatter',mode:'markers',x:[this.optScadaNominal.vfd_hz],y:[this.optScadaNominal.cash_flow],name:'SCADA Nominal',customdata:[this.optScadaNominal.rul_days||0],hovertemplate:'<b>SCADA Nominal: %{x} Hz</b><br>Cash Flow: $%{y:,.0f}<br>RUL: %{customdata}d<extra>SCADA Nominal</extra>',marker:{color:'#5a6a7a',size:12,symbol:'diamond'}},
       ];
-      const layout={paper_bgcolor:'#0b0c10',plot_bgcolor:'#0f1318',font:{color:'#a0b0c0',size:11},margin:{l:60,r:20,t:20,b:50},xaxis:{title:'VFD Frequency (Hz)',gridcolor:'#1e2a38'},yaxis:{title:'Net Cash Flow ($)',gridcolor:'#1e2a38'},legend:{bgcolor:'rgba(11,12,16,0.7)',bordercolor:'#1e2a38',borderwidth:1}};
+      const layout={paper_bgcolor:'#131d31',plot_bgcolor:'#131d31',font:{color:'#a0b0c0',size:11},margin:{l:60,r:20,t:20,b:50},xaxis:{title:'VFD Frequency (Hz)',gridcolor:'#1e2a38'},yaxis:{title:'Net Cash Flow ($)',gridcolor:'#1e2a38'},legend:{bgcolor:'rgba(19,29,49,0.7)',bordercolor:'#1e2a38',borderwidth:1}};
       Plotly.react(el,traces,layout,{displayModeBar:false,responsive:true}).catch(()=>Plotly.newPlot(el,traces,layout,{displayModeBar:false,responsive:true}));
     },
     
