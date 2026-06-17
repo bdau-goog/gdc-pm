@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: a25aea6 / branch: feature-trio-clean
-Image: sha256:a78083bdfdb861eaad149c90c97b5685c6cfb6f63d218cdd87b4a479fbd602b2
+Date: 2026-06-17 / git head: 1f3b0e8 / branch: feature-trio-clean
+Image: sha256:fd23ca10721d14a9e7e0953623e2fc0f3c06e0c4b9fbe177565ae0f72e2d3851
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,17 +22,23 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Live review of updated H1 slides on BenQ display
-Session BS+20 corrected the Panel 1 physics regression + SME terminology pass.
-Review on live display before further changes:
-- `gdc-pm.bdau.io/slides/h1.html` — Slide 1: scrub from NOMINAL → FAULT:
-  - PIP and Amps decline (amber at threshold)
+### PRIORITY 1 — Confirm FRC-flicker fix on BenQ display (Session BS+21)
+FRC-flicker mitigation deployed (commit `1f3b0e8`, sha256:fd23ca10). Review live:
+- Open `gdc-pm.bdau.io` and `gdc-pm.bdau.io/slides/h1.html` on BenQ
+- If shimmer is eliminated or significantly reduced → fix confirmed, proceed to H1 live review
+- If shimmer persists → next suspect: infinite-animation CSS (`blink`, `gl-shift`, `motor-glow`, `pad-pulse`)
+  or Plotly canvas rendering; report to Cline for targeted next pass
+- Background should appear slightly lifted vs. previous (no longer near-black)
+
+### PRIORITY 2 — Live review of H1 slides on BenQ display (same as before)
+- `gdc-pm.bdau.io/slides/h1.html` — Slide 1 scrub NOMINAL→FAULT:
+  - PIP + Amps decline (amber at threshold)
   - Temp rises gently 197→225°F (green, sub-trip, ↗ arrow, "Rising but lagging")
   - Vib rises gently 1.4→3.2 mm/s (green, sub-trip, ↗ arrow, "Rising but lagging")
 - Slide 2: CASING GAS label (right wellbore, drawdown) brightens as fluid drops
-- App landing now opens on `Intro` tab (not Discern)
+- App landing opens on `Intro` tab ✓
 
-### PRIORITY 2 — H2/H3 readability pass (same structure as H1 pass)
+### PRIORITY 3 — H2/H3 readability pass
 Once H1 confirmed on display, apply equivalent improvements to `slides/h2.html` and `slides/h3.html`.
 
 ---
