@@ -3,9 +3,11 @@
    Edit ONE value here → every deck updates on next page load.
    app/styles.css mirrors these values; keep in sync when changing. */
 :root {
-  /* Surface */
-  --bg:      #0b0c10;
-  --surf:    #101827;
+  /* Surface — lifted slightly above near-black FRC dithering band
+     BenQ PD2725U is 8-bit+FRC; backgrounds below ~5% luma trigger visible shimmer.
+     BS+20: raised --bg #0b0c10→#13161f, --surf #101827→#172132 */
+  --bg:      #13161f;
+  --surf:    #172132;
   --surf2:   #141e2d;
   --border:  rgba(100,116,139,0.2);
 

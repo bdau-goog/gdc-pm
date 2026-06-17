@@ -15,6 +15,10 @@ html, body {
   color: var(--text2);
   font-family: var(--sans);
   font-size: 16px;
+  /* BS+20 FRC-flicker fix: sub-pixel anti-aliasing — reduces text shimmer
+     on 8-bit+FRC panels (BenQ PD2725U) */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* ── Stage: fixed 1440×810 canvas, positioned + scaled by slide.js ── */
@@ -24,6 +28,10 @@ html, body {
   width: 1440px; height: 810px;
   overflow: hidden;
   background: var(--bg);
+  /* BS+20 FRC-flicker fix: force separate compositor layer — stabilises
+     sub-pixel rendering on 8-bit+FRC panels */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 /* ── Slide shell ── */

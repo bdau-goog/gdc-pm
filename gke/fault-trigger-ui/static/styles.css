@@ -1,5 +1,6 @@
     :root {
-      --bg:#0f172a; --surf:#1e293b; --surf2:#253347; --surf3:#2d3f56;
+      --bg:#131d31; --surf:#1e293b; --surf2:#253347; --surf3:#2d3f56;
+      /* BS+20 FRC-flicker fix: --bg lifted from #0f172a to move out of near-black FRC dithering band */
       --border:rgba(148,163,184,0.12); --border2:rgba(148,163,184,0.22);
       --text:#e2e8f0; --text2:#94a3b8; --muted:#94a3b8;
       --green:#4ade80; --yellow:#fbbf24; --orange:#fb923c; --red:#f87171; --blue:#38bdf8;
@@ -13,7 +14,7 @@
     [v-cloak]{display:none}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{height:100%;overflow:hidden}
-    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px}
+    body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
     ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
 
     /* ── Header ── */
@@ -33,7 +34,7 @@
     .ts-lbl{font-size:0.62rem;color:var(--muted);font-family:var(--mono)}
 
     /* ── App body ── */
-    .app-body{display:flex;flex-direction:column;height:calc(100vh - 48px);overflow:hidden}
+    .app-body{display:flex;flex-direction:column;height:calc(100vh - 48px);overflow:hidden;will-change:transform;transform:translateZ(0)}
     .main-tab-content{display:none;height:100%;flex-direction:column;overflow:hidden}
     .main-tab-content.active{display:flex}
 
