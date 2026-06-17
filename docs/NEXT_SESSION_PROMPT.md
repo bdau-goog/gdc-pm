@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: (commit pending) / branch: feature-trio-clean
-Image: sha256:fb9a214912c2b8d523af2750ed747239a3310a7e99363f15faefb92780dd3553
+Date: 2026-06-17 / git head: aefc4fb / branch: feature-trio-clean
+Image: sha256:373f76abb8f6440bf0b361993f1d26442dcc363ce698b09ab9cda87d75188adb
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,33 +22,23 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Live review of H1 scenario replay on BenQ ✅ LEAD/LAG PHYSICS DEPLOYED
-BS+25: `esp_health.ubj` retrained on lag_onset=0.55 trajectory. H1 replay trajectory also aligned.
-- Temp at lag onset (step 66): +0.8°F — essentially flat ✅
-- Vib at lag onset (step 66): +0.235 mm/s — essentially flat ✅
-- Temp end: 220.2°F / Vib end: 2.936 mm/s — sub-trip, green ✅
-- PIP leading: 1237→959 PSI / Amps leading: 83.8→69.3 A ✅
-- model_used: esp_health.ubj / Bayes: 93.1% ✅
-- **🔴 OPEN BUG:** GDC dashed marker fires AFTER "Threshold SCADA ▲" in the replay chart.
-  The agreed contract: GDC (XGBoost multivariate model) ALWAYS detects before threshold SCADA.
-  We conceded Advanced APM *might* match GDC. We never conceded threshold SCADA beats GDC.
+### PRIORITY 1 — Live review of H1 scenario replay and H2/H3 slides on BenQ ✅ ALL DEPLOYED
+BS+26 changes deployed and verified:
+- **HEALTH_THRESHOLD raised 0.65 → 0.87** in `h1_scenario_replay()`.
+  3-run live verification: gdc_detect_idx 4.8m–9.5m BEFORE scada_alarm_idx. ✅
+  GDC (XGBoost multivariate model) now consistently detects BEFORE threshold SCADA.
+- **H2/H3 slide readability pass** deployed:
+  - `slides/h2.html`: tile-val 0.85→1.05rem, tile-sub 0.52→0.68rem, doc-row 0.58→0.70rem,
+    tile labels 0.50→0.65rem, subtitles split with second line yellow #fbbf24.
+  - `slides/h3.html`: well-table 0.62→0.76rem, opt-table 0.60→0.72rem,
+    subtitles split with second line yellow #fbbf24.
 
-  Root cause: HEALTH_THRESHOLD=0.65 is too low. With lag_onset=0.55, SCADA fires at ~step 63
-  (52.5% of window, just before lag onset at 55%). The XGBoost health score at step 63 is ~0.84
-  (healthy by training standards — full feature set hasn't contributed yet). Threshold 0.65
-  isn't crossed until step ~76 → gdc_detect_idx > alarm_idx.
+Review on BenQ after deploy: H1 → load scenario → ▶ Play → confirm GDC line fires before SCADA line.
+Then H2 → all 3 slides, H3 → all 3 slides for readability.
 
-  Fix (ONE line in h1_scenario_replay): raise HEALTH_THRESHOLD from 0.65 → 0.82 so detection
-  fires at ~step 50 on PIP/Amps slope features alone, before the SCADA alarm at step 63.
-  Also verify on fluid_drawdown fault type.
-
-Review on BenQ after fix: H1 → load scenario → ▶ Play — confirm:
-  - GDC dashed line fires BEFORE Threshold SCADA line
-  - Temp/Vib flat through decision window, then gentle sub-trip rise
-- App landing opens on `Intro` tab ✓
-
-### PRIORITY 2 — H2/H3 readability pass
-Apply equivalent improvements to `slides/h2.html` and `slides/h3.html` (same structural treatment as H1 slide pass).
+### PRIORITY 2 — H2 and H3 live scenario tabs (tab_h2.html / tab_h3.html)
+No changes yet to these tabs. If live review reveals readability issues at BenQ scale, apply
+equivalent treatment: font floors, subtitle splits. The structural patterns are now proven in the slides.
 
 ---
 
@@ -59,7 +49,7 @@ Apply equivalent improvements to `slides/h2.html` and `slides/h3.html` (same str
 | Authored `~$2,500` / `~$150k` → comparative language in app replay sections | ⏸ Deferred |
 | `$150,000` × 3 in tab_architecture.html (ROI Equation + Fleet Financials) | ⏸ Deferred |
 
-## Physics Rulings Locked (BS+20 + BS+25 retrain)
+## Physics Rulings Locked (BS+20 + BS+25 retrain + BS+26 threshold tune)
 - **PIP/Amps are LEADING indicators** — decline from T+0 on the power-law curve.
 - **Temp/Vib are LAGGING indicators** — near-nominal through the decision window (~55% of replay),
   then gentle sub-trip rise. Temp: 197 → ~225°F. Vib: 1.4 → ~3.2 mm/s. Both GREEN throughout.
@@ -68,10 +58,10 @@ Apply equivalent improvements to `slides/h2.html` and `slides/h3.html` (same str
   - RT-hardened: gdc-second-opinion SURVIVES-IF-REWORDED (absolute language softened).
 - **esp_health.ubj retrained (BS+25)** on lag_onset=0.55 trajectory in xgboost==2.0.3 venv.
   RMSE=0.00185. Health < 0.30 at 90.1% of sequence (SCADA alarm zone correctly placed).
-  H2 unaffected: paraffin scenario gdc_detect_idx=23 < alarm_idx=78 ✅.
+- **HEALTH_THRESHOLD = 0.87 (BS+26)** — empirically tuned so gdc_detect_idx fires 4.8–9.5m before
+  SCADA alarm. hs_at_alarm ≈ 0.83 across runs; threshold 0.04-point margin above alarm zone.
+  H2 HEALTH_THRESHOLD = 0.65 (untouched — H2 paraffin scenario gdc_detect_idx=23 < alarm_idx=78 ✅).
 - **"Identical"** softened to **"indistinguishable on an intake-only string"** throughout.
-- **BS+20 "no retrain" ruling superseded** by BS+25 — retrain was necessary to align model with
-  lead/lag physics (old model keyed on concurrent temp/vib rise).
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
@@ -101,5 +91,3 @@ kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
 | H2 deck | gdc-pm.bdau.io/slides/h2.html |
 | H3 deck | gdc-pm.bdau.io/slides/h3.html |
 | Intro deck | gdc-pm.bdau.io/slides/intro.html |
-| Full demo | gdc-pm.bdau.io |
-| Author mode (split debug) | gdc-pm.bdau.io/slides/h1.html?author |
