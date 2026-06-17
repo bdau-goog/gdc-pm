@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: b3b1aa8 / branch: feature-trio-clean
-Image: sha256:8a8d28580091a638323189bc4fc0eff3b70a3c1c58e8a9bca331fd6615df281c
+Date: 2026-06-17 / git head: ab428f3 / branch: feature-trio-clean
+Image: sha256:f7c8218f0c4643863818f93615d910daedc5f28ff76b00b97b52637aac78a77e
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,8 +22,14 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Live review of H1 slides on BenQ display ✅ FLICKER RESOLVED
-BS+21 + BS+22 + BS+23 flicker fix **confirmed working on BenQ** (no flicker in H1 full-screen play mode).
+### PRIORITY 1 — Live review of H1 scenario replay + slides on BenQ ✅ FLICKER RESOLVED
+BS+21–BS+23 flicker fix confirmed. **Three chart bugs also fixed (commit `ab428f3`):**
+- Temp now 197→~225°F (not 250°F) — matches BS+20 physics ruling (API RP 11S §4.2)
+- Vib now 1.4→~3.2 mm/s (not 5+ mm/s) — sub-ISA HI, sub-trip as required
+- Legend box removed (`showlegend:false`)
+- Duplicate "Threshold SCADA▲" scrubber label removed
+
+Review on BenQ: H1 → load scenario → ▶ Play — confirm temp/vib stay sub-threshold.
 
 - `gdc-pm.bdau.io/slides/h1.html` — Slide 1 scrub NOMINAL→FAULT:
   - PIP + Amps decline (amber at threshold)
