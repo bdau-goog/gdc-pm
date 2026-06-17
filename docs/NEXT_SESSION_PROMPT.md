@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: ab428f3 / branch: feature-trio-clean
-Image: sha256:f7c8218f0c4643863818f93615d910daedc5f28ff76b00b97b52637aac78a77e
+Date: 2026-06-17 / git head: (commit pending) / branch: feature-trio-clean
+Image: sha256:fb9a214912c2b8d523af2750ed747239a3310a7e99363f15faefb92780dd3553
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,20 +22,18 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Live review of H1 scenario replay + slides on BenQ ✅ FLICKER RESOLVED
-BS+21–BS+23 flicker fix confirmed. **Three chart bugs also fixed (commit `ab428f3`):**
-- Temp now 197→~225°F (not 250°F) — matches BS+20 physics ruling (API RP 11S §4.2)
-- Vib now 1.4→~3.2 mm/s (not 5+ mm/s) — sub-ISA HI, sub-trip as required
-- Legend box removed (`showlegend:false`)
-- Duplicate "Threshold SCADA▲" scrubber label removed
+### PRIORITY 1 — Live review of H1 scenario replay on BenQ ✅ LEAD/LAG PHYSICS DEPLOYED
+BS+25: `esp_health.ubj` retrained on lag_onset=0.55 trajectory. H1 replay trajectory also aligned.
+- Temp at lag onset (step 66): +0.8°F — essentially flat ✅
+- Vib at lag onset (step 66): +0.235 mm/s — essentially flat ✅
+- Temp end: 220.2°F / Vib end: 2.936 mm/s — sub-trip, green ✅
+- PIP leading: 1237→959 PSI / Amps leading: 83.8→69.3 A ✅
+- model_used: esp_health.ubj / Bayes: 93.1% ✅
+- gdc_detect_idx note: On some runs gdc_detect_idx > alarm_idx (expected — SCADA fires just before lag onset;
+  model's full feature set doesn't contribute until after lag onset). gdc_detect_idx is metadata-only per BS+20.
+  Visual story is the health curve declining throughout the window.
 
-Review on BenQ: H1 → load scenario → ▶ Play — confirm temp/vib stay sub-threshold.
-
-- `gdc-pm.bdau.io/slides/h1.html` — Slide 1 scrub NOMINAL→FAULT:
-  - PIP + Amps decline (amber at threshold)
-  - Temp rises gently 197→225°F (green, sub-trip, ↗ arrow, "Rising but lagging")
-  - Vib rises gently 1.4→3.2 mm/s (green, sub-trip, ↗ arrow, "Rising but lagging")
-- Slide 2: CASING GAS label (right wellbore, drawdown) brightens as fluid drops
+Review on BenQ: H1 → load scenario → ▶ Play — confirm temp/vib ~flat through decision window, then gentle rise.
 - App landing opens on `Intro` tab ✓
 
 ### PRIORITY 2 — H2/H3 readability pass
@@ -50,15 +48,19 @@ Apply equivalent improvements to `slides/h2.html` and `slides/h3.html` (same str
 | Authored `~$2,500` / `~$150k` → comparative language in app replay sections | ⏸ Deferred |
 | `$150,000` × 3 in tab_architecture.html (ROI Equation + Fleet Financials) | ⏸ Deferred |
 
-## Physics Rulings Locked (BS+20)
-- **Temp + Vib BOTH rise in the H1 decision window** for BOTH gas lock and drawdown.
-  - Temp: 197 → ~225°F (lagging, sub-trip; thermal mass, API RP 11S §4.2)
-  - Vib: 1.4 → ~3.2 mm/s (lagging, sub-trip; cavitation, non-specific)
-  - Both stay GREEN throughout — only PIP/Amps cross alarm thresholds
-  - Confirmed by: Gemini hostile RT (FAILS on flat claim), internal XGBoost probe
-    (flat temp/vib delays detection by 8 min), fault_signatures.py training data
-- **No retrain of XGBoost models** — rising temp/vib is training-consistent
-- **"Identical"** softened to **"indistinguishable on an intake-only string"** throughout
+## Physics Rulings Locked (BS+20 + BS+25 retrain)
+- **PIP/Amps are LEADING indicators** — decline from T+0 on the power-law curve.
+- **Temp/Vib are LAGGING indicators** — near-nominal through the decision window (~55% of replay),
+  then gentle sub-trip rise. Temp: 197 → ~225°F. Vib: 1.4 → ~3.2 mm/s. Both GREEN throughout.
+  - Only PIP/Amps cross SCADA alarm thresholds.
+  - API RP 11S §4.2: thermal mass delays winding-temp rise; cavitation onset mild until high GVF.
+  - RT-hardened: gdc-second-opinion SURVIVES-IF-REWORDED (absolute language softened).
+- **esp_health.ubj retrained (BS+25)** on lag_onset=0.55 trajectory in xgboost==2.0.3 venv.
+  RMSE=0.00185. Health < 0.30 at 90.1% of sequence (SCADA alarm zone correctly placed).
+  H2 unaffected: paraffin scenario gdc_detect_idx=23 < alarm_idx=78 ✅.
+- **"Identical"** softened to **"indistinguishable on an intake-only string"** throughout.
+- **BS+20 "no retrain" ruling superseded** by BS+25 — retrain was necessary to align model with
+  lead/lag physics (old model keyed on concurrent temp/vib rise).
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied

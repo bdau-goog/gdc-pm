@@ -128,11 +128,19 @@ FAULT_PROFILES = {
         # temp_end = midpoint(245,265)   API RP 11S §4.2: thermal runaway, cooling flow collapses
         # vib_end  = midpoint(4.5,6.5)  SPE-174536-MS: intense cavitation during stage unloading
         # amps_end = midpoint(20,45)     API RP 11S §7.2: motor underload
+        #
+        # BS+25 lead/lag physics ruling (RT-hardened, gdc-second-opinion SURVIVES-IF-REWORDED):
+        # PIP and Amps are LEADING indicators — decline on the exponential curve from T+0.
+        # Winding Temp and Vibration are LAGGING indicators — they remain near-nominal through
+        # the decision window (first ~55% of the failure sequence) then rise gently.
+        # lag_onset=0.55 tells generate_sequence to use a delayed t_frac for temp/vib only.
+        # This matches the H1 replay scenario and API RP 11S §4.2 thermal-mass physics.
         "gas_lock": {
             "psi_end":  500,   # API RP 11S §7.2: midpoint(400,600) — casing annulus depleted
-            "temp_end": 255,   # API RP 11S §4.2: midpoint(245,265) — thermal runaway
-            "vib_end":  5.5,   # SPE-174536-MS:   midpoint(4.5,6.5) — intense cavitation
+            "temp_end": 255,   # API RP 11S §4.2: midpoint(245,265) — thermal runaway endpoint
+            "vib_end":  5.5,   # SPE-174536-MS:   midpoint(4.5,6.5) — intense cavitation endpoint
             "amps_end": 32.5,  # API RP 11S §7.2: midpoint(20,45)   — motor underload
+            "lag_onset": 0.55, # temp/vib stay near-nominal until 55% through the failure window
         },
         # ── Sand Ingress ──────────────────────────────────────────────────────
         # Formation sand slowly erodes impeller stages over 14 days
@@ -325,10 +333,26 @@ def generate_sequence(
     t_lin  = np.linspace(0.0, 1.0, STEPS)
     t_frac = (np.exp(EXP_K * t_lin) - 1.0) / (np.exp(EXP_K) - 1.0)
 
+    # ── Lead/lag t_frac: lagging indicators use a delayed onset ───────────────
+    # If the fault profile defines "lag_onset" (e.g. gas_lock), temp and vib
+    # remain near-nominal until that fraction of the failure sequence, then rise
+    # exponentially on a compressed timeline.  PIP and sensor4 (amps) always
+    # use the leading t_frac.  sand_ingress and motor_overheat have no lag_onset
+    # so they use t_frac for all sensors (concurrent degradation is correct for
+    # those fault modes).
+    lag_onset = fp.get("lag_onset", 0.0)
+    if lag_onset > 0.0:
+        t_lag = np.where(t_lin < lag_onset, 0.0,
+                         (t_lin - lag_onset) / (1.0 - lag_onset))
+        t_frac_lag = (np.exp(EXP_K * t_lag) - 1.0) / (np.exp(EXP_K) - 1.0)
+    else:
+        t_frac_lag = t_frac  # no lag — all sensors on the same leading curve
+
     # ── Sensor signal: nominal → fault endpoint via exponential ramp ──────────
-    psi_clean  = psi_start  + t_frac * (fp["psi_end"]  - psi_start)
-    temp_clean = temp_start + t_frac * (fp["temp_end"] - temp_start)
-    vib_clean  = vib_start  + t_frac * (fp["vib_end"]  - vib_start)
+    # PIP (psi) and amps use the leading t_frac; temp/vib use t_frac_lag.
+    psi_clean  = psi_start  + t_frac     * (fp["psi_end"]  - psi_start)
+    temp_clean = temp_start + t_frac_lag * (fp["temp_end"] - temp_start)
+    vib_clean  = vib_start  + t_frac_lag * (fp["vib_end"]  - vib_start)
 
     # Physical minimums
     psi_clean  = np.maximum(psi_clean,  1.0)

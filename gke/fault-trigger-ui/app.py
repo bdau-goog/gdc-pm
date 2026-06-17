@@ -7434,13 +7434,25 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
     temp_end = random.uniform(218, 228)
     vib_end  = random.uniform(2.8, 3.5)
 
+    # BS+25 lead/lag physics ruling (RT-hardened, gdc-second-opinion SURVIVES-IF-REWORDED):
+    # PIP and Motor Amps are LEADING indicators — decline from T+0 on the power-law curve.
+    # Winding Temp and Vibration are LAGGING indicators — they remain near-nominal through
+    # the decision window (~first 55% of the 30-min replay), then rise gently on a
+    # compressed power-law curve to their sub-trip endpoints (~225°F / ~3.2 mm/s, green).
+    # API RP 11S §4.2: thermal mass delays winding-temp rise; cavitation onset is mild
+    # until gas void fraction is high enough to fully disrupt hydraulic efficiency.
+    # The new esp_health.ubj was retrained on this lead/lag trajectory (Session BS+25).
+    _LAG_ONSET = 0.55  # temp/vib stay near-nominal until this fraction of the window
     psi_arr, amps_arr, temp_arr, vib_arr, t_min_arr = [], [], [], [], []
     for i in range(N):
-        frac = ((i + 1) / N) ** k
-        psi_arr.append(  round(psi_nom  + (psi_end  - psi_nom)  * frac + random.gauss(0, 18),  1))
-        amps_arr.append( round(amps_nom + (amps_end - amps_nom) * frac + random.gauss(0, 1.5), 2))
-        temp_arr.append( round(temp_nom + (temp_end - temp_nom) * frac + random.gauss(0, 1.2), 1))
-        vib_arr.append(  round(vib_nom  + (vib_end  - vib_nom)  * frac + random.gauss(0, 0.1), 3))
+        frac = ((i + 1) / N) ** k                  # leading fraction — PIP, Amps
+        u    = (i + 1) / N                          # normalised position 0→1
+        lag_u    = 0.0 if u < _LAG_ONSET else (u - _LAG_ONSET) / (1.0 - _LAG_ONSET)
+        lag_frac = lag_u ** k                       # lagging fraction — Temp, Vib
+        psi_arr.append(  round(psi_nom  + (psi_end  - psi_nom)  * frac     + random.gauss(0, 18),  1))
+        amps_arr.append( round(amps_nom + (amps_end - amps_nom) * frac     + random.gauss(0, 1.5), 2))
+        temp_arr.append( round(temp_nom + (temp_end - temp_nom) * lag_frac + random.gauss(0, 1.2), 1))
+        vib_arr.append(  round(vib_nom  + (vib_end  - vib_nom)  * lag_frac + random.gauss(0, 0.1), 3))
         t_min_arr.append(round(i * t_step, 2))
 
     # ── Run real XGBoost health model in sliding window ───────────────────────
