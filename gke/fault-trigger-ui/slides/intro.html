@@ -70,17 +70,9 @@
   <div class="slide-body">
     <div class="s1-left">
       <div class="s1-flow">
-        <!-- GKE logo -->
+        <!-- GKE logo — official product icon -->
         <div class="s1-logo-box">
-          <svg width="72" height="72" viewBox="0 0 72 72">
-            <polygon points="36,4 66,20 66,52 36,68 6,52 6,20" fill="rgba(66,133,244,0.15)" stroke="rgba(66,133,244,0.6)" stroke-width="1.5"/>
-            <polygon points="36,14 58,26 58,50 36,62 14,50 14,26" fill="none" stroke="rgba(66,133,244,0.3)" stroke-width="1"/>
-            <text x="36" y="43" text-anchor="middle" font-size="22" font-weight="700" fill="#4285f4" font-family="Inter,sans-serif">K</text>
-            <line x1="6" y1="20" x2="36" y2="4"  stroke="#ea4335" stroke-width="2.5"/>
-            <line x1="36" y1="4" x2="66" y2="20" stroke="#fbbc04" stroke-width="2.5"/>
-            <line x1="66" y1="20" x2="66" y2="52" stroke="#34a853" stroke-width="2.5"/>
-            <line x1="66" y1="52" x2="36" y2="68" stroke="#4285f4" stroke-width="2.5"/>
-          </svg>
+          <img src="_shared/GKE-512-color.png" width="72" height="72" style="object-fit:contain"/>
           <span>Google Kubernetes<br>Engine (GKE)</span>
         </div>
         <!-- Arrow: long light-grey, no label -->
@@ -91,21 +83,9 @@
           </svg>
           <span style="font-family:var(--mono);font-size:0.48rem;color:rgba(148,163,184,0.45)">on-site</span>
         </div>
-        <!-- GDC logo -->
+        <!-- GDC logo — official product icon -->
         <div class="s1-logo-box">
-          <svg width="72" height="72" viewBox="0 0 72 72">
-            <rect x="4" y="4" width="64" height="64" rx="10" fill="rgba(66,133,244,0.12)" stroke="rgba(66,133,244,0.55)" stroke-width="1.5"/>
-            <ellipse cx="36" cy="42" rx="20" ry="10" fill="rgba(66,133,244,0.55)"/>
-            <ellipse cx="28" cy="36" rx="11" ry="11" fill="rgba(66,133,244,0.7)"/>
-            <ellipse cx="42" cy="34" rx="13" ry="13" fill="rgba(66,133,244,0.7)"/>
-            <ellipse cx="36" cy="34" rx="16" ry="12" fill="#4285f4"/>
-            <rect x="20" y="50" width="32" height="3" rx="1.5" fill="rgba(66,133,244,0.7)"/>
-            <rect x="24" y="56" width="24" height="3" rx="1.5" fill="rgba(66,133,244,0.5)"/>
-            <line x1="4" y1="4"  x2="68" y2="4"  stroke="#ea4335" stroke-width="2" stroke-linecap="round"/>
-            <line x1="68" y1="4" x2="68" y2="68" stroke="#fbbc04" stroke-width="2" stroke-linecap="round"/>
-            <line x1="68" y1="68" x2="4" y2="68" stroke="#34a853" stroke-width="2" stroke-linecap="round"/>
-            <line x1="4" y1="68" x2="4"  y2="4"  stroke="#4285f4" stroke-width="2" stroke-linecap="round"/>
-          </svg>
+          <img src="_shared/DistributedCloud-512-color.png" width="72" height="72" style="object-fit:contain"/>
           <span style="font-weight:700;color:var(--blue);font-size:0.75rem;font-family:var(--mono)">GDC</span>
         </div>
       </div>
@@ -119,10 +99,17 @@
         </div>
       </div>
     </div>
-    <div class="s1-right" style="flex:1;display:flex;align-items:center;justify-content:flex-end;min-height:0;overflow:hidden">
-      <img src="_shared/intro_map.png"
+    <div class="s1-right" style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:24px;min-height:0;overflow:hidden">
+      <!-- GDC icon — beside the oil field, not on it -->
+      <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px;align-self:center">
+        <img src="_shared/DistributedCloud-512-color.png" alt="Google Distributed Cloud"
+             style="width:80px;height:80px;object-fit:contain"/>
+        <span style="font-family:var(--mono);font-size:0.48rem;color:rgba(148,163,184,0.5);text-align:center;line-height:1.4;letter-spacing:0.05em">GOOGLE<br>DISTRIBUTED<br>CLOUD</span>
+      </div>
+      <!-- Main oil field image -->
+      <img src="_shared/af793052-2f12-4024-a298-ce1c34c9b3b2.png"
            alt="Industrial asset landscape — oil platform, power generation, production field"
-           style="max-height:100%;max-width:100%;object-fit:contain;object-position:right center;border-radius:8px"/>
+           style="max-height:100%;max-width:calc(100% - 130px);object-fit:contain;object-position:right center;border-radius:8px;flex-shrink:1"/>
     </div>
   </div>
 </div><!-- /s1 -->
