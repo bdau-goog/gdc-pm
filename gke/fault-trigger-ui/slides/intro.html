@@ -10,19 +10,19 @@
   .s1-flow { display:flex; align-items:center; gap:20px; }
   .s1-logo-box { display:flex; flex-direction:column; align-items:center; gap:8px; }
   .s1-logo-box span { font-size:0.62rem; font-family:var(--mono); color:var(--muted); letter-spacing:0.06em; text-align:center; line-height:1.4; }
-  .s1-left { flex:0 0 500px; display:flex; flex-direction:column; gap:28px; justify-content:center; }
+  .s1-left { flex:0 0 600px; display:flex; flex-direction:column; gap:28px; justify-content:center; }
   .s1-right { flex:1; display:flex; align-items:center; justify-content:center; }
-  .s1-desc { font-size:1.25rem; color:var(--text2); line-height:1.65; max-width:440px; }
+  .s1-desc { font-size:1.45rem; color:var(--text2); line-height:1.65; max-width:540px; }
   .s1-desc strong { color:var(--green); font-weight:700; }
 
   .s2-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:20px; width:100%; }
   .s2-pillar {
-    background:rgba(15,23,42,0.65); border-radius:12px; padding:32px 24px;
-    display:flex; flex-direction:column; align-items:center; text-align:center; gap:16px;
+    background:rgba(15,23,42,0.65); border-radius:12px; padding:40px 28px;
+    display:flex; flex-direction:column; align-items:center; text-align:center; gap:20px;
   }
-  .s2-pillar h3 { font-size:1.2rem; font-weight:700; color:var(--text1); }
-  .s2-pillar p  { font-size:0.88rem; color:var(--muted); line-height:1.65; }
-  .s2-icon { width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
+  .s2-pillar h3 { font-size:1.4rem; font-weight:700; color:var(--text1); }
+  .s2-pillar p  { font-size:1.02rem; color:var(--muted); line-height:1.65; }
+  .s2-icon { width:72px; height:72px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.6rem; flex-shrink:0; }
   .s2-pillar:nth-child(1) { border:1px solid rgba(239,68,68,0.3); }
   .s2-pillar:nth-child(1) .s2-icon { background:rgba(239,68,68,0.12); }
   .s2-pillar:nth-child(2) { border:1px solid rgba(59,130,246,0.3); }
@@ -40,15 +40,15 @@
   .s3-model:nth-child(1) { border:1px solid rgba(74,222,128,0.28); }
   .s3-model:nth-child(2) { border:1px solid rgba(251,191,36,0.28); }
   .s3-model:nth-child(3) { border:1px solid rgba(239,68,68,0.28); }
-  .s3-hw-box { width:180px; height:120px; display:flex; align-items:center; justify-content:center; border-radius:8px; flex-shrink:0; }
+  .s3-hw-box { width:220px; height:140px; display:flex; align-items:center; justify-content:center; border-radius:8px; flex-shrink:0; }
   .s3-model:nth-child(1) .s3-hw-box { background:rgba(74,222,128,0.06); border:1px solid rgba(74,222,128,0.18); }
   .s3-model:nth-child(2) .s3-hw-box { background:rgba(251,191,36,0.06); border:1px solid rgba(251,191,36,0.18); }
   .s3-model:nth-child(3) .s3-hw-box { background:rgba(239,68,68,0.06);  border:1px solid rgba(239,68,68,0.18); }
-  .s3-model h3 { font-size:1.15rem; font-weight:700; }
+  .s3-model h3 { font-size:1.38rem; font-weight:700; }
   .s3-model:nth-child(1) h3 { color:#4ade80; }
   .s3-model:nth-child(2) h3 { color:#fbbf24; }
   .s3-model:nth-child(3) h3 { color:#f87171; }
-  .s3-model p { font-size:0.88rem; color:var(--muted); line-height:1.65; max-width:280px; }
+  .s3-model p { font-size:1.02rem; color:var(--muted); line-height:1.65; max-width:330px; }
   .s3-model p strong { font-weight:700; }
   .s3-model:nth-child(1) p strong { color:#4ade80; }
   .s3-model:nth-child(2) p strong { color:#fbbf24; }
@@ -70,7 +70,7 @@
   <div class="slide-body" style="align-items:flex-start;gap:0">
 
     <!-- Left col: GKE icon at top + text card below -->
-    <div class="s1-left" style="flex:0 0 540px;justify-content:flex-start;gap:20px">
+    <div class="s1-left" style="flex:0 0 600px;justify-content:flex-start;gap:20px">
       <!-- GKE icon -->
       <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
         <img src="_shared/GKE-512-color.png" width="80" height="80" style="object-fit:contain"/>
@@ -81,9 +81,9 @@
         <div class="mono-label">GOOGLE DISTRIBUTED CLOUD</div>
         <p class="s1-desc">A fully supported version of Google Kubernetes Engine (GKE), deployed <strong>at the edge</strong> for your critical workloads.</p>
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(59,130,246,0.15);display:flex;gap:18px;flex-wrap:wrap">
-          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">Same GKE APIs</span></span>
-          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">Google-Managed</span></span>
-          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">AI/ML Enabled</span></span>
+          <span style="font-size:0.88rem;color:var(--muted)">✦ <span style="color:#4ade80">Same GKE APIs</span></span>
+          <span style="font-size:0.88rem;color:var(--muted)">✦ <span style="color:#4ade80">Google-Managed</span></span>
+          <span style="font-size:0.88rem;color:var(--muted)">✦ <span style="color:#4ade80">AI/ML Enabled</span></span>
         </div>
       </div>
     </div>
@@ -123,7 +123,7 @@
 <div class="slide" id="s2">
   <div class="rainbow-bar"></div>
   <div class="slide-header">
-    <h1 style="font-size:2.4rem;font-weight:700;color:var(--text1);letter-spacing:-0.02em;line-height:1.2;margin:0">When Should You <em style="font-style:normal;color:#3b82f6">Consider</em> Using GDC?</h1>
+    <h1 style="font-size:2.4rem;font-weight:700;color:var(--text1);letter-spacing:-0.02em;line-height:1.2;margin:0">When Should You <em style="font-style:normal;color:#3b82f6">Consider Using GDC</em>?</h1>
     <div class="slide-divider"></div>
   </div>
   <div class="slide-body" style="align-items:center">
@@ -131,7 +131,7 @@
       <!-- Compliance -->
       <div class="s2-pillar">
         <div class="s2-icon">
-          <svg width="34" height="34" viewBox="0 0 34 34">
+          <svg width="42" height="42" viewBox="0 0 34 34">
             <path d="M17 3 L31 9 L31 19 C31 26 24 31 17 33 C10 31 3 26 3 19 L3 9 Z" fill="rgba(239,68,68,0.2)" stroke="rgba(239,68,68,0.65)" stroke-width="1.5"/>
             <polyline points="10,17 15,22 24,12" stroke="#ef4444" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
@@ -142,7 +142,7 @@
       <!-- Survivability -->
       <div class="s2-pillar">
         <div class="s2-icon">
-          <svg width="34" height="34" viewBox="0 0 34 34">
+          <svg width="42" height="42" viewBox="0 0 34 34">
             <path d="M6,21 Q17,8 28,21"  fill="none" stroke="rgba(59,130,246,0.5)" stroke-width="2" stroke-linecap="round"/>
             <path d="M10,25 Q17,16 24,25" fill="none" stroke="rgba(59,130,246,0.7)" stroke-width="2" stroke-linecap="round"/>
             <path d="M14,29 Q17,24 20,29" fill="none" stroke="#4285f4" stroke-width="2.5" stroke-linecap="round"/>
@@ -157,7 +157,7 @@
       <!-- Latency -->
       <div class="s2-pillar">
         <div class="s2-icon">
-          <svg width="34" height="34" viewBox="0 0 34 34">
+          <svg width="42" height="42" viewBox="0 0 34 34">
             <circle cx="17" cy="17" r="13" fill="rgba(74,222,128,0.1)" stroke="rgba(74,222,128,0.6)" stroke-width="1.5"/>
             <line x1="17" y1="17" x2="17" y2="8"  stroke="#4ade80" stroke-width="2"   stroke-linecap="round"/>
             <line x1="17" y1="17" x2="23" y2="21" stroke="#4ade80" stroke-width="2.5" stroke-linecap="round"/>
@@ -170,7 +170,7 @@
       <!-- Data Gravity -->
       <div class="s2-pillar">
         <div class="s2-icon">
-          <svg width="34" height="34" viewBox="0 0 34 34">
+          <svg width="42" height="42" viewBox="0 0 34 34">
             <rect x="5"  y="7"  width="24" height="6" rx="2" fill="rgba(251,191,36,0.5)" stroke="rgba(251,191,36,0.7)" stroke-width="1"/>
             <rect x="5"  y="15" width="24" height="6" rx="2" fill="rgba(251,191,36,0.4)" stroke="rgba(251,191,36,0.6)" stroke-width="1"/>
             <rect x="5"  y="23" width="24" height="6" rx="2" fill="rgba(251,191,36,0.3)" stroke="rgba(251,191,36,0.5)" stroke-width="1"/>
@@ -202,7 +202,7 @@
       <!-- Connected -->
       <div class="s3-model">
         <div class="s3-hw-box">
-          <svg width="140" height="100" viewBox="0 0 140 100">
+          <svg width="176" height="126" viewBox="0 0 140 100">
             <rect x="10" y="5"  width="120" height="90" rx="4" fill="rgba(15,23,42,0.8)" stroke="rgba(74,222,128,0.3)" stroke-width="1.5"/>
             <rect x="16" y="12" width="108" height="10" rx="2" fill="rgba(74,222,128,0.2)" stroke="rgba(74,222,128,0.4)" stroke-width="0.8"/>
             <rect x="16" y="26" width="108" height="10" rx="2" fill="rgba(74,222,128,0.15)" stroke="rgba(74,222,128,0.3)" stroke-width="0.8"/>
@@ -222,7 +222,7 @@
       <!-- Software-Only -->
       <div class="s3-model">
         <div class="s3-hw-box">
-          <svg width="140" height="100" viewBox="0 0 140 100">
+          <svg width="176" height="126" viewBox="0 0 140 100">
             <rect x="10" y="25" width="50" height="55" rx="4" fill="rgba(15,23,42,0.8)" stroke="rgba(251,191,36,0.4)" stroke-width="1.5"/>
             <rect x="16" y="32" width="38" height="5"  rx="1.5" fill="rgba(251,191,36,0.3)"/>
             <rect x="16" y="40" width="38" height="5"  rx="1.5" fill="rgba(251,191,36,0.2)"/>
@@ -241,7 +241,7 @@
       <!-- Air-Gapped Appliance -->
       <div class="s3-model">
         <div class="s3-hw-box">
-          <svg width="140" height="100" viewBox="0 0 140 100">
+          <svg width="176" height="126" viewBox="0 0 140 100">
             <rect x="15" y="8" width="110" height="80" rx="6" fill="rgba(15,23,42,0.8)" stroke="rgba(239,68,68,0.45)" stroke-width="2"/>
             <rect x="15" y="8"   width="16" height="16" rx="3" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
             <rect x="109" y="8"  width="16" height="16" rx="3" fill="rgba(239,68,68,0.15)" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
