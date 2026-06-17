@@ -1572,9 +1572,7 @@ createApp({
                  titlefont:{color:'#a78bfa'}, tickfont:{...commonYAxis.tickfont, color:'#a78bfa'},
                  anchor:'x', domain:[0.0, 0.23]},
         shapes, annotations,
-        showlegend:true,
-        legend:{orientation:'h', x:0, y:1.07, xanchor:'left', font:{size:8},
-                bgcolor:'rgba(11,12,16,0.7)'},
+        showlegend:false,
       }, {displayModeBar:false, responsive:true});
     },
     async approveH1VFDForce() {

@@ -7425,8 +7425,14 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
     # Fault-end targets from FAULT_PROFILES
     psi_end  = random.uniform(*fp["psi_range"])
     amps_end = (fp["amps_range"][0] + fp["amps_range"][1]) / 2.0
-    temp_end = random.uniform(*fp.get("temp_range", (198, 215)))
-    vib_end  = random.uniform(*fp.get("vib_range", (1.0, 2.5)))
+    # BS+20 physics ruling: in the H1 replay, temp and vib are LAGGING INDICATORS
+    # that rise only gently and remain sub-trip throughout the 30-min decision window.
+    # The full FAULT_PROFILES endpoints (245–265°F, 4.5–6.5 mm/s) are sized for the
+    # live injection system and XGBoost classifier training — NOT for this replay.
+    # Temp: 197 → ~225°F (thermal mass lag, motor cooling, API RP 11S §4.2)
+    # Vib:  1.4 → ~3.2 mm/s (cavitation onset, non-specific, sub-ISA HI threshold)
+    temp_end = random.uniform(218, 228)
+    vib_end  = random.uniform(2.8, 3.5)
 
     psi_arr, amps_arr, temp_arr, vib_arr, t_min_arr = [], [], [], [], []
     for i in range(N):

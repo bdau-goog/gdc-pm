@@ -129,8 +129,6 @@
                    style="width:100%;accent-color:#3b82f6;display:block">
             <div style="display:flex;font-size:0.44rem;color:var(--muted);margin-top:2px;position:relative;height:10px">
               <span style="position:absolute;left:0">T+0</span>
-              <span style="color:var(--red);position:absolute"
-                    :style="{left: (h1ReplayData.alarm_idx/(h1ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">Threshold SCADA▲</span>
               <span style="position:absolute;right:0">T+{{ h1ReplayData.t_min[h1ReplayData.n-1] }} min</span>
             </div>
           </div>
