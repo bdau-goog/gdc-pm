@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: 628f7e7 / branch: feature-trio-clean
-Image: sha256:fe84e1f15398df3e401f2f35061621a22664b74cc928384964640271ecfb510d
+Date: 2026-06-17 / git head: a25aea6 / branch: feature-trio-clean
+Image: sha256:a78083bdfdb861eaad149c90c97b5685c6cfb6f63d218cdd87b4a479fbd602b2
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -23,33 +23,47 @@ cat docs/DEMO_MASTER.md
 ## STEP 3: Next Implementation Tasks
 
 ### PRIORITY 1 — Live review of updated H1 slides on BenQ display
-Session BS+19 overhauled slides/h1.html. Review on live display before further changes:
-- `gdc-pm.bdau.io/slides/h1.html` — Slide 1: scrub from NOMINAL → FAULT (PIP/Amps decline, Temp/Vib stay flat green, PIP crosses 1020 PSI at ~57%, Amps crosses 50A at ~45%)
-- Slide 4: subtitle split, larger WITHOUT/WITH GDC headers, concise footer in yellow
-- Slide 5: new 3-column vertical use-case cards (O&G / P&U / Maritime)
+Session BS+20 corrected the Panel 1 physics regression + SME terminology pass.
+Review on live display before further changes:
+- `gdc-pm.bdau.io/slides/h1.html` — Slide 1: scrub from NOMINAL → FAULT:
+  - PIP and Amps decline (amber at threshold)
+  - Temp rises gently 197→225°F (green, sub-trip, ↗ arrow, "Rising but lagging")
+  - Vib rises gently 1.4→3.2 mm/s (green, sub-trip, ↗ arrow, "Rising but lagging")
+- Slide 2: CASING GAS label (right wellbore, drawdown) brightens as fluid drops
+- App landing now opens on `Intro` tab (not Discern)
 
-### PRIORITY 2 — After live review: h2.html and h3.html same readability/structure pass
-Once H1 Discern slides confirmed on display, apply equivalent improvements to `slides/h2.html` and `slides/h3.html`.
+### PRIORITY 2 — H2/H3 readability pass (same structure as H1 pass)
+Once H1 confirmed on display, apply equivalent improvements to `slides/h2.html` and `slides/h3.html`.
 
 ---
 
 ## Known Integrity Issues
 | Issue | Status |
 |-------|--------|
-| `PIP` (61 occurrences) → `Pump Inlet Pressure` in app.js/app.py/templates | ⏸ Deferred — decks use terms.js; slides use full name; app gets a separate cleanup pass |
-| Authored `~$2,500` / `~$150k` → comparative language in app replay sections | ⏸ Deferred — decks are clean; live replay narrative still has authored $ |
-| `$150,000` × 3 in tab_architecture.html (ROI Equation + Fleet Financials Ledger) | ⏸ Deferred — Architecture tab, not H1 demo path |
+| `PIP` (61 occurrences) → `Pump Inlet Pressure` in app.js/app.py/templates | ⏸ Deferred |
+| Authored `~$2,500` / `~$150k` → comparative language in app replay sections | ⏸ Deferred |
+| `$150,000` × 3 in tab_architecture.html (ROI Equation + Fleet Financials) | ⏸ Deferred |
+
+## Physics Rulings Locked (BS+20)
+- **Temp + Vib BOTH rise in the H1 decision window** for BOTH gas lock and drawdown.
+  - Temp: 197 → ~225°F (lagging, sub-trip; thermal mass, API RP 11S §4.2)
+  - Vib: 1.4 → ~3.2 mm/s (lagging, sub-trip; cavitation, non-specific)
+  - Both stay GREEN throughout — only PIP/Amps cross alarm thresholds
+  - Confirmed by: Gemini hostile RT (FAILS on flat claim), internal XGBoost probe
+    (flat temp/vib delays detection by 8 min), fault_signatures.py training data
+- **No retrain of XGBoost models** — rising temp/vib is training-consistent
+- **"Identical"** softened to **"indistinguishable on an intake-only string"** throughout
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
 - Tab content: `gke/fault-trigger-ui/templates/*.html` + `app.py` (index.html = shell only)
-- Slides: `gke/fault-trigger-ui/slides/` — **baked into the image** (COPY slides/ in Dockerfile). Always docker build + push + rollout restart after slide edits.
+- Slides: `gke/fault-trigger-ui/slides/` — **baked into the image** (COPY slides/ in Dockerfile)
 - Run `verify_templates.py` before any template build
 - Source env: `source /home/brian/gdc-pm/.env`
 - GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` ONLY for explicit LLM test; ALWAYS pair with gpu-stop.sh
-- **NO ollama-scheduler CronJobs** — both deleted Session BS+9 (conflict with GPU discipline)
+- **NO ollama-scheduler CronJobs**
 - No Jinja2 in templates
-- **Vizier:** 3 billing auto-triggers removed (Session BS+9). One call per explicit ▶ Run click.
+- **Vizier:** One call per explicit ▶ Run click only
 
 ## Build / deploy commands
 ```bash
