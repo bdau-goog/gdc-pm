@@ -67,50 +67,52 @@
     <h1 style="font-size:2.4rem;font-weight:700;color:var(--text1);letter-spacing:-0.02em;line-height:1.2;margin:0">What is <em style="font-style:normal;color:#3b82f6">GDC</em>?</h1>
     <div class="slide-divider"></div>
   </div>
-  <div class="slide-body">
-    <div class="s1-left">
-      <div class="s1-flow">
-        <!-- GKE logo — official product icon -->
-        <div class="s1-logo-box">
-          <img src="_shared/GKE-512-color.png" width="72" height="72" style="object-fit:contain"/>
-          <span>Google Kubernetes<br>Engine (GKE)</span>
-        </div>
-        <!-- Arrow: long light-grey, no label -->
-        <div style="display:flex;flex-direction:column;align-items:center;margin-top:-16px">
-          <svg width="240" height="20" viewBox="0 0 240 20">
-            <line x1="4" y1="10" x2="226" y2="10" stroke="rgba(148,163,184,0.5)" stroke-width="1.5"/>
-            <polygon points="226,5 238,10 226,15" fill="rgba(148,163,184,0.6)"/>
-          </svg>
-          <span style="font-family:var(--mono);font-size:0.48rem;color:rgba(148,163,184,0.45)">on-site</span>
-        </div>
-        <!-- GDC logo — official product icon -->
-        <div class="s1-logo-box">
-          <img src="_shared/DistributedCloud-512-color.png" width="72" height="72" style="object-fit:contain"/>
-          <span style="font-weight:700;color:var(--blue);font-size:0.75rem;font-family:var(--mono)">GDC</span>
-        </div>
+  <div class="slide-body" style="align-items:flex-start;gap:0">
+
+    <!-- Left col: GKE icon at top + text card below -->
+    <div class="s1-left" style="flex:0 0 540px;justify-content:flex-start;gap:20px">
+      <!-- GKE icon -->
+      <div style="display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0">
+        <img src="_shared/GKE-512-color.png" width="80" height="80" style="object-fit:contain"/>
+        <span style="font-size:0.62rem;font-family:var(--mono);color:var(--muted);text-align:center;line-height:1.4">Google Kubernetes<br>Engine (GKE)</span>
       </div>
+      <!-- Text card -->
       <div class="glass-card">
         <div class="mono-label">GOOGLE DISTRIBUTED CLOUD</div>
-        <p class="s1-desc">A fully supported version of Google Kubernetes Engine (GKE), deployed <strong>on-site</strong> for your critical workloads.</p>
+        <p class="s1-desc">A fully supported version of Google Kubernetes Engine (GKE), deployed <strong>at the edge</strong> for your critical workloads.</p>
         <div style="margin-top:16px;padding-top:14px;border-top:1px solid rgba(59,130,246,0.15);display:flex;gap:18px;flex-wrap:wrap">
           <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">Same GKE APIs</span></span>
-          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">Google-managed</span></span>
-          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">On-premises or edge</span></span>
+          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">Google-Managed</span></span>
+          <span style="font-size:0.72rem;color:var(--muted)">✦ <span style="color:#4ade80">AI/ML Enabled</span></span>
         </div>
       </div>
     </div>
-    <div class="s1-right" style="flex:1;display:flex;align-items:center;justify-content:flex-end;gap:24px;min-height:0;overflow:hidden">
-      <!-- GDC icon — beside the oil field, not on it -->
-      <div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:8px;align-self:center">
+
+    <!-- Thick horizontal arrow — no label; padding-top centers it on the 80px icons -->
+    <div style="flex-shrink:0;display:flex;align-items:flex-start;padding-top:30px;padding-left:10px;padding-right:10px">
+      <svg width="120" height="20" viewBox="0 0 120 20">
+        <line x1="2" y1="10" x2="102" y2="10" stroke="rgba(148,163,184,0.65)" stroke-width="3.5"/>
+        <polygon points="102,3 118,10 102,17" fill="rgba(148,163,184,0.7)"/>
+      </svg>
+    </div>
+
+    <!-- Right col: GDC icon upper-left + image below (smaller) -->
+    <div class="s1-right" style="flex:1;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:12px;min-height:0;overflow:hidden">
+      <!-- GDC icon at upper-left corner — above the image -->
+      <div style="flex-shrink:0;display:flex;align-items:center;gap:10px">
         <img src="_shared/DistributedCloud-512-color.png" alt="Google Distributed Cloud"
              style="width:80px;height:80px;object-fit:contain"/>
-        <span style="font-family:var(--mono);font-size:0.48rem;color:rgba(148,163,184,0.5);text-align:center;line-height:1.4;letter-spacing:0.05em">GOOGLE<br>DISTRIBUTED<br>CLOUD</span>
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-weight:700;color:var(--blue);font-size:0.82rem;font-family:var(--mono)">GDC</span>
+          <span style="font-size:0.52rem;color:rgba(148,163,184,0.55);font-family:var(--mono);letter-spacing:0.05em">GOOGLE DISTRIBUTED CLOUD</span>
+        </div>
       </div>
-      <!-- Main oil field image -->
+      <!-- Oil field image — smaller to give text card more room -->
       <img src="_shared/af793052-2f12-4024-a298-ce1c34c9b3b2.png"
            alt="Industrial asset landscape — oil platform, power generation, production field"
-           style="max-height:100%;max-width:calc(100% - 130px);object-fit:contain;object-position:right center;border-radius:8px;flex-shrink:1"/>
+           style="max-width:100%;max-height:340px;object-fit:contain;object-position:left top;border-radius:8px;flex-shrink:1"/>
     </div>
+
   </div>
 </div><!-- /s1 -->
 
