@@ -61,7 +61,7 @@ const DEMO_SCENARIOS = [
 createApp({
   data() {
     return {
-      mainTab: 'horizon1',
+      mainTab: 'intro',
       archPane: 'overview',
       archInfoOpen: false,
       currentView: 'dashboard',
@@ -1645,7 +1645,7 @@ createApp({
       try {
         const _vfdWell = this.h1TargetWell || 'ESP-ALPHA-1';
         await fetch('/api/agent/hitl-approve',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({asset_id:_vfdWell,fault_type:this.h1FaultType||'gas_lock',action_taken:'VFD reduced to 44 Hz (2,640 RPM) — gas void migrating up annulus',cost_incurred:0})});
+          body:JSON.stringify({asset_id:_vfdWell,fault_type:this.h1FaultType||'gas_lock',action_taken:'VFD reduced to 44 Hz (2,640 RPM) — free gas migrating up annulus',cost_incurred:0})});
       } catch(e) {}
       // Poll _post_approval_monitor messages every 30s
       this.h1RecoveryPollTimer = setInterval(async () => {
@@ -1935,7 +1935,7 @@ createApp({
       const base = this.h1GemmaFinding ||
         `Unloading anomaly detected · confidence building on ${this.h1TargetWell||'ESP-ALPHA-1'}. ` +
         `Pump Intake Pressure declining at \u221214 PSI/min\u00b9, motor amps declining at \u22122.3 A/min\u00b9 \u2014 ` +
-        `the correlated 4-sensor pattern is the diagnostic signature of gas void fraction exceeding the pump handling threshold\u2075. ` +
+        `the correlated 4-sensor pattern is the diagnostic signature of gas volume fraction exceeding the pump handling threshold\u2075. ` +
         `Separator gas test confirms GOR 1,310 scf/bbl \u2014 up 19% from prior tour\u00b3. ` +
         `API RP 11S \u00a75.3 identifies VFD speed reduction as the primary intervention\u2075. ` +
         `Your $0 option is viable now. Waiting 18 minutes moves you to the $2,000 tier. Waiting 25 minutes leaves only $150,000.`;
@@ -2307,24 +2307,36 @@ createApp({
     document.body.style.fontSize = _savedFs + 'px';
     this._appZoomHandler = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      // Cmd/Ctrl/Alt combos (native browser zoom) pass through — only intercept bare +/-/0
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
       const fs = parseInt(document.body.style.fontSize || _APP_BASE_FS, 10);
+      let _zoomMsg = null;
       if (e.key === '+' || e.key === '=') {
         const nv = Math.min(22, fs + 1);
         document.body.style.fontSize = nv + 'px';
         localStorage.setItem('gdc.app.fontsize', nv);
         this.showToast(`App zoom: ${Math.round(nv / _APP_BASE_FS * 100)}% (+/- to adjust, 0 = reset)`, 'var(--surf2)');
         e.preventDefault();
+        _zoomMsg = 'zoom-in';
       } else if (e.key === '-' || e.key === '_') {
         const nv = Math.max(9, fs - 1);
         document.body.style.fontSize = nv + 'px';
         localStorage.setItem('gdc.app.fontsize', nv);
         this.showToast(`App zoom: ${Math.round(nv / _APP_BASE_FS * 100)}% (+/- to adjust, 0 = reset)`, 'var(--surf2)');
         e.preventDefault();
+        _zoomMsg = 'zoom-out';
       } else if (e.key === '0') {
         document.body.style.fontSize = _APP_BASE_FS + 'px';
         localStorage.removeItem('gdc.app.fontsize');
         this.showToast('App zoom: 100% (reset)', 'var(--surf2)');
         e.preventDefault();
+        _zoomMsg = 'zoom-reset';
+      }
+      // Forward zoom command to any active briefing iframes (e.g. /slides/h1.html)
+      if (_zoomMsg) {
+        document.querySelectorAll('iframe').forEach(function(f) {
+          try { f.contentWindow.postMessage(_zoomMsg, '*'); } catch(_) {}
+        });
       }
     };
     document.addEventListener('keydown', this._appZoomHandler);

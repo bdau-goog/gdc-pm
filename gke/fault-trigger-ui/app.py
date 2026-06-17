@@ -197,7 +197,7 @@ def generate_dynamic_documents(asset_id: str, fault_type: str, sensors: dict) ->
         gvf = random.randint(71, 85)  # guaranteed > 70 → always triggers 0.6x RUL adjustment in adjust_rul_with_documents
         docs.append({
             "doc_type": "well_test",
-            "content": f"Well Test: Gas Void Fraction (GVF) at intake for {asset_id} estimated at {gvf}%. Current intake pressure: {sensors.get('psi', 0):.1f} PSI.",
+            "content": f"Well Test: Gas Volume Fraction (GVF) at intake for {asset_id} estimated at {gvf}%. Current intake pressure: {sensors.get('psi', 0):.1f} PSI.",
             "timestamp": (now - timedelta(hours=random.randint(1, 4))).isoformat() + "Z"
         })
         docs.append({
@@ -1244,13 +1244,13 @@ _L3_SCENARIO_RAG_DOCS = [
         ),
     ),
     (
-        "Well A-3 — OEM ESP Bulletin — Pump Response Under Elevated Gas Void Fraction",
+        "Well A-3 — OEM ESP Bulletin — Pump Response Under Elevated Gas Volume Fraction",
         "esp",
         (
-            "ESP OPERATIONS TECHNICAL BULLETIN — Pump Performance Under Elevated Gas Void Fraction\n"
+            "ESP OPERATIONS TECHNICAL BULLETIN — Pump Performance Under Elevated Gas Volume Fraction\n"
             "Bulletin No.: OP-TB-2023-047 | Applies to: All centrifugal ESP installations\n"
             "Source: Westex Artificial Lift Systems — Technical Engineering Group\n\n"
-            "GAS VOID FRACTION (GVF) EFFECTS ON ESP PERFORMANCE:\n"
+            "GAS VOLUME FRACTION (GVF) EFFECTS ON ESP PERFORMANCE:\n"
             "Centrifugal pumps are designed to handle liquid. When free gas enters the pump stages,\n"
             "pump efficiency declines as the gas compresses rather than pressurises the fluid column.\n"
             "At GVF above approximately 20–25%, pump hydraulic output drops sharply and motor current\n"
@@ -2964,7 +2964,7 @@ def inject_degrade(req: DegradeRequest):
                 """, (
                     req.asset_id, asset_class, "gas_lock", "shift_note",
                     "Tour 2 Shift Note \u2014 Elevated GVF at Pump Intake",
-                    "Operator observed gas void fraction at pump intake estimated at 78%% throughout "
+                    "Operator observed gas volume fraction at pump intake estimated at 78%% throughout "
                     "the morning tour. Separator gas test from prior shift: GOR 1,310 scf/bbl, up 19%% "
                     "from 24-hour baseline. Motor amps trending below nominal. No SCADA alarm has fired "
                     "\u2014 all sensors remain within configured thresholds. Recommend continued monitoring.",
@@ -5015,7 +5015,7 @@ INTELLIGENCE_FEED = {
             "ai_relevance": "GVF 68% exceeds pump handling threshold — intake PSI declining confirms early gas lock",
             "detail": (
                 "Well Test — ESP-ALPHA-5 / Well A-5\n"
-                "· Gas Void Fraction (GVF) at pump intake: 68% (threshold: 60%)\n"
+                "· Gas Volume Fraction (GVF) at pump intake: 68% (threshold: 60%)\n"
                 "· Intake pressure: 1,040 PSI (nominal: 1,400 PSI; declining at -18 PSI/hr)\n"
                 "· Motor current: 58A (nominal: 75A; declining — pump unloading)\n"
                 "· Note: 'Higher than usual GVF this morning — possibly gas migration from upper zone.'\n"
@@ -5456,7 +5456,7 @@ INTELLIGENCE_FEED = {
                 "· Pump Intake Pressure (PIP): 1,400 PSI (normal range: 1,200–1,600 PSI) ✓\n"
                 "· Motor current: 75A (normal range: 60–90A) ✓\n"
                 "· Winding temperature: 198°F (alarm limit: 280°F derated) ✓\n"
-                "· Gas Void Fraction (GVF) estimate: 42% (threshold: 60%) ✓\n"
+                "· Gas Volume Fraction (GVF) estimate: 42% (threshold: 60%) ✓\n"
                 "· Production rate: 847 BOPD (on target)\n"
                 "· No corrective action recommended. Continue monitoring."
             ),
@@ -5605,7 +5605,7 @@ GEMMA_FINDINGS = {
         "Reservoir will reach Low alarm in ~3.6h. Repair materials on rig floor — locate leak during next stand break."
     ),
     "gas_lock": (
-        "🤖 Gemma: Intake PSI declining at -18 PSI/min below 1,000 PSI threshold — gas void fraction increasing in pump intake. "
+        "🤖 Gemma: Intake PSI declining at -18 PSI/min below 1,000 PSI threshold — gas volume fraction increasing in pump intake. "
         "VFD frequency reduction available via SCADA. Motor thermal window is minutes, not hours — act immediately."
     ),
     "slug_flow": (
@@ -5940,7 +5940,7 @@ class RemediationRecordRequest(BaseModel):
 
 def _run_recovery_thread(asset_id: str) -> None:
     """Post 36 climbing PIP/Amps readings over 3 real minutes, simulating wellbore
-    gas void clearance after VFD speed-down. Chart shows live green recovery trend."""
+    free gas clearance after VFD speed-down. Chart shows live green recovery trend."""
     RECOVERY_STEPS = 36
     psi_start  = 800.0   # approximate fault-level PIP
     psi_target = 1400.0  # nominal PIP

@@ -118,15 +118,15 @@
         <div class="sensor-tile" id="p1-tmp-card" style="background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.2)">
           <div class="tile-header" id="p1-tmp-header" style="color:#94a3b8"><span>WINDING TEMP <span id="p1-tmp-arrow">→</span></span><span style="font-size:0.50rem" id="p1-tmp-status">NOMINAL</span></div>
           <div class="bar-track"><div class="bar-fill" id="p1-tmp-fill" style="width:40%;background:linear-gradient(90deg,rgba(74,222,128,0.6),rgba(74,222,128,0.3))"></div></div>
-          <div id="p1-tmp-readout" style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~197°F · stays flat early</div>
-          <div class="tile-desc">Motor cooling still flowing — temp is the <em>lagging</em> signal (API RP 11S §4.2)</div>
+          <div id="p1-tmp-readout" style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~197°F · rising but lagging</div>
+          <div class="tile-desc">Rising but lagging — stays below 280°F trip (API RP 11S §4.2)</div>
         </div>
         <!-- Vibration -->
         <div class="sensor-tile" id="p1-vib-card" style="background:rgba(15,23,42,0.55);border:1px solid rgba(100,116,139,0.2)">
           <div class="tile-header" id="p1-vib-header" style="color:#94a3b8"><span>VIBRATION <span id="p1-vib-arrow">→</span></span><span style="font-size:0.50rem" id="p1-vib-status">FLAT</span></div>
           <div class="bar-track"><div class="bar-fill" id="p1-vib-fill" style="width:20%;background:linear-gradient(90deg,rgba(74,222,128,0.55),rgba(74,222,128,0.25))"></div></div>
-          <div id="p1-vib-readout" style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~1.4 mm/s · stays flat</div>
-          <div class="tile-desc">No bearing contact change during hydraulic unloading — distinguishes from bearing wear</div>
+          <div id="p1-vib-readout" style="font-family:var(--mono);font-size:0.60rem;color:rgba(74,222,128,0.6)">~1.4 mm/s · rising but lagging</div>
+          <div class="tile-desc">Rising but lagging</div>
         </div>
       </div>
     </div>
@@ -146,7 +146,7 @@
     <div style="flex-shrink:0">
       <div class="slide-kicker">AMBIGUOUS TELEMETRY</div>
       <h2 class="slide-title">One Signature, Two Physical Realities</h2>
-      <p class="slide-sub">Gas Entrainment and Fluid Drawdown produce <strong style="color:#93c5fd">identical Pump Inlet Pressure and Amps decline</strong> on an intake-only sensor string.</p>
+      <p class="slide-sub">Gas Entrainment and Fluid Drawdown produce <strong style="color:#93c5fd">indistinguishable Pump Inlet Pressure and Amps decline</strong> on an intake-only sensor string.</p>
       <p class="slide-sub" style="margin-top:4px"><strong style="color:#fbbf24">The cause — and the safe action — are not in these numbers.</strong></p>
     </div>
 
@@ -215,7 +215,7 @@
             <line x1="43" y1="0" x2="43" y2="155" stroke="rgba(100,116,139,0.35)" stroke-width="1.5"/>
             <!-- Gas/vapor void zone — above declining fluid level -->
             <rect x="20" y="14" width="22" height="127" fill="rgba(15,23,42,0.55)"/>
-            <text id="p2-gas-text" x="31" y="40" text-anchor="middle" fill="rgba(100,116,139,0.35)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0.25">GAS VOID</text>
+            <text id="p2-gas-text" x="31" y="40" text-anchor="middle" fill="rgba(100,116,139,0.35)" font-size="3.5" font-family="Inter,sans-serif" style="opacity:0.25">CASING GAS</text>
             <!-- Fluid column — starts high, drains toward pump intake as t increases -->
             <rect id="p2-fluid" x="20" y="55" width="22" height="88" fill="rgba(120,53,15,0.4)" stroke="rgba(180,83,9,0.3)" stroke-width="0.5"/>
             <!-- Fluid level indicator (animated with fluid column) -->
@@ -531,7 +531,7 @@
         <div>
           <div style="font-size:0.52rem;font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(100,116,139,0.65);margin-bottom:3px">Observational State</div>
           <div style="font-size:0.75rem;color:var(--text2);font-weight:600">Pump Inlet Pressure ↓ · Motor Amps ↓</div>
-          <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Intake-only PDG — signature is identical on Gas Entrainment and Fluid Drawdown (API RP 11S)</div>
+          <div style="font-size:0.62rem;color:var(--muted);margin-top:2px">Intake-only PDG — signature is not reliably distinguishable on Gas Entrainment or Fluid Drawdown (API RP 11S §7.2)</div>
         </div>
         <div>
           <div style="font-size:0.52rem;font-family:var(--mono);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(59,130,246,0.65);margin-bottom:3px">Documented Context</div>
@@ -669,39 +669,43 @@ window.applyState = function (t, slideIdx) {
     var ampCard = document.getElementById('p1-amp-card');
     if (ampCard) ampCard.style.borderColor = ampAlarm ? 'rgba(251,191,36,0.32)' : 'rgba(74,222,128,0.28)';
 
-    // Winding Temp — stays FLAT and GREEN throughout.
-    // Lagging signal: motor cooling still flowing during hydraulic unloading (API RP 11S §4.2).
-    // Tiny thermal drift only (+4°F max over the whole window) — always nominal.
-    var tmpF = Math.round(197 + 4 * t);
+    // Winding Temp — RISING but LAGGING throughout. Physics: loss of cooling flow after hydraulic
+    // unloading reduces motor heat removal immediately, but thermal mass of the motor + fluid
+    // gives a 15-30 min lag before hitting the 280°F derated trip. In this scrub window (decision
+    // window) temp rises ~28°F above nominal — always stays green/sub-trip. (API RP 11S §4.2)
+    // 197°F → 225°F over t=0→1. Bar: 40% → 75%. No alarm crosses in this window.
+    var tmpF = Math.round(197 + 28 * t);
     var tmpFill = document.getElementById('p1-tmp-fill');
-    if (tmpFill) { tmpFill.style.width = '40%'; tmpFill.style.background = greenFlat; }
+    if (tmpFill) { tmpFill.style.width = (40 + 35 * t).toFixed(1) + '%'; tmpFill.style.background = greenFlat; }
     var tmpH = document.getElementById('p1-tmp-header');
-    if (tmpH) tmpH.style.color = '#94a3b8';
+    if (tmpH) tmpH.style.color = 'rgba(74,222,128,0.85)';
     var tmpAr = document.getElementById('p1-tmp-arrow');
-    if (tmpAr) tmpAr.textContent = '→';
+    if (tmpAr) tmpAr.textContent = '↗';
     var tmpSt = document.getElementById('p1-tmp-status');
-    if (tmpSt) { tmpSt.textContent = 'FLAT (' + tmpF + '°F)'; tmpSt.style.color = 'rgba(100,116,139,0.5)'; }
+    if (tmpSt) { tmpSt.textContent = 'RISING (' + tmpF + '°F)'; tmpSt.style.color = 'rgba(74,222,128,0.75)'; }
     var tmpRo = document.getElementById('p1-tmp-readout');
-    if (tmpRo) { tmpRo.textContent = '~' + tmpF + '°F · stays flat — lagging signal'; tmpRo.style.color = 'rgba(74,222,128,0.6)'; }
+    if (tmpRo) { tmpRo.textContent = '~' + tmpF + '°F · rising but lagging'; tmpRo.style.color = 'rgba(74,222,128,0.6)'; }
     var tmpCard = document.getElementById('p1-tmp-card');
-    if (tmpCard) tmpCard.style.borderColor = 'rgba(100,116,139,0.2)';
+    if (tmpCard) tmpCard.style.borderColor = 'rgba(74,222,128,0.2)';
 
-    // Vibration — stays FLAT and GREEN throughout.
-    // No bearing contact change during hydraulic unloading.
-    // Flat vibration is what distinguishes unloading from mechanical bearing wear.
-    var vibMs = (1.4 + 0.1 * t).toFixed(1);
+    // Vibration — RISING but LAGGING throughout. Physics: cavitation (gas lock) and rough
+    // running from reduced submergence (drawdown) both increase vibration. On a single-axis
+    // RMS sensor the signal is non-specific — cannot name the cause. Always stays green/sub-trip
+    // (7.5 mm/s trip is far away). 1.4 → 3.2 mm/s over t=0→1. Bar: 20% → 45%.
+    // Training-consistent range per fault_signatures.py (gas_lock vib 4.5-6.5, mid-window here).
+    var vibMs = (1.4 + 1.8 * t).toFixed(1);
     var vibFill = document.getElementById('p1-vib-fill');
-    if (vibFill) { vibFill.style.width = '20%'; vibFill.style.background = greenFlat; }
+    if (vibFill) { vibFill.style.width = (20 + 25 * t).toFixed(1) + '%'; vibFill.style.background = greenFlat; }
     var vibH = document.getElementById('p1-vib-header');
-    if (vibH) vibH.style.color = '#94a3b8';
+    if (vibH) vibH.style.color = 'rgba(74,222,128,0.85)';
     var vibAr = document.getElementById('p1-vib-arrow');
-    if (vibAr) vibAr.textContent = '→';
+    if (vibAr) vibAr.textContent = '↗';
     var vibSt = document.getElementById('p1-vib-status');
-    if (vibSt) { vibSt.textContent = 'FLAT (' + vibMs + ' mm/s)'; vibSt.style.color = 'rgba(100,116,139,0.5)'; }
+    if (vibSt) { vibSt.textContent = 'RISING (' + vibMs + ' mm/s)'; vibSt.style.color = 'rgba(74,222,128,0.75)'; }
     var vibRo = document.getElementById('p1-vib-readout');
-    if (vibRo) { vibRo.textContent = '~' + vibMs + ' mm/s · stays flat — no bearing contact'; vibRo.style.color = 'rgba(74,222,128,0.6)'; }
+    if (vibRo) { vibRo.textContent = '~' + vibMs + ' mm/s · rising but lagging'; vibRo.style.color = 'rgba(74,222,128,0.6)'; }
     var vibCard = document.getElementById('p1-vib-card');
-    if (vibCard) vibCard.style.borderColor = 'rgba(100,116,139,0.2)';
+    if (vibCard) vibCard.style.borderColor = 'rgba(74,222,128,0.2)';
   }
 
   if (slideIdx === 1) {

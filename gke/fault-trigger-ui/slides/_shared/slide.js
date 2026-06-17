@@ -127,11 +127,27 @@
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); goTo(cur + 1); }
     if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   { e.preventDefault(); goTo(cur - 1); }
     // Zoom: + / = zoom in, - zoom out, 0 reset to fit
+    // Let Cmd/Ctrl/Alt combos through to native browser zoom — only intercept bare +/-/0
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.key === '+' || e.key === '=') { e.preventDefault(); adjustZoom(+0.05); return; }
     if (e.key === '-' || e.key === '_') { e.preventDefault(); adjustZoom(-0.05); return; }
     if (e.key === '0') { e.preventDefault(); zoomFactor = 1.0; localStorage.setItem('gdc.slide.zoom', '1.0'); fit(); showZoomHint(); return; }
     var n = parseInt(e.key, 10);
     if (n >= 1 && n <= N) goTo(n - 1);
+  });
+
+  // ── Parent postMessage zoom forwarding ─────────────────────────────────
+  // app.js forwards 'zoom-in' / 'zoom-out' / 'zoom-reset' to all iframes so
+  // the app-level +/-/0 keys also scale the slide stage.
+  window.addEventListener('message', function (e) {
+    if (e.data === 'zoom-in')    { adjustZoom(+0.1); }
+    else if (e.data === 'zoom-out')  { adjustZoom(-0.1); }
+    else if (e.data === 'zoom-reset') {
+      zoomFactor = 1.0;
+      localStorage.setItem('gdc.slide.zoom', '1.0');
+      fit();
+      showZoomHint();
+    }
   });
 
   // ── 3. Scrubber + ▶ Play ──────────────────────────────────────────────────
