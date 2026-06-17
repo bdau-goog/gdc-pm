@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-17 / git head: f9e4164 / branch: feature-trio-clean
-Image: sha256:cc7f4d9f8ca46da9822a50a22476253ba0318f5f806b671c0b27e295281a08d8
+Date: 2026-06-17 / git head: b3b1aa8 / branch: feature-trio-clean
+Image: sha256:8a8d28580091a638323189bc4fc0eff3b70a3c1c58e8a9bca331fd6615df281c
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,16 +22,17 @@ cat docs/DEMO_MASTER.md
 
 ## STEP 3: Next Implementation Tasks
 
-### PRIORITY 1 — Confirm flicker fix on BenQ display (BS+21 + BS+22 combined)
-Two-phase flicker mitigation is now deployed:
+### PRIORITY 1 — Confirm flicker fix on BenQ display (BS+21 + BS+22 + BS+23)
+Three-phase flicker mitigation is now deployed:
 - BS+21 (`1f3b0e8`): background lift out of FRC near-black dithering band
-- BS+22 (`f9e4164`, sha256:cc7f4d9f): animation slowdown + Page Visibility API pause
+- BS+22 (`f9e4164`): animation throttle + Page Visibility API pause
+- BS+23 (`b3b1aa8`, sha256:8a8d2858): rAF play loop + GPU compositor layer isolation + all chart bgcolor lift
 
 Review on BenQ:
-- Open `gdc-pm.bdau.io/slides/h1.html` — animations should feel calmer; pulsing dots slower
-- Navigate to a different browser tab for 5–10s, then come back — page should resume smoothly
-- If residual flicker persists → last remaining suspect is the Plotly chart canvas continuous redraws
-  (60fps canvas updates); next step would be reducing chart polling interval from 5s to 15s
+- Open `gdc-pm.bdau.io` → H1 tab → load scenario → press ▶ Play (full screen if possible)
+- Flicker should be gone or dramatically reduced (all 4 root causes addressed)
+- If any residual: last suspect is Plotly's 5s polling interval driving `renderChart()`;
+  next step would be raising the `_pollChart` interval from 5s to 15s in `startDegPoll()`
 
 ### PRIORITY 2 — Live review of H1 slides on BenQ display (same as before)
 - `gdc-pm.bdau.io/slides/h1.html` — Slide 1 scrub NOMINAL→FAULT:
