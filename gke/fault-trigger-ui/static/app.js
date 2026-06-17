@@ -2360,6 +2360,16 @@ createApp({
         else if (e.data === 'go-horizon1') { this.setMainTab('horizon1'); }
       };
       window.addEventListener('message', this._slideMsg);
+
+      // BS+22 LC-fatigue fix: pause all CSS animations when browser tab is hidden.
+      // Sustained fast-cycling animations drive rapid LC voltage changes; the resulting
+      // liquid-crystal orientation hysteresis causes pixel "charge" that takes 10-30s
+      // to dissipate after the page navigates away.
+      // body.gdc-tab-hidden rule in styles.css applies animation-play-state:paused to all.
+      this._visibilityHandler = () => {
+        document.body.classList.toggle('gdc-tab-hidden', document.hidden);
+      };
+      document.addEventListener('visibilitychange', this._visibilityHandler);
     });
   },
 
@@ -2368,6 +2378,7 @@ createApp({
     this.stopDegPoll();
     if (this._slideMsg) window.removeEventListener('message', this._slideMsg);
     if (this._appZoomHandler) document.removeEventListener('keydown', this._appZoomHandler);
+    if (this._visibilityHandler) document.removeEventListener('visibilitychange', this._visibilityHandler);
   },
 }).mount('#app');
 console.log("=== app.js mounted successfully ===");
