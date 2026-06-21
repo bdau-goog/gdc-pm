@@ -156,7 +156,7 @@ Photorealistic slow push-in toward a clean operations dashboard glowing on a mon
 
 ---
 
-## GENERATION TOOLING — USE GOOGLE FLOW, NOT VEO-INSIDE-VIDS (decided Session BS+30)
+## PRODUCTION PROCESS — BUILD THE WHOLE INTRO IN GOOGLE FLOW, THEN ASSEMBLE IN VIDS (decided BS+30/BS+31)
 
 **Why we switched:** every failure in the Vids-embedded Veo workflow traced to **no cross-shot context** — Veo regenerated cold each time (re-inventing servers), and the only way to steer it was retyping the whole prompt. That produced the explosion → liquid → laser-beam churn on Beat 6.
 
@@ -170,6 +170,28 @@ Photorealistic slow push-in toward a clean operations dashboard glowing on a mon
 **What Flow does NOT fix:** the abstract "fusion" effect is **concept-hostile to Veo**, not tool-hostile — it failed 4x because "data merging" over-literalizes into hazards/sci-fi. The **EFFECT CUT** decision (Beat 6 = calm literal server room, VO carries the merge) stands in Flow too. Don't reopen it.
 
 **Per-beat prompts in this doc are tool-agnostic** — paste them into Flow as-is. The "ingredient image" and "Extend" notes map directly onto Flow's Ingredients and scene-extension features. *(Fallback if Flow is unavailable to you: the general Gemini app is better than Vids for iterative prompting, but still has no true cross-shot video memory — you'll lean on ingredient images for continuity.)*
+
+### Flow production process (all 12 beats — do the WHOLE intro here, not just Movement 3)
+
+**Decision (BS+31):** generate **every** beat in Flow, start to finish; Vids is only for final assembly + per-scene VO. Flow's Characters + Ingredients + scene-extension give the cross-shot consistency the per-beat prompts assume.
+
+**One-time setup (reusable assets):**
+- **Character — "Mark"** (the RTOC operator): created from the side-profile portrait; behavior description set; **no voice** (we record VO in Vids), **Portrait only** (operator beats are seated medium shots — skip Create Body). Use Mark for **Beats 3, 4A, 4B, 4C**. NOTE: the source portrait shows a headset + on-screen weather-radar map — in the beat prompts keep screens out of focus and add "no headset" if unwanted; the Character fixes his face, the prompt controls wardrobe/framing.
+- **Environment ingredient — server aisle:** the calm server-room still. Use for **5B, 6A, 6B**.
+- **Environment ingredient — wellhead field:** once Flow renders a clean Beat 1, save a frame as the ingredient for **Beat 2**.
+- Settings each run: **16:9 · 8s · Veo 3.1 Quality · x4 variations** (internal, credits not a constraint — x4 = 4 shots on goal, the best defense against the steam/spark/beam lottery).
+
+**Per-movement build order (chain with Extend / "jump to" where beats share a space):**
+1. **M1 — Beat 1** (aerial valve-tree field) → save a frame → **Beat 2** (push-in on one blue wellhead) via that ingredient.
+2. **M2 — Beat 3** with **Mark** → **4A → 4B → 4C**, all with Mark at the same desk (reuse Mark + a Beat-3 desk frame). 4C is the overhead scattered-desk shot.
+3. **M3 — Beat 5A** (3 silver sleds, macro) → **Extend → 5B** (pull back to the aisle) → **Extend → 6A** (push back in) → **Extend → 6B** (settle on one server). In Vids, split each extended clip so each beat carries its own VO line. **Beat 6 = EFFECT CUT** (calm room; no beams/paper/effects).
+4. **Hand-off — Beat 7** (push toward a glowing dashboard) → cut to the live demo.
+
+**Then in Vids:** import the 12 finished clips, one per scene, attach per-scene VO (next section), match each scene length to its line.
+
+**Guardrails carried into Flow (unchanged):** no readable screens/UI (garble); no Dell branding + never feed the Dell photo as an ingredient; hard-negate steam/sparks/fire/liquid/beams; operator three-quarter side profile, never to camera; schema-starve outdoor beats (blue valve-tree, never "oil field/pumpjack").
+
+---
 
 ---
 

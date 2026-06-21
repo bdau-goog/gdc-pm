@@ -1,5 +1,5 @@
 # Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-20 (Session BS+30) / git head: pending commit / branch: feature-trio-clean / docs-only
+Date: 2026-06-21 (Session BS+31) / git head: pending commit / branch: feature-trio-clean / docs-only
 Image: sha256:1ea1a269e8c9c644d1f38dafe25e66277feb5a73752552aaeb3b24d02ffa1761 (unchanged — Session BS+29 was docs-only)
 
 ## STEP 1: Run These Four Commands First
@@ -20,9 +20,9 @@ Expected when healthy:
 cat docs/DEMO_MASTER.md
 ```
 
-## STEP 3: Next Task — Build Movement 3 in Google Flow, import to Vids (docs/VEO_COLD_OPEN.md)
+## STEP 3: Next Task — Build the WHOLE intro in Google Flow, import to Vids (docs/VEO_COLD_OPEN.md)
 
-`docs/VEO_COLD_OPEN.md` is the deliverable (12-scene narrated cold open). **Session BS+30 pivoted generation to Google Flow** (labs.google/flow) because Vids-embedded Veo has no cross-shot context (root cause of the Beat-6 churn). Workflow: **generate clips in Flow (use Ingredients for reusable assets + scene extension) → import to Vids → attach per-scene VO.** See the new "GENERATION TOOLING" section in the doc.
+`docs/VEO_COLD_OPEN.md` is the deliverable (12-scene narrated cold open). **Session BS+30 pivoted generation to Google Flow** (labs.google/flow) because Vids-embedded Veo has no cross-shot context (root cause of the Beat-6 churn). Workflow (BS+31): **generate ALL 12 beats in Flow** (Character "Mark" + Ingredients + Extend-chaining) **→ import to Vids → attach per-scene VO.** See the "PRODUCTION PROCESS" section + its "Flow production process" sub-block in the doc — it has the asset setup and per-movement build order.
 
 **Validated renders so far:** Beat 1 (aerial blue valve-tree field), Beat 3 (operator side-profile), 5A (3 silver sleds — had minor steam, prompt now negates it). **Awaiting Flow rebuild:** 5A→5B (Extend, split into 2 scenes), 6A/6B.
 
