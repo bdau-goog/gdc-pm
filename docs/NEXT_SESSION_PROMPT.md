@@ -1,63 +1,53 @@
-# Next Session Prompt — GDC Edge AI Demo (Operational State)
-Date: 2026-06-21 (Session BS+31) / git head: pending commit / branch: feature-trio-clean / docs-only
-Image: sha256:1ea1a269e8c9c644d1f38dafe25e66277feb5a73752552aaeb3b24d02ffa1761 (unchanged — Session BS+29 was docs-only)
+# Next Session Prompt — GDC ESP Cold-Open Video (Operational State)
+Date: 2026-06-21 (Session BS+33) / branch: feature-trio-clean / docs-only (no app/cluster changes)
+Task focus: **finish the Veo cold open**, then record the live-demo walkthrough. NO cluster work needed.
 
-## STEP 1: Run These Four Commands First
+## STEP 0: Skip cluster startup
+This is a video/narrative work-stream. ollama offline = expected. Do NOT scale GPU. Do NOT run the 4 startup commands unless you pivot to app code.
+
+## STEP 1: Read these, in order
 ```bash
-kubectl get pods -n gdc-pm --no-headers
-kubectl get deployment ollama -n gdc-pm -o jsonpath='{.spec.replicas}'; echo ""
-curl -s http://gdc-pm.bdau.io/api/mlops/status | python3 -c "import sys,json;d=json.load(sys.stdin);print('ollama_online:',d.get('ollama_online'),'model:',d.get('ollama_model'))"
-kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_reliability -c "SELECT COUNT(*) FROM field_intel; SELECT COUNT(*) FROM rag_documents;"
+cat docs/VEO_COLD_OPEN.md          # the cold-open spec — READ THE M3 RESET BANNER
+sed -n '1,40p' docs/SESSION_LOG.md # last session (BS+33) context
 ```
-Expected when healthy:
-- fault-trigger-ui: 1/1 Running
-- **ollama replicas=0 (GPU OFF — DO NOT scale up)**
-- ollama_online: False, model: offline (expected dev default)
-- field_intel=11, rag_documents=20
+Also have ready (the live-demo half, already written + app-verified):
+`docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md` §2–6 · `docs/DEMO_VO_PERPANEL.md`
 
-## STEP 2: Read DEMO_MASTER.md
-```bash
-cat docs/DEMO_MASTER.md
-```
+## STEP 2: WHERE THE COLD OPEN STANDS (the single most important thing)
+**Scenes 1–5 are LOCKED and final (Movements 1–2 = the PROBLEM half).** VO is verbatim, do not reword:
+1. *"Upstream oil and gas runs on engineering discipline — lifting every barrel as efficiently and safely as possible."* ✅ rendered
+2. *"Electric submersible pumps - ESPs - do that lifting. Maintaining them well keeps costs down and optimizes production."* (gauge-free prompt ready)
+3. *"Occasionally, monitoring systems trigger alarms, telling you a well is in trouble. Often, these are easily diagnosed."* (Beat-3 operator footage ✅; merges old 3+4A)
+4. *"But some alarms are ambiguous — the signals alone can't tell you the cause."* (operator hesitates)
+5. *"The context that can help is scattered across distributed systems — slow to assemble when the decision can't wait."* (overhead scattered desk)
 
-## STEP 3: Next Task — Build the WHOLE intro in Google Flow, import to Vids (docs/VEO_COLD_OPEN.md)
+**Movement 3 (the SOLUTION half) is VOID and must be redesigned next session.** Old Beats 5A/5B/6A/6B/7 are reference-only — do NOT render as written.
 
-`docs/VEO_COLD_OPEN.md` is the deliverable (12-scene narrated cold open). **Session BS+30 pivoted generation to Google Flow** (labs.google/flow) because Vids-embedded Veo has no cross-shot context (root cause of the Beat-6 churn). Workflow (BS+31): **generate ALL 12 beats in Flow** (Character "Mark" + Ingredients + Extend-chaining) **→ import to Vids → attach per-scene VO.** See the "PRODUCTION PROCESS" section + its "Flow production process" sub-block in the doc — it has the asset setup and per-movement build order.
+## STEP 3: THE M3 REDESIGN — the value-prop spine that MUST land (this was the missing clarity)
+M1–M2 filmed the problem. **M3 must land the operator BENEFIT** as one affirmative spine, in order:
+1. **MORE TIME** — GDC flags the ambiguous well early, before failure is irreversible (DEMO_MASTER §1).
+2. **MORE CONTEXT INGESTED** — it reads + fuses the well's own scattered documents no sensor system reads (DEMO_MASTER §3 Diagnostic Gap / L3 moat).
+3. **MORE AI/LLM-DRIVEN INSIGHT** — turns fused context into a cited, reviewable diagnosis + recommended action, in seconds, in the operator's perimeter (System A retrieval + System B Gemma; HITL).
+**Net:** more time + more context + more insight → operator takes the right action every time vs. a reflexive expensive shut-in. **Sovereignty is the enabling WHERE, kept secondary — not the headline.**
 
-**Validated renders so far:** Beat 1 (aerial blue valve-tree field), Beat 3 (operator side-profile), 5A (3 silver sleds — had minor steam, prompt now negates it). **Awaiting Flow rebuild:** 5A→5B (Extend, split into 2 scenes), 6A/6B.
+## STEP 4: THE HARD RENDER LESSON (do not relearn it)
+**Veo renders nouns, not concepts.** M1–M2 worked because each beat is one literal object. M3 failed because it asked Veo to draw abstractions (logical perimeter, data fusion) → it over-literalizes into hazards (explosion/liquid/lasers/steam) or draws the wrong thing (physical badge-door for a logical perimeter). **Do NOT re-attempt 5B/6A/6B as literal fusion/perimeter renders.**
 
-**LOCKED this session — do NOT reopen:**
-- Beat 6 = **EFFECT CUT**: NO abstract "fusion" effect, NO beams/lasers, NO paper, NO liquid/sparks/steam. 6A/6B are calm literal server-room shots; the **VO carries "merges and compares."** (4 render failures: explosion→liquid→lasers proved the concept is Veo-hostile.)
-- 5A VO = the GDC inversion ("AI to your data, not your data to the cloud"); 5B VO = security/governance with **governed egress** ("only what you approve ever leaves" — NOT "never leaves," which contradicts H3/Vizier).
-- Real gear = 3 slim silver Dell sleds; **never show Dell branding; never feed the Dell photo as an ingredient.**
-- Veo hazard rule: hard-negate steam/sparks/fire/liquid/beams — atmospheric metaphors over-literalize into O&G hazards.
+**Two honest M3 paths (pick one with the user FIRST, before rendering):**
+- **PATH A** — cut straight to the live app for the solution (V4's canonical answer): the cold open is the problem; dissolve into the live UI where fusion/verdict/perimeter are shown for real. Fewest renders, zero abstraction risk. (V4 §2 + DEMO_VO_PERPANEL §0.)
+- **PATH B** — 1–2 literal solution beats, VO carries the meaning: only renderable solution nouns = (a) GDC hardware (Scene 5A clip already done & loved) + (b) the SAME operator now RESOLVED (calm, confident, deciding — mirrors Scene 4's hesitation, closes the human arc). No server-room "fusion" shot, no perimeter door.
 
-**Likely tasks next session:** (1) help the user drive Flow (Ingredients setup, scene extension) as they build 5A→6B; (2) retune any beat Flow renders off; (3) carryover from BS+28: schema-starve rewrite of VEO_PROMPTS.md outdoor scenes (Scene 1 ~line 31, 4b ~62, 5 ~70, 6 ~80).
+## STEP 5: PATH TO FINISH (then record the demo — the easy, zero-render part)
+1. Decide M3 path (A or B) with user.
+2. Render remaining LITERAL clips only: Scene 2 (gauge-free wellhead), Scene 4 (operator hesitates), Scene 5 (scattered desk), + Path-B operator-resolved beat if chosen.
+3. Assemble cold open in Vids (one clip per scene, per-scene VO).
+4. **Record the live demo** — fully scripted + app-verified already: V4 §2–6 + DEMO_VO_PERPANEL (How It Works → H1 Discern → H2 Classify → H3 Optimize → Close). Number-free, no run desync. ZERO rendering risk.
+
+## RENDER MECHANICS (settled BS+32 — in VEO_COLD_OPEN.md "Flow mechanics")
+- Tool: **Google Flow**. Model: **Omni Flash** (references ✅, ~10s). **Extend is BROKEN** (blank video) — continuity = still-frame ingredients only. Veo 3.1 Quality CANNOT use references.
+- Ingredients via **Nano Banana Pro**. Veo output count is on the video bar (not the image-default panel) — or just re-run 3–4×.
+- Guardrails: no readable screens/UI; no Dell branding / never feed the Dell photo; schema-starve outdoor beats (blue valve-tree, never "oil field/pumpjack"); don't specify countable small details (gauges) — frame them out/blur.
 
 ## Constraints (Permanent)
-- `terraform/gke.tf` must NOT be applied
-- Tab content: `gke/fault-trigger-ui/templates/*.html` + `app.py` (index.html = shell only)
-- Slides: `gke/fault-trigger-ui/slides/` — baked into the image
-- Run `verify_templates.py` before any template build
-- Source env: `source /home/brian/gdc-pm/.env`
-- GPU: ollama scale-to-zero; `./scripts/gpu-start.sh` ONLY for explicit LLM test; ALWAYS pair with gpu-stop.sh
-- No Jinja2 in templates · Vizier: one call per ▶ Run click only
-- Deploy with explicit `@sha256:<digest>` (`:latest` rollout-restart re-uses cached image on this cluster)
-
-## Build / deploy commands (only if returning to the app)
-```bash
-cd gke/fault-trigger-ui
-python3 ../../scripts/verify_templates.py   # must pass before build
-docker build -t us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest .
-docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
-kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
-kubectl rollout status deployment/fault-trigger-ui -n gdc-pm --timeout=90s
-```
-
-## Slide URLs for live review
-| Purpose | URL |
-|---|---|
-| H1 deck | gdc-pm.bdau.io/slides/h1.html |
-| H2 deck | gdc-pm.bdau.io/slides/h2.html |
-| H3 deck | gdc-pm.bdau.io/slides/h3.html |
-| Intro deck | gdc-pm.bdau.io/slides/intro.html |
+- `terraform/gke.tf` must NOT be applied. Tab content = templates/*.html + app.py. Slides baked into image. Source env: `source /home/brian/gdc-pm/.env`.
+- GPU scale-to-zero; gpu-start.sh ONLY for explicit LLM test, paired with gpu-stop.sh.
