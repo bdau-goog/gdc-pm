@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Cold-Open Video (Operational State)
 Date: 2026-06-22 (Session BS+34) / branch: feature-trio-clean / docs-only (no app/cluster changes)
-Git HEAD: c615c45fb142dc08ed5f6b05ec6c3b386742bcfd (uncommitted docs updated)
+Git HEAD: 879dee10178fee3042a34a99337cde7055c54199 (uncommitted docs updated)
 Image Digest: sha256:cd46caa8 (fault-trigger-ui, current)
 
 ## STEP 1: Run These Four Commands First (Skip cluster startup unless app changes are made)
@@ -29,9 +29,10 @@ cat docs/VEO_COLD_OPEN.md
 ```
 
 ## STEP 3: Next Implementation Task (Video production & walkthrough recording)
-1. **Render Remaining Google Flow Clips:**
+1. **Render Remaining Google Flow Clips (100% Digital Workspace Realism):**
    - **Scene 2:** Wellhead + VFD control skid (tight push-in, schema-starved, no gauges).
    - **Scene 4:** Ambiguous alarm (operator Mark hesitates, eyes off-camera, pulsing amber warning).
+   - **Scene 5 (Beat 4C):** Digital-Only Fragmentation (operator Mark's hands tapping a tablet screen, dragging a mouse, and typing on a keyboard to cross-reference multiple disconnected digital devices and windows like databases, PDF attachments, and system alert logs. Absolutely no physical paper, printed reports, or notebooks on the desk).
    - **Scene 6:** Operator Mark Resolved (mirrors Scene 4; calm, steady green/blue screen-glow, single slow nod of approval, types final authorize key; uses same Mark Character setup & desk reference still).
 2. **Assemble Video in Google Vids:**
    - Drop Scene 1, 2, 3, 4, 5 (all locked problem-half clips) on 5 scenes.
