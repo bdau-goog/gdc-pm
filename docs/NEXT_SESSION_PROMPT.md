@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Cold-Open Video (Operational State)
-Date: 2026-06-22 (Session BS+35) / branch: feature-trio-clean / docs-only (no app/cluster changes)
-Git HEAD: a05e082 + uncommitted docs (VEO_COLD_OPEN, V4_GROUNDED, SESSION_LOG, this file) — commit before next session
+Date: 2026-06-22 (Session BS+36) / branch: feature-trio-clean / docs-only (no app/cluster changes)
+Git HEAD: a05e082 + uncommitted docs (VEO_COLD_OPEN, NEXT_SESSION_PROMPT, SESSION_LOG) — commit before next session
 Image Digest: sha256:cd46caa8 (fault-trigger-ui, current — unchanged)
 
 ## STEP 1: Run These Four Commands First (Skip cluster startup unless app changes are made)
@@ -32,12 +32,15 @@ cat docs/VEO_COLD_OPEN.md      # SCENE↔BEAT MAP at top is the canonical 9-scen
 Canonical structure + per-scene VO are LOCKED in `docs/VEO_COLD_OPEN.md` (SCENE↔BEAT MAP table at top).
 `docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md` §1 is reconciled verbatim — both docs agree on every line.
 
-**Production tool (BS+35 decision):** remaining solution-half beats are made in **Vids/Veo using EXTEND**.
+**Production tool (BS+36):** Scene 8 = fresh cold render (NOT Extend — lamp-out dominant event). Scene 9 = Vids build from real screen-recording.
 
 ### Remaining render tasks (Vids/Veo):
-1. **Scene 7 (Beat 6) — Pre-threshold scoring.** Prompt = VEO_COLD_OPEN.md "Beat 6 (Scene 7)". Mark's eyes, calm/blue-green, screen-free. Render as the **Extend base clip**. VO: *"At the edge, GDC scores the combined pattern across all channels simultaneously — identifying the drift before SCADA can alarm."*
-2. **Scene 8 (Beat 7) — Operator resolved + HITL.** **EXTEND from Scene 7.** Mark's resolved nod + authorize keystroke; mirror of Scene 4. VO: *"Then, it automatically reads and fuses the well's complete document history — delivering a cited recommendation for operator approval."*
-3. **Scene 9 (Beat 8) — Dissolve hand-off.** Standalone push-in to a glowing dashboard. VO: *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*
+1. **Scene 7 ✅ DONE** — POV cut assembled as two sub-scenes in Vids:
+   - **7A (~3s):** Veo render of Mark (hard down-left head turn, multi-channel data-light, audio suppressed) ✅ RENDERED. This is also the **Extend base clip for Scene 8**.
+   - **7B (~6-7s):** Real GDC Advisor DETECTION-MOMENT screenshot ✅ DONE (GDC marker fired, hs = 0.9029, docs loading, no recommendation yet). Ken Burns: start on both markers, drift to Decision Console showing "WELL A-3 — BASELINE MONITORING · RETRIEVED CONTEXT — ALLOYDB PGVECTOR (< 2S)" loading state.
+   - **VO (rebalanced split):** 7A = *"Using your secured networks and data…"* | 7B = *"…GDC combines and evaluates multiple sensor streams in real time — identifying the developing issue."* Record as one take spanning both sub-scenes.
+2. **Scene 8 (Beat 7) — Operator resolved + HITL. ⬜ NEXT.** **FRESH COLD RENDER — do NOT Extend** (Extend kept the lamp on). Use a still frame from 7A as reference ingredient. Four-beat sequence: (1) satisfied certainty → (2) tap key to authorize → (3) amber lamp dims and goes DARK → (4) settles back, cool blue only. Lamp-out is the dominant visual event. **Add no-dialogue suppression clause.** **MUTE Veo audio in Vids.** VO: *"GDC then fuses your live documents with that data — diagnoses the fault, prepares the fix, and awaits your authorization."*
+3. **Scene 9 (Beat 8) — Dissolve hand-off. ⬜** Build in Vids from real GDC Advisor screen-recording (FLUID DRAWDOWN fully-revealed screenshot recommended — or live screen-recording, slow push-in + brighten). VO: *"The decision — and the control — are always yours. Let's see it work on a live well right now."*
 
 ### Then:
 4. **Assemble all 9 scenes in Vids**, one clip per scene, attach per-scene VO verbatim (Scene 6 sled clip reused as-is). See VEO_COLD_OPEN.md "HOW TO RECORD PER-SCENE VOICEOVER."
