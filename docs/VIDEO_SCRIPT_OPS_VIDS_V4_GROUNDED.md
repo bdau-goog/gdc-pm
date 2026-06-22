@@ -62,27 +62,35 @@ Photorealistic overhead top-down shot looking straight down onto the same dark i
 
 ### MOVEMENT 3: The GDC Solution
 
-**🎬 Beat 6 — Scoring the Combined Pattern (Pre-Threshold Faster Detection)**  ·  *~8s*
+**🎬 Beat 6 — Bring GDC to the Operations Center (The Edge Platform)**  ·  *~8s*  ·  *✅ RENDERED*
+```
+Photorealistic cinematic macro shot inside a bright, spotless, climate-controlled enterprise data clean-room with perfectly clear, cold, dry, still air. The camera performs a slow, smooth tracking glide from left to right along the front edges of a small stack of three identical slim silver-white enterprise compute sleds mounted one above another, the focus racking gently from the near sled to the far one. Across the clean front faces, dozens of tiny status LEDs blink in green and amber, while a single steady green power LED glows on each unit. A crisp specular highlight travels slowly across the brushed-metal surfaces as the camera moves. A few blue and orange fiber patch cables catch the moving light. The dense ports stay soft and out of focus so they read as fine texture, never text. Bright, even, cool white lighting; clean dry air; immaculate surfaces. Only the three stacked sleds are in frame — no surrounding rack frame, no power strips, no outlets. Crisp, controlled, enterprise-grade, on-premise.
+```
+> 🎙️ **VO — Beat 6 (Vids Scene 6):** *"This is where Google Distributed Cloud comes in — it brings Google's AI to your data, instead of your data to the cloud."*
+> **🛠 Note:** the loved sled-hardware clip is already rendered (reuse as-is); the VO is verbatim to the delivered take. This is the bridge from the problem half into the GDC solution.
+
+**🎬 Beat 7 — Scoring the Combined Pattern (Pre-Threshold Faster Detection)**  ·  *~8s*
 ```
 Photorealistic cinematic macro shot of the operator "Mark"'s eyes, focused and calm, reflecting the cool blue and green light of the workstation monitors. The camera performs a slow track across his profile as he monitors the system. Deep, quiet concentration; the blue-green light is steady and smooth, with no pulsing alarm amber. Shallow depth of field, 35mm film look, quiet night-shift focus. No screen content is visible in frame, no text, no letters, no logos, no graphics.
 ```
-> 🎙️ **VO — Beat 6 (Vids Scene 6):** *"Working at the edge, GDC scores the combined pattern across all sensor channels simultaneously — identifying a developing issue before any individual sensor crosses its hard SCADA limit."*
+> 🎙️ **VO — Beat 7 (Vids Scene 7):** *"At the edge, GDC scores the combined pattern across all channels simultaneously — identifying the drift before SCADA can alarm."*
+> **🛡️ Guardrail:** pre-threshold edge claimed vs. threshold-only SCADA, NOT vs. best-of-breed APM (detection quality converges there). "Before SCADA can alarm" = before the hard-limit trip (4–9-min lead on the H1 scenario). Categorical moat is the document fusion in Beat 8.
 
-**🎬 Beat 7 — Fusing the Unstructured Context (The Context Problem Resolved + HITL)**  ·  *~8s*
+**🎬 Beat 8 — Fusing the Unstructured Context (The Context Problem Resolved + HITL)**  ·  *~8s*
 ```
 Photorealistic medium shot of the same control-room operator "Mark" from Beat 3, at the same desk, seen in three-quarter side profile, looking off-camera at his screens. The tension from Beat 4 is gone: his brow is relaxed, and he has a calm, confident expression of quiet certainty. Across his face is a soft, steady, cool green and blue screen-glow, with no pulsing amber warning lights. Studying a clear recommendation, he gives a single, slow, assured nod of approval, and with simple deliberate motion, reaches forward and types a final key to authorize the proactive action. The background remains dark and soft, with distant unreadable screens pushed completely out of focus into neat blue bokeh. Cinematic side-profile composition, shallow depth of field, 35mm film look, quiet resolution. No readable text, no logos, no recognizable UI chrome.
 ```
-> 🎙️ **VO — Beat 7 (Vids Scene 7):** *"Then, it automatically reads and fuses the well's complete document history in seconds — delivering a cited, reviewable recommendation for final operator approval."*
+> 🎙️ **VO — Beat 8 (Vids Scene 8):** *"Then, it automatically reads and fuses the well's complete document history — delivering a cited recommendation for operator approval."*
 
 ---
 
 ### HAND-OFF — Roll Into the Demo
 
-**🎬 Beat 8 — Dissolve Toward the Screen**  ·  *~6s*
+**🎬 Beat 9 — Dissolve Toward the Screen**  ·  *~6s*
 ```
 Photorealistic slow push-in toward a clean operations dashboard glowing on a monitor in the dark RTOC, the screen brightening to fill the frame, inviting the viewer in. Cool screen light. No readable text, no logos.
 ```
-> 🎙️ **VO — Beat 8 (Vids Scene 8):** *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*
+> 🎙️ **VO — Beat 9 (Vids Scene 9):** *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*
 > **🛠 Handoff:** Dissolve from the cinematic intro directly into the actual live web-browser UI of the GDC Advisor kiosk (opening on the *How It Works* tab).
 
 ---

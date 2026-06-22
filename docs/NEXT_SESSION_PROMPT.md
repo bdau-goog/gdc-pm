@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC ESP Cold-Open Video (Operational State)
-Date: 2026-06-22 (Session BS+34) / branch: feature-trio-clean / docs-only (no app/cluster changes)
-Git HEAD: 879dee10178fee3042a34a99337cde7055c54199 (uncommitted docs updated)
-Image Digest: sha256:cd46caa8 (fault-trigger-ui, current)
+Date: 2026-06-22 (Session BS+35) / branch: feature-trio-clean / docs-only (no app/cluster changes)
+Git HEAD: a05e082 + uncommitted docs (VEO_COLD_OPEN, V4_GROUNDED, SESSION_LOG, this file) — commit before next session
+Image Digest: sha256:cd46caa8 (fault-trigger-ui, current — unchanged)
 
 ## STEP 1: Run These Four Commands First (Skip cluster startup unless app changes are made)
 ```bash
@@ -25,24 +25,29 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 ## STEP 2: Read DEMO_MASTER.md and VEO_COLD_OPEN.md
 ```bash
 cat docs/DEMO_MASTER.md
-cat docs/VEO_COLD_OPEN.md
+cat docs/VEO_COLD_OPEN.md      # SCENE↔BEAT MAP at top is the canonical 9-scene order
 ```
 
-## STEP 3: Next Implementation Task (Video production & walkthrough recording)
-1. **Render Remaining Google Flow Clips (100% Digital Workspace Realism):**
-   - **Scene 2:** Wellhead + VFD control skid (tight push-in, schema-starved, no gauges).
-   - **Scene 4:** Ambiguous alarm (operator Mark hesitates, eyes off-camera, pulsing amber warning).
-   - **Scene 5 (Beat 4C):** Digital-Only Fragmentation (operator Mark's hands tapping a tablet screen, dragging a mouse, and typing on a keyboard to cross-reference multiple disconnected digital devices and windows like databases, PDF attachments, and system alert logs. Absolutely no physical paper, printed reports, or notebooks on the desk).
-   - **Scene 6:** Operator Mark Resolved (mirrors Scene 4; calm, steady green/blue screen-glow, single slow nod of approval, types final authorize key; uses same Mark Character setup & desk reference still).
-2. **Assemble Video in Google Vids:**
-   - Drop Scene 1, 2, 3, 4, 5 (all locked problem-half clips) on 5 scenes.
-   - Drop Scene 5 GDC Hardware, Scene 6 Operator Resolved, and Scene 7 Dissolve on 3 solution-half scenes.
-   - Attach per-scene VO verbatim from `docs/VEO_COLD_OPEN.md`.
-3. **Record Live-Demo Walkthrough:**
-   - Follow `docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md` §2–6 and `docs/DEMO_VO_PERPANEL.md`.
-   - Live demo is app-verified, number-free, and requires zero rendering.
+## STEP 3: Cold-Open Status — 9-scene structure, Scenes 1-6 RENDERED, 7-9 REMAIN
+Canonical structure + per-scene VO are LOCKED in `docs/VEO_COLD_OPEN.md` (SCENE↔BEAT MAP table at top).
+`docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md` §1 is reconciled verbatim — both docs agree on every line.
+
+**Production tool (BS+35 decision):** remaining solution-half beats are made in **Vids/Veo using EXTEND**.
+
+### Remaining render tasks (Vids/Veo):
+1. **Scene 7 (Beat 6) — Pre-threshold scoring.** Prompt = VEO_COLD_OPEN.md "Beat 6 (Scene 7)". Mark's eyes, calm/blue-green, screen-free. Render as the **Extend base clip**. VO: *"At the edge, GDC scores the combined pattern across all channels simultaneously — identifying the drift before SCADA can alarm."*
+2. **Scene 8 (Beat 7) — Operator resolved + HITL.** **EXTEND from Scene 7.** Mark's resolved nod + authorize keystroke; mirror of Scene 4. VO: *"Then, it automatically reads and fuses the well's complete document history — delivering a cited recommendation for operator approval."*
+3. **Scene 9 (Beat 8) — Dissolve hand-off.** Standalone push-in to a glowing dashboard. VO: *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*
+
+### Then:
+4. **Assemble all 9 scenes in Vids**, one clip per scene, attach per-scene VO verbatim (Scene 6 sled clip reused as-is). See VEO_COLD_OPEN.md "HOW TO RECORD PER-SCENE VOICEOVER."
+5. **Record Part B live-demo walkthrough** — V4_GROUNDED §3-6 + DEMO_VO_PERPANEL.md. App-verified, number-free, zero render risk. This is the finish line.
+
+### Narrative guardrail (PRIME DIRECTIVE — do not violate):
+Scene 7 pre-threshold edge is claimed **only vs. threshold-only SCADA** (4–9-min H1 lead), **never vs. best-of-breed APM** (detection converges there). Categorical moat = Scene 8 document fusion. (DEMO_MASTER §3 / NARRATIVE_GUIDANCE tier table.)
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied — would destroy the live cluster.
 - All demo changes go into templates/*.html and app.py. Slides baked into image.
 - GPU scale-to-zero; `gpu-start.sh` ONLY for explicit LLM test, always paired with `gpu-stop.sh`.
+- VEO_COLD_OPEN.md has hidden-character lines (banner/en-dash) that defeat replace_in_file — use write_to_file as the fallback for that file (BS+29/BS+35 lesson).
