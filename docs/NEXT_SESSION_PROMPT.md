@@ -1,6 +1,6 @@
-# Next Session Prompt — GDC ESP Cold-Open Video (Operational State)
-Date: 2026-06-22 (Session BS+36) / branch: feature-trio-clean / docs-only (no app/cluster changes)
-Git HEAD: a05e082 + uncommitted docs (VEO_COLD_OPEN, NEXT_SESSION_PROMPT, SESSION_LOG) — commit before next session
+# Next Session Prompt — GDC ESP Ops Video (Operational State)
+Date: 2026-06-22 (Session BS+37) / branch: feature-trio-clean / docs-only (no app/cluster changes)
+Git HEAD: 71ec245 (BS+37 Part B recording package reconciled to live app)
 Image Digest: sha256:cd46caa8 (fault-trigger-ui, current — unchanged)
 
 ## STEP 1: Run These Four Commands First (Skip cluster startup unless app changes are made)
@@ -28,57 +28,45 @@ cat docs/DEMO_MASTER.md
 cat docs/VEO_COLD_OPEN.md      # SCENE↔BEAT MAP at top is the canonical 9-scene order
 ```
 
-## STEP 3: Cold-Open Status — ALL 9 SCENES COMPLETE ✅
+## STEP 3: Video Production Status
 
-**Cold open is DONE.** All 9 scenes produced and assembled in Vids. Final VO table locked in `docs/VEO_COLD_OPEN.md`.
+**Cold open (Part A):** COMPLETE — all 9 scenes produced/assembled in Vids. Final VO table locked in `docs/VEO_COLD_OPEN.md`. Scene 9 VO updated (BS+37) to bridge into the MEET GDC intro deck.
 
-**Final 9-scene VO (record-ready):**
-| # | VO |
-|---|---|
-| 1 | *"Upstream oil and gas runs on engineering discipline — lifting every barrel as efficiently and safely as possible."* |
-| 2 | *"Electric submersible pumps — ESPs — do that lifting. Maintaining them well keeps costs down and optimizes production."* |
-| 3 | *"Occasionally, monitoring systems trigger alarms, telling you a well is in trouble. Often, these are easily diagnosed."* |
-| 4 | *"But some alarms are ambiguous — the signals alone can't tell you the cause."* |
-| 5 | *"The context that can help is scattered across distributed systems — slow to assemble when the decision can't wait."* |
-| 6 | *"This is where Google Distributed Cloud comes in — it brings Google's AI to your data, instead of your data to the cloud."* |
-| 7A | *"Using your secured networks and data…"* |
-| 7B | *"…GDC combines and evaluates multiple sensor streams in real time — identifying the developing issue."* |
-| 8 | *"GDC then fuses your live documents with that data — diagnoses the fault, prepares the fix, and awaits your authorization."* |
-| 9 | *"The decision — and the control — are always yours. Let's see it work on a live well right now."* |
+**Part B recording package:** COMPLETE AND VERIFIED (BS+37) — all four script-vs-app mismatches corrected. Record-ready.
 
-**Key production notes (BS+36):**
-- Scene 7 = POV cut: 7A Veo render (Mark, hard down-left, audio suppressed) + 7B real screenshot (detection-moment: GDC marker fired, hs=0.9029, docs loading, no recommendation)
-- Scene 8 = fresh cold render (NOT Extend), lamp dims and goes dark as dominant event, still-frame from 7A as ingredient
-- Scene 9 = FLUID DRAWDOWN fully-revealed screenshot (or live screen-recording), slow push-in + brighten
-- **Mute all Veo audio tracks in Vids.** No-dialogue suppression clause in every character render prompt (BS+36 permanent guardrail).
+### Part B Recording — START HERE
+Use **`docs/DEMO_VO_PERPANEL.md`** as the primary per-scene recording guide (verified against the live app BS+37).
+Use **`docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md`** §2–§6 for extended narration options.
+Use **`docs/RECORDING_GUIDE.md`** for capture setup (MacBook 1280×720 CSS, QuickTime → Vids).
 
-### Next task: Narrative review + alignment check (~6 min target)
-
-**Goal:** Ensure the cold open (Part A) and the live demo walkthrough (Part B) are on the same message, have no contradictions, and fit within ~6 minutes total.
-
-**Step 1 — Read the three production scripts:**
-```bash
-cat docs/VEO_COLD_OPEN.md      # Part A: 9-scene VO table (lines 1-20 = the VO table)
-cat docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md   # Part B: live demo walkthrough
-cat docs/DEMO_VO_PERPANEL.md   # Part B: per-panel demo VO with [ACTION] notes
+**Demo flow (BS+37 verified):**
+```
+Cold open (Vids, 9 scenes) → Scene 9 "...First, a closer look at GDC itself — then we'll watch it work on a live well."
+→ Intro tab (3 slides: What is GDC? / When to Consider / Deployment Models) → click ▶ View Demo →
+→ Discern (H1) tab → Classify (H2) tab → Optimize (H3) tab → close on H3 uplift + ⓘ Reference tab
 ```
 
-**Step 2 — Runtime check:**
-- Part A (cold open): 9 scenes × ~7-10s = **~60-75s**
-- Part B (live demo): How It Works + H1 + H2 + H3 + close = **~4:00** (per DEMO_MASTER)
-- Total: **~5:00-5:15** (target ≤6:00) — should pass, but verify Part B word count
-- Check: does the Scene 9 VO ("The decision — and the control — are always yours...") set up Part B intro cleanly?
+**Runtime:** ~5:50 total (Part A ~65s + Part B ~4:45) — under 6:00. Trim lever: ~10 words from H2 if needed.
 
-**Step 3 — On-message consistency check:**
-- Cold open claims "diagnoses the fault, prepares the fix, awaits your authorization" (Scene 8 VO) → verify the live demo HITL screen shows exactly this (GDC AGENT · ACTION PACKAGE READY · AWAITING RTOC APPROVAL + "Approve & Execute")
-- Cold open says "using your secured networks and data" (Scene 7A VO) → verify V4_GROUNDED doesn't over-claim sovereignty at L2 (per DEMO_MASTER §3 BQ patch)
-- Cold open says "identifies the developing issue" (Scene 7B VO) → verify Part B "How It Works" section matches this framing (multivariate pre-threshold, not "we detect faster than SCADA" against best-of-breed APM)
-- Cold open says "the decision and control are always yours" (Scene 9) → verify HITL gate is prominent in H1/H2 demo narration
+**Verified live-app facts (BS+37 — do NOT contradict these during recording):**
+| Element | Actual label in live app |
+|---|---|
+| Nav tabs | Intro · Discern · Classify · Optimize · ⓘ Reference |
+| H1/H2 view toggle | 🟡 SCADA View / 🟢 GDC Advisor |
+| H1 verdict cards | ✔ GAS LOCK CONFIRMED / ⚠ FLUID DRAWDOWN CONFIRMED |
+| H1 HITL | GDC Agent · Action package ready · Awaiting RTOC approval + ✔ Approve & Execute |
+| H1/H2 run button | ↺ New Scenario |
+| H3 run button | ⚡ Run Vizier Optimization |
+| H3 comparison | Baseline Hz column vs GDC Optimal column in per-well table (no toggle) |
+| Close | H3 uplift card (+bbl/d, cash), then ⓘ Reference tab RTOC panel |
+| Operations/Financials tabs | ❌ ORPHANED — not in nav, do not attempt to navigate there |
 
-**Step 4 — Output:** A short alignment report: any contradictions, any timing risks, any VO lines in Part B that need adjustment. Then update V4_GROUNDED or DEMO_VO_PERPANEL if needed.
+### Known Integrity Item
+**Operations / Financials templates exist but are not wired into the nav header.** Confirmed orphaned in BS+27 and again in BS+37. The close narration has been re-pointed to H3 uplift + ⓘ Reference. **Future code task:** wire `tab_operations` and `tab_financials` into the nav header in `index.html` and the `mainTab` state in `app.js`, then verify and deploy. No urgency for the video recording — current close works on live reachable screens.
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied — would destroy the live cluster.
 - All demo changes go into templates/*.html and app.py. Slides baked into image.
 - GPU scale-to-zero; `gpu-start.sh` ONLY for explicit LLM test, always paired with `gpu-stop.sh`.
-- VEO_COLD_OPEN.md has hidden-character lines (banner/en-dash) that defeat replace_in_file — use write_to_file as the fallback for that file (BS+29/BS+35 lesson).
+- VEO_COLD_OPEN.md has hidden-character lines (banner/en-dash) that defeat replace_in_file — use write_to_file as the fallback for that file (BS+29/BS+35/BS+37 lesson).
+- Commit docs before ending any session — `git add docs/ && git commit -m "..."`.
