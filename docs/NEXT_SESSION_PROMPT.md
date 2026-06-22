@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-22 (Session BS+37) / branch: feature-trio-clean / docs-only (no app/cluster changes)
-Git HEAD: 71ec245 (BS+37 Part B recording package reconciled to live app)
-Image Digest: sha256:cd46caa8 (fault-trigger-ui, current — unchanged)
+Date: 2026-06-22 (Session BS+37) / branch: feature-trio-clean / app + docs changes this session
+Git HEAD: 8a4bfc4 (BS+37 trajectory realism: H1+H2 AR(1) noise, independent k, sigmoid lag)
+Image Digest: sha256:65e1f258 (fault-trigger-ui, current — deployed and verified)
 
 ## STEP 1: Run These Four Commands First (Skip cluster startup unless app changes are made)
 ```bash
@@ -33,6 +33,7 @@ cat docs/VEO_COLD_OPEN.md      # SCENE↔BEAT MAP at top is the canonical 9-scen
 **Cold open (Part A):** COMPLETE — all 9 scenes produced/assembled in Vids. Final VO table locked in `docs/VEO_COLD_OPEN.md`. Scene 9 VO updated (BS+37) to bridge into the MEET GDC intro deck.
 
 **Part B recording package:** COMPLETE AND VERIFIED (BS+37) — all four script-vs-app mismatches corrected. Record-ready.
+**Simulation realism (H1, H2):** IMPROVED (BS+37 addendum) — AR(1) autocorrelated noise, independent k per sensor, sigmoid lag onset. gdc=27 < alarm=48 verified. H3 untouched (real Vertex AI Vizier).
 
 ### Part B Recording — START HERE
 Use **`docs/DEMO_VO_PERPANEL.md`** as the primary per-scene recording guide (verified against the live app BS+37).
