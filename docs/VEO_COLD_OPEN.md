@@ -132,7 +132,7 @@ Photorealistic cinematic macro shot inside a bright, spotless, climate-controlle
 Photorealistic cinematic macro shot of the operator "Mark"'s eyes, focused and calm, reflecting the cool blue and green light of the workstation monitors. The camera performs a slow track across his profile as he monitors the system. Deep, quiet concentration; the blue-green light is steady and smooth, with no pulsing alarm amber. Shallow depth of field, 35mm film look, quiet night-shift focus. No screen content is visible in frame, no text, no letters, no logos, no graphics.
 ```
 
-> **🎙️ VO — Beat 6:** *"Working at the edge, GDC scores the combined pattern across all sensor channels simultaneously — identifying a developing issue before any individual sensor crosses its hard SCADA limit."*  ·  *(~29 words / ~8s)*  
+> **🎙️ VO — Beat 6:** *"At the edge, GDC scores the combined pattern across all channels simultaneously — identifying the drift before SCADA can alarm."*  ·  *(~18 words / ~8s)*  
 > **🛠 Value Point:** Faster Detection (multivariate pattern matching without buzzwords) + More Time (identifying pre-threshold).
 > **🛠 Screen-free:** Convey "monitoring the pattern" purely through the steady blue-green reflections in the operator's focused eyes, avoiding any unrenderable screens.
 > **🛠 Continuity:** Feed a still frame of Mark's close-up from Beat 3 as a reference ingredient to maintain perfect character continuity.
@@ -145,7 +145,7 @@ Photorealistic cinematic macro shot of the operator "Mark"'s eyes, focused and c
 Photorealistic medium shot of the same control-room operator "Mark" from Beat 3, at the same desk, seen in three-quarter side profile, looking off-camera at his screens. The tension from Beat 4B is gone: his brow is relaxed, and he has a calm, confident expression of quiet certainty. Across his face is a soft, steady, cool green and blue screen-glow, with no pulsing amber warning lights. Studying a clear recommendation, he gives a single, slow, assured nod of approval, and with simple deliberate motion, reaches forward and types a final key to authorize the proactive action. The background remains dark and soft, with distant unreadable screens pushed completely out of focus into neat blue bokeh. Cinematic side-profile composition, shallow depth of field, 35mm film look, quiet resolution. No readable text, no logos, no recognizable UI chrome.
 ```
 
-> **🎙️ VO — Beat 7:** *"Then, it automatically reads and fuses the well's complete document history in seconds — delivering a cited, reviewable recommendation for final operator approval."*  ·  *(~27 words / ~8s)*  
+> **🎙️ VO — Beat 7:** *"Then, it automatically reads and fuses the well's complete document history — delivering a cited recommendation for operator approval."*  ·  *(~18 words / ~8s)*  
 > **🛠 Value Point:** More Context Ingested (sensors + documents) + More AI-Driven Insight (cited, reviewable recommendation) + Human-In-The-Loop Approval (nod of approval / operator action) + Sovereignty ("Running entirely on-premise").
 > **🛠 How this resolves the narrative arc:** This beat is the **mirror image** of Beat 4B (the ambiguous alarm / operator hesitates). Beat 4B showed hesitation, amber pulsing warning, and hovering hands. Beat 7 shows quiet confidence, cool green/blue steady glow, a single slow nod of approval, and a decisive action (HITL).
 > **🛠 Screen-free:** Avoids garbled text. Convey "resolution" purely through Mark's relaxed body language, green-glow lighting, and decisive nod.
