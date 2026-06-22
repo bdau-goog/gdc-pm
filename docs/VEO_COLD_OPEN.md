@@ -197,7 +197,10 @@ Convey "resolution" through Mark's relaxed body language, the decisive nod, and 
 NO VEO RENDER — BUILD IN VIDS (BS+35/BS+37). Scene 9 is built from the live demo itself: take the first few seconds of the actual GDC Advisor screen opening on the Intro tab and apply a slow push-in / gentle brighten as the cold open dissolves into it. Because the screen is the REAL app, there is zero garbled-text risk and the cut into the live demo is maximally honest. (The earlier plan — a Veo push-in toward a faked dashboard — is retired; Veo cannot render a legible UI.)
 ```
 
-> **VO — Beat 8 (Scene 9) — UPDATED (BS+37):** *"The decision — and the control — are always yours. First, a closer look at GDC itself — then we'll watch it work on a live well."* · *(22 words / ~8s) — delivers the HITL claim + bridges into the MEET GDC (Intro deck) section before the live H1 scenario.*
+> **VO — Beat 8 (Scene 9) — UPDATED (BS+37):** *"The decision — and the control — are always yours. First, a closer look at GDC itself — then we'll step through a realistic production scenario."* · *(22 words / ~8s)*
+>
+> **Integrity note (BS+37):** "a live well" was removed. The H1 demo is a physics-grounded scenario replay (pre-computed trajectory, real XGBoost + real pgvector, labeled `⏺ Scenario Replay` in the UI) — not real-time field data from a deployed well. "Step through a realistic production scenario" is accurate and defensible to an engineer who sees the scrubber.
+>
 > **Handoff (BS+35/BS+37):** Build Scene 9 from the live app opening on the **Intro** tab (Slide 1 "What is GDC?"). Apply slow push-in / brighten dissolve. The Intro deck's own **"View Demo" button** on Slide 3 then advances into H1 — the hand-off is a real, built-in click. No faked dashboard, no garble.
 
 **Cut to live screen recording.** From here, follow **V4 (operator-grounded)** for the demo voiceover, starting at the **"MEET GDC" (Intro tab, 3 slides)** beat (`DEMO_VO_PERPANEL.md` Section 0), then **Discern then Classify then Optimize**, and the close.

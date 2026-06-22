@@ -90,7 +90,8 @@ Photorealistic medium shot of the same control-room operator "Mark" from Beat 3,
 ```
 Photorealistic slow push-in toward a clean operations dashboard glowing on a monitor in the dark RTOC, the screen brightening to fill the frame, inviting the viewer in. Cool screen light. No readable text, no logos.
 ```
-> 🎙️ **VO — Beat 9 (Vids Scene 9):** *"The decision — and the control — are always yours. First, a closer look at GDC itself — then we'll watch it work on a live well."*
+> 🎙️ **VO — Beat 9 (Vids Scene 9):** *"The decision — and the control — are always yours. First, a closer look at GDC itself — then we'll step through a realistic production scenario."*
+> **Integrity note (BS+37):** "a live well" removed — H1 is a scenario replay (pre-computed trajectory, real XGBoost + pgvector, labeled `⏺ Scenario Replay` in the UI), not real-time field data from a deployed well.
 > **🛠 Handoff:** Dissolve from the cinematic intro directly into the actual live web-browser UI opening on the **Intro** tab (Slide 1 "What is GDC?"). The Intro deck's own **▶ View Demo →** button on Slide 3 advances into the live H1 scenario, keeping the hand-off natural.
 
 ---
