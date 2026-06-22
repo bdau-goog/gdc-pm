@@ -28,26 +28,54 @@ cat docs/DEMO_MASTER.md
 cat docs/VEO_COLD_OPEN.md      # SCENE↔BEAT MAP at top is the canonical 9-scene order
 ```
 
-## STEP 3: Cold-Open Status — 9-scene structure, Scenes 1-6 RENDERED, 7-9 REMAIN
-Canonical structure + per-scene VO are LOCKED in `docs/VEO_COLD_OPEN.md` (SCENE↔BEAT MAP table at top).
-`docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md` §1 is reconciled verbatim — both docs agree on every line.
+## STEP 3: Cold-Open Status — ALL 9 SCENES COMPLETE ✅
 
-**Production tool (BS+36):** Scene 8 = fresh cold render (NOT Extend — lamp-out dominant event). Scene 9 = Vids build from real screen-recording.
+**Cold open is DONE.** All 9 scenes produced and assembled in Vids. Final VO table locked in `docs/VEO_COLD_OPEN.md`.
 
-### Remaining render tasks (Vids/Veo):
-1. **Scene 7 ✅ DONE** — POV cut assembled as two sub-scenes in Vids:
-   - **7A (~3s):** Veo render of Mark (hard down-left head turn, multi-channel data-light, audio suppressed) ✅ RENDERED. This is also the **Extend base clip for Scene 8**.
-   - **7B (~6-7s):** Real GDC Advisor DETECTION-MOMENT screenshot ✅ DONE (GDC marker fired, hs = 0.9029, docs loading, no recommendation yet). Ken Burns: start on both markers, drift to Decision Console showing "WELL A-3 — BASELINE MONITORING · RETRIEVED CONTEXT — ALLOYDB PGVECTOR (< 2S)" loading state.
-   - **VO (rebalanced split):** 7A = *"Using your secured networks and data…"* | 7B = *"…GDC combines and evaluates multiple sensor streams in real time — identifying the developing issue."* Record as one take spanning both sub-scenes.
-2. **Scene 8 (Beat 7) — Operator resolved + HITL. ⬜ NEXT.** **FRESH COLD RENDER — do NOT Extend** (Extend kept the lamp on). Use a still frame from 7A as reference ingredient. Four-beat sequence: (1) satisfied certainty → (2) tap key to authorize → (3) amber lamp dims and goes DARK → (4) settles back, cool blue only. Lamp-out is the dominant visual event. **Add no-dialogue suppression clause.** **MUTE Veo audio in Vids.** VO: *"GDC then fuses your live documents with that data — diagnoses the fault, prepares the fix, and awaits your authorization."*
-3. **Scene 9 (Beat 8) — Dissolve hand-off. ⬜** Build in Vids from real GDC Advisor screen-recording (FLUID DRAWDOWN fully-revealed screenshot recommended — or live screen-recording, slow push-in + brighten). VO: *"The decision — and the control — are always yours. Let's see it work on a live well right now."*
+**Final 9-scene VO (record-ready):**
+| # | VO |
+|---|---|
+| 1 | *"Upstream oil and gas runs on engineering discipline — lifting every barrel as efficiently and safely as possible."* |
+| 2 | *"Electric submersible pumps — ESPs — do that lifting. Maintaining them well keeps costs down and optimizes production."* |
+| 3 | *"Occasionally, monitoring systems trigger alarms, telling you a well is in trouble. Often, these are easily diagnosed."* |
+| 4 | *"But some alarms are ambiguous — the signals alone can't tell you the cause."* |
+| 5 | *"The context that can help is scattered across distributed systems — slow to assemble when the decision can't wait."* |
+| 6 | *"This is where Google Distributed Cloud comes in — it brings Google's AI to your data, instead of your data to the cloud."* |
+| 7A | *"Using your secured networks and data…"* |
+| 7B | *"…GDC combines and evaluates multiple sensor streams in real time — identifying the developing issue."* |
+| 8 | *"GDC then fuses your live documents with that data — diagnoses the fault, prepares the fix, and awaits your authorization."* |
+| 9 | *"The decision — and the control — are always yours. Let's see it work on a live well right now."* |
 
-### Then:
-4. **Assemble all 9 scenes in Vids**, one clip per scene, attach per-scene VO verbatim (Scene 6 sled clip reused as-is). See VEO_COLD_OPEN.md "HOW TO RECORD PER-SCENE VOICEOVER."
-5. **Record Part B live-demo walkthrough** — V4_GROUNDED §3-6 + DEMO_VO_PERPANEL.md. App-verified, number-free, zero render risk. This is the finish line.
+**Key production notes (BS+36):**
+- Scene 7 = POV cut: 7A Veo render (Mark, hard down-left, audio suppressed) + 7B real screenshot (detection-moment: GDC marker fired, hs=0.9029, docs loading, no recommendation)
+- Scene 8 = fresh cold render (NOT Extend), lamp dims and goes dark as dominant event, still-frame from 7A as ingredient
+- Scene 9 = FLUID DRAWDOWN fully-revealed screenshot (or live screen-recording), slow push-in + brighten
+- **Mute all Veo audio tracks in Vids.** No-dialogue suppression clause in every character render prompt (BS+36 permanent guardrail).
 
-### Narrative guardrail (PRIME DIRECTIVE — do not violate):
-Scene 7 pre-threshold edge is claimed **only vs. threshold-only SCADA** (4–9-min H1 lead), **never vs. best-of-breed APM** (detection converges there). Categorical moat = Scene 8 document fusion. (DEMO_MASTER §3 / NARRATIVE_GUIDANCE tier table.)
+### Next task: Narrative review + alignment check (~6 min target)
+
+**Goal:** Ensure the cold open (Part A) and the live demo walkthrough (Part B) are on the same message, have no contradictions, and fit within ~6 minutes total.
+
+**Step 1 — Read the three production scripts:**
+```bash
+cat docs/VEO_COLD_OPEN.md      # Part A: 9-scene VO table (lines 1-20 = the VO table)
+cat docs/VIDEO_SCRIPT_OPS_VIDS_V4_GROUNDED.md   # Part B: live demo walkthrough
+cat docs/DEMO_VO_PERPANEL.md   # Part B: per-panel demo VO with [ACTION] notes
+```
+
+**Step 2 — Runtime check:**
+- Part A (cold open): 9 scenes × ~7-10s = **~60-75s**
+- Part B (live demo): How It Works + H1 + H2 + H3 + close = **~4:00** (per DEMO_MASTER)
+- Total: **~5:00-5:15** (target ≤6:00) — should pass, but verify Part B word count
+- Check: does the Scene 9 VO ("The decision — and the control — are always yours...") set up Part B intro cleanly?
+
+**Step 3 — On-message consistency check:**
+- Cold open claims "diagnoses the fault, prepares the fix, awaits your authorization" (Scene 8 VO) → verify the live demo HITL screen shows exactly this (GDC AGENT · ACTION PACKAGE READY · AWAITING RTOC APPROVAL + "Approve & Execute")
+- Cold open says "using your secured networks and data" (Scene 7A VO) → verify V4_GROUNDED doesn't over-claim sovereignty at L2 (per DEMO_MASTER §3 BQ patch)
+- Cold open says "identifies the developing issue" (Scene 7B VO) → verify Part B "How It Works" section matches this framing (multivariate pre-threshold, not "we detect faster than SCADA" against best-of-breed APM)
+- Cold open says "the decision and control are always yours" (Scene 9) → verify HITL gate is prominent in H1/H2 demo narration
+
+**Step 4 — Output:** A short alignment report: any contradictions, any timing risks, any VO lines in Part B that need adjustment. Then update V4_GROUNDED or DEMO_VO_PERPANEL if needed.
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied — would destroy the live cluster.
