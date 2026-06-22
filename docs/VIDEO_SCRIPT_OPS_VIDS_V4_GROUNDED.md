@@ -16,59 +16,74 @@ Same facts, same structure, same camera and screen direction. The **only** chang
 
 ---
 
-## ░░ SECTION 1 — COLD OPEN (Veo) ░░  *(~35s)*
+## ░░ SECTION 1 — COLD OPEN & WHAT GDC IS (Cinematic Intro) ░░  *(~75s)*
 
-### 🎬 VEO PROMPT
-```
-SCENE 1 — "Night Shift in the Field"
-Photorealistic. A Permian Basin pad at night, summer, West Texas. A single electric submersible
-pump wellhead (christmas tree + VFD control cabinet) under a sodium work-light, a long amber cone
-across caliche gravel. Beyond it, a row of identical wellheads fades into the dark to the horizon —
-implied scale. Stars above, no wind. Cut to interior: a calm Real-Time Operations Center, one
-operator at a wall of SCADA trend screens; a single amber alarm banner is active. On the desk, a
-thick well file labeled "WELL A-3 — COMPLETION & PVT HISTORY". 35mm, shallow depth of field.
-No text overlays, no synthetic UI. Palette: sodium amber + cold monitor blue.
-```
-
-### 🎥 CINEMATOGRAPHY
-- **Slow descending aerial push-in** (~8s) toward the lit wellhead — establish scale and isolation.
-- **Match-cut** to interior; **slow dolly-in** on the operator, **rack-focus** from the alarm banner to the well file on the desk.
-- Measured, professional pacing. Amber exterior vs. blue interior frames the film's thesis: sensors versus documents.
-
-### 🎙️ NARRATION
-> *"Across a producing field, a control room watches hundreds of wells at once.*
->
-> *When an alarm fires, the sensors tell the operator that a pump is in trouble — but not why. The deciding context usually isn't on the screen. It's in the well file: the shift notes, the lab work, the service history.*
->
-> *Closing that gap — automatically, on every well — is what Google Cloud designed GDC to do."*
+This introductory section is filmed entirely as a **narrated Veo cinematic story** before cutting directly to the live screen recording. It is built as **one Veo clip = one Vids scene = one short VO line**, maintaining automatic sync on every beat.
 
 ---
 
-## ░░ SECTION 2 — WHAT GDC IS ░░  *(~45s)*
+### MOVEMENT 1: Industry Context
 
-### 🎬 VEO PROMPT *(optional 6–8s bridge)*
+**🎬 Beat 1 — The Field of Wellheads (establishing, schema-starved)**  ·  *~8s*
 ```
-SCENE 2 — "On-Premise at the Edge"
-Photorealistic macro inside a field equipment skid: a small rack-mounted server with a discreet
-"GDC" label, status LEDs steady green, fiber and copper neatly dressed. Behind it, a window onto
-the dark pad. Compact, quiet, on-premise. Cool blue key light, one warm practical. No text overlays.
+Photorealistic elevated cinematic drone shot slowly descending over a vast flat caliche-gravel field in remote West Texas at golden hour. Spread across the field in a loose grid, dozens of identical christmas-tree wellheads recede toward the horizon — each one a vertical stack of flanged steel valves and spools about a man's height, painted glossy industrial blue, fitted with several bright red round handwheels projecting from the sides and small round pressure gauges. Short horizontal flowlines link each wellhead to slim steel gathering pipes that run in straight lines across the tan gravel. Long warm shadows, flat distant horizon, dust-free clean hardware. Smooth slow descending aerial motion, 35mm film look. Industrial precision, repetition, quiet scale.
 ```
+> 🎙️ **VO — Beat 1 (Vids Scene 1):** *"Upstream oil and gas runs on engineering discipline — lifting every barrel as efficiently and safely as possible."*
 
-### 🎥 CINEMATOGRAPHY
-- **Locked-off macro**, gentle **3% push-in** on the green LEDs.
-- **Dissolve** to the live *How It Works* tab.
+**🎬 Beat 2 — The Wellhead + Control Skid (tight push-in, schema-starved)**  ·  *~8s*
+```
+Photorealistic slow push-in on a single christmas-tree wellhead firmly bolted to a low concrete base in the same gravel field as the wide aerial — a vertical stack of heavy flanged steel valves and spools about a man's height, painted glossy industrial blue, with several bright red round handwheels projecting from the sides. The framing favors the blue valve body and the red handwheels; any small fittings stay soft and out of focus. From the base, a horizontal steel flowline runs along the gravel and ties into a slim gathering pipe. A short distance behind sits a separate electrical control skid: a tall louvered stainless cabinet and a small boxy transformer, linked by conduit. Every piece of equipment is solidly connected — nothing floating or detached. The rest of the identical blue wellheads recede softly out of focus toward the golden-hour horizon. Shallow depth of field, warm low-sun grade matching the field shot, 35mm film look. Precision industrial hardware, clean and quiet.
+```
+> 🎙️ **VO — Beat 2 (Vids Scene 2):** *"Electric submersible pumps - ESPs - do that lifting. Maintaining them well keeps costs down and optimizes production."*
 
-### 🖱️ SCREEN CHOREOGRAPHY (live UI — *How It Works* tab)
-- Enter on the **three-tier diagram**. Cursor glides top→bottom, ~1.5s dwell per tier:
-  **Tier 1 Telemetry Tags → Tier 2 Tag Patterns (local ML) → Tier 3 Document Context (pgvector / AlloyDB Omni).**
-- **Digital zoom 1.15× on Tier 3** and hold until "perimeter" is spoken.
+---
 
-### 🎙️ NARRATION
-> *"This is Google Distributed Cloud. It runs Google's AI and data stack inside the operator's own perimeter — on their hardware, behind their firewall.*
->
-> *It works alongside the existing control system. Sensor tags stream in. Local models score the combined pattern across every channel, continuously. And it adds the layer no control system or monitoring platform has today: search across the operator's own well documents — shift notes, lab reports, workover records, vendor service logs.*
->
-> *When a well moves off-pattern, GDC reads the sensors and those documents together, and returns a cited, reviewable diagnosis. On open models. On-premise. In seconds."*
+### MOVEMENT 2: The Problem
+
+**🎬 Beat 3 — The Night Alarm (operator profile, no screen content)**  ·  *~8s*
+```
+Photorealistic medium shot of a single industrial control-room operator seen in three-quarter side profile at night, looking to the side at screens out of frame. They are a professional in a neat dark work shirt, expression calm and focused; they do NOT look at the camera. The soft cool blue glow of monitors washes across their face from the side, joined by a gentle, rhythmic pulsing amber light that casts slow warm flashes on their profile. The background is dark and soft, with banks of distant unreadable screens pushed completely out of focus into neat blue bokeh. Cinematic side-profile composition, shallow depth of field, 35mm film look, quiet night-shift focus. No screen content is visible in frame, no text, no letters, no logos, no graphics.
+```
+> 🎙️ **VO — Beat 3 (Vids Scene 3):** *"Occasionally, monitoring systems trigger alarms, telling you a well is in trouble. Often, these are easily diagnosed."*
+
+**🎬 Beat 4 — The Ambiguous Alarm (operator hesitates, no quick resolve)**  ·  *~6s*
+```
+Photorealistic medium shot of the same control-room operator from Beat 3, at the same desk, in three-quarter side profile, looking off-camera at their screens — they do NOT look at the camera. This time there is no quick resolution: the operator leans in slightly, brow tightening, one hand hovering near the keyboard but not acting, studying an unclear signal with quiet concern. The amber warning accent keeps pulsing, unresolved, rather than settling to calm blue. Banks of monitors stay softly out of focus as blue bokeh behind them. Same night-shift lighting, cool blue with a persistent warm amber accent. Shallow depth of field, 35mm film look, quiet uncertainty. No screen content visible, no text, no letters, no logos, no graphics.
+```
+> 🎙️ **VO — Beat 4 (Vids Scene 4):** *"But some alarms are ambiguous — the signals alone can't tell you the cause."*
+
+**🎬 Beat 5 — The Scattered Context (fragmentation is the subject)**  ·  *~8s*
+```
+Photorealistic overhead top-down shot looking straight down onto the same dark industrial control desk from Beat 3, lit by cool blue screen glow with a warm amber desk-lamp spill from one side. Scattered across the desk are several DISCONNECTED sources of information that don't belong together: a rugged tablet showing a generic scanned report (header block + small data table), a separate laptop turned at an angle showing a different generic document, a printed lab-report sheet, a spiral notebook with handwriting, and a phone displaying yet another small screen. The operator's two hands move between the scattered items — sliding the paper aside, reaching for the tablet, comparing — conveying the slow effort of gathering context from many separate places. Everything is kept slightly soft so no text is legible. Slow, deliberate, slightly tense pacing, heavier than the previous beat. Shallow depth of field, 35mm film look. No readable text anywhere, no logos, no recognizable UI chrome, no audio-waveform or seismic-nebula imagery.
+```
+> 🎙️ **VO — Beat 5 (Vids Scene 5):** *"The context that can help is scattered across distributed systems — slow to assemble when the decision can't wait."*
+
+---
+
+### MOVEMENT 3: The GDC Solution
+
+**🎬 Beat 6 — Bring GDC to the Operations Center (The Edge Platform)**  ·  *~8s*
+```
+Photorealistic cinematic macro shot inside a bright, spotless, climate-controlled enterprise data clean-room with perfectly clear, cold, dry, still air. The camera performs a slow, smooth tracking glide from left to right along the front edges of a small stack of three identical slim silver-white enterprise compute sleds mounted one above another, the focus racking gently from the near sled to the far one. Across the clean front faces, dozens of tiny status LEDs blink in green and amber, while a single steady green power LED glows on each unit. A crisp specular highlight travels slowly across the brushed-metal surfaces as the camera moves. A few blue and orange fiber patch cables catch the moving light. The dense ports stay soft and out of focus so they read as fine texture, never text. Bright, even, cool white lighting; clean dry air; immaculate surfaces. Only the three stacked sleds are in frame — no surrounding rack frame, no power strips, no outlets. Crisp, controlled, enterprise-grade, on-premise.
+```
+> 🎙️ **VO — Beat 6 (Vids Scene 6):** *"To find that context in time, Google Distributed Cloud brings Google's AI models directly to your data at the sovereign edge."*
+
+**🎬 Beat 7 — The Operator Resolved (Context Fusion & AI Analysis)**  ·  *~8s*
+```
+Photorealistic medium shot of the same control-room operator "Mark" from Beat 3, at the same desk, seen in three-quarter side profile, looking off-camera at his screens. The tension from Beat 4 is gone: his brow is relaxed, and he has a calm, confident expression of quiet certainty. Across his face is a soft, steady, cool green and blue screen-glow, with no pulsing amber warning lights. Studying a clear recommendation, he gives a single, slow, assured nod of approval, and with simple deliberate motion, reaches forward and types a final key to authorize the proactive action. The background remains dark and soft, with distant unreadable screens pushed completely out of focus into neat blue bokeh. Cinematic side-profile composition, shallow depth of field, 35mm film look, quiet resolution. No readable text, no logos, no recognizable UI chrome.
+```
+> 🎙️ **VO — Beat 7 (Vids Scene 7):** *"Running entirely on-premise, GDC automatically fuses real-time sensor signatures with the well's complete document history — delivering a cited, reviewable recommendation for final operator approval, in seconds."*
+
+---
+
+### HAND-OFF — Roll Into the Demo
+
+**🎬 Beat 8 — Dissolve Toward the Screen**  ·  *~6s*
+```
+Photorealistic slow push-in toward a clean operations dashboard glowing on a monitor in the dark RTOC, the screen brightening to fill the frame, inviting the viewer in. Cool screen light. No readable text, no logos.
+```
+> 🎙️ **VO — Beat 8 (Vids Scene 8):** *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*
+> **🛠 Handoff:** Dissolve from the cinematic intro directly into the actual live web-browser UI of the GDC Advisor kiosk (opening on the *How It Works* tab).
 
 ---
 
