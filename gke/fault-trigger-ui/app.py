@@ -7413,7 +7413,8 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
     fp = FAULT_PROFILES.get(ft, FAULT_PROFILES["gas_lock"])
 
     N      = 120                         # trajectory steps
-    k      = random.uniform(1.2, 2.5)   # ramp shape exponent (same as degrade thread)
+    k      = random.uniform(1.2, 2.5)   # PIP ramp shape exponent
+    k_amps = k * random.uniform(0.70, 0.90)   # Amps: softer ramp (hydraulic head leads, current follows)
     t_step = 0.25                        # minutes per step → 30-minute total window
 
     # Nominal operating baselines
@@ -7443,16 +7444,29 @@ async def h1_scenario_replay(fault: str = "gas_lock"):
     # until gas void fraction is high enough to fully disrupt hydraulic efficiency.
     # The new esp_health.ubj was retrained on this lead/lag trajectory (Session BS+25).
     _LAG_ONSET = 0.55  # temp/vib stay near-nominal until this fraction of the window
+    # AR(1) autocorrelated noise: n_t = rho*n_{t-1} + sqrt(1-rho^2)*eps_t
+    # Marginal sigma unchanged; adjacent steps correlated (realistic historian appearance).
+    # rho=0.65 -> correlation < 0.1 beyond ~5 steps; 20-step slope features minimally affected.
+    _rho = 0.65
+    _ar  = math.sqrt(1.0 - _rho ** 2)
+    _psi_n = _amps_n = _temp_n = _vib_n = 0.0
     psi_arr, amps_arr, temp_arr, vib_arr, t_min_arr = [], [], [], [], []
     for i in range(N):
-        frac = ((i + 1) / N) ** k                  # leading fraction — PIP, Amps
-        u    = (i + 1) / N                          # normalised position 0→1
-        lag_u    = 0.0 if u < _LAG_ONSET else (u - _LAG_ONSET) / (1.0 - _LAG_ONSET)
-        lag_frac = lag_u ** k                       # lagging fraction — Temp, Vib
-        psi_arr.append(  round(psi_nom  + (psi_end  - psi_nom)  * frac     + random.gauss(0, 18),  1))
-        amps_arr.append( round(amps_nom + (amps_end - amps_nom) * frac     + random.gauss(0, 1.5), 2))
-        temp_arr.append( round(temp_nom + (temp_end - temp_nom) * lag_frac + random.gauss(0, 1.2), 1))
-        vib_arr.append(  round(vib_nom  + (vib_end  - vib_nom)  * lag_frac + random.gauss(0, 0.1), 3))
+        u         = (i + 1) / N
+        frac_psi  = u ** k           # PIP: base exponent (leading indicator)
+        frac_amps = u ** k_amps      # Amps: softer ramp (hydraulic lag before current responds)
+        # Sigmoid lag onset replaces hard corner at _LAG_ONSET:
+        #   ~0 for u << 0.55, smooth S-curve through 0.55, ~1 for u >> 0.55
+        lag_u    = 1.0 / (1.0 + math.exp(-14.0 * (u - _LAG_ONSET)))
+        lag_frac = lag_u ** k
+        _psi_n  = _rho * _psi_n  + _ar * random.gauss(0, 18)
+        _amps_n = _rho * _amps_n + _ar * random.gauss(0, 1.5)
+        _temp_n = _rho * _temp_n + _ar * random.gauss(0, 1.2)
+        _vib_n  = _rho * _vib_n  + _ar * random.gauss(0, 0.1)
+        psi_arr.append(  round(psi_nom  + (psi_end  - psi_nom)  * frac_psi  + _psi_n,  1))
+        amps_arr.append( round(amps_nom + (amps_end - amps_nom) * frac_amps + _amps_n, 2))
+        temp_arr.append( round(temp_nom + (temp_end - temp_nom) * lag_frac  + _temp_n, 1))
+        vib_arr.append(  round(vib_nom  + (vib_end  - vib_nom)  * lag_frac  + _vib_n,  3))
         t_min_arr.append(round(i * t_step, 2))
 
     # ── Run real XGBoost health model in sliding window ───────────────────────
@@ -7628,7 +7642,10 @@ async def h2_scenario_replay():
     t_step = 0.1   # weeks per step
 
     onset_idx = random.randint(18, 26)
-    k         = random.uniform(1.2, 2.0)
+    k         = random.uniform(1.2, 2.0)   # base ramp exponent
+    k_vib     = k * random.uniform(1.00, 1.20)   # Vib leads (mechanical friction at restriction builds first)
+    k_amps    = k * random.uniform(0.80, 0.95)   # Amps softer (electrical response to hydraulic change)
+    k_psi     = k * random.uniform(0.85, 1.00)   # PIP rises with amps (backpressure balance)
 
     # Nominal baselines
     eff_nom  = random.uniform(74.5, 77.5)
@@ -7644,14 +7661,28 @@ async def h2_scenario_replay():
     psi_end  = random.uniform(1480, 1650)   # PIP rises — paraffin restriction tell
     temp_end = random.uniform(200.0, 208.0) # barely rises — flat (hydraulic, not thermal)
 
+    # AR(1) autocorrelated noise (same sigma, locally correlated steps)
+    _rho = 0.65
+    _ar  = math.sqrt(1.0 - _rho ** 2)
+    _eff_n = _vib_n = _amps_n = _psi_n = _temp_n = 0.0
     eff_arr, vib_arr, amps_arr, psi_arr, temp_arr, t_wk_arr = [], [], [], [], [], []
     for i in range(N):
-        frac = 0.0 if i < onset_idx else ((i - onset_idx + 1) / max(1, N - onset_idx)) ** k
-        eff_arr.append( round(eff_nom  + (eff_end  - eff_nom)  * frac + random.gauss(0, 0.4),  2))
-        vib_arr.append( round(vib_nom  + (vib_end  - vib_nom)  * frac + random.gauss(0, 0.08), 3))
-        amps_arr.append(round(amps_nom + (amps_end - amps_nom) * frac + random.gauss(0, 0.5),  2))
-        psi_arr.append( round(psi_nom  + (psi_end  - psi_nom)  * frac + random.gauss(0, 18),   1))
-        temp_arr.append(round(temp_nom + (temp_end - temp_nom) * frac + random.gauss(0, 0.8),  1))
+        u_raw     = 0.0 if i < onset_idx else (i - onset_idx + 1) / max(1, N - onset_idx)
+        u_base    = min(1.0, u_raw)
+        frac_base = u_base ** k        # efficiency + temp: base exponent
+        frac_vib  = u_base ** k_vib    # vib leads slightly (mechanical restriction precedes electrical)
+        frac_amps = u_base ** k_amps   # amps softer (current responds to hydraulic change)
+        frac_psi  = u_base ** k_psi    # pip rises with amps (backpressure balance)
+        _eff_n  = _rho * _eff_n  + _ar * random.gauss(0, 0.4)
+        _vib_n  = _rho * _vib_n  + _ar * random.gauss(0, 0.08)
+        _amps_n = _rho * _amps_n + _ar * random.gauss(0, 0.5)
+        _psi_n  = _rho * _psi_n  + _ar * random.gauss(0, 18)
+        _temp_n = _rho * _temp_n + _ar * random.gauss(0, 0.8)
+        eff_arr.append( round(eff_nom  + (eff_end  - eff_nom)  * frac_base + _eff_n,  2))
+        vib_arr.append( round(vib_nom  + (vib_end  - vib_nom)  * frac_vib  + _vib_n,  3))
+        amps_arr.append(round(amps_nom + (amps_end - amps_nom) * frac_amps + _amps_n, 2))
+        psi_arr.append( round(psi_nom  + (psi_end  - psi_nom)  * frac_psi  + _psi_n,  1))
+        temp_arr.append(round(temp_nom + (temp_end - temp_nom) * frac_base + _temp_n, 1))
         t_wk_arr.append(round(i * t_step, 2))
 
     # ── Health score from esp_health.ubj (sliding window) ────────────────────
