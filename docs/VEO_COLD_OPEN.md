@@ -16,7 +16,7 @@
 | 6 | Beat 5 | GDC edge platform — the three compute sleds (bridge) | DONE rendered |
 | 7 | Beat 6 | Pre-threshold scoring — POV cut: 7A Veo render (Mark, hard down-left, audio suppressed, ~3s) + fade + 7B real GDC Advisor screenshot Ken Burns (~6-7s, GAS LOCK confirmed, GDC marker before SCADA marker) | DONE — 7A rendered, 7B screenshot built, assembled as two sub-scenes in Vids |
 | 8 | Beat 7 | Operator resolved — Mark authorizes, amber lamp goes dark (fresh cold render, NOT Extend — lamp-out is the dominant event) | to render (fresh cold render) |
-| 9 | Beat 8 | Hand-off — slow push-in on the LIVE app (built from real screen-recording, not Veo) | build in Vids |
+| 9 | Beat 8 | Hand-off — slow push-in on the LIVE app opening on the **Intro** tab (built from real screen-recording, not Veo) | build in Vids |
 
 
 ---
@@ -163,8 +163,8 @@ Assemble: 7A fade to 7B, then cut to Scene 8.
 ```
 
 > **VO — Beat 6 (Scene 7) — REBALANCED SPLIT (BS+36):**
-> - **7A (over Mark, ~3s):** *"Using your secured networks and data…"* — short sovereignty/human setup over the operator in his secure RTOC.
-> - **7B (over the DETECTION screenshot, ~6-7s):** *"…GDC combines and evaluates multiple sensor streams in real time — identifying the developing issue."* — plays over the detection-moment screenshot (GDC marker fired, hs = 0.9029, docs loading, no recommendation yet).
+> - **7A (over Mark, ~3s):** *"Using your secured networks and data..."* — short sovereignty/human setup over the operator in his secure RTOC.
+> - **7B (over the DETECTION screenshot, ~6-7s):** *"...GDC combines and evaluates multiple sensor streams in real time — identifying the developing issue."* — plays over the detection-moment screenshot (GDC marker fired, hs = 0.9029, docs loading, no recommendation yet).
 > - **Record as one continuous take** and drop it spanning both sub-scenes; the pause falls on the fade. Every concrete word ("sensor streams / identifying the developing issue") lands on the screen that proves it.
 > **Value Point:** Faster Detection (multivariate pattern scoring) + More Time (GDC marker fires before SCADA threshold). NARRATIVE GUARDRAIL: this edge is vs. threshold-only SCADA (the gap between the two markers in 7B is the literal evidence), never vs. best-of-breed APM.
 > **Why POV cut (BS+36):** 7A sells "he is in his secure network looking at something multi-dimensional"; 7B reveals what he sees — the real app with the GDC-before-SCADA gap as a fact, not a claim. Veo's garble limit means any attempt to render the app screen produces fake text. POV cut sidesteps this entirely.
@@ -191,16 +191,16 @@ Convey "resolution" through Mark's relaxed body language, the decisive nod, and 
 
 ### HAND-OFF — Roll into the Demo
 
-**Beat 8 (Scene 9) — Hand-off: push-in on the LIVE app** · *~6s* · *BUILD IN VIDS (from real screen-recording, not Veo)*
+**Beat 8 (Scene 9) — Hand-off: push-in on the LIVE app (Intro tab)** · *~8s* · *BUILD IN VIDS (from real screen-recording, not Veo)*
 
 ```
-NO VEO RENDER — BUILD IN VIDS (BS+35). Scene 9 is built from the live demo itself: take the first few seconds of the actual GDC Advisor screen-recording and apply a slow push-in / gentle brighten as the cold open dissolves into it. Because the screen is the REAL app, there is zero garbled-text risk and the cut into the live demo is maximally honest. (The earlier plan — a Veo push-in toward a faked dashboard — is retired; Veo cannot render a legible UI.)
+NO VEO RENDER — BUILD IN VIDS (BS+35/BS+37). Scene 9 is built from the live demo itself: take the first few seconds of the actual GDC Advisor screen opening on the Intro tab and apply a slow push-in / gentle brighten as the cold open dissolves into it. Because the screen is the REAL app, there is zero garbled-text risk and the cut into the live demo is maximally honest. (The earlier plan — a Veo push-in toward a faked dashboard — is retired; Veo cannot render a legible UI.)
 ```
 
-> **VO — Beat 8 (Scene 9) — FINAL (BS+36):** *"The decision — and the control — are always yours. Let's see it work on a live well right now."* · *(17 words / ~7s) — delivers the HITL claim + invites into the demo.*
-> **Handoff (BS+35 — no Veo render):** Build this from the live demo. Grab the first few seconds of the real GDC Advisor screen-recording and apply a slow push-in / brighten so the cold open dissolves straight into the actual app. The screen is real, so there is no faked dashboard and no garble — the most honest possible cut into Part B.
+> **VO — Beat 8 (Scene 9) — UPDATED (BS+37):** *"The decision — and the control — are always yours. First, a closer look at GDC itself — then we'll watch it work on a live well."* · *(22 words / ~8s) — delivers the HITL claim + bridges into the MEET GDC (Intro deck) section before the live H1 scenario.*
+> **Handoff (BS+35/BS+37):** Build Scene 9 from the live app opening on the **Intro** tab (Slide 1 "What is GDC?"). Apply slow push-in / brighten dissolve. The Intro deck's own **"View Demo" button** on Slide 3 then advances into H1 — the hand-off is a real, built-in click. No faked dashboard, no garble.
 
-**Cut to live screen recording.** From here, follow **V3 (cinematic)** or **V4 (operator-grounded)** for the demo voiceover, starting at the **"What is GDC / How It Works"** beat, then **Discern then Classify then Optimize**, and the close.
+**Cut to live screen recording.** From here, follow **V4 (operator-grounded)** for the demo voiceover, starting at the **"MEET GDC" (Intro tab, 3 slides)** beat (`DEMO_VO_PERPANEL.md` Section 0), then **Discern then Classify then Optimize**, and the close.
 
 ---
 
@@ -245,7 +245,7 @@ The point of per-beat VO: **each scene carries its own narration**, so sync is a
 
 ## PART B — LIVE DEMO (screen recording + VO)
 Use the existing script for the demo walkthrough — **do not** add more B-roll (protects the 6-min budget):
-- **How It Works** tab — three tiers (telemetry to patterns to documents).
+- **MEET GDC (Intro tab)** — 3 slides: What is GDC / When to Consider / Deployment Models. (`DEMO_VO_PERPANEL.md` Section 0)
 - **Discern (H1)** — ambiguous signal; read the on-screen verdict (Gas Lock *or* Drawdown branch).
 - **Classify (H2)** — bearing-wear look-alike to paraffin; three documents; surface fix vs. pull.
 - **Optimize (H3)** — six wells, one gas limit; cloud searches, edge enforces; offline safety.
@@ -258,9 +258,9 @@ Use the existing script for the demo walkthrough — **do not** add more B-roll 
 ## RUNTIME MATH
 | Part | Content | Beats / sections | Time |
 |---|---|---|---|
-| A — Veo intro | Scenes 1-9 (5 problem-half + sled bridge + 2 solution + hand-off) | 9 scenes x ~7-10s | ~1:00-1:15 |
-| B — Live demo | How It Works + H1 + H2 + H3 + close | ~430 words | ~4:00 |
-| | **Total** | | **~5:00-5:15** (comfortably under 6:00) |
+| A — Veo intro | Scenes 1-9 (5 problem-half + sled bridge + 2 solution + hand-off) | 9 scenes x ~7-10s | ~1:05 |
+| B — Live demo | MEET GDC (Intro) + H1 + H2 + H3 + close | ~695 words | ~4:45 |
+| | **Total** | | **~5:50** (under 6:00 — trim lever: ~10 words from H2 narration) |
 
 ---
 

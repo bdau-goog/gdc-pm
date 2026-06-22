@@ -90,8 +90,26 @@ Photorealistic medium shot of the same control-room operator "Mark" from Beat 3,
 ```
 Photorealistic slow push-in toward a clean operations dashboard glowing on a monitor in the dark RTOC, the screen brightening to fill the frame, inviting the viewer in. Cool screen light. No readable text, no logos.
 ```
-> 🎙️ **VO — Beat 9 (Vids Scene 9):** *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*
-> **🛠 Handoff:** Dissolve from the cinematic intro directly into the actual live web-browser UI of the GDC Advisor kiosk (opening on the *How It Works* tab).
+> 🎙️ **VO — Beat 9 (Vids Scene 9):** *"The decision — and the control — are always yours. First, a closer look at GDC itself — then we'll watch it work on a live well."*
+> **🛠 Handoff:** Dissolve from the cinematic intro directly into the actual live web-browser UI opening on the **Intro** tab (Slide 1 "What is GDC?"). The Intro deck's own **▶ View Demo →** button on Slide 3 advances into the live H1 scenario, keeping the hand-off natural.
+
+---
+
+## ░░ SECTION 2 — MEET GDC (Intro tab — 3 slides) ░░  *(~33s)*
+
+*Grounded in the live Intro deck (3 slides: "What is GDC?" · "When Should You Consider GDC?" · "GDC — Flexible Deployment Models"). The cold-open (Scenes 6–8) told "what GDC does for ESPs"; this section tells "what GDC is" at the platform level before the live scenarios.*
+
+### 🖱️ SCREEN CHOREOGRAPHY (live UI — *Intro* tab)
+- **Slide 1 "What is GDC?"** — cursor the GKE→GDC arrow; hold on the glass card ("Google-Managed · AI/ML Enabled"). (~10s)
+- **Slide 2 "When Should You Consider GDC?"** — cursor across the four pillars (Compliance & Sovereignty · Survivability · Latency · Data Gravity). (~12s)
+- **Slide 3 "GDC — Flexible Deployment Models"** — cursor the three model cards (Connected · Software-Only · Air-Gapped); click **▶ View Demo →** to enter the live scenarios. (~11s)
+
+### 🎙️ NARRATION
+> *"At its core, GDC is a fully supported version of Google Kubernetes Engine — Google-managed, AI-enabled — deployed at the edge, on hardware that sits inside your own facility.*
+>
+> *It's built for four realities of field operations: data that must stay sovereign, operations that must survive a network outage, decisions that can't wait on a round-trip to the cloud, and the sheer gravity of data generated at the wellsite.*
+>
+> *And it deploys the way your site allows — a managed connected rack, software on your own hardware, or a fully air-gapped appliance for the most remote sites. Let's see it work."*
 
 ---
 
@@ -196,10 +214,10 @@ gold vs. cold storm blue. No text overlays.
 
 ### 🖱️ SCREEN CHOREOGRAPHY (live UI — *Horizon 3* tab)
 - **Briefing pass:** Slides 1→3. On **Slide 1**, **zoom on the GOR table** — cursor-tap the two lowest-gas wells, then the gassiest. On **Slide 2**, point to the **printed thermal-limit line**.
-- Click **▶ Run the Optimization**.
-- **Milestone A:** trial dots populate the chart — searching, then converging.
-- **Milestone B:** **zoom 1.15× on the per-well setpoint table** as it locks (lowest-gas wells highest; gassiest backs off).
-- **Milestone C:** settle on the **uplift card** and **edge-safety callout**; cursor-circle the gas figure to show the ceiling is respected.
+- Click **⚡ Run Vizier Optimization** (the banner button — *not* "Run the Optimization").
+- **Milestone A:** trial scatter populates the chart — searching, then converging toward the optimum.
+- **Milestone B:** **zoom 1.15× on the per-well setpoint table** as it locks — cursor the **Baseline Hz column** (every well near the same conservative speed), then cursor across the **GDC Optimal column** (lowest-gas wells highest; gassiest backs off). *(No "SCADA Uniform / GDC Optimal" toggle exists — the contrast lives in the two table columns.)*
+- **Milestone C:** settle on the **uplift card** (+bbl/d · cash uplift); cursor the **Binding Constraint selector** (GAS TAKEAWAY active) and the thermal-limit provenance note; cursor-circle the gas ceiling figure to show it is respected.
 
 ### 🎙️ NARRATION
 > *"The third case is the whole pad. These wells share one gas-handling limit set by the midstream contract. Every barrel brings associated gas — but some wells bring far more than others. Throttle them all equally and the field leaves production on the table on its most gas-efficient wells.*
@@ -226,8 +244,9 @@ over, the wells are running. Warm sunrise palette, resolved. No text overlays.
 - **Slow crane-up** from the operator to a **wide of the running pad at sunrise.**
 - Hold the wide; gentle fade.
 
-### 🖱️ SCREEN CHOREOGRAPHY (live UI — *Operations* / *Financials*)
-- Toggle **Operations** then **Financials**; cursor-rest on the cumulative-savings figure. Calm, settled framing.
+### 🖱️ SCREEN CHOREOGRAPHY (live UI — *Optimize* uplift card → *ⓘ Reference*)
+- Rest on the **H3 uplift card** (+bbl/d, cash uplift) — let the numbers sit; then navigate to the **ⓘ Reference** tab; cursor-rest on the "Operator RTOC / Sovereign Data Center" deployment panel. Calm, settled framing.
+- *(Operations and Financials templates exist in the codebase but are not currently wired into the nav — do not attempt to navigate there. Known Integrity item: wire tabs into nav = future code task.)*
 
 ### 🎙️ NARRATION
 > *"Three problems an ESP operation faces every day: an ambiguous alarm, a misread cause, and production left within the limits.*
@@ -266,13 +285,15 @@ When a precise figure matters, **frame it, don't speak it.** Zoom/dwell so the a
 ## APPENDIX C — RUNTIME LEDGER
 | # | Section | Words | Spoken | Notes |
 |---|---|---|---|---|
-| 1 | Cold Open | ~60 | ~0:30 | + ~10s B-roll dwell |
-| 2 | What GDC Is | ~95 | ~0:48 | tier glide |
+| 1 | Cold Open (9 Veo scenes) | ~110 | ~0:65 | ~65s incl. B-roll dwell |
+| 2 | Meet GDC (Intro 3 slides) | ~95 | ~0:33 | replaces old "What GDC Is" tier-glide |
 | 3 | H1 Discern | ~150 (shared + one branch) | ~1:15 | A/B branch, one read |
 | 4 | H2 Classify | ~140 | ~1:10 | doc reveals |
-| 5 | H3 Optimize | ~130 | ~1:05 | Vizier run animates |
-| 6 | Close | ~70 | ~0:35 | crane-up |
-| | **TOTAL spoken** | **≈620** | **≈5:10** | **finished ≈6:00** with B-roll/panel/run dwell |
+| 5 | H3 Optimize | ~130 | ~1:05 | Vizier run + table + uplift |
+| 6 | Close | ~70 | ~0:35 | H3 uplift + Reference tab |
+| | **TOTAL spoken** | **≈695** | **≈5:43** | **finished ≈5:50** with panel/run dwell (under 6:00) |
+
+> Trim lever if cut runs long: drop ~10 words from H2 narration ("and the last pull record shows the bearings were inspected and normal not long ago" → "and the last pull record confirms healthy bearings").
 
 > To trim toward a hard 6:00 if B-roll runs long: drop the Section-2 Veo bridge first, then ~10 words from H2.
 
