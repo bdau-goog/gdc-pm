@@ -126,15 +126,28 @@ Photorealistic cinematic macro shot inside a bright, spotless, climate-controlle
 
 ---
 
-**🎬 Beat 6 — The Operator Resolved (Context Fusion & AI Analysis)**  ·  *~8s*
+**🎬 Beat 6 — Scoring the Combined Pattern (Pre-Threshold Faster Detection)**  ·  *~8s*
+
+```
+Photorealistic cinematic macro shot of the operator "Mark"'s eyes, focused and calm, reflecting the cool blue and green light of the workstation monitors. The camera performs a slow track across his profile as he monitors the system. Deep, quiet concentration; the blue-green light is steady and smooth, with no pulsing alarm amber. Shallow depth of field, 35mm film look, quiet night-shift focus. No screen content is visible in frame, no text, no letters, no logos, no graphics.
+```
+
+> **🎙️ VO — Beat 6:** *"Working at the edge, GDC scores the combined pattern across all sensor channels simultaneously — identifying a developing issue before any individual sensor crosses its hard SCADA limit."*  ·  *(~29 words / ~8s)*  
+> **🛠 Value Point:** Faster Detection (multivariate pattern matching without buzzwords) + More Time (identifying pre-threshold).
+> **🛠 Screen-free:** Convey "monitoring the pattern" purely through the steady blue-green reflections in the operator's focused eyes, avoiding any unrenderable screens.
+> **🛠 Continuity:** Feed a still frame of Mark's close-up from Beat 3 as a reference ingredient to maintain perfect character continuity.
+
+---
+
+**🎬 Beat 7 — Fusing the Unstructured Context (The Context Problem Resolved + HITL)**  ·  *~8s*
 
 ```
 Photorealistic medium shot of the same control-room operator "Mark" from Beat 3, at the same desk, seen in three-quarter side profile, looking off-camera at his screens. The tension from Beat 4B is gone: his brow is relaxed, and he has a calm, confident expression of quiet certainty. Across his face is a soft, steady, cool green and blue screen-glow, with no pulsing amber warning lights. Studying a clear recommendation, he gives a single, slow, assured nod of approval, and with simple deliberate motion, reaches forward and types a final key to authorize the proactive action. The background remains dark and soft, with distant unreadable screens pushed completely out of focus into neat blue bokeh. Cinematic side-profile composition, shallow depth of field, 35mm film look, quiet resolution. No readable text, no logos, no recognizable UI chrome.
 ```
 
-> **🎙️ VO — Beat 6:** *"Running entirely on-premise, GDC automatically fuses real-time sensor signatures with the well's complete document history — delivering a cited, reviewable recommendation for final operator approval, in seconds."*  ·  *(~30 words / ~8s)*  
+> **🎙️ VO — Beat 7:** *"Then, it automatically reads and fuses the well's complete document history in seconds — delivering a cited, reviewable recommendation for final operator approval."*  ·  *(~27 words / ~8s)*  
 > **🛠 Value Point:** More Context Ingested (sensors + documents) + More AI-Driven Insight (cited, reviewable recommendation) + Human-In-The-Loop Approval (nod of approval / operator action) + Sovereignty ("Running entirely on-premise").
-> **🛠 How this resolves the narrative arc:** This beat is the **mirror image** of Beat 4B (the ambiguous alarm / operator hesitates). Beat 4B showed hesitation, amber pulsing warning, and hovering hands. Beat 6 shows quiet confidence, cool green/blue steady glow, a single slow nod of approval, and a decisive action (HITL).
+> **🛠 How this resolves the narrative arc:** This beat is the **mirror image** of Beat 4B (the ambiguous alarm / operator hesitates). Beat 4B showed hesitation, amber pulsing warning, and hovering hands. Beat 7 shows quiet confidence, cool green/blue steady glow, a single slow nod of approval, and a decisive action (HITL).
 > **🛠 Screen-free:** Avoids garbled text. Convey "resolution" purely through Mark's relaxed body language, green-glow lighting, and decisive nod.
 > **🛠 Continuity:** Feed a still frame from Beat 3/4B as a reference ingredient for Flow's Character "Mark" and his desk setup, ensuring perfect facial and wardrobe alignment.
 
@@ -142,13 +155,13 @@ Photorealistic medium shot of the same control-room operator "Mark" from Beat 3,
 
 ### HAND-OFF — Roll into the Demo
 
-**🎬 Beat 7 — Dissolve toward the screen**  ·  *~6s*
+**🎬 Beat 8 — Dissolve toward the screen**  ·  *~6s*
 
 ```
 Photorealistic slow push-in toward a clean operations dashboard glowing on a monitor in the dark RTOC, the screen brightening to fill the frame, inviting the viewer in. Cool screen light. No readable text, no logos.
 ```
 
-> **🎙️ VO — Beat 7:** *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*  ·  *(~18 words / ~7s)*  
+> **🎙️ VO — Beat 8:** *"Let's dive into the live system, and see GDC analyze a struggling well at the source."*  ·  *(~18 words / ~7s)*  
 > **🛠 Handoff:** Dissolve from the cinematic intro directly into the actual live web-browser UI of the GDC Advisor kiosk.
 
 ➡️ **Cut to live screen recording.** From here, follow **V3 (cinematic)** or **V4 (operator-grounded)** for the demo voiceover, starting at the **"What is GDC / How It Works"** beat, then **Discern → Classify → Optimize**, and the close.

@@ -62,17 +62,17 @@ Photorealistic overhead top-down shot looking straight down onto the same dark i
 
 ### MOVEMENT 3: The GDC Solution
 
-**🎬 Beat 6 — Bring GDC to the Operations Center (The Edge Platform)**  ·  *~8s*
+**🎬 Beat 6 — Scoring the Combined Pattern (Pre-Threshold Faster Detection)**  ·  *~8s*
 ```
-Photorealistic cinematic macro shot inside a bright, spotless, climate-controlled enterprise data clean-room with perfectly clear, cold, dry, still air. The camera performs a slow, smooth tracking glide from left to right along the front edges of a small stack of three identical slim silver-white enterprise compute sleds mounted one above another, the focus racking gently from the near sled to the far one. Across the clean front faces, dozens of tiny status LEDs blink in green and amber, while a single steady green power LED glows on each unit. A crisp specular highlight travels slowly across the brushed-metal surfaces as the camera moves. A few blue and orange fiber patch cables catch the moving light. The dense ports stay soft and out of focus so they read as fine texture, never text. Bright, even, cool white lighting; clean dry air; immaculate surfaces. Only the three stacked sleds are in frame — no surrounding rack frame, no power strips, no outlets. Crisp, controlled, enterprise-grade, on-premise.
+Photorealistic cinematic macro shot of the operator "Mark"'s eyes, focused and calm, reflecting the cool blue and green light of the workstation monitors. The camera performs a slow track across his profile as he monitors the system. Deep, quiet concentration; the blue-green light is steady and smooth, with no pulsing alarm amber. Shallow depth of field, 35mm film look, quiet night-shift focus. No screen content is visible in frame, no text, no letters, no logos, no graphics.
 ```
-> 🎙️ **VO — Beat 6 (Vids Scene 6):** *"To find that context in time, Google Distributed Cloud brings Google's AI models directly to your data at the sovereign edge."*
+> 🎙️ **VO — Beat 6 (Vids Scene 6):** *"Working at the edge, GDC scores the combined pattern across all sensor channels simultaneously — identifying a developing issue before any individual sensor crosses its hard SCADA limit."*
 
-**🎬 Beat 7 — The Operator Resolved (Context Fusion & AI Analysis)**  ·  *~8s*
+**🎬 Beat 7 — Fusing the Unstructured Context (The Context Problem Resolved + HITL)**  ·  *~8s*
 ```
 Photorealistic medium shot of the same control-room operator "Mark" from Beat 3, at the same desk, seen in three-quarter side profile, looking off-camera at his screens. The tension from Beat 4 is gone: his brow is relaxed, and he has a calm, confident expression of quiet certainty. Across his face is a soft, steady, cool green and blue screen-glow, with no pulsing amber warning lights. Studying a clear recommendation, he gives a single, slow, assured nod of approval, and with simple deliberate motion, reaches forward and types a final key to authorize the proactive action. The background remains dark and soft, with distant unreadable screens pushed completely out of focus into neat blue bokeh. Cinematic side-profile composition, shallow depth of field, 35mm film look, quiet resolution. No readable text, no logos, no recognizable UI chrome.
 ```
-> 🎙️ **VO — Beat 7 (Vids Scene 7):** *"Running entirely on-premise, GDC automatically fuses real-time sensor signatures with the well's complete document history — delivering a cited, reviewable recommendation for final operator approval, in seconds."*
+> 🎙️ **VO — Beat 7 (Vids Scene 7):** *"Then, it automatically reads and fuses the well's complete document history in seconds — delivering a cited, reviewable recommendation for final operator approval."*
 
 ---
 
