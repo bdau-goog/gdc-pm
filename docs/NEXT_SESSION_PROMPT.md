@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
 Date: 2026-06-23 (Session BS+41) / branch: feature-trio-clean
-Git HEAD: 62b21f0 / Image: sha256:d5eba8a4 (fault-trigger-ui, H1-P5 doc pills + outcome chips redesign)
+Git HEAD: 0ae3980 / Image: sha256:f3c6f77a (fault-trigger-ui, full Gemma de-claim sweep)
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -64,9 +64,10 @@ The bible runtime ledger still shows the old ~5:45 estimate — update it.
 
 ## Current Deployed State
 - App: http://gdc-pm.bdau.io
-- Image: sha256:d5eba8a4 (fault-trigger-ui, H1-P5 doc pills + outcome chips — 62b21f0)
-- Slides committed: h1.html — P3 redesigned (3-card), P5 doc pills + outcome chips (62b21f0)
-- VIDS_PRODUCTION_MASTER.md: B1-P1→P4 marked DONE; B1-P5 redesigned (doc pills + outcome chips) + VO updated — ready to record
+- Image: sha256:f3c6f77a (fault-trigger-ui, Gemma de-claim sweep + H1-P5 doc pills + outcome chips)
+- Slides committed: h1.html P4 (Bayesian Context Fusion), P5 doc pills; intro.html Gemma chip removed
+- VIDS_PRODUCTION_MASTER.md: B1-P1→P4 marked DONE; B1-P5 redesigned + VO updated — ready to record
+- Gemma de-claimed: all user-facing surfaces reframed to XGBoost + pgvector + Bayesian
 
 ## Key Decisions This Session (do NOT revert)
 | Decision | Detail |
