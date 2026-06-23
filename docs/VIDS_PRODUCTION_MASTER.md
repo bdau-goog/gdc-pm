@@ -393,16 +393,24 @@ ASSET REF   : slides/h1.html #p4
 CONTINUITY  : ECHOES Part A (A5 — scattered context is now collected)
 ```
 
-### B1-P5 — INDUSTRIAL APPLICATION (H1 Slide 5)   ·  ~10s  ·  RECORD
+### B1-P5 — INDUSTRIAL APPLICATION (H1 Slide 5)   ·  ~24s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 5 "Solving the Edge Context Gap — At Scale"
-VISUAL      : Three-industry cards
-CAMERA/MOVE : [LIVE] advance to Slide 5; brief hold on the three-industry cards
-              [POST] static
-VO          : "And this gap — live state on the sensors, the deciding context locked in
-              documents — shows up in every industry that runs critical equipment."
-PANEL QUOTE : Industry card labels
+              Three cards: O&G (blue) · P&U (purple) · MARITIME (orange)
+              Each shows: Observational State → Documented Context → GDC Resolution
+VISUAL      : All three industry cards visible; cursor sweeps L→R matching the VO
+CAMERA/MOVE : [LIVE] advance to Slide 5; hold ~3s for all three cards to animate in
+              Cursor on O&G card — "oil and gas case"
+              Cursor moves to P&U card — "Power and utilities"
+              Cursor moves to MARITIME card — "Maritime"
+              Cursor pulls back wide — "Different industries… GDC fuses"
+              [POST] no zoom — cursor movement is the only action; user highlights in post
+VO          : "We just reviewed an oil and gas case — but this gap shows up in every
+              industry that runs critical equipment. Power and utilities: a transformer
+              alarm looks identical on peak load overload or insulation failure. Maritime:
+              the same vibration signature from two completely different causes. Different
+              industries, different physics. GDC fuses the documents that break the tie."
 ASSET REF   : slides/h1.html #p5
 CONTINUITY  : (none)
 ```
