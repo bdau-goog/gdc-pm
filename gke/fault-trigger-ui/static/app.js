@@ -843,7 +843,7 @@ createApp({
       es.onmessage=(e)=>{
         try {
           const msg=JSON.parse(e.data);
-          if(msg.type==='recommendation'){ruleMsg=msg;this.agentTypingText='Gemma streaming analysis…';this.agentMessages.push({role:'agent',content:`[${msg.source}] ${msg.text}`});this.$nextTick(()=>this.scrollChat());this.setHitlFromRecommendation(msg);}
+          if(msg.type==='recommendation'){ruleMsg=msg;this.agentTypingText='AI streaming analysis…';this.agentMessages.push({role:'agent',content:`[${msg.source}] ${msg.text}`});this.$nextTick(()=>this.scrollChat());this.setHitlFromRecommendation(msg);}
           else if(msg.type==='token'){llmText+=msg.text;this.agentTypingText=llmText.slice(-80);}
           else if(msg.type==='done'){es.close();this.agentTyping=false;this.agentTypingText='';if(llmText.trim().length>20){this.agentMessages.push({role:'agent',content:llmText.trim()});this.$nextTick(()=>this.scrollChat());}if(ruleMsg)this.chatHistory.push({role:'assistant',content:ruleMsg.text});}
         } catch{}
@@ -2011,8 +2011,8 @@ createApp({
         const r = await fetch('/api/agent/chat', {method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({asset_id: this.h1TargetWell||'ESP-ALPHA-1', fault_type: this.h1FaultType||'gas_lock', message: q, context: this.h1AdvisorText.slice(0,600)})});
         if (r.ok) { const d = await r.json(); this.h1ChatMessages[this.h1ChatMessages.length-1].text = d.response || 'No response from model.'; }
-        else { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
-      } catch(e) { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting Gemma. Please retry.'; }
+        else { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting on-site AI. Please retry.'; }
+      } catch(e) { this.h1ChatMessages[this.h1ChatMessages.length-1].text = 'Error contacting on-site AI. Please retry.'; }
     },
     
     // ── Horizon 2: Slug Flow ──
@@ -2029,7 +2029,7 @@ createApp({
         if (_h2InjR.ok) { const _h2InjD = await _h2InjR.json(); if (_h2InjD.injection_params) this.showInjectionPopup(_h2InjD.injection_params); }
         this.showToast('⚡ Slug Flow injected on ESP-ALPHA-3','var(--yellow)');
         const feed=await fetch('/api/intelligence-feed/ESP-ALPHA-3?fault_type=slug_flow');
-        if(feed.ok) { const d=await feed.json(); this.h2FeedItems=d.items||[]; this.h2GemmaFinding=d.gemma_finding||'🤖 Gemma: Vibration drift 1.1→2.4 mm/s with flat motor temperature (198°F). Flowline slugging signature — not downhole motor failure. Dispatch surface technician to adjust choke valve. Do NOT pull well.'; }
+        if(feed.ok) { const d=await feed.json(); this.h2FeedItems=d.items||[]; this.h2GemmaFinding=d.gemma_finding||'🤖 AI: Vibration drift 1.1→2.4 mm/s with flat motor temperature (198°F). Flowline slugging signature — not downhole motor failure. Dispatch surface technician to adjust choke valve. Do NOT pull well.'; }
         this.h2DegPollTimer = setInterval(async()=>{
           const r=await fetch('/api/degrade-status/ESP-ALPHA-3');
           if(r.ok){const d=await r.json();if(d.is_active){const cs=this.activeDegradesMap['ESP-ALPHA-3']?.current_sensors||{};if(cs.vib)this.h2SensorVib=cs.vib.toFixed(2)+' mm/s ↑';}}

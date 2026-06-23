@@ -55,7 +55,7 @@
                 <li><strong>RabbitMQ</strong> — Durable message broker; survives pod restarts without data loss</li>
                 <li><strong>Inference API</strong> — XGBoost ML model serving via FastAPI; deterministic, explainable anomaly detection</li>
                 <li><strong>AlloyDB Omni</strong> — PostgreSQL + pgvector; unified store for telemetry, ML outputs, and RAG documents</li>
-                <li><strong>Ollama + Gemma 4 8B</strong> — Local LLM on NVIDIA L4 GPU; RAG synthesis and fault reasoning</li>
+                <li><strong>Bayesian Context Fusion</strong> — On-site deterministic evidence chain; pgvector RAG synthesis and fault reasoning (GPU-optional)</li>
                 <li><strong>Fault Trigger UI</strong> — Demo control console + live operator interface</li>
                 <li><strong>Event Processor</strong> — RabbitMQ consumer; routes telemetry to ML inference and AlloyDB</li>
               </ul>
@@ -65,7 +65,7 @@
               <ul>
                 <li><strong>Pillar 1 — Isolation &amp; self-sufficiency (IEC 62443 / Purdue Model):</strong> OT/production data must not cross the public internet under the operator's OT-security policy. The AI must also keep functioning when the outside link is severed — a satellite or WAN drop during a process upset is a real scenario. Local corpus + local inference is outage-immune by design. <em>Note: NERC-CIP CIP-005/007 applies to Power &amp; Energy Bulk Electric System assets — not upstream O&amp;G.</em></li>
                 <li><strong>Pillar 2 — Data residency &amp; sovereignty:</strong> Reservoir and production data is commercially sensitive. Many NOCs and regulated jurisdictions require it to remain in-country and off public multi-tenant cloud. GDC co-locates compute with the data — it never moves.</li>
-                <li><strong>Pillar 3 — Governance &amp; IP:</strong> Open-weight Gemma on GDC means proprietary prompts (live telemetry + field documents) never transit a third-party model API and are never externally logged or exposed.</li>
+                <li><strong>Pillar 3 — Governance &amp; IP:</strong> Open, auditable AI on GDC means proprietary data (live telemetry + field documents) never transit a third-party model API and are never externally logged or exposed.</li>
               </ul>
             </div>
           </div>
@@ -122,7 +122,7 @@
               <div class="arch-stage stage-llm" style="flex:1;min-width:110px;overflow:hidden">
                 <div class="arch-stage-title">🧠 5. AI Context Fusion</div>
                 <div class="arch-stage-body" style="flex-direction:column;gap:4px">
-                  <div class="arch-chip chip-purple"><span>Gemma 4 8B</span></div>
+                  <div class="arch-chip chip-purple"><span>Bayesian Fusion</span></div>
                 </div>
                 <div style="font-size:1.1rem;color:rgba(255,255,255,0.2);text-align:center;margin:4px 0">↓</div>
                 <div style="display:flex;flex-direction:column;gap:3px">
@@ -343,7 +343,7 @@
                   <div class="arch-stage-title" style="font-size:0.65rem">⚡ Event Processor (GDC)</div>
                   <div class="arch-stage-body" style="flex-direction:column;gap:4px;margin-top:4px">
                     <div class="arch-chip chip-orange"><span style="font-size:0.62rem">XGBoost inference → AI-Based RUL</span></div>
-                    <div class="arch-chip chip-purple"><span style="font-size:0.62rem">RAG context → Gemma 4 8B</span></div>
+                    <div class="arch-chip chip-purple"><span style="font-size:0.62rem">RAG context → Bayesian fusion</span></div>
                   </div>
                 </div>
               </div>
@@ -574,7 +574,7 @@
 
             <!-- Retrieved context assembled -->
             <div class="arch-stage stage-llm">
-              <div class="arch-stage-title">📄 Context Assembled for Gemma Prompt</div>
+              <div class="arch-stage-title">📄 Context Assembled for Bayesian Fusion</div>
               <div class="arch-stage-body" style="flex-direction:column;gap:5px">
                 <div class="arch-chip chip-purple"><span>📚 [Industry Corpus] Gas Lock — causes pump cavitation via gas volume fraction exceeding 30%...</span></div>
                 <div class="arch-chip chip-blue"><span>📋 [Shift Note] Operator noted elevated GOR on ESP-A1 during previous afternoon tour...</span></div>
@@ -588,8 +588,8 @@
         <div class="arch-pane" :class="{active: archPane==='reasoning'}">
           <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
             <div style="flex:1">
-              <h2>AI Reasoning — Gemma 4 8B Edge LLM</h2>
-              <p>The assembled context (sensor data + ML prediction + retrieved documents) is submitted to Gemma 4 8B, running on an NVIDIA L4 GPU within the edge cluster, with no internet dependency.</p>
+              <h2>Bayesian Context Fusion</h2>
+              <p>The assembled context (sensor data + ML prediction + retrieved documents) is fused by a deterministic Bayesian evidence chain running on-site — no GPU required, no internet dependency.</p>
             </div>
             <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
           </div>
@@ -598,21 +598,21 @@
           <div v-if="archInfoOpen && archPane==='reasoning'" class="arch-info-panel">
             <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
             <div class="arch-info-section">
-              <div class="arch-info-title">💡 Why Edge LLM Matters</div>
+              <div class="arch-info-title">💡 Why Deterministic Fusion</div>
               <ul>
-                <li>Cloud LLM APIs (Vertex AI, OpenAI) require a WAN connection and introduce 2–5 second network latency — assuming the link is up</li>
-                <li>A wellsite with 4G failover may have packet loss during a storm — exactly when you need the AI most</li>
+                <li>Cloud LLM APIs require a WAN connection and introduce latency — exactly when you need the AI most</li>
+                <li>A deterministic Bayesian chain produces identical results on every run — fully reproducible, fully auditable, no hallucination risk</li>
                 <li>Sensitive operational data (well test reports, production rates, lab results) never leaves the operator's sovereign boundary</li>
               </ul>
-              <div class="arch-callout callout-purple">Gemma 4 8B on the L4 GPU achieves comparable reasoning quality to Gemini Flash for structured O&G fault diagnosis, with no public-cloud dependency and full offline operation.</div>
+              <div class="arch-callout callout-purple">The Bayesian evidence chain runs on commodity CPU, requires no GPU, and is fully auditable — every likelihood ratio traces to a cited API RP 11S reference. Air-gap capable by design.</div>
             </div>
             <div class="arch-info-section">
-              <div class="arch-info-title">🎯 What the LLM Actually Does</div>
+              <div class="arch-info-title">🎯 What the Bayesian Fusion Actually Does</div>
               <ul>
                 <li>It is <strong style="color:var(--text)">not</strong> doing ML inference — the XGBoost model does that in Pane 3</li>
-                <li>It synthesizes structured sensor data with unstructured text documents to produce a <strong style="color:var(--text)">human-readable diagnosis and action recommendation</strong></li>
+                <li>It fuses pgvector-retrieved documents with sensor data and ML output using a calibrated naive-Bayes evidence chain to produce a <strong style="color:var(--text)">confidence-weighted differential diagnosis</strong></li>
                 <li>It adjusts the Base RUL when retrieved context reveals conditions the ML model's training data didn't capture (e.g., accelerating free-gas trend from the lab report)</li>
-                <li>The recommendation is Gemma's output — not a hardcoded rule</li>
+                <li>The recommendation is produced by a deterministic Bayesian chain over retrieved documents — not a hardcoded rule</li>
               </ul>
             </div>
           </div>
@@ -629,15 +629,15 @@
               </div>
             </div>
 
-            <div class="arch-connector">↓ <span class="arch-connector-label">Submitted to Ollama API · gemma4:latest · NVIDIA L4 GPU · on-cluster · no WAN</span></div>
+            <div class="arch-connector">↓ <span class="arch-connector-label">Processed by on-site Bayesian evidence chain · deterministic · no GPU required · no WAN</span></div>
 
-            <!-- GPU box -->
+            <!-- Bayesian fusion box -->
             <div class="arch-stage stage-llm" style="margin-bottom:12px">
-              <div class="arch-stage-title">🧠 Gemma 4 8B (NVIDIA L4 GPU)</div>
+              <div class="arch-stage-title">🧠 Bayesian Context Fusion (on-site CPU)</div>
               <div class="arch-stage-body">
-                <div class="arch-chip chip-purple"><span class="arch-chip-label">Model</span><span class="arch-chip-val">gemma4:latest</span></div>
-                <div class="arch-chip chip-purple"><span class="arch-chip-label">Backend</span><span class="arch-chip-val">Ollama (on-cluster)</span></div>
-                <div class="arch-chip chip-muted"><span class="arch-chip-label">Latency</span><span class="arch-chip-val">< 8 seconds</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Method</span><span class="arch-chip-val">naive-Bayes log-odds</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Input</span><span class="arch-chip-val">pgvector RAG findings</span></div>
+                <div class="arch-chip chip-muted"><span class="arch-chip-label">Latency</span><span class="arch-chip-val">< 2 seconds</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">WAN required</span><span class="arch-chip-val" style="color:var(--green)">None</span></div>
               </div>
             </div>

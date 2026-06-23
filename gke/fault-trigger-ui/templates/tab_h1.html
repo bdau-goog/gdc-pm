@@ -305,8 +305,8 @@
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(74,222,128,0.2);color:rgba(74,222,128,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
                 <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
                   <div style="margin-bottom:3px;font-size:0.36rem">
-                    <span v-if="h1ReplayData.gemma_modulated" style="color:rgba(167,139,250,0.75)">&#x1F916; Gemma extraction active &middot; LRs modulated from retrieved doc evidence</span>
-                    <span v-else style="color:rgba(100,116,139,0.4)">&#x1F4CA; Baseline LR &middot; GPU offline &middot; lr_base used</span>
+                    <span v-if="h1ReplayData.gemma_modulated" style="color:rgba(167,139,250,0.75)">&#x1F4CA; Document evidence active &middot; LRs calibrated from retrieved docs</span>
+                    <span v-else style="color:rgba(100,116,139,0.4)">&#x1F4CA; Baseline LR &middot; deterministic mode &middot; lr_base used</span>
                   </div>
                   <div style="display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 0.6fr;gap:2px 4px;color:rgba(100,116,139,0.6);font-size:0.38rem;text-transform:uppercase;margin-bottom:2px"><span>Finding</span><span>LR</span><span>Prior</span><span>Post</span></div>
                   <div v-for="f in h1ReplayData.bayes_findings" :key="f.id" style="padding:2px 0;border-top:1px solid rgba(100,116,139,0.08)">
@@ -336,8 +336,8 @@
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(251,146,60,0.2);color:rgba(251,146,60,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
                 <div v-if="h1ShowEvidenceTable && h1ReplayData && h1ReplayData.bayes_findings" style="margin-top:5px;font-size:0.42rem;color:var(--text2);font-family:var(--mono)">
                   <div style="margin-bottom:3px;font-size:0.36rem">
-                    <span v-if="h1ReplayData.gemma_modulated" style="color:rgba(167,139,250,0.75)">&#x1F916; Gemma extraction active &middot; LRs modulated from retrieved doc evidence</span>
-                    <span v-else style="color:rgba(100,116,139,0.4)">&#x1F4CA; Baseline LR &middot; GPU offline &middot; lr_base used</span>
+                    <span v-if="h1ReplayData.gemma_modulated" style="color:rgba(167,139,250,0.75)">&#x1F4CA; Document evidence active &middot; LRs calibrated from retrieved docs</span>
+                    <span v-else style="color:rgba(100,116,139,0.4)">&#x1F4CA; Baseline LR &middot; deterministic mode &middot; lr_base used</span>
                   </div>
                   <div style="display:grid;grid-template-columns:1.2fr 0.6fr 0.6fr 0.6fr;gap:2px 4px;color:rgba(100,116,139,0.6);font-size:0.38rem;text-transform:uppercase;margin-bottom:2px"><span>Finding</span><span>LR</span><span>Prior</span><span>Post</span></div>
                   <div v-for="f in h1ReplayData.bayes_findings" :key="f.id" style="padding:2px 0;border-top:1px solid rgba(100,116,139,0.08)">

@@ -460,7 +460,7 @@
       <!-- With GDC -->
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
         <div style="font-family:var(--mono);font-size:0.85rem;font-weight:700;color:#60a5fa;letter-spacing:0.08em;text-align:center;padding-bottom:6px;border-bottom:1px solid rgba(59,130,246,0.12)">WITH GDC</div>
-        <div style="font-size:0.58rem;color:var(--muted);text-align:center;margin-bottom:4px">Edge-resident AlloyDB + Gemma: auto-retrieval, cited diagnosis, HITL approval</div>
+        <div style="font-size:0.58rem;color:var(--muted);text-align:center;margin-bottom:4px">Edge-resident AlloyDB + pgvector RAG: auto-retrieval, cited diagnosis, HITL approval</div>
         <!-- Time indicator: stopwatch (snaps to ~2s, holds, resets) -->
         <div style="display:flex;align-items:center;gap:10px;padding:7px 12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);border-radius:5px;margin-bottom:2px">
           <svg width="38" height="38" viewBox="0 0 44 44" style="flex-shrink:0;overflow:visible">
@@ -475,7 +475,7 @@
           </svg>
           <div>
             <div style="font-size:0.88rem;font-weight:800;color:#60a5fa;line-height:1.2">< 10 SECONDS</div>
-            <div class="detail-element" style="font-size:0.54rem;color:rgba(59,130,246,0.7);line-height:1.4;margin-top:2px">Edge-resident AlloyDB + on-site Gemma: cited, auditable verdict</div>
+            <div class="detail-element" style="font-size:0.54rem;color:rgba(59,130,246,0.7);line-height:1.4;margin-top:2px">Edge-resident AlloyDB + pgvector RAG: cited, auditable verdict</div>
           </div>
         </div>
         <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
@@ -496,8 +496,8 @@
           <div class="anim-row gdc-step" style="animation-delay:1.7s">
             <span class="gdc-step-num">3</span>
             <div>
-              <div style="font-size:0.58rem;font-weight:700;color:#60a5fa">Gemma Context Fusion</div>
-              <div style="font-size:0.52rem;color:var(--text2);line-height:1.5;margin-top:1px">On-site Gemma reads the retrieved documents. Bayesian evidence chain produces a confidence-weighted differential diagnosis.</div>
+              <div style="font-size:0.58rem;font-weight:700;color:#60a5fa">Bayesian Context Fusion</div>
+              <div style="font-size:0.52rem;color:var(--text2);line-height:1.5;margin-top:1px">On-site Bayesian evidence chain fuses the retrieved documents into a confidence-weighted differential diagnosis.</div>
             </div>
           </div>
           <div class="anim-row gdc-step" style="animation-delay:2.3s">

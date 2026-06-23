@@ -191,7 +191,7 @@
               🤖 GDC Ops Agent
               <span style="font-size:0.54rem;margin-left:3px;text-transform:none;font-weight:400"
                     :style="{color: mlops.ollama_online === false ? 'var(--red)' : 'var(--muted)', opacity: mlops.ollama_online === false ? 1 : 0.7}">
-                {{ mlops.ollama_online === false ? '⛔ LLM offline — rule-based mode' : (mlops.ollama_model || 'gemma4:latest') + ' @ Edge' }}
+                {{ mlops.ollama_online === false ? '⛔ LLM offline — rule-based mode' : (mlops.ollama_model || 'on-site AI') + ' @ Edge' }}
               </span>
               <span v-if="agentTyping" style="font-size:0.54rem;color:var(--muted);text-transform:none;font-weight:400;margin-left:3px">streaming…</span>
             </div>
