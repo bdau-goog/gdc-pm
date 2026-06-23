@@ -299,21 +299,24 @@ NOTE        : View Demo → click moves to this slide (B0.4 is now the last Intr
 **Run button:** `↺ New Scenario`
 **Verdict (random):** `✔ GAS LOCK CONFIRMED` OR `⚠ FLUID DRAWDOWN CONFIRMED`
 
-### B1-P1 — THE SCENARIO (H1 Slide 1)   ·  ~8s  ·  RECORD
+### B1-P1 — THE SCENARIO (H1 Slide 1)   ·  ~30s  ·  RECORD
 ```
 SOURCE      : Live screen capture (briefing slides iframe)
 APP STATE   : H1 tab · briefing mode · Slide 1 "Same Signal. Two Causes. One Right Decision."
 VISUAL      : Scenario kicker + title + sub-text: ESP unloading / two root causes / opposite actions
 CAMERA/MOVE : [LIVE] tab opens in briefing mode on Slide 1
               [POST] static
-VO          : "Well A-3 is on a standard intake-only string. One signal is about to appear —
-              with two possible causes that call for opposite actions."
+VO          : "A moment ago, we described the ambiguous alarm — where the signals alone can't tell
+              you the cause. This is one. Well A-3: a mature ESP well on Pad Alpha, out in the
+              Permian. As it begins to lose lift, the sensors show a textbook decline — but that
+              same signature can come from two very different downhole problems, and the fix that
+              saves the well in one case would destroy it in the other."
 PANEL QUOTE : Slide kicker "THE SCENARIO"
 ASSET REF   : slides/h1.html #p1
-CONTINUITY  : ECHOES Part A (A3–A5 — the ambiguous problem)
+CONTINUITY  : CALLBACKS Part A A4 ("the signals alone can't tell you the cause") — direct echo
 ```
 
-### B1-P2 — AMBIGUOUS TELEMETRY + Play (H1 Slide 2)   ·  ~10s  ·  RECORD
+### B1-P2 — AMBIGUOUS TELEMETRY + Play (H1 Slide 2)   ·  ~12s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 2 "One Signature, Two Physical Realities" · click ▶ Play on
@@ -322,50 +325,52 @@ VISUAL      : Four sensor tiles; ▶ Play animation: PIP and Amps decline; Windi
               Vibration hold flat
 CAMERA/MOVE : [LIVE] advance to Slide 2; click ▶ Play; let animation run
               [POST] zoom 1.2× on the four sensor tiles to make values readable
-VO          : "Watch it develop: intake pressure and motor current slide down together, while
-              winding temperature and vibration stay flat. They lag — so they can't break the tie."
+VO          : "Here are the two culprits: gas entering the pump, or fluid falling below the
+              intake. Completely different physics — and on an intake-only sensor string,
+              completely identical."
 PANEL QUOTE : PIP and Amps declining curves vs flat Temp and Vib lines (zoom quotes them)
 ASSET REF   : slides/h1.html #p2 — mini-sim ▶ Play button
 CONTINUITY  : (none)
 ```
 
-### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~9s  ·  RECORD
+### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~11s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 3 "Motor Burnout vs. Sand Bridging"
 VISUAL      : Two-outcome contrast card: Motor Burnout / Sand Bridging outcomes
 CAMERA/MOVE : [LIVE] advance to Slide 3
               [POST] zoom 1.15× on the two-outcome contrast cards
-VO          : "Same signature, two physical realities. One is cleared by easing the pump;
-              the other is made catastrophic by it. The sensor alone cannot tell you which."
+VO          : "And the actions are opposites. Ease the pump to clear gas — but if the real
+              cause is sand, that same move buries the pump. Guessing wrong is a six-figure
+              workover."
 PANEL QUOTE : Motor Burnout vs. Sand Bridging outcome labels
 ASSET REF   : slides/h1.html #p3
 CONTINUITY  : (none)
 ```
 
-### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~7s  ·  RECORD
+### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~9s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 4 "Fusing Telemetry and Unstructured Well History"
 VISUAL      : Document types being fused against the live signal
 CAMERA/MOVE : [LIVE] advance to Slide 4; cursor across document types
               [POST] static
-VO          : "The tie-breaker isn't another sensor — it's the well's own documents, read
-              against the live signal."
+VO          : "The tie-breaker was never going to be another sensor. It's the well's own
+              documents — read against the live signal."
 PANEL QUOTE : Document source labels on Slide 4
 ASSET REF   : slides/h1.html #p4
 CONTINUITY  : ECHOES Part A (A5 — scattered context is now collected)
 ```
 
-### B1-P5 — INDUSTRIAL APPLICATION (H1 Slide 5)   ·  ~8s  ·  RECORD
+### B1-P5 — INDUSTRIAL APPLICATION (H1 Slide 5)   ·  ~10s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 5 "Solving the Edge Context Gap — At Scale"
 VISUAL      : Three-industry cards
 CAMERA/MOVE : [LIVE] advance to Slide 5; brief hold on the three-industry cards
               [POST] static
-VO          : "And this same gap — state on the sensor, context in the documents — exists
-              across every industry that runs physical assets."
+VO          : "And this gap — live state on the sensors, the deciding context locked in
+              documents — shows up in every industry that runs critical equipment."
 PANEL QUOTE : Industry card labels
 ASSET REF   : slides/h1.html #p5
 CONTINUITY  : (none)
