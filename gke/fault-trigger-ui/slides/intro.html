@@ -53,6 +53,37 @@
   .s3-model:nth-child(1) p strong { color:#4ade80; }
   .s3-model:nth-child(2) p strong { color:#fbbf24; }
   .s3-model:nth-child(3) p strong { color:#f87171; }
+
+  /* ── Slide 4 — Two Operating Topologies ── */
+  .s4-grid { display:grid; grid-template-columns:1fr 1fr; gap:32px; width:100%; max-width:880px; }
+  .s4-panel { display:flex; flex-direction:column; gap:12px; padding:20px 22px 16px; border-radius:10px;
+              background:rgba(15,23,42,0.55); border:1px solid rgba(74,144,200,0.22); }
+  .s4-panel-title { font-size:0.72rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+                    color:rgba(100,116,139,0.7); margin-bottom:4px; }
+  .s4-facility { border:1px solid rgba(74,222,128,0.35); border-radius:8px; padding:12px 14px;
+                 background:rgba(74,222,128,0.04); }
+  .s4-facility-label { font-size:0.62rem; font-weight:700; color:rgba(74,222,128,0.55);
+                       letter-spacing:0.07em; text-transform:uppercase; margin-bottom:8px; }
+  .s4-row { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--text1);
+            padding:3px 0; border-bottom:1px solid rgba(74,144,200,0.08); }
+  .s4-row:last-child { border-bottom:none; }
+  .s4-badge { font-size:0.58rem; font-weight:700; padding:1px 5px; border-radius:3px;
+              background:rgba(74,222,128,0.14); color:#4ade80; white-space:nowrap; }
+  .s4-badge-orange { background:rgba(251,146,60,0.14); color:#fb923c; }
+  .s4-badge-blue   { background:rgba(96,165,250,0.14); color:#60a5fa; }
+  .s4-no-cloud { margin-top:10px; font-size:0.75rem; color:rgba(100,116,139,0.65);
+                 display:flex; align-items:center; gap:6px; }
+  .s4-arrow-row { display:flex; align-items:center; gap:0; flex-direction:column; margin-top:6px; }
+  .s4-arrow-line { width:1px; height:20px; background:rgba(96,165,250,0.4);
+                   border-left:1px dashed rgba(96,165,250,0.5); margin:0 auto; }
+  .s4-arrow-label { font-size:0.60rem; color:rgba(96,165,250,0.65); text-align:center; padding:2px 0; }
+  .s4-cloud { border:1px solid rgba(96,165,250,0.35); border-radius:8px; padding:10px 14px;
+              background:rgba(96,165,250,0.04); margin-top:2px; }
+  .s4-cloud-label { font-size:0.62rem; font-weight:700; color:rgba(96,165,250,0.55);
+                    letter-spacing:0.07em; text-transform:uppercase; margin-bottom:6px; }
+  .s4-cloud-name { font-size:0.86rem; color:#93c5fd; font-weight:600; }
+  .s4-cloud-sub  { font-size:0.72rem; color:rgba(100,116,139,0.65); margin-top:2px; }
+  .s4-data-label { font-size:0.68rem; color:rgba(100,116,139,0.55); font-style:italic; margin-top:8px; }
 </style>
 </head>
 <body>
@@ -266,13 +297,68 @@
 </div><!-- /s3 -->
 
 
+<div class="slide" id="s4">
+  <div class="rainbow-bar"></div>
+  <div class="slide-header">
+    <h1 style="font-size:2.4rem;font-weight:700;color:var(--text1);letter-spacing:-0.02em;line-height:1.2;margin:0">Two Topologies — <em style="font-style:normal;color:#3b82f6">Both Sovereign</em></h1>
+    <div class="slide-divider"></div>
+  </div>
+  <div class="slide-body" style="align-items:center">
+    <div class="s4-grid">
+
+      <!-- LEFT: DISCERN + CLASSIFY — fully on-prem -->
+      <div class="s4-panel">
+        <div class="s4-panel-title">Discern &amp; Classify — H1 / H2</div>
+        <div class="s4-facility">
+          <div class="s4-facility-label">🏭 Your Facility (sovereign boundary)</div>
+          <div class="s4-row"><span class="s4-badge">Sensor</span>Telemetry ingestion</div>
+          <div class="s4-row"><span class="s4-badge s4-badge-orange">XGBoost</span>Health scoring &amp; detection</div>
+          <div class="s4-row"><span class="s4-badge s4-badge-blue">AlloyDB</span>pgvector RAG — field documents</div>
+          <div class="s4-row"><span class="s4-badge">Gemma</span>On-prem LLM reasoning</div>
+          <div class="s4-row"><span class="s4-badge">HITL</span>Diagnosis + operator approval</div>
+        </div>
+        <div class="s4-no-cloud">
+          <span style="font-size:1rem">⛔</span>
+          <span>No cloud required — <strong style="color:var(--text1)">air-gap capable</strong></span>
+        </div>
+      </div>
+
+      <!-- RIGHT: OPTIMIZE — on-prem + Vizier cloud search -->
+      <div class="s4-panel">
+        <div class="s4-panel-title">Optimize — H3</div>
+        <div class="s4-facility">
+          <div class="s4-facility-label">🏭 Your Facility (sovereign boundary)</div>
+          <div class="s4-row"><span class="s4-badge">Sensor</span>Telemetry ingestion</div>
+          <div class="s4-row"><span class="s4-badge s4-badge-orange">XGBoost</span>Thermal limit check (on-edge)</div>
+          <div class="s4-row"><span class="s4-badge s4-badge-blue">AlloyDB</span>Constraint provenance docs</div>
+          <div class="s4-row"><span class="s4-badge">LP</span>Fallback optimizer (local, no cloud)</div>
+          <div class="s4-row"><span class="s4-badge">HITL</span>Setpoint approval + deploy</div>
+        </div>
+        <div class="s4-arrow-row">
+          <div class="s4-arrow-line"></div>
+          <div class="s4-arrow-label">↕&nbsp; only Hz setpoints + scores cross the wire<br>telemetry · production rates · well IDs stay on-prem</div>
+          <div class="s4-arrow-line"></div>
+        </div>
+        <div class="s4-cloud">
+          <div class="s4-cloud-label">☁ Google Cloud</div>
+          <div class="s4-cloud-name">Vertex AI Vizier</div>
+          <div class="s4-cloud-sub">Bayesian GP search — setpoint space only</div>
+        </div>
+        <div class="s4-data-label">Safety enforced on the edge. If the link drops, the local result stands.</div>
+      </div>
+
+    </div>
+  </div>
+</div><!-- /s4 -->
+
+
 <!-- ══ Navigation bar ══ -->
 <div class="nav-bar">
   <span class="nav-spacer"></span>
   <button class="nav-back">← Back</button>
   <span class="nav-hint">← →</span>
   <div id="nav-dots" style="display:flex;gap:6px;align-items:center"></div>
-  <span class="nav-counter">1 / 3</span>
+  <span class="nav-counter">1 / 4</span>
   <button class="nav-next">Next →</button>
   <button class="nav-run" data-msg="go-horizon1" style="display:none">▶ View Demo →</button>
   <span class="nav-spacer"></span>
