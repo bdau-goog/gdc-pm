@@ -350,17 +350,19 @@ VISUAL      : Three choice cards in a row (1fr 1fr 1fr grid). Each shows 2 outco
               opposite fate. The Managed Step-Down card has ✘ Gas (unnecessary) / ✔ Drawdown
               (correct). The Shut-In card has ✘ Gas (overkill) / ✔ Drawdown clean (safe-defers)
               / ✘ Drawdown+Sand (dangerous).
-CAMERA/MOVE : [LIVE] advance to Slide 3; cursor rests center (all 3 cards visible)
-              [POST] Screen Studio staged zoom (three beats, same ~1.4× throughout):
-              (1) Cursor → VFD Speed-Down card · green ✔ Gas Entrainment — CORRECT row
-              (2) Cursor pans straight DOWN to red ✘ Fluid Drawdown + Sand — DANGEROUS row
-                  (same card; pan only; vertical travel = same action, opposite fate)
-              (3) Cursor pans RIGHT to Managed Step-Down card · green ✔ Fluid Drawdown — CORRECT;
-                  brief hold to show "that's the answer — when you know the cause"
-VO          : "Three responses, each with a trap. Ease the speed: right for gas — seizes the
-              pump on a sandy drawdown well. Managed step-down: right for drawdown — the sensor
-              can't tell you which one you're on. That answer is in the documents."
-PANEL QUOTE : ✔ Gas (Speed-Down) → ✘ Drawdown+Sand (Speed-Down) → ✔ Drawdown (Managed Step-Down)
+CAMERA/MOVE : [LIVE] advance to Slide 3; cursor starts wide (all 3 cards visible)
+              [POST] Screen Studio — sweep L→R across all three cards, one beat per card.
+              Use ZOOM (~1.3×) or MASK (highlight one card, others dimmed) — both work:
+              (1) Card 1 (VFD Speed-Down): flick ✔ Gas row → ✘ Drawdown+Sand row (vertical)
+              (2) Card 2 (Managed Step-Down): settle on ✔ Fluid Drawdown row (hold ~2s)
+              (3) Card 3 (Emergency Shut-In): settle on ✘ Gas (overkill) + ✔ clean (holds)
+              (4) Pull back to all three + bottom callout for the closing line
+VO          : "Three responses — and each one is a trap in the wrong case. Ease the speed:
+              clears the gas, but seizes a sandy well. Step down and hold: right for drawdown,
+              needless for gas. Shut in: safe only if the well is confirmed clean — overkill
+              if it isn't. The sensor can't tell you which. That answer is in the documents."
+PANEL QUOTE : Card 1 ✔/✘ flip → Card 2 ✔ Drawdown → Card 3 ✘ Gas + ✔ clean → bottom callout
+
 ASSET REF   : slides/h1.html #p3
 CONTINUITY  : (none)
 NOTE (BS+40): Slide redesigned from 2-card to 3-card to close the "both dangerous for sandy
