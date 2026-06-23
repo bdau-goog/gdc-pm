@@ -372,7 +372,7 @@ NOTE (BS+40): Slide redesigned from 2-card to 3-card to close the "both dangerou
               "SAFE · DEFERS PRODUCTION" on the Shut-In / clean-drawdown row.
 ```
 
-### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~16s  ·  RECORD
+### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~12s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 4 "Fusing Telemetry and Unstructured Well History"
