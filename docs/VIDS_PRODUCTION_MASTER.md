@@ -343,7 +343,7 @@ NOTE (BS+40): "Indistinguishable" dropped from VO — invites "slug-texture" reb
 ### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~13s  ·  RECORD
 ```
 SOURCE      : Live screen capture
-APP STATE   : H1 tab · Slide 3 "Blind to Cause. Both Standard Responses Have a Trap."
+APP STATE   : H1 tab · Slide 3 "All Three Responses Have a Trap."
               (REDESIGNED BS+40 — 3 cards: VFD Speed-Down | Managed Step-Down + Hold | Emergency Shut-In)
 VISUAL      : Three choice cards in a row (1fr 1fr 1fr grid). Each shows 2 outcome rows.
               KEY VISUAL: the Speed-Down card has ✔ Gas / ✘ Drawdown+Sand — same action,
