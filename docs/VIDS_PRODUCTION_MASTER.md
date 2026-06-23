@@ -299,7 +299,7 @@ NOTE        : View Demo → click moves to this slide (B0.4 is now the last Intr
 **Run button:** `↺ New Scenario`
 **Verdict (random):** `✔ GAS LOCK CONFIRMED` OR `⚠ FLUID DRAWDOWN CONFIRMED`
 
-### B1-P1 — THE SCENARIO (H1 Slide 1)   ·  ~30s  ·  RECORD
+### B1-P1 — THE SCENARIO (H1 Slide 1)   ·  ~30s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture (briefing slides iframe)
 APP STATE   : H1 tab · briefing mode · Slide 1 "Same Signal. Two Causes. One Right Decision."
@@ -316,34 +316,50 @@ ASSET REF   : slides/h1.html #p1
 CONTINUITY  : CALLBACKS Part A A4 ("the signals alone can't tell you the cause") — direct echo
 ```
 
-### B1-P2 — AMBIGUOUS TELEMETRY + Play (H1 Slide 2)   ·  ~12s  ·  RECORD
+### B1-P2 — AMBIGUOUS TELEMETRY + Play (H1 Slide 2)   ·  ~14s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 2 "One Signature, Two Physical Realities" · click ▶ Play on
-              the mini-sim (THE EVENT)
-VISUAL      : Four sensor tiles; ▶ Play animation: PIP and Amps decline; Winding Temp and
-              Vibration hold flat
-CAMERA/MOVE : [LIVE] advance to Slide 2; click ▶ Play; let animation run
-              [POST] zoom 1.2× on the four sensor tiles to make values readable
-VO          : "Here are the two culprits: gas entering the pump, or fluid falling below the
-              intake. Completely different physics — and on an intake-only sensor string,
-              completely identical."
-PANEL QUOTE : PIP and Amps declining curves vs flat Temp and Vib lines (zoom quotes them)
-ASSET REF   : slides/h1.html #p2 — mini-sim ▶ Play button
+              the shared scrubber
+VISUAL      : Two animated wellbore diagrams side by side — GAS ENTRAINMENT (blue, left)
+              and FLUID DRAWDOWN · RESERVOIR DEPLETION (amber, right). Shared scrubber
+              drives both simultaneously. Bottom bar "SAME SENSOR OUTPUT ↓" shows identical
+              pressure + amps decline for both causes.
+CAMERA/MOVE : [LIVE] advance to Slide 2; click ▶ Play; let both animations run
+              [POST] zoom 1.2× on the two side-by-side wellbore panels
+VO          : "Two culprits: gas entrainment — free gas reaching the pump — or fluid
+              drawdown, where the fluid level falls toward the intake. Different downhole
+              causes — and on this sensor string, the cause and the safe action are not
+              in these numbers."
+PANEL QUOTE : Bottom bar "SAME SENSOR OUTPUT ↓" + identical pressure/amps bars for both
+              causes (zoom quotes the identical declining bars)
+ASSET REF   : slides/h1.html #p2 — shared ▶ Play scrubber button
 CONTINUITY  : (none)
+NOTE (BS+40): "Indistinguishable" dropped from VO — invites "slug-texture" rebuttal from
+              experienced ESP engineers. Anchor shifted to slide's own unarguable line:
+              "the cause and the safe action are not in these numbers."
 ```
 
 ### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~11s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 3 "Motor Burnout vs. Sand Bridging"
-VISUAL      : Two-outcome contrast card: Motor Burnout / Sand Bridging outcomes
-CAMERA/MOVE : [LIVE] advance to Slide 3
-              [POST] zoom 1.15× on the two-outcome contrast cards
+VISUAL      : Two choice cards (VFD Speed-Down | Emergency Shut-In); each with three
+              outcome rows (✔/✘). KEY VISUAL: the VFD Speed-Down card has both a green
+              ✔ Gas Entrainment row AND a red ✘ Fluid Drawdown + Moderate Sand row —
+              same command, opposite fate.
+CAMERA/MOVE : [LIVE] advance to Slide 3; cursor rests center (wide — both cards visible)
+              [POST] Screen Studio staged zoom (three beats, same ~1.4× level throughout):
+              (1) Cursor → VFD Speed-Down card · green ✔ Gas Entrainment = CORRECT ACTION row
+              (2) Cursor pans straight DOWN to red ✘ Fluid Drawdown + Moderate Sand = DANGEROUS
+                  row on the SAME card — pan only, do not re-scale; the vertical cursor travel
+                  is the argument: same action, opposite fate
+              (3) Cursor nudges to amber callout strip "six-figure workover" at card bottom · hold
 VO          : "And the actions are opposites. Ease the pump to clear gas — but if the real
               cause is sand, that same move buries the pump. Guessing wrong is a six-figure
               workover."
-PANEL QUOTE : Motor Burnout vs. Sand Bridging outcome labels
+PANEL QUOTE : ✔ Gas Entrainment = CORRECT ACTION → ✘ Fluid Drawdown + Moderate Sand = DANGEROUS
+              (same VFD Speed-Down card — vertical cursor travel quotes the contrast)
 ASSET REF   : slides/h1.html #p3
 CONTINUITY  : (none)
 ```
