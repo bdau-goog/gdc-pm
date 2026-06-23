@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-23 (Session BS+39) / branch: feature-trio-clean
-Git HEAD: (see `git log --oneline -3` after startup) / Image: sha256:60bf5924 (fault-trigger-ui, Slide 4 v5)
+Date: 2026-06-23 (Session BS+40) / branch: feature-trio-clean
+Git HEAD: a1cc3da / Image: sha256:ab55aa1f (fault-trigger-ui, B1-S2 amber-hold fix)
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -23,11 +23,17 @@ cat docs/VIDS_PRODUCTION_MASTER.md   # PRIMARY REFERENCE — shot bible
 # Last 3 SESSION_LOG entries for context
 ```
 
-## STEP 3: Next Implementation Task — §1 H1 DISCERN
+## STEP 3: Next Implementation Task — §1 H1 DISCERN (RECORD-READY)
 
-Start at `docs/VIDS_PRODUCTION_MASTER.md` §SECTION 1 (B1-P1 → B1-S6).
+**Code work for H1 is DONE.** Start recording `docs/VIDS_PRODUCTION_MASTER.md` §SECTION 1 (B1-P1 → B1-S6).
 
 **Recording method (settled):** Screen Studio on BenQ 2560×1440 native full-screen (no viewport shrink, no DevTools). Cursor-driven zoom via Screen Studio. VO recorded per-scene in Screen Studio then imported to Vids.
+
+**B1-S2 amber-hold fix (deployed a1cc3da sha256:ab55aa1f):**
+- Let replay run to `gdc_detect_idx` (~27) while transport is playing → amber "Retrieving context" state appears
+- **Immediately press pause** — the amber state now holds indefinitely (was: flipped to verdict in 1.5s even while paused)
+- Record B1-S2 VO: *"GDC flags the developing drift here — ahead of any single hard limit being crossed."*
+- Press play → 1.5s later the verdict + docs reveal automatically (straight into B1-S3/S4)
 
 **B3-S4 gate (pre-verified BS+39 — still valid):**
 ```bash
