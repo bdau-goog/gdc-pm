@@ -357,10 +357,11 @@ CAMERA/MOVE : [LIVE] advance to Slide 3; cursor starts wide (all 3 cards visible
               (2) Card 2 (Managed Step-Down): settle on ✔ Fluid Drawdown row (hold ~2s)
               (3) Card 3 (Emergency Shut-In): settle on ✘ Gas (overkill) + ✔ clean (holds)
               (4) Pull back to all three + bottom callout for the closing line
-VO          : "Three responses — and each one is a trap in the wrong case. Ease the speed:
-              clears the gas, but seizes a sandy well. Step down and hold: right for drawdown,
-              needless for gas. Shut in: safe only if the well is confirmed clean — overkill
-              if it isn't. The sensor can't tell you which. That answer is in the documents."
+VO          : "There are three responses — and each one is a trap in the wrong case. Ease the
+              speed — clears the gas, but seizes a sandy well. Step down and hold — correct for
+              drawdown; for gas, the simple speed-down already worked. Shut in — safe only if
+              the well is confirmed clean, but overkill if it isn't. The sensors can't tell you
+              which is right. That answer is in the well documents."
 PANEL QUOTE : Card 1 ✔/✘ flip → Card 2 ✔ Drawdown → Card 3 ✘ Gas + ✔ clean → bottom callout
 
 ASSET REF   : slides/h1.html #p3
