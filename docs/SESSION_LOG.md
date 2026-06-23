@@ -1454,3 +1454,24 @@ What was built: Global Tailwind dark slate palette replaced harsh neon palette a
 **Code committed:** `65275b7`
 
 Fixed integrity violations: H3 Vizier tab now uses real Vertex AI Vizier Gaussian Process Bandit (not fake deterministic trials). Field intel documents now use live Gemma4 Ollama generation via `_intel_generator()`. VFD cost displayed was $2,500 (fixed to $0). H1 assessment label was "INTERVENE NOW" (fixed to "Intervention Needed" with dynamic state machine). All known display-vs-reality mismatches resolved.
+
+---
+
+## Session BS+40 — 2026-06-23 (Recording Session — H1 Briefing)
+
+**Code committed:** h1.html changes (P3 3-card redesign, P5 text size bump + Oil & Gas/Power & Utilities labels); VIDS_PRODUCTION_MASTER.md (B1-P1→P4 VOs revised and marked DONE, B1-P3 redesign notes, B1-P5 revised VO, B1-P5 runtime note added). Image sha256:c2165139 deployed.
+
+**Recording progress:** B1-P1 ✅ B1-P2 ✅ B1-P3 ✅ B1-P4 ✅ all recorded. B1-P5 recorded but needs re-record after slide fix (see below).
+
+**Key decisions:**
+- H1-P3 redesigned from 2-card to 3-card layout: VFD Speed-Down / Managed Step-Down + Hold / Emergency Shut-In. Closed the false-binary hole where both actions were DANGEROUS for sandy drawdown. Title changed to "All Three Responses Have a Trap." LAST RESORT label replaced with SAFE · DEFERS PRODUCTION.
+- B1-P2 VO: "indistinguishable" dropped (slug-texture rebuttal from ESP engineers); replaced with "the cause and the safe action are not in these numbers."
+- B1-P3 VO: "needless for gas" replaced with "for gas, the simple speed-down already worked." All three responses enumerated.
+- B1-P1 VO: new Veo A4 callback opening ("A moment ago, we described the ambiguous alarm…").
+- B1-P4 VO: GDC-forward rebalance (retrieves/fuses/diagnoses/cited in seconds); drop manual enumeration.
+- B1-P5 VO: O&G callback + brief P&U + Maritime sentences; cursor sweep, no zoom.
+- Runtime ledger obsolete: actual VO-only runtime now ~7:32 core (~8:00-8:30 finished).
+
+**Critical RT failure caught this session:** MCP gdc-second-opinion red-teamed both P&U (transformer alarm) and Maritime (propulsion vibration) cross-industry analogies on H1-P5. BOTH FAIL. Root cause: "identical sensor signature" framing is false — experts can distinguish these cases from sensor rate-of-change or frequency spectrum alone. DGA is a primary diagnostic, not a tie-breaker. ISO 10816 is wrong standard for Maritime. Fix required before re-recording B1-P5: reframe to "action requires off-sensor context" + drop ISO 10816 + name both causes in Maritime card.
+
+**Next tasks (priority order):** (1) Fix P5 cross-industry cards in Plan mode draft → approve → rebuild → re-record B1-P5. (2) Record B1-S1→S6. (3) Update bible runtime ledger. (4) Proceed to H2 recording.
