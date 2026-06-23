@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
 Date: 2026-06-23 (Session BS+41) / branch: feature-trio-clean
-Git HEAD: beb066f / Image: sha256:d2dfa64a (fault-trigger-ui, H1-P5 cross-industry reframe — no app change this step)
+Git HEAD: 62b21f0 / Image: sha256:d5eba8a4 (fault-trigger-ui, H1-P5 doc pills + outcome chips redesign)
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -64,9 +64,9 @@ The bible runtime ledger still shows the old ~5:45 estimate — update it.
 
 ## Current Deployed State
 - App: http://gdc-pm.bdau.io
-- Image: sha256:d2dfa64a (fault-trigger-ui, H1-P5 cross-industry reframe — identical/ISO10816 removed)
-- Slides committed: h1.html — P3 redesigned (3-card), P5 Observational State reframed (e34bf91)
-- VIDS_PRODUCTION_MASTER.md: B1-P1→P4 marked DONE; B1-P5 slide fixed and VO updated — ready to record
+- Image: sha256:d5eba8a4 (fault-trigger-ui, H1-P5 doc pills + outcome chips — 62b21f0)
+- Slides committed: h1.html — P3 redesigned (3-card), P5 doc pills + outcome chips (62b21f0)
+- VIDS_PRODUCTION_MASTER.md: B1-P1→P4 marked DONE; B1-P5 redesigned (doc pills + outcome chips) + VO updated — ready to record
 
 ## Key Decisions This Session (do NOT revert)
 | Decision | Detail |
