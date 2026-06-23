@@ -55,16 +55,17 @@
   .s3-model:nth-child(3) p strong { color:#f87171; }
 
   /* ── Slide 4 v4 — Two Edge Architectures ── */
-  .s4-wrap { display:flex; flex-direction:column; gap:0; width:100%; max-width:920px; flex:1; }
+  .s4-wrap { display:flex; flex-direction:column; gap:0; width:100%; max-width:920px;
+             flex:1; justify-content:center; }
   .s4-col-headers { display:grid; grid-template-columns:1fr 1fr; column-gap:24px; margin-bottom:8px; }
   .s4-col-hdr { display:flex; flex-direction:column; align-items:center; gap:6px; }
   .s4-col-hdr-label { font-size:0.72rem; font-weight:700; letter-spacing:0.07em;
                       text-transform:uppercase; color:var(--muted); }
   .s4-header-rule { border:none; border-top:1px solid rgba(74,144,200,0.22); margin-bottom:0; }
   .s4-topo-row { display:grid; grid-template-columns:1fr 1fr; column-gap:24px;
-                 align-items:center; padding:22px 0; flex:1; }
+                 align-items:center; padding:16px 0; }
   .s4-left  { display:flex; flex-direction:column; gap:8px; }
-  .s4-right { display:flex; align-items:center; }
+  .s4-right { display:flex; align-items:center; justify-content:center; }
   .s4-row-label { font-size:0.72rem; font-weight:700; letter-spacing:0.09em; text-transform:uppercase; }
   .s4-row-label.green { color:#4ade80; }
   .s4-row-label.blue  { color:#60a5fa; }
@@ -73,7 +74,7 @@
   .s4-chip { font-size:0.76rem; font-weight:600; padding:4px 10px; border-radius:4px;
              background:rgba(74,144,200,0.1); color:rgba(148,163,184,0.9); white-space:nowrap; }
   .s4-row-divider { border:none; border-top:1px dashed rgba(74,144,200,0.2); margin:0; }
-  .s4-conn-line { flex:1; border-top:1px dashed rgba(96,165,250,0.4); }
+  .s4-conn-line { flex:0 0 48px; border-top:1px dashed rgba(96,165,250,0.4); }
   .s4-cloud-box { padding:12px 18px; border-radius:8px; border:1px solid rgba(96,165,250,0.35);
                   background:rgba(96,165,250,0.05); white-space:nowrap; }
   .s4-cloud-name { font-size:0.96rem; font-weight:700; color:#93c5fd; }
