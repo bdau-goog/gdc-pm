@@ -24,7 +24,7 @@ Every demo section maps to a value point first stated in the cold open and echoe
 | **MORE TIME** — pre-threshold scoring | Scene 7 (GDC amber marker before SCADA red marker in GDC Advisor screenshot) | H1-S2 (new) | `gdc_detect_idx` (~27) fires before `alarm_idx` (~48) in `h1ReplayData` |
 | **MORE CONTEXT** — document fusion | Scene 8 (Mark authorizes; amber lamp out) | H1-S4 / H2-S3 (3-doc cascade) | `h1RagRevealed` / `h2VerdictRevealed` → doc cards appear sequentially |
 | **HITL / SOVEREIGNTY — on-prem** | Scene 8 (nod + authorize) | H1-S5 / H2-S4 | `GDC Agent · Action package ready · Awaiting RTOC approval` → `✔ Approve & Execute` |
-| **SOVEREIGNTY SPECTRUM** — H1/H2 air-gap, H3 connected | Intro Slide 3 plant (Deployment Models) | H2→H3 Bridge scene (new) + H3 Slide 3 payoff | Intro `s3` slide; H3 `Cloud Searches. Edge Enforces.`; Vizier sends only Hz + score |
+| **SOVEREIGNTY SPECTRUM** — H1/H2 on-prem, H3 connected | Intro Slide 3 plant (Deployment Models) | H2→H3 Bridge scene (new) + H3 Slide 3 payoff | Intro `s3` slide; H3 `Cloud Searches. Edge Enforces.`; Vizier sends only Hz + score |
 
 ---
 
@@ -35,7 +35,7 @@ Extend the existing VO to bridge forward:
 > *"…a managed connected rack, software on your own hardware, or a fully air-gapped appliance for the most remote sites. **You'll see both ends of that spectrum today.** Let's see it work."*
 
 ### BRIDGE — new scene between H2 Close and H3 (see §BRIDGE below)
-> *"The first two cases ran entirely on-prem — air-gap capable, no cloud required. The third case is the connected model: it reaches GCP for Bayesian search — but only candidate setpoints and scores leave the site. Your data never follows. And safety stays local."*
+> *"The first two cases ran entirely on-prem — all AI local, no cloud required. The third is the connected model: it reaches the cloud for Bayesian search — but only setpoints and scores leave the site. Your data never follows. Safety stays local."*
 
 ### PAYOFF — H3-S3 + H3-S5 (existing lines, now carry the sovereignty resolution)
 H3-S3: *"…more daily production, with gas held just under the ceiling."*
@@ -465,8 +465,8 @@ VISUAL      : SCADA view shows alarm banner; no cause; grey action cards (not gr
 CAMERA/MOVE : [LIVE] switch to 🟡 SCADA View; scrub to alarm; point to the amber banner
               and the un-colored action cards
               [POST] static
-VO          : "This is what the control system sees. It protects the pump — it trips on its
-              hard limit, as it should — but it offers no cause, and no read on sand risk."
+VO          : "This is what the control system sees. It protects the pump — trips on its
+              hard limit, as it should — but offers no cause, no read on sand risk."
 PANEL QUOTE : "ambiguous underload" + grey (not green) action cards
 ASSET REF   : templates/tab_h1.html — `h1CursorIdx >= h1ReplayData.alarm_idx` + SCADA view
 CONTINUITY  : (none)
@@ -660,19 +660,13 @@ ASSET REF   : templates/tab_h2.html — two-card layout before h2Resolved / h2Pu
 CONTINUITY  : (none)
 ```
 
-### B2-S5 — Outcome (OPTIONAL / TRIM)   ·  ~4s  ·  RECORD-IF-BUDGET
+### B2-S5 — Outcome   ·  ~4s  ·  ❌ CUT
 ```
 SOURCE      : Live screen capture
 APP STATE   : H2 tab · GDC Advisor · h2Resolved=true · !h2PullOutcome
-              · "✅ HOT-OIL TRUCK DISPATCHED — PARAFFIN RESTRICTION CLEARED"
-VISUAL      : Resolved outcome card; pull explicitly avoided
-CAMERA/MOVE : [LIVE] click dispatch; hold on outcome card
-              [POST] static
-VO          : "Symptom versus cause — decided by the documents."
-PANEL QUOTE : "✅ HOT-OIL TRUCK DISPATCHED — PARAFFIN RESTRICTION CLEARED"
-ASSET REF   : templates/tab_h2.html — `h2Resolved && !h2PullOutcome` outcome card
-NOTE        : OPTIONAL — cut if runtime tight. The action contrast card (B2-S4) already
-              carries the payoff if this scene is dropped.
+NOTE        : ❌ CUT (BS+41) — VO "Symptom versus cause — decided by the documents" is
+              verbatim-redundant with B2-S4 closing line. B2-S4 carries the payoff.
+              Do not record. Saves ~4s.
 ```
 
 ---
@@ -690,10 +684,12 @@ VISUAL      : Return to the three Deployment Model cards; cursor the Air-Gapped 
 CAMERA/MOVE : [LIVE] navigate Intro tab → Slide 3; cursor Air-Gapped card (hold ~2s) then
               pan cursor to Connected card (hold ~2s)
               [POST] zoom 1.15× on the Air-Gapped and Connected cards to make labels readable
-VO          : "The first two cases ran entirely on-prem — air-gap capable, no cloud required.
-              The third case is the connected model: it reaches GCP for Bayesian search —
-              but only candidate setpoints and scores leave the site. Your data never follows.
-              And safety stays local."
+VO          : "The first two cases ran entirely on-prem — all AI local, no cloud required.
+              The third is the connected model: it reaches the cloud for Bayesian search —
+              but only setpoints and scores leave the site. Your data never follows.
+              Safety stays local."
+              (NOTE: "air-gap capable" removed per BS+39 accuracy fix — demo runs on
+              Connected GDC; honest claim is "all AI on-prem, fully sovereign")
 PANEL QUOTE : "Air-Gapped" model card label (H1/H2) + "Connected" model card label (H3)
 ASSET REF   : slides/intro.html #s3 (same as B0.3 — callback not re-record)
 CONTINUITY  : TOPOLOGY SPINE: Plant (B0.4) → Bridge (this) → Payoff (H3-S5).
