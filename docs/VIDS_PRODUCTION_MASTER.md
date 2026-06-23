@@ -406,12 +406,12 @@ CAMERA/MOVE : [LIVE] advance to Slide 5; hold ~3s for all three cards to animate
               Cursor moves to MARITIME card — "Maritime"
               Cursor pulls back wide — "Different industries… GDC fuses"
               [POST] no zoom — cursor movement is the only action; user highlights in post
-VO          : "We just reviewed an oil and gas case — but this gap shows up in every
-              industry that runs critical equipment. Power and utilities: a transformer
-              thermal alarm fires — isolate or ride through peak demand? The answer is
-              in the DGA report. Maritime: vibration rising, fuel up — combustion knock
-              or bearing wear? Opposite responses. The documents decide. Different
-              industries, different physics. GDC fuses the context."
+VO          : "This gap shows up in every industry running critical equipment. Power and
+              utilities: transformer alarm fires — isolate or ride through peak demand?
+              The answer is in the DGA report. Maritime: vibration rising, fuel up —
+              combustion knock or bearing wear? Opposite responses. The documents decide.
+              Different industries, different physics. GDC fuses the context."
+              (~52 words / ~21s — locked BS+41)
 ASSET REF   : slides/h1.html #p5
 CONTINUITY  : (none)
 ```
