@@ -182,6 +182,7 @@ createApp({
       h1PlayTimer: null,            // setInterval handle
       h1FaultTypeRevealed: false,   // true once cursor >= gdc_detect_idx
       h1RagRevealTimer: null,       // setTimeout for 1.5s RAG reveal after GDC detect
+      h1RagPending: false,          // true when detect fired while paused; reveal deferred to play resume
 
       // Horizon 2 State
       h2Injected: false,
@@ -388,6 +389,14 @@ createApp({
         }
       }
     },
+    // When transport resumes, fire any deferred RAG reveal (e.g. paused at gdc_detect_idx for B1-S2)
+    h1Playing(val) {
+      if (val && this.h1RagPending && this.h1FaultTypeRevealed && !this.h1RagRevealed) {
+        this.h1RagPending = false;
+        if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
+        this.h1RagRevealTimer = setTimeout(() => { this._h1DoRagReveal(); }, 1500);
+      }
+    },
     // ── Scenario Replay: advance state when cursor crosses detection thresholds ──
     h1CursorIdx(val) {
       if (!this.h1ReplayData) return;
@@ -398,6 +407,7 @@ createApp({
         if (this.h1RagDoc3Timer)   { clearTimeout(this.h1RagDoc3Timer);   this.h1RagDoc3Timer   = null; }
         this.h1FaultTypeRevealed  = false;
         this.h1RagRevealed        = false;
+        this.h1RagPending         = false;
         this.h1RagDoc2Shown       = false;
         this.h1RagDoc3Shown       = false;
         this.h1EvidenceActive     = 0;
@@ -412,15 +422,13 @@ createApp({
         this.h1FaultTypeRevealed = true;
         this.h1FaultType = this.h1ReplayData.fault_type;
         if (this.h1RagRevealTimer) clearTimeout(this.h1RagRevealTimer);
-        this.h1RagRevealTimer = setTimeout(() => {
-          this.h1RagRevealed = true;
-          this.h1EvidenceActive = 2; // triggers h1EvidenceActive watcher → sets exclusion flags
-          // Sequential doc reveals: GOR Lab Test at +2s, OEM Guide at +3.5s
-          if (this.h1RagDoc2Timer) clearTimeout(this.h1RagDoc2Timer);
-          if (this.h1RagDoc3Timer) clearTimeout(this.h1RagDoc3Timer);
-          this.h1RagDoc2Timer = setTimeout(() => { this.h1RagDoc2Shown = true; }, 2000);
-          this.h1RagDoc3Timer = setTimeout(() => { this.h1RagDoc3Shown = true; }, 3500);
-        }, 1500);
+        if (this.h1Playing) {
+          // Transport running → reveal RAG after 1.5s (normal playback behavior)
+          this.h1RagRevealTimer = setTimeout(() => { this._h1DoRagReveal(); }, 1500);
+        } else {
+          // Transport paused → hold amber "Retrieving" state until play resumes (B1-S2 recording window)
+          this.h1RagPending = true;
+        }
       }
       // Update Plotly cursor line via relayout (shape index 1 = cursor; shape[0] = alarm marker)
       this._updateH1ReplayCursor(val);
@@ -453,6 +461,16 @@ createApp({
   },
 
   methods: {
+    // ── H1 RAG reveal helper — called by timer whether triggered live or deferred ──
+    _h1DoRagReveal() {
+      this.h1RagRevealed = true;
+      this.h1EvidenceActive = 2; // triggers h1EvidenceActive watcher → sets exclusion flags
+      // Sequential doc reveals: GOR Lab Test at +2s, OEM Guide at +3.5s
+      if (this.h1RagDoc2Timer) clearTimeout(this.h1RagDoc2Timer);
+      if (this.h1RagDoc3Timer) clearTimeout(this.h1RagDoc3Timer);
+      this.h1RagDoc2Timer = setTimeout(() => { this.h1RagDoc2Shown = true; }, 2000);
+      this.h1RagDoc3Timer = setTimeout(() => { this.h1RagDoc3Shown = true; }, 3500);
+    },
     openDeepDive(assetId, faultType) {
       this.ddAssetId = assetId;
       this.ddFaultType = faultType;
