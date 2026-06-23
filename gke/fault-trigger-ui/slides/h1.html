@@ -292,78 +292,94 @@
   <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:14px 48px 10px;gap:12px;overflow:hidden">
     <div style="flex-shrink:0">
       <div class="slide-kicker" style="color:var(--amber)">DECISION SUPPORT</div>
-      <h2 class="slide-title">Motor Burnout vs. Sand Bridging</h2>
-      <p class="slide-sub">An unloading well forces a blind trade-off: slow down to clear gas and risk sand settling, or shut in and risk sand fallback.</p>
-      <p class="slide-sub" style="margin-top:4px"><strong style="color:#fbbf24">Neither is safe without knowing the well's completion history.</strong></p>
+      <h2 class="slide-title">Blind to Cause.<br>Both Standard Responses Have a Trap.</h2>
+      <p class="slide-sub">The sensor confirms hydraulic unloading — but cannot say whether the cause is gas entrainment or fluid drawdown. Each cause demands a different response.</p>
+      <p class="slide-sub" style="margin-top:4px"><strong style="color:#fbbf24">Without knowing the cause and sand history, no standard response is safe.</strong></p>
     </div>
 
-    <!-- Two decision cards -->
-    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0">
+    <!-- Three decision cards -->
+    <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;min-height:0">
 
       <!-- Card 1: VFD Speed-Down -->
-      <div class="anim-row" style="animation-delay:0.2s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:18px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.82rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:7px">CHOICE: VFD SPEED-DOWN <span style="font-weight:400;color:var(--muted)">52 → 44 Hz</span></div>
-        <div style="font-size:0.60rem;color:var(--muted);line-height:1.5">Reduces pump intake rate. Well stays online if gas is the cause.</div>
-        <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
+      <div class="anim-row" style="animation-delay:0.2s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:6px">VFD SPEED-DOWN <span style="font-weight:400;color:var(--muted)">52 → 44 Hz</span></div>
+        <div style="font-size:0.58rem;color:var(--muted);line-height:1.5">Reduces pump intake rate. Correct for gas — leaves a sandy drawdown well exposed.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;overflow:hidden">
           <div class="dec-outcome" style="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.22)">
             <span class="dec-check" style="color:#4ade80">✔</span>
             <div>
-              <div style="font-size:0.60rem;font-weight:700;color:#4ade80;margin-bottom:2px">Gas Entrainment — CORRECT ACTION</div>
+              <div style="font-size:0.60rem;font-weight:700;color:#4ade80;margin-bottom:2px">Gas Entrainment — CORRECT</div>
               <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Gas vents up the annulus. Pump recovers hydraulic load. Well stays on production at reduced rate. Zero incremental cost.</div>
-            </div>
-          </div>
-          <div class="dec-outcome" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.14)">
-            <span class="dec-check" style="color:#86efac">✔</span>
-            <div>
-              <div style="font-size:0.60rem;font-weight:700;color:#86efac;margin-bottom:2px">Fluid Drawdown + Light Sand — ACCEPTABLE</div>
-              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Safe only above minimum lift velocity <em>and</em> if sand cut confirmed low from completion record.</div>
             </div>
           </div>
           <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
             <span class="dec-check" style="color:#f87171">✘</span>
             <div>
-              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Fluid Drawdown + Moderate Sand — DANGEROUS</div>
-              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Below ~48 Hz, tubing velocity drops under critical sand-transport limit. Sand settles and bridges the string. Pump seizes on restart.</div>
+              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Fluid Drawdown + Sand — DANGEROUS</div>
+              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Drops below critical sand-transport velocity. Sand bridges the string. Pump seizes on restart.</div>
             </div>
           </div>
         </div>
-        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.54rem;color:rgba(251,191,36,0.85)">A zero-dollar VFD command triggers a six-figure workover if sand is present and unaccounted for.</div>
+        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.52rem;color:rgba(251,191,36,0.85)">Right for gas — wrong for a sandy drawdown well. The sensor can't tell you which.</div>
       </div>
 
-      <!-- Card 2: Emergency Shut-In -->
-      <div class="anim-row" style="animation-delay:0.8s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:18px 20px;display:flex;flex-direction:column;gap:10px;overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.82rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:7px">CHOICE: EMERGENCY SHUT-IN <span style="font-weight:400;color:var(--muted)">Stop Pump</span></div>
-        <div style="font-size:0.60rem;color:var(--muted);line-height:1.5">Stops pump completely. Eliminates immediate motor burnout risk — at a cost.</div>
-        <div style="display:flex;flex-direction:column;gap:7px;flex:1;overflow:hidden">
+      <!-- Card 2: Managed Step-Down + Hold -->
+      <div class="anim-row" style="animation-delay:0.6s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:6px">MANAGED STEP-DOWN + HOLD <span style="font-weight:400;color:var(--muted)">Stay above transport velocity</span></div>
+        <div style="font-size:0.58rem;color:var(--muted);line-height:1.5">Reduces rate while keeping tubing velocity above the critical sand-transport threshold.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;overflow:hidden">
+          <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
+            <span class="dec-check" style="color:#f87171">✘</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Gas Entrainment — UNNECESSARY</div>
+              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Gas clears at reduced speed regardless. Managed ramp adds control complexity with no benefit.</div>
+            </div>
+          </div>
+          <div class="dec-outcome" style="background:rgba(74,222,128,0.07);border:1px solid rgba(74,222,128,0.22)">
+            <span class="dec-check" style="color:#4ade80">✔</span>
+            <div>
+              <div style="font-size:0.60rem;font-weight:700;color:#4ade80;margin-bottom:2px">Fluid Drawdown — CORRECT</div>
+              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Holds tubing velocity above the sand-transport limit. Sand stays in suspension. Pump stays safe while the well stabilizes.</div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.52rem;color:rgba(251,191,36,0.85)">Requires knowing the cause is drawdown — that answer is in the documents, not the sensor.</div>
+      </div>
+
+      <!-- Card 3: Emergency Shut-In -->
+      <div class="anim-row" style="animation-delay:1.0s;background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.3);border-radius:var(--radius);padding:14px 16px;display:flex;flex-direction:column;gap:8px;overflow:hidden">
+        <div style="font-family:var(--mono);font-size:0.78rem;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.06em;border-bottom:1px solid rgba(255,255,255,0.07);padding-bottom:6px">EMERGENCY SHUT-IN <span style="font-weight:400;color:var(--muted)">Stop Pump</span></div>
+        <div style="font-size:0.58rem;color:var(--muted);line-height:1.5">Stops pump completely. Eliminates motor-burnout risk — but not always the safe default.</div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex:1;overflow:hidden">
           <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
             <span class="dec-check" style="color:#f87171">✘</span>
             <div>
               <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Gas Entrainment — OVERKILL</div>
-              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Unnecessary production deferral and restart risk (electrical inrush, hydraulic hammer). The asset was never in danger.</div>
+              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Production deferral + restart risk (inrush, hydraulic hammer). Asset was never at risk.</div>
             </div>
           </div>
           <div class="dec-outcome" style="background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.14)">
             <span class="dec-check" style="color:#86efac">✔</span>
             <div>
-              <div style="font-size:0.60rem;font-weight:700;color:#86efac;margin-bottom:2px">Fluid Drawdown + Low Sand — LAST RESORT</div>
-              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Acceptable only when completion record confirms low sand cut <em>and</em> standing valve integrity. Defers production.</div>
+              <div style="font-size:0.60rem;font-weight:700;color:#86efac;margin-bottom:2px">Fluid Drawdown (confirmed clean) — SAFE · DEFERS PRODUCTION</div>
+              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Acceptable when completion record confirms low sand cut <em>and</em> standing valve integrity. Always costs production.</div>
             </div>
           </div>
           <div class="dec-outcome" style="background:rgba(239,68,68,0.07);border:1px solid rgba(239,68,68,0.25)">
             <span class="dec-check" style="color:#f87171">✘</span>
             <div>
-              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Fluid Drawdown + Sand Present — DANGEROUS</div>
-              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Stopping flow drops velocity to zero. Suspended sand falls back onto pump assembly. Sand-bridge seizure. Six-figure workover pull.</div>
+              <div style="font-size:0.60rem;font-weight:700;color:#f87171;margin-bottom:2px">Fluid Drawdown + Sand — DANGEROUS</div>
+              <div class="detail-element" style="font-size:0.55rem;color:var(--text2);line-height:1.5">Zero velocity drops suspended sand onto pump assembly. Sand-bridge seizure. Six-figure workover.</div>
             </div>
           </div>
         </div>
-        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.54rem;color:rgba(251,191,36,0.85)">Shut-in is not a conservative default — without sand context, it can be as damaging as the wrong trim.</div>
+        <div style="padding:6px 9px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:4px;font-size:0.52rem;color:rgba(251,191,36,0.85)">Not a conservative default — without sand context, as damaging as the wrong trim.</div>
       </div>
     </div>
 
     <!-- Bottom callout -->
     <div class="anim-row" style="flex-shrink:0;animation-delay:1.4s;padding:13px 20px;background:rgba(15,23,42,0.85);border:1px solid rgba(255,255,255,0.08);border-radius:7px;text-align:center">
-      <div style="font-size:1.05rem;font-weight:800;color:#e2e8f0;line-height:1.4">To make the safe call, the operator needs to know the sand history of the well.</div>
+      <div style="font-size:1.05rem;font-weight:800;color:#e2e8f0;line-height:1.4">The correct response depends on the cause and the sand history — neither is in the sensor data.</div>
       <div style="font-size:0.80rem;color:var(--muted);margin-top:5px;font-style:italic">SCADA cannot provide it. The answer is in the completion record — a document, not a sensor.</div>
     </div>
   </div>
