@@ -384,11 +384,11 @@ CAMERA/MOVE : [LIVE] advance to Slide 4
               [POST] zoom on WITHOUT column (clock + document list) during "minutes to hours";
               pan RIGHT to WITH column (stopwatch + GDC steps) during "GDC does it in seconds";
               settle on the < 10 SECONDS readout for the closing line
-VO          : "The answer lives in the well's own records — the completion file, the fluid
-              survey, the shift log. By hand, under an active alarm, finding and reading them
-              takes minutes to hours. GDC does it in seconds — automatically, with every
-              source cited."
-PANEL QUOTE : WITHOUT column "MINUTES TO HOURS" clock → WITH column "< 10 SECONDS" stopwatch
+VO          : "Those records exist. The problem is assembling them under pressure. GDC
+              retrieves, fuses, and diagnoses automatically — in seconds. A cited
+              recommendation is in the engineer's hands before any hard limit is crossed."
+PANEL QUOTE : WITHOUT column "MINUTES TO HOURS" → WITH column "< 10 SECONDS" · GDC 4-step
+              (auto-retrieve → Gemma fusion → cited verdict → HITL)
 ASSET REF   : slides/h1.html #p4
 CONTINUITY  : ECHOES Part A (A5 — scattered context is now collected)
 ```
