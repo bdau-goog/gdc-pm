@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-23 (Session BS+40) / branch: feature-trio-clean
-Git HEAD: 650956b / Image: sha256:c2165139 (fault-trigger-ui, B1-P5 labels + text size bump)
+Date: 2026-06-23 (Session BS+41) / branch: feature-trio-clean
+Git HEAD: e34bf91 / Image: sha256:d2dfa64a (fault-trigger-ui, H1-P5 cross-industry reframe — identical framing removed)
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -23,35 +23,20 @@ cat docs/VIDS_PRODUCTION_MASTER.md   # PRIMARY REFERENCE — shot bible
 # Last 3 SESSION_LOG entries for context
 ```
 
-## STEP 3: FIRST TASK — Fix H1-P5 Cross-Industry Cards (BLOCKING — do before any recording)
+## STEP 3: FIRST TASK — Record B1-P5, then B1-S1 → B1-S6
 
-**Red-team result (Session BS+40, MCP gdc-second-opinion):** Both P&U and Maritime analogies in H1 Slide 5 FAIL.
+**H1-P5 card fix: ✅ DONE (Session BS+41)**
+- P&U line 571: "Thermal alarm fires. Safe action — isolate now or ride through peak demand — depends on context the sensor stream cannot supply."
+- Maritime line 593: "Vibration alarm fires — block vibration rising, fuel consumption up, RPM flat. Combustion knock and early bearing wear both produce this pattern; opposite responses required."
+- ISO 10816 removed. "identical" removed. Committed e34bf91. Live at sha256:d2dfa64a.
 
-**Root cause:** "SCADA thermal alarm — identical on overload or insulation failure" is FALSE. An expert reads disproportionate rate-of-change from sensors alone; DGA is a *primary* diagnostic, not a tie-breaker. Same problem for Maritime: combustion knock and bearing wear have distinct frequency spectra; "identical" is falsifiable.
+**Recording order:**
+1. B1-P5 — VO in bible (VIDS_PRODUCTION_MASTER.md §B1-P5). Cursor O&G → P&U → MARITIME → pull wide. ~24s.
+2. B1-S1 → B1-S2 → B1-S3 → B1-S4 (A/B branch) → B1-S5 → B1-S6 (OPTIONAL)
 
-**Approved fix (Plan Mode only, user to approve draft before code):**
-Reframe from "identical sensor signature" → "alarm fires; the *safe action* depends on context off the telemetry stream." Drop ISO 10816 from Maritime (no replacement standard needed). Name both causes in Maritime (currently only has one explicit cause — inconsistent with P&U which names both).
+B1-P1 ✅ B1-P2 ✅ B1-P3 ✅ B1-P4 ✅ B1-P5 card fixed ✅ — ready to record B1-P5.
 
-**Implementation steps:**
-1. Draft revised P5 card text + B1-P5 VO in Plan mode → get approval
-2. Edit `gke/fault-trigger-ui/slides/h1.html` P5 section — rewrite "Observational State" and "Documented Context" blurbs; remove ISO 10816 citation
-3. Rebuild + push + rollout restart (standard deploy pipeline)
-4. Re-record B1-P5 with revised VO
-
-**Specific lines to target in h1.html (grep to confirm):**
-```bash
-grep -n "SCADA thermal alarm\|ISO 10816\|identical on" gke/fault-trigger-ui/slides/h1.html
-```
-
-**Revised framing (start here — refine with user):**
-- P&U: "A transformer SCADA thermal alarm — winding temperature rising, load current rising. Whether to isolate (incipient internal fault) or ride through (explained peak-demand overload) requires documents: the DGA oil lab report confirms or rules out internal arcing; the regional grid demand forecast explains the load. Without both, the correct action is unknown."
-- Maritime: "Engine block vibration rising with fuel consumption up, RPM flat. Whether to switch fuel tanks under way (high-asphaltene combustion knock) or initiate controlled shutdown (early main bearing wear) requires the fuel bunkering assay and OEM combustion service bulletin. Both causes; opposite actions; the decision lives in the documents."
-
-## STEP 4: Resume Recording — B1-S1 → B1-S6 (after P5 is fixed)
-
-B1-P1 ✅ B1-P2 ✅ B1-P3 ✅ B1-P4 ✅ recorded this session.
-B1-P5 needs re-record after P5 card fix above.
-Then proceed: B1-S1 → B1-S2 → B1-S3 → B1-S4 (A/B) → B1-S5 → B1-S6 (OPTIONAL).
+## STEP 4: Continue Recording — B2 → BBRIDGE → B3 → BCLOSE (after B1 done)
 
 All B1-Sx VOs are in the bible and have not changed this session — safe to proceed.
 
@@ -74,9 +59,9 @@ The bible runtime ledger still shows the old ~5:45 estimate — update it.
 
 ## Current Deployed State
 - App: http://gdc-pm.bdau.io
-- Image: sha256:c2165139 (fault-trigger-ui, H1-P5 text bumped + Oil & Gas / Power & Utilities labels)
-- Slides committed: h1.html — P3 redesigned (3-card, "All Three Responses Have a Trap."), P5 text bumped
-- VIDS_PRODUCTION_MASTER.md: B1-P1→P4 marked DONE; B1-P5 card has revised VO but needs re-record after slide fix
+- Image: sha256:d2dfa64a (fault-trigger-ui, H1-P5 cross-industry reframe — identical/ISO10816 removed)
+- Slides committed: h1.html — P3 redesigned (3-card), P5 Observational State reframed (e34bf91)
+- VIDS_PRODUCTION_MASTER.md: B1-P1→P4 marked DONE; B1-P5 slide fixed and VO updated — ready to record
 
 ## Key Decisions This Session (do NOT revert)
 | Decision | Detail |
