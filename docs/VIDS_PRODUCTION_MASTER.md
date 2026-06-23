@@ -340,28 +340,33 @@ NOTE (BS+40): "Indistinguishable" dropped from VO — invites "slug-texture" reb
               "the cause and the safe action are not in these numbers."
 ```
 
-### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~11s  ·  RECORD
+### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~13s  ·  RECORD
 ```
 SOURCE      : Live screen capture
-APP STATE   : H1 tab · Slide 3 "Motor Burnout vs. Sand Bridging"
-VISUAL      : Two choice cards (VFD Speed-Down | Emergency Shut-In); each with three
-              outcome rows (✔/✘). KEY VISUAL: the VFD Speed-Down card has both a green
-              ✔ Gas Entrainment row AND a red ✘ Fluid Drawdown + Moderate Sand row —
-              same command, opposite fate.
-CAMERA/MOVE : [LIVE] advance to Slide 3; cursor rests center (wide — both cards visible)
-              [POST] Screen Studio staged zoom (three beats, same ~1.4× level throughout):
-              (1) Cursor → VFD Speed-Down card · green ✔ Gas Entrainment = CORRECT ACTION row
-              (2) Cursor pans straight DOWN to red ✘ Fluid Drawdown + Moderate Sand = DANGEROUS
-                  row on the SAME card — pan only, do not re-scale; the vertical cursor travel
-                  is the argument: same action, opposite fate
-              (3) Cursor nudges to amber callout strip "six-figure workover" at card bottom · hold
-VO          : "And the actions are opposites. Ease the pump to clear gas — but if the real
-              cause is sand, that same move buries the pump. Guessing wrong is a six-figure
-              workover."
-PANEL QUOTE : ✔ Gas Entrainment = CORRECT ACTION → ✘ Fluid Drawdown + Moderate Sand = DANGEROUS
-              (same VFD Speed-Down card — vertical cursor travel quotes the contrast)
+APP STATE   : H1 tab · Slide 3 "Blind to Cause. Both Standard Responses Have a Trap."
+              (REDESIGNED BS+40 — 3 cards: VFD Speed-Down | Managed Step-Down + Hold | Emergency Shut-In)
+VISUAL      : Three choice cards in a row (1fr 1fr 1fr grid). Each shows 2 outcome rows.
+              KEY VISUAL: the Speed-Down card has ✔ Gas / ✘ Drawdown+Sand — same action,
+              opposite fate. The Managed Step-Down card has ✘ Gas (unnecessary) / ✔ Drawdown
+              (correct). The Shut-In card has ✘ Gas (overkill) / ✔ Drawdown clean (safe-defers)
+              / ✘ Drawdown+Sand (dangerous).
+CAMERA/MOVE : [LIVE] advance to Slide 3; cursor rests center (all 3 cards visible)
+              [POST] Screen Studio staged zoom (three beats, same ~1.4× throughout):
+              (1) Cursor → VFD Speed-Down card · green ✔ Gas Entrainment — CORRECT row
+              (2) Cursor pans straight DOWN to red ✘ Fluid Drawdown + Sand — DANGEROUS row
+                  (same card; pan only; vertical travel = same action, opposite fate)
+              (3) Cursor pans RIGHT to Managed Step-Down card · green ✔ Fluid Drawdown — CORRECT;
+                  brief hold to show "that's the answer — when you know the cause"
+VO          : "Three responses, each with a trap. Ease the speed: right for gas — seizes the
+              pump on a sandy drawdown well. Managed step-down: right for drawdown — the sensor
+              can't tell you which one you're on. That answer is in the documents."
+PANEL QUOTE : ✔ Gas (Speed-Down) → ✘ Drawdown+Sand (Speed-Down) → ✔ Drawdown (Managed Step-Down)
 ASSET REF   : slides/h1.html #p3
 CONTINUITY  : (none)
+NOTE (BS+40): Slide redesigned from 2-card to 3-card to close the "both dangerous for sandy
+              drawdown" false-binary hole. Managed Step-Down + Hold is the complete answer
+              GDC's drawdown verdict delivers. "LAST RESORT" label removed — replaced with
+              "SAFE · DEFERS PRODUCTION" on the Shut-In / clean-drawdown row.
 ```
 
 ### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~9s  ·  RECORD
