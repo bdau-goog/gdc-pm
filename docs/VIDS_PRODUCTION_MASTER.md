@@ -408,9 +408,10 @@ CAMERA/MOVE : [LIVE] advance to Slide 5; hold ~3s for all three cards to animate
               [POST] no zoom — cursor movement is the only action; user highlights in post
 VO          : "We just reviewed an oil and gas case — but this gap shows up in every
               industry that runs critical equipment. Power and utilities: a transformer
-              alarm looks identical on peak load overload or insulation failure. Maritime:
-              the same vibration signature from two completely different causes. Different
-              industries, different physics. GDC fuses the documents that break the tie."
+              thermal alarm fires — isolate or ride through peak demand? The answer is
+              in the DGA report. Maritime: vibration rising, fuel up — combustion knock
+              or bearing wear? Opposite responses. The documents decide. Different
+              industries, different physics. GDC fuses the context."
 ASSET REF   : slides/h1.html #p5
 CONTINUITY  : (none)
 ```
