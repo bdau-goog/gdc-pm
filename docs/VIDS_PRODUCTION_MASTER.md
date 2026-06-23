@@ -340,7 +340,7 @@ NOTE (BS+40): "Indistinguishable" dropped from VO — invites "slug-texture" reb
               "the cause and the safe action are not in these numbers."
 ```
 
-### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~13s  ·  RECORD
+### B1-P3 — DECISION SUPPORT (H1 Slide 3)   ·  ~27s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 3 "All Three Responses Have a Trap."
@@ -372,16 +372,23 @@ NOTE (BS+40): Slide redesigned from 2-card to 3-card to close the "both dangerou
               "SAFE · DEFERS PRODUCTION" on the Shut-In / clean-drawdown row.
 ```
 
-### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~9s  ·  RECORD
+### B1-P4 — ADDING CONTEXT (H1 Slide 4)   ·  ~16s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · Slide 4 "Fusing Telemetry and Unstructured Well History"
-VISUAL      : Document types being fused against the live signal
-CAMERA/MOVE : [LIVE] advance to Slide 4; cursor across document types
-              [POST] static
-VO          : "The tie-breaker was never going to be another sensor. It's the well's own
-              documents — read against the live signal."
-PANEL QUOTE : Document source labels on Slide 4
+              · Left panel: WITHOUT GDC — clock (MINUTES TO HOURS), 4 scattered sources
+              · Right panel: WITH GDC — stopwatch (< 10 SECONDS), 4 automated steps
+VISUAL      : Two-column contrast — MINUTES TO HOURS (left) vs < 10 SECONDS (right).
+              The stopwatch-vs-clock is the dominant visual; the source names fill the detail.
+CAMERA/MOVE : [LIVE] advance to Slide 4
+              [POST] zoom on WITHOUT column (clock + document list) during "minutes to hours";
+              pan RIGHT to WITH column (stopwatch + GDC steps) during "GDC does it in seconds";
+              settle on the < 10 SECONDS readout for the closing line
+VO          : "The answer lives in the well's own records — the completion file, the fluid
+              survey, the shift log. By hand, under an active alarm, finding and reading them
+              takes minutes to hours. GDC does it in seconds — automatically, with every
+              source cited."
+PANEL QUOTE : WITHOUT column "MINUTES TO HOURS" clock → WITH column "< 10 SECONDS" stopwatch
 ASSET REF   : slides/h1.html #p4
 CONTINUITY  : ECHOES Part A (A5 — scattered context is now collected)
 ```
