@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
 Date: 2026-06-23 (Session BS+41) / branch: feature-trio-clean
-Git HEAD: e34bf91 / Image: sha256:d2dfa64a (fault-trigger-ui, H1-P5 cross-industry reframe — identical framing removed)
+Git HEAD: beb066f / Image: sha256:d2dfa64a (fault-trigger-ui, H1-P5 cross-industry reframe — no app change this step)
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -23,20 +23,25 @@ cat docs/VIDS_PRODUCTION_MASTER.md   # PRIMARY REFERENCE — shot bible
 # Last 3 SESSION_LOG entries for context
 ```
 
-## STEP 3: FIRST TASK — Record B1-P5, then B1-S1 → B1-S6
+## STEP 3: RECORDING — B1-P5 in progress; then B1-S1 → S6, then B2 → BBRIDGE → B3 → BCLOSE
 
-**H1-P5 card fix: ✅ DONE (Session BS+41)**
-- P&U line 571: "Thermal alarm fires. Safe action — isolate now or ride through peak demand — depends on context the sensor stream cannot supply."
-- Maritime line 593: "Vibration alarm fires — block vibration rising, fuel consumption up, RPM flat. Combustion knock and early bearing wear both produce this pattern; opposite responses required."
-- ISO 10816 removed. "identical" removed. Committed e34bf91. Live at sha256:d2dfa64a.
+**H1-P5 card fix: ✅ DONE** · **Tier 1 bible trims: ✅ DONE (beb066f)**
 
-**Recording order:**
-1. B1-P5 — VO in bible (VIDS_PRODUCTION_MASTER.md §B1-P5). Cursor O&G → P&U → MARITIME → pull wide. ~24s.
-2. B1-S1 → B1-S2 → B1-S3 → B1-S4 (A/B branch) → B1-S5 → B1-S6 (OPTIONAL)
+Trim summary (docs only — no app change, no re-record needed for done scenes):
+- B1-P5 VO: 52w / ~21s (locked)
+- B1-S3 VO: tightened 31w → 28w
+- B2-S5: ❌ CUT — redundant VO; saves ~4s
+- BBRIDGE VO: "air-gap capable" → "all AI local" (BS+39 accuracy fix applied to VO)
 
-B1-P1 ✅ B1-P2 ✅ B1-P3 ✅ B1-P4 ✅ B1-P5 card fixed ✅ — ready to record B1-P5.
+**Recording order (current):**
+1. B1-P5 — in progress (user recording)
+2. B1-S1 → B1-S2 → B1-S3 → B1-S4 (A/B) → B1-S5 → B1-S6 (OPTIONAL — cut if tight)
+3. B2-P1 → B2-P2 → B2-P3 → B2-S1 → B2-S2 → B2-S3 → B2-S4 (skip B2-S5 — CUT)
+4. BBRIDGE (use updated VO — "all AI local, no cloud required")
+5. B3-P1 → B3-P2 → B3-P3 → B3-S1 → B3-S2 → B3-S3 → B3-S4 (CONDITIONAL) → B3-S5
+6. BCLOSE
 
-## STEP 4: Continue Recording — B2 → BBRIDGE → B3 → BCLOSE (after B1 done)
+## STEP 4: Pre-B2 RT gate — H2-C1 (vib units)
 
 All B1-Sx VOs are in the bible and have not changed this session — safe to proceed.
 
