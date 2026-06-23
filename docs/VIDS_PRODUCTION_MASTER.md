@@ -214,9 +214,9 @@ CONTINUITY  : This clip's opening frame should match A8's final frame (RTOC → 
 
 ---
 
-## SECTION 0 — MEET GDC · Intro tab, 3 slides · ~33s
+## SECTION 0 — MEET GDC · Intro tab, 4 slides · ~43s
 
-### B0.1 — What is GDC? (Intro Slide 1)   ·  ~10s  ·  RECORD
+### B0.1 — What is GDC? (Intro Slide 1)   ·  ~10s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture
 APP STATE   : Intro tab · Slide 1 "What is GDC?" (opens when tab is clicked)
@@ -231,7 +231,7 @@ ASSET REF   : slides/intro.html #s1
 CONTINUITY  : (none — first app scene)
 ```
 
-### B0.2 — When to Consider GDC (Intro Slide 2)   ·  ~12s  ·  RECORD
+### B0.2 — When to Consider GDC (Intro Slide 2)   ·  ~12s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture
 APP STATE   : Intro tab · Slide 2 "When Should You Consider Using GDC?"
@@ -247,23 +247,47 @@ ASSET REF   : slides/intro.html #s2
 CONTINUITY  : (none)
 ```
 
-### B0.3 — Deployment Models + Sovereignty Plant (Intro Slide 3)   ·  ~13s  ·  RECORD
+### B0.3 — Deployment Models (Intro Slide 3)   ·  ~9s  ·  ✅ DONE
 ```
 SOURCE      : Live screen capture
 APP STATE   : Intro tab · Slide 3 "GDC — Flexible Deployment Models"
 VISUAL      : Three model cards: Connected · Software-Only · Air-Gapped
-CAMERA/MOVE : [LIVE] advance slide; cursor the three model cards; click ▶ View Demo →
-              [POST] static
-VO          : "And it deploys the way your site allows — a managed connected rack, software
-              on your own hardware, or a fully air-gapped appliance for the most remote sites.
-              You'll see both ends of that spectrum today. Let's see it work."
-PANEL QUOTE : Three deployment model cards; "Air-Gapped" is the anchor for H1/H2;
-              "Connected" is the anchor for H3
+CAMERA/MOVE : [LIVE] advance slide; cursor the three model cards
+              [POST] static (no View Demo click here — that moved to B0.4)
+VO          : "There are three deployment models to match your use-cases — Google managed
+              connected rack servers, GDC software on your own hardware, or a fully
+              air-gapped appliance for the most sensitive workloads."
+PANEL QUOTE : Three deployment model cards
 ASSET REF   : slides/intro.html #s3
-CONTINUITY  : SOVEREIGNTY PLANT — the phrase "both ends of that spectrum" is paid off by
-              the H2→H3 Bridge scene (BBRIDG) and H3-S5
-NOTE        : VO extended from DEMO_VO_PERPANEL.md to add "You'll see both ends of that
-              spectrum today." — this is the sovereignty plant.
+CONTINUITY  : (none — sovereignty plant was cut; topology framing is in B0.4)
+NOTE (SESSION BS+39 decision): Original VO included "You'll see both ends of that spectrum
+              today" as a sovereignty plant. CUT FOR ACCURACY — overclaimed two hardware SKUs
+              (the demo uses one Connected deployment, not both Connected and Air-Gapped hardware).
+              B0.4 replaces this as the honest topology plant.
+```
+
+### B0.4 — Two Edge Architectures (Intro Slide 4)   ·  ~10s  ·  ✅ DONE ⭐ NEW
+```
+SOURCE      : Live screen capture — NEW SLIDE (slides/intro.html #s4, committed 115ed31)
+APP STATE   : Intro tab · Slide 4 "Two Edge Architectures — Fully On-Prem and Hybrid"
+              · Two-column layout: RTOC icon (left) | Google Cloud icon (right)
+              · Row 1: DISCERN · CLASSIFY (green) — chip box left only, right column empty
+              · Row 2: OPTIMIZE (blue) — chip box left + dashed connector → AI Optimizer cloud box
+VISUAL      : Both rows visible; connector + AI Optimizer box in right column (Optimize row)
+CAMERA/MOVE : [LIVE] advance slide; cursor Discern·Classify row (left) → trace dashed connector
+              → AI Optimizer box; click ▶ View Demo →
+              [POST] gentle zoom to AI Optimizer box as VO says "Vizier, Google's powerful AI optimizer"
+VO          : "Three scenarios — two where all AI runs on-prem against local data, fully
+              sovereign. The third reaches the cloud for one service: Vizier, Google's
+              powerful AI optimizer."
+PANEL QUOTE : "AI Optimizer · Vertex AI Vizier" cloud box (right column, Optimize row)
+ASSET REF   : slides/intro.html #s4
+CONTINUITY  : TOPOLOGY PLANT — pays off in BBRIDGE (callback) and H3-S3/S5 (payoff).
+              "Air-gap capable" deliberately NOT used — demo runs on Connected GDC.
+              Sovereignty framing: "all AI on-prem, fully sovereign" (accurate);
+              "data never follows" implied by the cloud box showing only setpoints+scores.
+NOTE        : View Demo → click moves to this slide (B0.4 is now the last Intro slide).
+              B0.3 advances normally to B0.4 via Next →.
 ```
 
 ---
@@ -627,7 +651,8 @@ VO          : "The first two cases ran entirely on-prem — air-gap capable, no 
               And safety stays local."
 PANEL QUOTE : "Air-Gapped" model card label (H1/H2) + "Connected" model card label (H3)
 ASSET REF   : slides/intro.html #s3 (same as B0.3 — callback not re-record)
-CONTINUITY  : SOVEREIGNTY SPINE: Plant (B0.3) → Bridge (this) → Payoff (H3-S5)
+CONTINUITY  : TOPOLOGY SPINE: Plant (B0.4) → Bridge (this) → Payoff (H3-S5).
+              B0.3 plant line was cut for accuracy (Session BS+39). B0.4 is the honest plant.
 INTEGRITY   : Sovereignty claim is true to code: Vizier receives only Hz vectors + scalar
               cash_flow (app.py L6741–6763). evaluate_field() — physics, temps, GOR —
               runs on-prem before any value crosses the wire. Fallback is fully deterministic
@@ -814,7 +839,7 @@ CONTINUITY  : Final sovereign-data-center framing resolves the sovereignty spine
 | Section | Scenes | Est. time |
 |---|---|---|
 | Part A — Cold open (Veo, 9 scenes) | A1–A9 | ~65s |
-| Part B — Intro (3 slides) | B0.1–B0.3 | ~33s |
+| Part B — Intro (4 slides) | B0.1–B0.4 | ~43s |
 | Part B — H1 Discern (5 slides + 5+1 scenario) | B1-P1 to B1-S6 | ~55s+15s opt |
 | Part B — H2 Classify (3 slides + 4+1 scenario) | B2-P1 to B2-S5 | ~27s+13s opt |
 | Part B — Sovereignty Bridge | BBRIDGE | ~8s |
