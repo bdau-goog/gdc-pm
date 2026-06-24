@@ -497,17 +497,15 @@ CAMERA/MOVE : [LIVE] click 🟢 GDC Advisor; let docs + verdict render; when Doc
               proof of L3 document fusion); close modal; let remaining docs cascade in; zoom
               each doc card briefly as it appears
               [POST] zoom 1.15× on the verdict card; hold ~2s
-VO — GAS LOCK : "GDC retrieves the well's documents — casing pressure climbing, GOR up,
-              the annulus still submerged — and infers free gas reaching the pump stages:
-              gas interference, not drawdown. Ease the speed; keep the well online."
-              (NOTE BS+47: "gas in pump stages" is INFERRED from surface evidence —
-              casing pressure + GOR + annulus state — NOT measured directly by any
-              sensor. The shift note itself says "GVF estimated...based on casing
-              pressure behaviour and surface gas rate." No downhole GVF sensor exists
-              on this string. The new VO attributes the inference correctly:
-              surface measurements → physics (API RP 11S §7.2) → inferred conclusion.
-              This is the stronger claim: it demonstrates the L3 reasoning chain,
-              not just the output.)
+VO — GAS LOCK : "GDC retrieves the well's latest documents — the gas-to-oil ratio rising
+              at the separator, gas is accumulating in the annulus — and concludes that
+              free gas is reaching the pump stages. It's gas interference, not fluid
+              drawdown. It's best to ease the speed and keep the well online."
+              (~46 words / ~15s real-pace — LOCKED BS+47)
+              (INTEGRITY: "concludes" = inference from surface evidence. Gas-to-oil ratio
+              = Separator Lab Report on screen. Gas accumulating in annulus = Shift Note
+              casing pressure +18 PSI on screen. No downhole GVF sensor on this string —
+              GVF ~18% is estimated from surface evidence, not measured directly.)
 VO — DRAWDOWN : "GDC retrieves the well's documents — fluid level below the intake, a known
               sand producer — and returns a cited verdict: drawdown. Shut it in; easing the
               speed here would seize the pump."
@@ -536,9 +534,10 @@ VISUAL      : HITL panel; approve the action
 CAMERA/MOVE : [LIVE] show the HITL awaiting state; zoom the Autonomy Policy badge;
               zoom the evidence/similarity line; click ✔ Approve & Dispatch to SCADA
               [POST] zoom 1.15× on "Awaiting RTOC approval" + the approve button
-VO          : "Every recommendation is cited and reviewable. The engineer approves the
-              action — GDC advises, the human decides. The autonomy policy sets the envelope;
-              this call requires human approval."
+VO          : "Every recommendation is cited, and every step is reviewable. GDC prepares
+              the action and hands it to the engineer — GDC advises, but the human decides.
+              The autonomy policy sets the envelope, and for a setpoint change like this one,
+              it always requires a person to sign off."
 PANEL QUOTE : "Awaiting RTOC approval" label + ✔ Approve & Dispatch to SCADA button label
 ASSET REF   : templates/tab_h1.html — `GDC Agent · Action package ready · Awaiting RTOC approval`
 CONTINUITY  : ECHOES Part A A8 (the nod + authorize moment)
@@ -553,7 +552,8 @@ APP STATE   : H1 tab · GDC Advisor · h1Resolved=true
 VISUAL      : Resolved outcome card; well stays online (gas lock) or safe shut-in (drawdown)
 CAMERA/MOVE : [LIVE] hold on the resolved state
               [POST] static
-VO          : "The well stays online — an ambiguous alarm became a confident, low-cost decision."
+VO          : "The setpoint goes out, and the well stays online. What started as an ambiguous
+              alarm became a confident, low-cost decision — no shut-in, no truck roll."
               (gas lock branch; omit or adapt for drawdown)
 PANEL QUOTE : "✅ VFD SETPOINT DISPATCHED" status label
 ASSET REF   : templates/tab_h1.html — `h1Resolved && !h1Seized`
@@ -578,8 +578,9 @@ VISUAL      : Scenario kicker + title + sub: paraffin problem / 52-day overdue t
               vendor delay logged but not in SCADA
 CAMERA/MOVE : [LIVE] tab opens in briefing mode on Slide 1
               [POST] static
-VO          : "A different well, a slower problem. Waxy crude, on a routine treatment
-              schedule — until a treatment is missed."
+VO          : "This is a different well, with a slower-moving problem. It produces a waxy
+              crude, so it's on a routine treatment schedule to keep the tubing clear —
+              until one of those treatments gets missed."
 PANEL QUOTE : Slide kicker "THE SCENARIO"
 ASSET REF   : slides/h2.html #p1
 CONTINUITY  : (none — new scenario)
@@ -594,9 +595,10 @@ VISUAL      : Four sensor tiles: current rising, efficiency falling, vibration c
 CAMERA/MOVE : [LIVE] advance to Slide 2
               [POST] zoom 1.2× on the four sensor tiles; hold on vibration tile crossing
               the high-alarm line
-VO          : "Weeks of drift — rising current, falling efficiency, vibration climbing
-              through its high alarm. To a best-in-class platform, that pattern reads as
-              bearing wear: pull the pump."
+VO          : "Over several weeks, the signal drifts — current rising, efficiency falling,
+              vibration climbing right through its high alarm. To a best-in-class platform,
+              that pattern reads as one thing: bearing wear. And the standard response to
+              bearing wear is to pull the pump."
 PANEL QUOTE : Vibration tile value vs printed high-alarm line (4.0 mm/s) — zoom quotes the cross
 ASSET REF   : slides/h2.html #p2
 CONTINUITY  : (none)
@@ -609,8 +611,8 @@ APP STATE   : H2 tab · Slide 3 "Three Documents. One Truck. No Pull."
 VISUAL      : Three-document / one-truck framing; kicker "ADDING CONTEXT"
 CAMERA/MOVE : [LIVE] advance to Slide 3; hold on the framing
               [POST] static
-VO          : "But the bearings aren't the cause — and the proof is in three documents the
-              platform never sees."
+VO          : "But the bearings aren't the cause here — and the proof is sitting in three
+              documents the monitoring platform never sees."
 PANEL QUOTE : "GDC adds three documents" (slide sub-text)
 ASSET REF   : slides/h2.html #p3
 CONTINUITY  : (none)
@@ -624,7 +626,8 @@ APP STATE   : H2 tab · click ↺ New Scenario → degradation replay begins
 VISUAL      : Replay starts; degradation begins accumulating
 CAMERA/MOVE : [LIVE] click ↺ New Scenario; show replay animating
               [POST] static
-VO          : "Run it. The degradation accumulates exactly the way mechanical wear would."
+VO          : "Let's run it. The degradation builds gradually — accumulating exactly the
+              way mechanical bearing wear would."
 PANEL QUOTE : Slowly rising vibration / falling efficiency curves
 ASSET REF   : templates/tab_h2.html — `↺ New Scenario` button
 CONTINUITY  : (none)
@@ -640,8 +643,8 @@ VISUAL      : SCADA view; VIB-HI alarm; pump-pull card showing
 CAMERA/MOVE : [LIVE] ensure SCADA View; let replay reach scada_alarm_idx; point to the
               bearing-wear conclusion / pump pull card
               [POST] static
-VO          : "The monitoring platform identifies the symptom correctly — and routes to the
-              standard, expensive response: a pump pull."
+VO          : "The monitoring platform reads the symptom correctly — but it routes straight
+              to the standard, expensive response: pulling the pump."
 PANEL QUOTE : VIB-HI alarm banner text + pump-pull action card
 ASSET REF   : templates/tab_h2.html — `h2CursorIdx >= h2ReplayData.scada_alarm_idx` SCADA view
 CONTINUITY  : (none)
@@ -660,9 +663,10 @@ VISUAL      : Three doc cards appear in sequence; blue verdict banner above
 CAMERA/MOVE : [LIVE] click 🟢 GDC Advisor; pace the VO to the reveals
               [POST] zoom 1.15× on each doc card as it appears (~2s each);
               then zoom 1.2× on the blue verdict banner; hold ~2s
-VO          : "GDC fuses three documents: an overdue paraffin treatment, a fluid report
-              showing this crude lays down wax, and a recent inspection with healthy bearings.
-              The verdict flips — paraffin restriction, not bearing wear."
+VO          : "GDC fuses three documents: a paraffin treatment that's overdue, a fluid report
+              showing this crude lays down wax as it cools, and a recent inspection that found
+              the bearings healthy. Together, they flip the verdict — this is a paraffin
+              restriction, not bearing wear."
 PANEL QUOTE : Doc 1 title "Chemical Vendor Service Log"; Doc 2 🧪 "Fluid PVT Report";
               Doc 3 📁 "Prior Pull Record"; verdict banner "do NOT pull"
 ASSET REF   : templates/tab_h2.html — `h2VerdictRevealed` + three doc v-if blocks
@@ -679,8 +683,8 @@ APP STATE   : H2 tab · 🟢 GDC Advisor · h2VerdictRevealed=true · before act
 VISUAL      : Hot-oil dispatch action card (green) vs pump pull AVERTED card
 CAMERA/MOVE : [LIVE] show both action cards
               [POST] zoom 1.15× on the AVERTED label on the pull card; hold ~2s
-VO          : "The fix is a surface treatment, not a workover. The pull is averted —
-              symptom versus cause, decided by the documents."
+VO          : "So the fix is a surface treatment — a hot-oil truck, not a workover rig.
+              The pull is averted, because the documents separated the symptom from the cause."
 PANEL QUOTE : "✅ HOT-OIL TRUCK DISPATCHED" / AVERTED label on pull card
 ASSET REF   : templates/tab_h2.html — two-card layout before h2Resolved / h2PullOutcome
 CONTINUITY  : (none)
@@ -712,8 +716,8 @@ CAMERA/MOVE : [LIVE] navigate Intro tab → Slide 3; cursor Air-Gapped card (hol
               [POST] zoom 1.15× on the Air-Gapped and Connected cards to make labels readable
 VO          : "The first two cases ran entirely on-prem — all AI local, no cloud required.
               The third is the connected model: it reaches the cloud for Bayesian search —
-              but only setpoints and scores leave the site. Your data never follows.
-              Safety stays local."
+              but only the setpoints and their scores ever leave the site — your data never
+              follows, and the safety decision always stays local."
               (NOTE: "air-gap capable" removed per BS+39 accuracy fix — demo runs on
               Connected GDC; honest claim is "all AI on-prem, fully sovereign")
 PANEL QUOTE : "Air-Gapped" model card label (H1/H2) + "Connected" model card label (H3)
@@ -746,8 +750,9 @@ CAMERA/MOVE : [LIVE] tab opens in briefing mode on Slide 1
               [POST] zoom 1.2× on the GOR table; cursor the lowest-GOR wells
               (priority rows — "Priority · runs max ↑"), then cursor the highest-GOR well
               (marginal row — "Marginal · gives way ↓")
-VO          : "Now the whole pad. Six wells share one gas-handling limit — and every barrel
-              carries gas, but some wells carry far more than others."
+VO          : "Now let's look at the whole pad. Six wells share a single gas-handling limit —
+              and while every barrel of oil carries some gas with it, some wells carry far
+              more than others."
 PANEL QUOTE : GOR table values; priority vs marginal labels
 ASSET REF   : slides/h3.html #p1
 CONTINUITY  : (none — new scenario; sovereignty is covered in BBRIDGE)
@@ -762,8 +767,8 @@ VISUAL      : Three ceiling constraints; printed thermal-limit line visible
 CAMERA/MOVE : [LIVE] advance to Slide 2; point to each of the three ceiling items
               [POST] zoom 1.15× on the printed thermal-limit line/value
 VO          : "Here's the goal: the most oil the pad can produce while staying under the gas
-              contract and never crossing any motor's temperature limit. Three ceilings,
-              held at once."
+              contract — and without ever crossing any motor's temperature limit. That's three
+              ceilings, all held at once."
 PANEL QUOTE : Thermal-limit value (printed on slide — panels carry the number)
 ASSET REF   : slides/h3.html #p2
 CONTINUITY  : (none)
@@ -777,8 +782,9 @@ APP STATE   : H3 tab · Slide 3 "Cloud Searches. Edge Enforces."
 VISUAL      : Division-of-labor diagram; cloud side vs edge side
 CAMERA/MOVE : [LIVE] advance to Slide 3; hold on cloud-searches / edge-enforces split
               [POST] static
-VO          : "The division of labor: the cloud searches for the best setpoints; the edge
-              enforces the safety limit on every candidate, locally."
+VO          : "And here's the division of labor: the cloud does the searching for the best
+              setpoints, while the edge enforces the safety limit on every candidate it
+              proposes — locally."
 PANEL QUOTE : "Cloud Searches. Edge Enforces." slide title
 ASSET REF   : slides/h3.html #p3
 CONTINUITY  : SOVEREIGNTY PAYOFF begins here (continues B3-S5)
@@ -792,8 +798,8 @@ APP STATE   : H3 tab · briefing dismissed (h3BriefingMode=false) · click ⚡ R
 VISUAL      : Trial dots populating chart; optimization converges toward optimum
 CAMERA/MOVE : [LIVE] click ⚡ Run Vizier Optimization; show trial scatter populating
               [POST] static — let the animation be the visual
-VO          : "Run it. The optimizer explores the setpoint space — and only setpoints and
-              scores ever leave the site."
+VO          : "Let's run it. The optimizer explores the setpoint space, trial by trial —
+              and only those setpoints and their scores ever leave the site."
 PANEL QUOTE : Trial scatter chart (each dot = one Hz proposal + one cash score)
 ASSET REF   : templates/tab_h3.html — `⚡ Run Vizier Optimization` button
 CONTINUITY  : SOVEREIGNTY SPINE: the phrase "only setpoints and scores" echoes BBRIDGE exactly
@@ -807,8 +813,8 @@ APP STATE   : H3 tab · optTrials.length > 0 · per-well setpoint table visible
 VISUAL      : Per-well table with Baseline Hz column highlighted; uniform values
 CAMERA/MOVE : [LIVE] when trials settle, zoom on the per-well table; cursor the Baseline Hz column
               [POST] zoom 1.15× on the Baseline Hz column
-VO          : "The safe baseline throttles every well the same — which strands production
-              on the wells that are most gas-efficient."
+VO          : "The safe baseline throttles every well by the same amount — which ends up
+              stranding production on the wells that are actually the most gas-efficient."
 PANEL QUOTE : Baseline Hz column values (uniform; printed on screen)
 ASSET REF   : templates/tab_h3.html — per-well table `Baseline Hz` column
 CONTINUITY  : (none)
@@ -825,8 +831,9 @@ VISUAL      : GDC Optimal column differentiation vs Baseline; uplift card
 CAMERA/MOVE : [LIVE] cursor across GDC Optimal column; then pan to uplift card
               [POST] zoom 1.15× on GDC Optimal column; hold ~2s; then zoom 1.15× on
               uplift card; hold ~2s
-VO          : "GDC's allocation runs the low-gas wells wide open and backs off the gassiest —
-              more daily production, with gas held just under the ceiling."
+VO          : "GDC's allocation does it differently — it runs the low-gas wells wide open
+              and backs off the gassiest ones. The result is more daily production, with gas
+              held just under the ceiling."
 PANEL QUOTE : GDC Optimal Hz values (differentiated) + uplift card (+bbl/d · cash figure)
 ASSET REF   : templates/tab_h3.html — GDC Optimal + Δ Hz columns + uplift card
 CONTINUITY  : (none)
@@ -844,8 +851,8 @@ VISUAL      : Binding Constraint selector (GAS TAKEAWAY active) + constraint pro
 CAMERA/MOVE : [LIVE] cursor the Binding Constraint selector (GAS TAKEAWAY active);
               then cursor the constraint provenance card below it
               [POST] zoom 1.15× on the provenance doc card
-VO          : "And the limit itself is cited — it traces to the midstream contract,
-              not a guess."
+VO          : "And the limit itself is cited — it traces back to the actual midstream
+              contract, not to a guess or a round number."
 PANEL QUOTE : Constraint provenance doc card text (midstream contract reference from AlloyDB)
 ASSET REF   : templates/tab_h3.html — v-if="constraintDoc && constraintDoc.found" block
               · RAG lookup: /api/vizier/optimize → app.py L6538 (constraintDoc query)
@@ -869,8 +876,8 @@ VISUAL      : Thermal-limit note; constraint selector (GAS TAKEAWAY active)
 CAMERA/MOVE : [LIVE] cursor the Binding Constraint selector; hold on the thermal-limit
               provenance note below the table
               [POST] zoom 1.15× on the thermal-limit note
-VO          : "And the temperature limit is enforced on the edge — so if the link drops
-              mid-search, safety never drops with it."
+VO          : "And that temperature limit is enforced right at the edge — so if the network
+              link drops in the middle of a search, the safety constraint never drops with it."
 PANEL QUOTE : Thermal-limit value in provenance note (printed: 280°F)
 ASSET REF   : templates/tab_h3.html — thermal-limit provenance note + constraint selector
 CONTINUITY  : SOVEREIGNTY PAYOFF: this is the third leg of the sovereignty spine
@@ -893,8 +900,8 @@ CAMERA/MOVE : [LIVE] rest on H3 uplift card (let numbers sit ~3s); navigate to �
               cursor the sovereign-deployment panel
               [POST] zoom 1.1× on uplift card (+bbl/d figure); then static on Reference panel
 VO          : "Diagnose the ambiguous, catch the wrong fix, and push every safe barrel —
-              one sovereign stack, cited and reviewable, inside your perimeter.
-              Lower lifting cost, longer asset life, higher runtime."
+              all from one sovereign stack, cited and reviewable, running inside your
+              perimeter. Lower lifting cost, longer asset life, higher runtime."
 PANEL QUOTE : Uplift card values (+bbl/d · cash uplift); ⓘ Reference "Sovereign Data Center" label
 ASSET REF   : templates/tab_h3.html uplift card; tab_operations orphan note above
 CONTINUITY  : Final sovereign-data-center framing resolves the sovereignty spine cleanly.
