@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-24 (Session BS+43) / branch: feature-trio-clean
-Git HEAD: 49bf672 / Image: sha256:d127b3f9ccc5f1dfc19fda00946bde3fc32419f8891e536ab589c06edaaad6ac
+Date: 2026-06-24 (Session BS+44) / branch: feature-trio-clean
+Git HEAD: a766dac / Image: sha256:d127b3f9ccc5f1dfc19fda00946bde3fc32419f8891e536ab589c06edaaad6ac
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -19,33 +19,77 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ## STEP 2: Read These Documents
 ```bash
-cat docs/VIDS_PRODUCTION_MASTER.md   # PRIMARY REFERENCE — shot bible
-# Last 3 SESSION_LOG entries for context
+cat docs/SESSION_LOG.md | head -120   # last 3 entries for context
 ```
 
-## STEP 3: Next Tasks (priority order)
+## STEP 3: Reference Tab Integrity Scrub
 
-### 3A — RECORDING: Resume B1-S1 (all slide fixes and Reference tab are done)
-Slides clear, Reference tab new Pane 3 deployed. Recording order:
-1. B1-S1 → S2 → S3 → S4 (A/B) → S5 → S6 (optional)
-2. B2-P1 → P2 → P3 → S1 → S2 → S3 → S4  (skip B2-S5 — CUT)
-3. BBRIDGE (VO: "all AI local, no cloud required")
-4. B3-P1 → P2 → P3 → S1 → S2 → S3 → S4 (CONDITIONAL — verify constraintDoc.found=True first) → S5
-5. BCLOSE
+**Objective:** Audit all 7 panes of `tab_architecture.html` (769 lines) against the
+`.clinerules` Prime Directive. Build a mini Claim Ledger. Fix any OPEN items.
 
-Pre-B3-S4 check:
+**Context:** The tab has a top-level amber disclaimer:
+`"Walkthrough Example — not live data · Values shown illustrate a single pipeline execution"`
+This is the honest framing. The scrub checks whether the individual displayed values
+are *consistent with our code*, not that they equal live API output.
+
+### The 7 panes and their known risk areas:
+
+| Pane | Key | Known risk |
+|---|---|---|
+| 1 System Overview | `archPane==='overview'` | ROI comparison cards, IEC standard cites — review only |
+| 2 Telemetry Ingestion | `archPane==='ingestion'` | Minimal numbers; mostly clean |
+| 3 Unstructured Data Ingestion | `archPane==='docingest'` | Just written (BS+43) — honest by design ✅ |
+| **4 ML Detection** | `archPane==='detection'` | **Sensor values + model outputs: grep-verify** |
+| **5 Context Fusion** | `archPane==='context'` | Stream 3 doc examples; timing claims |
+| **6 AI Reasoning** | `archPane==='reasoning'` | **Hardcoded RUL values: 22.1 min base → 14.2 min AI** |
+| **7 Operations** | `archPane==='operator'` | **ROI numbers: $150k / $366k / $7.8M+** |
+
+### Pane 4 specific checks (ML Detection):
+The walkthrough example uses: PSI=185, Temp=218°F, Vib=0.41 mm/s, Amps=63.2A,
+Health=0.34, Confidence=91.4%, Base RUL=22.1 min.
+
+Verify these are plausible mid-window values (not endpoint values) against code:
 ```bash
-curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c "import sys,json; d=json.load(sys.stdin); print('constraintDoc.found:', d.get('constraint_doc', {}).get('found'))"
+grep -n "psi_range\|temp_range\|vib_range\|amps_range\|gas_lock" gke/fault-trigger-ui/app.py | grep -i "gas_lock\|FAULT_PROFILE" | head -20
+# psi_range=(875,1100) — PSI 185 is BELOW this, but mid-window decline from 1245 is plausible
+# CHECK: is 185 PSI defensible as a mid-decline demonstration value?
 ```
 
-### 3B — Reference Tab integrity scrub (new session, separate from recording)
-The Reference tab has 7 panes. Several have hardcoded display values (e.g., Pane 6 ROI
-numbers, Pane 5 RUL estimates) that were written before integrity discipline was tightened.
-A scoped scrub pass is needed — read each pane, build a brief claim ledger, fix OPEN items.
-See SESSION_LOG BS+43 for context on what was changed this session.
+### Pane 6 specific checks (AI Reasoning):
+```bash
+grep -n "RUL\|rul_minutes\|14\.2\|22\.1\|adjusted_rul" gke/fault-trigger-ui/app.py | head -20
+# Base RUL 22.1 min → AI-adjusted 14.2 min: is this ratio plausible?
+# adjust_rul_with_documents() applies 0.6× multiplier for high GVF
+# 22.1 × 0.64 ≈ 14.1 min — check the formula confirms this is reachable
+```
 
-### 3C — SESSION_LOG append (needed before wrap)
-Append BS+43 entry to docs/SESSION_LOG.md.
+### Pane 7 specific checks (Operations / ROI):
+```bash
+grep -n "150.000\|150k\|150,000\|366\|7\.8M\|workover\|pull_cost\|FAULT_PHYSICS\|rig_rate" gke/fault-trigger-ui/app.py | head -20
+# Expected: FAULT_PHYSICS["gas_lock"] has cost_emergency ~150000
+# $366k = $150k pull + 48hr downtime × $45k/day = $150k + $216k = $366k — verify arithmetic
+# $7.8M annualized: check if this traces to any code constant or is an authored estimate
+```
+
+### Scrub output format (create inline, no new file needed):
+For each flagged claim, one line in the session:
+```
+| Pane | Claim | Source | Status: SURVIVES / OPEN |
+```
+Fix OPEN items in one batched `replace_in_file` call per file.
+`verify_templates.py` must pass before deploy.
+
+---
+
+## STEP 4 (if time): B3-S4 Pre-Recording Verification
+
+Before recording B3-S4 (H3 constraint provenance), verify constraintDoc renders reliably:
+```bash
+curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c \
+  "import sys,json; d=json.load(sys.stdin); print('constraintDoc.found:', d.get('constraint_doc', {}).get('found'))"
+# Expected: constraintDoc.found: True
+# If False: check app.py pgvector query at L6530-6545 — seed doc may be missing
+```
 
 ## Deploy Command (permanent reference)
 ```bash
@@ -55,13 +99,6 @@ docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:lat
 kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 ```
 **Registry:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/` (NOT gcr.io — that's the old project)
-
-## Deployed This Session (BS+43)
-- **Reference tab Pane 2** renamed "Telemetry Ingestion" (was "Data Ingestion")
-- **Reference tab Pane 3** added: "Unstructured Data Ingestion" — honest two-layer content
-  (IN THIS DEMO: seed corpus + pgvector; IN PRODUCTION: connector pipeline pattern)
-- **B1-P5 slides/h1.html** sparklines added: 7 inline SVG polylines across 3 industry cards
-  (O&G: 2 declining blue; P&U: 2 rising purple; Maritime: 2 rising + 1 flat-dashed orange)
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
