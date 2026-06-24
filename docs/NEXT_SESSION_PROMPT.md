@@ -22,28 +22,43 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat docs/SESSION_LOG.md | head -60   # last 2 entries for context
 ```
 
-## STEP 3: Next Implementation Tasks
+## STEP 3: FINISH H1 RECORDING — ALL SCENES CLEARED
 
-**B1-S4 HOLD IS LIFTED** — all Tasks 1–4 resolved, Autonomy badge added, HITL reworded. Ready to record.
+**PRIME DIRECTIVE FOR THIS SESSION: Get B1-S1 through B1-S6 in the can. All code is verified live. No blockers. No code tasks. Open Screen Studio, open `gdc-pm.bdau.io`, and record.**
 
-### RECORDING ORDER (resume here)
+**B1-P1 through B1-P5 are already done ✅.** The remaining 6 scenario scenes are all CLEARED:
 
-| Scene | Status | Notes |
+| Scene | ~Time | Status | Key on-screen text to verify before recording |
+|---|---|---|---|
+| **B1-S1** | ~7s | ✅ RECORD NOW | "BASELINE MONITORING · XGBoost routing score" |
+| **B1-S2** | ~7s | ✅ RECORD NOW | Amber "ANOMALY — Retrieving field context via pgvector RAG…" hold |
+| **B1-S3** | ~10s | ✅ RECORD NOW | "ambiguous underload — gas lock and fluid drawdown…" red banner |
+| **B1-S4** | ~11s | ✅ RECORD NOW (just unblocked) | "✔ GAS INTERFERENCE CONFIRMED"; Autonomy badge; click Doc 1 modal ~3s |
+| **B1-S5** | ~8s | ✅ RECORD NOW | "✔ Approve & Dispatch to SCADA — VFD Trim"; Autonomy Policy badge |
+| **B1-S6** | ~5s | ✅ RECORD IF BUDGET | "✅ VFD SETPOINT DISPATCHED — 52 → 44 Hz · awaiting wellbore response" |
+
+**Recording choreography reminders:**
+- B1-S2: Play to `gdc_detect_idx` (~27) → PAUSE → amber "Retrieving context" holds → record VO → press play → 1.5s later verdict reveals
+- B1-S4: Let docs + verdict render; click Doc 1 (Shift Note or Sonic Log) to open modal → hold ~3s → close → zoom each doc card; then zoom verdict card 1.15×
+- B1-S5: Zoom Autonomy Policy badge; zoom evidence/similarity line; click Approve & Dispatch to SCADA
+- Both VO branches provided in shot bible (Gas Lock / Drawdown) — record whichever fires; do NOT re-run to force a branch
+
+**After H1 is in the can, continue with:**
+| Next | Scene | ~Time |
 |---|---|---|
-| B1-S4 | ✅ **CLEARED TO RECORD** | "GAS INTERFERENCE CONFIRMED", Autonomy badge, Doc 1 modal on camera ~3s |
-| B1-S5 | ✅ CLEARED | "Approve & Dispatch to SCADA" button; show Autonomy Policy badge |
-| B1-S6 | ✅ CLEARED (optional) | "VFD SETPOINT DISPATCHED — awaiting wellbore response" |
-| BBRIDGE | ✅ CLEARED | Sovereignty bridge H2→H3 |
-| B2-S1–S4 | ✅ CLEARED (B2-S5 ❌ CUT) | H2 CLASSIFY paraffin scenario |
-| B3-S1–S3 | ✅ CLEARED | H3 OPTIMIZE Vizier → table → uplift |
-| B3-S4 | CONDITIONAL | Verify constraintDoc.found=True before recording |
+| BBRIDGE | H2→H3 Sovereignty Bridge | ~8s |
+| B2-S1–S4 | H2 CLASSIFY paraffin (B2-S5 ❌ CUT) | ~50s |
+| B3-S1–S3 | H3 OPTIMIZE Vizier → table → uplift | ~45s |
+| B3-S4 | H3 constraint provenance — CONDITIONAL | ~8s |
 
-### Verify B3-S4 gate before recording:
+**B3-S4 gate (run before recording that scene only):**
 ```bash
 curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c \
   "import sys,json; d=json.load(sys.stdin); print('constraintDoc.found:', d.get('constraint_doc', {}).get('found'))"
 # Expected: constraintDoc.found: True
 ```
+
+**No code changes planned this session.** If a visual bug is found during recording, document it and continue — do not stop recording to fix a non-blocking issue.
 
 ---
 
