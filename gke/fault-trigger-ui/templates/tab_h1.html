@@ -299,7 +299,7 @@
                   <span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}
                     &nbsp;·&nbsp;P(gas_lock) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
                 </div>
-                <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing annulus fully submerged. Gas interference in pump stages (GVF ~18% at intake — prevents Gas Lock).</div>
+                <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing pressure rising · GOR elevated · annulus submerged — free gas inferred at pump intake (GVF ~18% estimated from surface evidence).</div>
                 <div style="color:var(--text2);font-size:0.58rem">VFD trim (52→44 Hz) is safe. Motor cooling intact.</div>
                 <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(74,222,128,0.2);color:rgba(74,222,128,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
@@ -389,7 +389,7 @@
                     <button @click="approveH1VFD()" class="h1-action-card h1-card-green">
                       <div class="h1-card-header">✔ Approve &amp; Dispatch to SCADA — VFD Trim</div>
                       <div class="h1-card-sub">Supervisory setpoint · 52 → 44 Hz · SCADA retains regulatory control</div>
-                      <div class="h1-card-desc">GVF ~18% at intake — early gas interference, below the 20–25% sharp-drop threshold. Casing annulus fully submerged. VFD trim safe.</div>
+                      <div class="h1-card-desc">Casing pressure rising + GOR elevated → GVF ~18% estimated at intake. Early interference, pre-gas-lock threshold. Annulus submerged. VFD trim safe.</div>
                     </button>
                     <button @click="executeH1Shutdown()"
                             style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.56rem;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
