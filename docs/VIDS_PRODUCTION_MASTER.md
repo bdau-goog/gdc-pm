@@ -466,11 +466,17 @@ VISUAL      : SCADA view shows alarm banner; no cause; grey action cards (not gr
 CAMERA/MOVE : [LIVE] switch to 🟡 SCADA View; scrub to alarm; point to the amber banner
               and the un-colored action cards
               [POST] static
-VO          : "This is what the control system sees. It protects the pump — trips on its
-              hard limit, as it should — but offers no cause, no read on sand risk."
+VO          : "Further into the event, the SCADA threshold fires — it sees the unloading
+              signature, as it should. But the cause is ambiguous, and on a sandy well,
+              the wrong choice here destroys the pump."
 PANEL QUOTE : "ambiguous underload" + grey (not green) action cards
 ASSET REF   : templates/tab_h1.html — `h1CursorIdx >= h1ReplayData.alarm_idx` + SCADA view
 CONTINUITY  : (none)
+NOTE (BS+47): Shot bible VO "It protects the pump — trips on its hard limit" replaced.
+              At alarm_idx the pump is still running; SCADA has alarmed, not tripped.
+              Action cards are awaiting operator input. "Protects" was factually wrong
+              for this app state. New VO gives SCADA credit for correct detection
+              ("as it should") without claiming protection it hasn't performed.
 ```
 
 ### B1-S4 — GDC Advisor verdict + 3 documents   ·  ~11s  ·  RECORD (A/B BRANCH)
