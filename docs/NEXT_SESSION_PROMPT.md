@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-24 (Session BS+46 wrap) / branch: feature-trio-clean
-Git HEAD: 22611e6 / Image: sha256:8b3411d2fc1caf69efdff994bc507fe950f53e82fc7c665bc7590d12dc2ee47b
+Date: 2026-06-24 (Session BS+47 wrap) / branch: feature-trio-clean
+Git HEAD: d3b9dc1 / Image: sha256:ff5f96d1c4c2e5d71bd76eb867336c8d388a9e8db15b8a8a207236c5fbc7ff98
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -22,84 +22,47 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 cat docs/SESSION_LOG.md | head -60   # last 2 entries for context
 ```
 
-## STEP 3: FINISH H1 RECORDING — ALL SCENES CLEARED
+## STEP 3: PRIME DIRECTIVE — Start by listing remaining H1 scenes
 
-**PRIME DIRECTIVE FOR THIS SESSION: Get B1-S1 through B1-S6 in the can. All code is verified live. No blockers. No code tasks. Open Screen Studio, open `gdc-pm.bdau.io`, and record.**
+**The user's instruction:** *"Start that session by listing the remaining H1 scenes with VO and direction."*
 
-**B1-P1 through B1-P5 are already done ✅.** The remaining 6 scenario scenes are all CLEARED:
+**B1-S4 is DONE ✅.** The remaining H1 scenario scenes are:
 
-| Scene | ~Time | Status | Key on-screen text to verify before recording |
-|---|---|---|---|
-| **B1-S1** | ~7s | ✅ RECORD NOW | "BASELINE MONITORING · XGBoost routing score" |
-| **B1-S2** | ~7s | ✅ RECORD NOW | Amber "ANOMALY — Retrieving field context via pgvector RAG…" hold |
-| **B1-S3** | ~10s | ✅ RECORD NOW | "ambiguous underload — gas lock and fluid drawdown…" red banner |
-| **B1-S4** | ~11s | ✅ RECORD NOW (just unblocked) | "✔ GAS INTERFERENCE CONFIRMED"; Autonomy badge; click Doc 1 modal ~3s |
-| **B1-S5** | ~8s | ✅ RECORD NOW | "✔ Approve & Dispatch to SCADA — VFD Trim"; Autonomy Policy badge |
-| **B1-S6** | ~5s | ✅ RECORD IF BUDGET | "✅ VFD SETPOINT DISPATCHED — 52 → 44 Hz · awaiting wellbore response" |
-
-**Recording choreography reminders:**
-- B1-S2: Play to `gdc_detect_idx` (~27) → PAUSE → amber "Retrieving context" holds → record VO → press play → 1.5s later verdict reveals
-- B1-S4: Let docs + verdict render; click Doc 1 (Shift Note or Sonic Log) to open modal → hold ~3s → close → zoom each doc card; then zoom verdict card 1.15×
-- B1-S5: Zoom Autonomy Policy badge; zoom evidence/similarity line; click Approve & Dispatch to SCADA
-- Both VO branches provided in shot bible (Gas Lock / Drawdown) — record whichever fires; do NOT re-run to force a branch
-
-**After H1 is in the can, continue with:**
-| Next | Scene | ~Time |
+| Scene | Status | Note |
 |---|---|---|
-| BBRIDGE | H2→H3 Sovereignty Bridge | ~8s |
-| B2-S1–S4 | H2 CLASSIFY paraffin (B2-S5 ❌ CUT) | ~50s |
-| B3-S1–S3 | H3 OPTIMIZE Vizier → table → uplift | ~45s |
-| B3-S4 | H3 constraint provenance — CONDITIONAL | ~8s |
+| **B1-S5** | ⏳ TO RECORD | HITL Approve — Autonomy Policy badge |
+| **B1-S6** | ⏳ RECORD-IF-BUDGET | Outcome — VFD dispatched |
 
-**B3-S4 gate (run before recording that scene only):**
-```bash
-curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c \
-  "import sys,json; d=json.load(sys.stdin); print('constraintDoc.found:', d.get('constraint_doc', {}).get('found'))"
-# Expected: constraintDoc.found: True
-```
+Output the full scene cards for B1-S5 and B1-S6 from VIDS_PRODUCTION_MASTER.md (the cards are already updated with smoothed VOs from BS+47). Then continue with BBRIDGE and H2.
 
-**No code changes planned this session.** If a visual bug is found during recording, document it and continue — do not stop recording to fix a non-blocking issue.
+**After H1, recording order:**
+| Section | Scenes | Status |
+|---|---|---|
+| BBRIDGE | H2→H3 Sovereignty Bridge | ⏳ TO RECORD |
+| H2 CLASSIFY | B2-P1 through B2-S4 | ⏳ TO RECORD |
+| H3 OPTIMIZE | B3-P1 through B3-S5 | ⏳ TO RECORD |
+| BCLOSE | H3 Uplift + Reference tab | ⏳ TO RECORD |
 
----
+**All VOs are locked and smoothed in VIDS_PRODUCTION_MASTER.md (commit d3b9dc1).**
 
-### TASK A — Autonomy Envelope Roadmap (next session — NOT this session)
-**Context:** The "autonomy threshold knob" idea (confidence-based auto-execute) was RT-tested
-(gdc-second-opinion BS+46) — numeric confidence threshold FAILS (IEC 61511, not PHA-grounded).
-The correct design is an **action-class Autonomy Policy** (operator defines per-action-class
-whether GDC may act or must escalate; high-stakes/contraindicated actions always require
-human approval regardless of confidence).
+## STEP 4: What BS+47 Shipped
 
-**What was shipped:** Static "⛭ Autonomy Policy: VFD setpoint → ALWAYS REQUIRE APPROVAL
-(operator-set)" badge on the H1 HITL panel — defensible, honest, survives hostile engineer.
+### Code change deployed (sha256:ff5f96d1):
+- **tab_h1.html L302+L392:** "Gas interference in pump stages" (stated-as-fact) replaced with the inference chain:
+  - Zone 1: `"Casing pressure rising · GOR elevated · annulus submerged — free gas inferred at pump intake (GVF ~18% estimated from surface evidence)"`
+  - Action card: `"Casing pressure rising + GOR elevated → GVF ~18% estimated at intake. Early interference, pre-gas-lock threshold. Annulus submerged. VFD trim safe."`
+  - Physics: PIP drops (pump intake pressure = the SCADA signal on chart). Casing annulus pressure (wellhead) RISES in gas lock (gas accumulates above pump). These are distinct tags. The app says "Casing pressure rising" (correct for engineers). VO uses "gas accumulating in the annulus" (clearer for mixed audience).
 
-**What's deferred for future session:**
-- Full operator-configurable autonomy envelope (action-class matrix, low-risk action delegation)
-- Calibrated confidence display (requires precision/recall/Brier score against real outcomes
-  before any numeric threshold goes on screen per PRIME DIRECTIVE)
-- DEMO_MASTER roadmap entry added this session — see §5 notes.
+### VO locks (docs only, commit d3b9dc1):
+- **B1-S2:** `"GDC flags the developing event — ahead of any SCADA hard limits fire — and begins retrieving unstructured field context."` (LOCKED)
+- **B1-S3:** `"Further into the event, the SCADA threshold fires — it sees the unloading signature, as it should. But the cause is ambiguous, and on a sandy well, the wrong choice here destroys the pump."` (LOCKED)
+- **B1-S4 GAS LOCK:** User's version — *"GDC retrieves the well's latest documents — the gas-to-oil ratio rising at the separator, gas is accumulating in the annulus — and concludes that free gas is reaching the pump stages. It's gas interference, not fluid drawdown. It's best to ease the speed and keep the well online."* (~15s real-pace, LOCKED)
+- **B1-S5 through BCLOSE:** All smoothed for natural delivery cadence (commit d3b9dc1)
 
----
-
-## STEP 4: What BS+46 Shipped (already deployed, do not re-do)
-
-**Image sha256:8b3411d2 — committed 22611e6**
-
-### Code changes (tab_h1.html + app.py):
-- **Task 2 (terminology):** `✔ GAS LOCK CONFIRMED` → `✔ GAS INTERFERENCE CONFIRMED — free gas in pump stages`; cause-term sweep. Internal `gas_lock` enums untouched.
-- **Task 3 (GVF):** `GVF 78%` → `GVF ~18% at intake — early interference, below the 20–25% sharp-drop threshold` (UI + shift note seed + field_intel inject text + nm_1 nominal card 42%→12%). Source: MCP-grounded, API RP 11S / SLB / Baker Hughes (Session BS+46).
-- **Task 4 (Doc 3 integrity):** Doc 3 card label now dynamically bound to `rag_sections[2].title` — kills the No-Silent-Lies hardcode.
-- **Task 6 (HITL):** Button → `✔ Approve & Dispatch to SCADA — VFD Trim` / sub `Supervisory setpoint · 52 → 44 Hz · SCADA retains regulatory control`. Post-press → `✅ VFD SETPOINT DISPATCHED — 52 → 44 Hz · awaiting wellbore response` (replaces both RECOVERING instances). Source: gdc-second-opinion RT SURVIVES.
-- **Autonomy Policy badge:** Static badge `⛭ Autonomy Policy: VFD setpoint → ALWAYS REQUIRE APPROVAL (operator-set)` on gas_lock HITL panel. RT on numeric threshold FAILS (IEC 61511); badge is defensible.
-- **GVF consistency sweep:** 60–65% contradictory threshold strings fixed in app.py (L2967/2971, L5014/5015/5018); nm_1 nominal card 42%→12%; all now align with OEM bulletin 20–25% threshold (L1256 — untouched, correct).
-- **DB re-seed:** Tour 2 Shift Note deleted pre-rollout; `_seed_l3_scenario_docs_bg()` thread re-inserts with `~18%%` on startup.
-
-### Docs sweep:
-- DEMO_MASTER §2 table: "Gas Lock or Fluid Drawdown" → "Gas Interference or Fluid Drawdown"
-- DEMO_MASTER §4.1: updated to reflect Gas Interference as cause-term + GVF ~18% early-interference window + API RP 11S / SLB citation
-- DEMO_MASTER G5 note: GVF 78% note updated to confirm resolved (BS+46)
-- VIDS B1-S4: cause-term → "gas interference, preventing gas lock"; Autonomy badge choreography; Task 5 modal open (Doc 1, ~3s on camera)
-- VIDS B1-S5: button label + Autonomy Policy badge in app state
-- VIDS B1-S6: outcome label updated
+### Recording progress:
+- ✅ B1-P1 through B1-P5 DONE
+- ✅ B1-S1 through B1-S4 DONE
+- ⏳ B1-S5, B1-S6, BBRIDGE, H2, H3, BCLOSE still to record
 
 ## Deploy Command (permanent reference)
 ```bash
@@ -114,8 +77,8 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - `terraform/gke.tf` must NOT be applied
 - GPU scale-to-zero; `gpu-start.sh` ONLY for explicit LLM test (~$0.65/hr)
 - VEO_COLD_OPEN.md has hidden-character lines — use write_to_file not replace_in_file
-- B1-P1 through B1-P5 VO locked: recorded, match bible verbatim ✅
+- B1-P1 through B1-S4 VO locked: recorded, match bible ✅
 - B2-S5: ❌ CUT — do not record
 - BBRIDGE VO: "all AI local, no cloud required" (not "air-gap capable")
-- B1-S4: ✅ **HOLD LIFTED** — all integrity fixes deployed, verified live (BS+46)
-- **Autonomy numeric knob: ❌ BLOCKED** — gdc-second-opinion: 4 FAILS (IEC 61511, not PHA-grounded, cherry-picked, automation bias). Deploy action-class policy badge only (done). Numeric threshold gates on precision/recall/Brier calibration.
+- **Autonomy numeric knob: ❌ BLOCKED** — IEC 61511 FAILS. Deploy action-class policy badge only (done).
+- **GAS LOCK VO physics:** PIP drops (SCADA signal). Casing annulus pressure rises (gas lock evidence). These are different tags. App says "Casing pressure rising" (correct). VO says "gas accumulating in the annulus" (mechanism, clearer for mixed audience). Do NOT change either without this note.
