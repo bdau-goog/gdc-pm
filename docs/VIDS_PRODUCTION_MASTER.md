@@ -497,9 +497,17 @@ CAMERA/MOVE : [LIVE] click 🟢 GDC Advisor; let docs + verdict render; when Doc
               proof of L3 document fusion); close modal; let remaining docs cascade in; zoom
               each doc card briefly as it appears
               [POST] zoom 1.15× on the verdict card; hold ~2s
-VO — GAS LOCK : "GDC retrieves the well's documents — annulus submerged, gas interference in
-              the pump stages, sand history clean — and returns a cited verdict: gas
-              interference, preventing gas lock. Ease the speed; keep the well online."
+VO — GAS LOCK : "GDC retrieves the well's documents — casing pressure climbing, GOR up,
+              the annulus still submerged — and infers free gas reaching the pump stages:
+              gas interference, not drawdown. Ease the speed; keep the well online."
+              (NOTE BS+47: "gas in pump stages" is INFERRED from surface evidence —
+              casing pressure + GOR + annulus state — NOT measured directly by any
+              sensor. The shift note itself says "GVF estimated...based on casing
+              pressure behaviour and surface gas rate." No downhole GVF sensor exists
+              on this string. The new VO attributes the inference correctly:
+              surface measurements → physics (API RP 11S §7.2) → inferred conclusion.
+              This is the stronger claim: it demonstrates the L3 reasoning chain,
+              not just the output.)
 VO — DRAWDOWN : "GDC retrieves the well's documents — fluid level below the intake, a known
               sand producer — and returns a cited verdict: drawdown. Shut it in; easing the
               speed here would seize the pump."
