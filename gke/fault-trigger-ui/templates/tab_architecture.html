@@ -491,7 +491,7 @@
                 <li>Health Score of 0.34 = 66% degraded. SCADA single-threshold alarm not triggered yet.</li>
                 <li>Key: SCADA uses absolute thresholds. XGBoost uses correlated trends across all 4 sensors simultaneously.</li>
               </ul>
-              <div class="arch-callout callout-orange">PSI at 185 is "normal" in isolation. PSI declining at 2.4 PSI/min while temp and amps rise simultaneously is a gas_lock signature. XGBoost detects the pattern; SCADA cannot.</div>
+              <div class="arch-callout callout-orange">PSI at 1,100 is mid-decline — within SCADA limits (floor alarm: 1,020 PSI) but approaching threshold. PSI declining at 2.4 PSI/min while temp simultaneously rises is the gas_lock pattern. XGBoost detects the joint signature before any single tag crosses its hard limit.</div>
             </div>
             <div class="arch-info-section">
               <div class="arch-info-title">📐 RUL Calculation</div>
@@ -499,7 +499,7 @@
                 <li>Health Score is converted to RUL via fault-physics degradation curves calibrated per fault type</li>
                 <li>Exponential weighted average (EWA) over 10 readings smooths out sensor noise</li>
                 <li>Base RUL = time until Health Score would reach the SCADA alarm threshold (0.15)</li>
-                <li>This Base RUL is then refined by the Edge LLM in Pane 5 using retrieved context</li>
+                <li>This Base RUL is then refined by the Bayesian evidence chain in Pane 5 using retrieved context</li>
               </ul>
             </div>
           </div>
@@ -511,7 +511,7 @@
               <div class="arch-sensor-grid" style="margin-top:4px">
                 <div class="arch-sensor-row">
                   <div class="asr-label">Intake PSI</div>
-                  <div class="asr-val asr-anomaly">185 PSI <span class="asr-trend">↘</span></div>
+                  <div class="asr-val asr-anomaly">1,100 PSI <span class="asr-trend">↘</span></div>
                 </div>
                 <div class="arch-sensor-row">
                   <div class="asr-label">Winding Temp</div>
@@ -519,11 +519,11 @@
                 </div>
                 <div class="arch-sensor-row">
                   <div class="asr-label">Vibration</div>
-                  <div class="asr-val asr-anomaly">0.41 mm/s <span class="asr-trend">↗</span></div>
+                  <div class="asr-val asr-anomaly">1.5 mm/s <span class="asr-trend">↗</span></div>
                 </div>
                 <div class="arch-sensor-row">
                   <div class="asr-label">Motor Amps</div>
-                  <div class="asr-val asr-anomaly">63.2 A <span class="asr-trend">↗</span></div>
+                  <div class="asr-val asr-anomaly">84 A <span class="asr-trend">↘</span></div>
                 </div>
                 <div class="arch-sensor-row">
                   <div class="asr-label">dPSI/dt (slope)</div>
@@ -556,9 +556,9 @@
               <div class="arch-compare-card acc-scada">
                 <div class="acc-title acc-title-scada">SCADA Alarm at same time</div>
                 <ul class="acc-items">
-                  <li class="no">PSI: 185 PSI — Within normal range ✓</li>
+                  <li class="no">PSI: 1,100 PSI — Within normal range ✓</li>
                   <li class="no">Temp: 218°F — Within normal range ✓</li>
-                  <li class="no">Vib: 0.41mm — Within normal range ✓</li>
+                  <li class="no">Vib: 1.5mm — Within normal range ✓</li>
                   <li class="no">NO ALARM TRIGGERED</li>
                 </ul>
               </div>
@@ -660,7 +660,7 @@
               <div class="arch-stage-title">🗄 AlloyDB Omni — Unified Context Store</div>
               <div class="arch-stage-body">
                 <div class="arch-chip chip-orange"><span class="arch-chip-label">Table</span><span class="arch-chip-val">telemetry_events</span></div>
-                <div class="arch-chip chip-purple"><span class="arch-chip-label">Table</span><span class="arch-chip-val">industry_corpus (18 rows)</span></div>
+                <div class="arch-chip chip-purple"><span class="arch-chip-label">Table</span><span class="arch-chip-val">rag_documents (20 rows)</span></div>
                 <div class="arch-chip chip-blue"><span class="arch-chip-label">Table</span><span class="arch-chip-val">ops_reports (100+ rows)</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">Index</span><span class="arch-chip-val">HNSW · &lt;10ms retrieval</span></div>
               </div>
@@ -700,7 +700,7 @@
                 <li>A deterministic Bayesian chain produces identical results on every run — fully reproducible, fully auditable, no hallucination risk</li>
                 <li>Sensitive operational data (well test reports, production rates, lab results) never leaves the operator's sovereign boundary</li>
               </ul>
-              <div class="arch-callout callout-purple">The Bayesian evidence chain runs on commodity CPU, requires no GPU, and is fully auditable — every likelihood ratio traces to a cited API RP 11S reference. Air-gap capable by design.</div>
+              <div class="arch-callout callout-purple">The Bayesian evidence chain runs on commodity CPU, requires no GPU, and is fully auditable — every likelihood ratio traces to a cited API RP 11S reference. Sovereign by design, outage-immune.</div>
             </div>
             <div class="arch-info-section">
               <div class="arch-info-title">🎯 What the Bayesian Fusion Actually Does</div>
@@ -719,7 +719,7 @@
               <div class="arch-stage-title">📝 Prompt Assembly</div>
               <div style="display:flex;flex-direction:column;gap:5px;margin-top:4px">
                 <div class="arch-chip chip-orange" style="font-size:0.65rem"><span><strong>FAULT:</strong> gas_lock on ESP-ALPHA-1 · Health: 34% · Base RUL: 22.1 min</span></div>
-                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span><strong>SENSORS:</strong> PSI 185↘ · Temp 218°F↗ · Vib 0.41mm↗ · Amps 63.2A↗</span></div>
+                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span><strong>SENSORS:</strong> PSI 1,100↘ · Temp 218°F↗ · Vib 1.5mm↗ · Amps 84A↘</span></div>
                 <div class="arch-chip chip-purple" style="font-size:0.65rem"><span><strong>STATIC CORPUS:</strong> [3 OEM manual sections — gas lock, motor current, system overview]</span></div>
                 <div class="arch-chip chip-blue" style="font-size:0.65rem"><span><strong>FIELD INTEL:</strong> Shift note (GOR elevated) + Lab report (8.4% free gas at intake)</span></div>
               </div>
@@ -738,13 +738,13 @@
               </div>
             </div>
 
-            <div class="arch-connector">↓ <span class="arch-connector-label">Streaming response token-by-token</span></div>
+            <div class="arch-connector">↓ <span class="arch-connector-label">Deterministic output — &lt; 2 seconds</span></div>
 
             <!-- LLM Assessment -->
             <div class="arch-stage stage-ml" style="margin-bottom:12px">
-              <div class="arch-stage-title">📤 LLM Assessment</div>
+              <div class="arch-stage-title">📤 Bayesian Assessment</div>
               <div style="margin-top:4px">
-                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span>"Pump Intake Pressure of 185 is declining at 2.4 PSI/min. Lab report confirms 8.4% free gas at intake — matches early-stage gas volume fraction exceeding pump design limits..."</span></div>
+                <div class="arch-chip chip-orange" style="font-size:0.65rem"><span>"Pump Intake Pressure of 1,100 PSI is declining at 2.4 PSI/min. Lab report confirms 8.4% free gas at intake — matches early-stage gas volume fraction exceeding pump design limits..."</span></div>
               </div>
             </div>
 
@@ -752,8 +752,8 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div style="background:rgba(255,109,0,0.08);border:1px solid rgba(255,109,0,0.4);border-radius:8px;padding:12px 14px">
                 <div style="font-size:0.6rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">📊 Output — AI-Based RUL</div>
-                <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--orange)">14.2 min</div>
-                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Refined from Model Base RUL (22.1 min) using retrieved lab report context</div>
+                <div style="font-family:var(--mono);font-size:1.2rem;font-weight:700;color:var(--orange)">13.3 min</div>
+                <div style="font-size:0.6rem;color:var(--muted);margin-top:4px">Refined from Base RUL 22.1 min — GVF &gt;70% confirmed in lab report → 0.6× multiplier applied</div>
               </div>
               <div style="background:rgba(0,230,118,0.06);border:1px solid rgba(0,230,118,0.35);border-radius:8px;padding:12px 14px">
                 <div style="font-size:0.6rem;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:6px">✅ Output — Actions</div>
@@ -788,9 +788,9 @@
             <div class="arch-info-section">
               <div class="arch-info-title">💵 The ROI Equation</div>
               <ul>
-                <li><strong style="color:var(--g-red)">Without GDC:</strong> SCADA alarms when the motor is already at risk. Emergency pull: $150,000 + 48hr downtime at $45k/day = <strong style="color:var(--g-red)">$366,000</strong></li>
-                <li><strong style="color:var(--g-green)">With GDC:</strong> Operator adjusts VFD 14 minutes early. Motor preserved. <strong style="color:var(--g-green)">Cost: $0</strong></li>
-                <li>Annualised ROI across 38-well field at current fault frequency: <strong style="color:var(--g-green)">$7.8M+</strong></li>
+                <li><strong style="color:var(--g-red)">Without GDC:</strong> SCADA alarms when the motor is already at risk. Emergency pull, motor replacement &amp; deferred production: <strong style="color:var(--g-red)">~$150,000</strong></li>
+                <li><strong style="color:var(--g-green)">With GDC:</strong> Operator adjusts VFD 13 minutes early. Motor preserved. <strong style="color:var(--g-green)">Cost: $0</strong></li>
+                <li>Annualised ROI across a 38-well fleet: compounding savings across multiple avoided interventions per year — documented per event in the fleet ledger</li>
               </ul>
             </div>
           </div>
@@ -802,7 +802,7 @@
               <div class="arch-stage-body">
                 <div class="arch-chip chip-orange"><span class="arch-chip-label">Asset</span><span class="arch-chip-val">ESP-ALPHA-1</span></div>
                 <div class="arch-chip chip-red"><span class="arch-chip-label">Fault</span><span class="arch-chip-val">Gas Lock</span></div>
-                <div class="arch-chip chip-red"><span class="arch-chip-label">AI-Informed RUL</span><span class="arch-chip-val">14.2 min</span></div>
+                <div class="arch-chip chip-red"><span class="arch-chip-label">AI-Informed RUL</span><span class="arch-chip-val">13.3 min</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">SCADA</span><span class="arch-chip-val" style="color:var(--green)">No Alarm</span></div>
               </div>
             </div>
@@ -854,7 +854,7 @@
               <div class="arch-stage-body">
                 <div class="arch-chip chip-green"><span class="arch-chip-label">Capital Preserved</span><span class="arch-chip-val">$150,000</span></div>
                 <div class="arch-chip chip-muted"><span class="arch-chip-label">Cost Incurred</span><span class="arch-chip-val">$0</span></div>
-                <div class="arch-chip chip-green"><span class="arch-chip-label">Advance Warning</span><span class="arch-chip-val">14.2 min</span></div>
+                <div class="arch-chip chip-green"><span class="arch-chip-label">Advance Warning</span><span class="arch-chip-val">13.3 min</span></div>
                 <div class="arch-chip chip-green"><span class="arch-chip-label">Outcome</span><span class="arch-chip-val">Unplanned downtime avoided</span></div>
               </div>
             </div>
