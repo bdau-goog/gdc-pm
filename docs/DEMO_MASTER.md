@@ -19,7 +19,7 @@ The demo proves this across three distinct dimensions — **Discern** (context-f
 
 | Act | Tab | Scenario | Asset | Core Claim | GDC Advantage |
 |-----|-----|----------|-------|------------|---------------|
-| **H1** | **Discern** | Gas Lock or Fluid Drawdown | ESP-ALPHA-1–6 (random) | *Discerning Operator: Context & Scale* | L3 document fusion resolves the ambiguous unloading signal; enables safe proactive intervention vs. reactive manual action under operator workload |
+| **H1** | **Discern** | Gas Interference or Fluid Drawdown | ESP-ALPHA-1–6 (random) | *Discerning Operator: Context & Scale* | L3 document fusion resolves the ambiguous unloading signal; enables safe proactive intervention vs. reactive manual action under operator workload |
 | **H2** | **Classify** | Paraffin/Wax Deposition Mimicking Bearing Wear | ESP-ALPHA-3 | *Provenance Diagnosis: Prevent Wrong Pull* | Retrieves vendor service log + PVT report + prior pull record → identifies overdue hot-oil PM as root cause → averts $70k–$100k unnecessary pump pull |
 | **H3** | **Optimize** | VFD Optimization | ESP-ALPHA-1 | *Edge-Cloud Collaboration* | Local XGBoost checks limits; Vertex AI Vizier drives search |
 
@@ -185,7 +185,7 @@ This argument lives in two places in the revised demo:
 
 When an ESP's **Pump Intake Pressure (PIP)** and **Motor Current (Amps)** both decline together on an intake-only string, the early-window signature is genuinely ambiguous between two root causes with opposite correct actions:
 
-1. **Gas Lock (GVF rising):** The casing fluid level is HIGH and stable. A pocket of free gas has entered the pump stages. The pump unloads hydraulically. **Correct action: VFD trim (52 → 44 Hz).** This slows the impeller, allowing the gas pocket to vent up the fully-submerged casing annulus. Well stays online at near-zero cost.
+1. **Gas Interference → Gas Lock (GVF ~18% at intake — rising):** The casing fluid level is HIGH and stable. A pocket of free gas has entered the pump stages (gas interference — the cause-term per API RP 11S / SLB). The pump unloads hydraulically and, without intervention, progresses to gas lock (acute failure: pump fully vapor-bound). **Correct action: VFD trim (52 → 44 Hz).** This slows the impeller, allowing the gas pocket to vent up the fully-submerged casing annulus. Well stays online at near-zero cost. GVF ~18% places the event in the early-interference window (above the 20–25% sharp-drop onset; below the 25–35% full gas lock threshold — MCP-grounded, API RP 11S / SLB, June 2026).
 
 2. **Reservoir Fluid Drawdown:** The casing fluid level is CRITICALLY LOW — the dynamic fluid level is near minimum submergence. The pump unloads mechanically. **Correct action: Reduce VFD speed in controlled steps, maintaining minimum sand-transport velocity, while verifying dynamic fluid level from the last sonic survey before any further reduction.** A hard shut-in is contraindicated on a sand-laden fluid column — suspended sand settles and bridges in the tubing string on shutdown, locking the pump against restart. VFD trim (slowing past the transport floor) is equally dangerous: it drops fluid velocity below the critical sand-transport threshold, causing sand to bridge in the tubing above the pump. The deciding factor — whether there is safe headroom to step down — lives in the last sonic survey and the well's sand history, not in the real-time sensor string. Representative workover cost if mishandled: ~$150k.
 
@@ -764,7 +764,7 @@ Every synthetic field document (modal, RAG card, seeded `field_intel` row, app.p
 
 **Documents currently requiring Batch B remediation (Session W open items):**
 - H1 Sonic Log modal: fails G1 (Baker Hughes), G2 (diagnosis in body), G3 (smoking gun — 150 ft near-critical at 06:00)
-- H1 Shift Note: review against G3 (GVF "estimated at 78%" is inferred, not a direct sensor reading — verify wording)
+- H1 Shift Note: GVF ~18% at intake is inferred from casing pressure behaviour and surface gas rate (not a direct downhole sensor reading) — wording is consistent with operator shift-note language ✅ (resolved Session BS+46)
 - H1 OEM Guide doc card: review G4 (does it independently solve the case?)
 - H2 Workover completion report, OEM compatibility matrix, shift note: sign off against G1–G6 gate before seeding (new H2 scenario — not yet built)
 

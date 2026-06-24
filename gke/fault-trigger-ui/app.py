@@ -1202,7 +1202,7 @@ _L3_SCENARIO_RAG_DOCS = [
             "past 4 hours. Rate of rise: approximately 4 PSI/hour. No manual pressure adjustments\n"
             "made this tour.\n\n"
             "Gas Rate at Separator: Elevated vs. baseline — surface gas rate trending upward from\n"
-            "prior tour. GVF estimated elevated based on casing pressure behaviour and surface gas rate.\n\n"
+            "prior tour. GVF estimated at approximately 18%% at pump intake based on casing pressure behaviour and surface gas rate.\n\n"
             "Fluid Level: No acoustic survey this tour — last survey 48 hours prior showed fluid level\n"
             "within normal range for this well.\n\n"
             "Motor Amps: Declining slightly from nominal 87A. Currently 84A. Within operating limits.\n"
@@ -2964,12 +2964,12 @@ def inject_degrade(req: DegradeRequest):
                 """, (
                     req.asset_id, asset_class, "gas_lock", "shift_note",
                     "Tour 2 Shift Note \u2014 Elevated GVF at Pump Intake",
-                    "Operator observed gas volume fraction at pump intake estimated at 78%% throughout "
+                    "Operator observed gas volume fraction at pump intake estimated at approximately 18%% throughout "
                     "the morning tour. Separator gas test from prior shift: GOR 1,310 scf/bbl, up 19%% "
                     "from 24-hour baseline. Motor amps trending below nominal. No SCADA alarm has fired "
                     "\u2014 all sensors remain within configured thresholds. Recommend continued monitoring.",
-                    "HIGH \u2014 GVF above pump handling threshold (~60\u201365%%); combined with rising GOR, "
-                    "pattern is consistent with early-stage gas lock and imminent loss of motor cooling flow.",
+                    "HIGH \u2014 GVF above the 20\u201325%% sharp-drop onset threshold; combined with rising GOR, "
+                    "pattern is consistent with early-stage gas interference progressing toward gas lock.",
                     "\U0001f4cb", "AI", "ai"
                 ))
             elif req.fault_type == "fluid_drawdown":
@@ -5011,11 +5011,11 @@ INTELLIGENCE_FEED = {
         {
             "id": "gl_1a", "type": "well_test", "source": "Daily Well Test Report",
             "ts_label": "06:00 this morning", "icon": "🧪", "is_anomaly": True,
-            "headline": "GVF at intake: 68% ↑  ·  Intake PSI: 1,040 PSI ↓  ·  Declining",
-            "ai_relevance": "GVF 68% exceeds pump handling threshold — intake PSI declining confirms early gas lock",
+            "headline": "GVF at intake: 28% ↑  ·  Intake PSI: 1,040 PSI ↓  ·  Declining",
+            "ai_relevance": "GVF 28% exceeds onset threshold (20–25%); intake PSI declining confirms early gas interference progressing to gas lock",
             "detail": (
                 "Well Test — ESP-ALPHA-5 / Well A-5\n"
-                "· Gas Volume Fraction (GVF) at pump intake: 68% (threshold: 60%)\n"
+                "· Gas Volume Fraction (GVF) at pump intake: 28% (onset: 20–25%; gas lock risk: 25–35%)\n"
                 "· Intake pressure: 1,040 PSI (nominal: 1,400 PSI; declining at -18 PSI/hr)\n"
                 "· Motor current: 58A (nominal: 75A; declining — pump unloading)\n"
                 "· Note: 'Higher than usual GVF this morning — possibly gas migration from upper zone.'\n"
@@ -5456,7 +5456,7 @@ INTELLIGENCE_FEED = {
                 "· Pump Intake Pressure (PIP): 1,400 PSI (normal range: 1,200–1,600 PSI) ✓\n"
                 "· Motor current: 75A (normal range: 60–90A) ✓\n"
                 "· Winding temperature: 198°F (alarm limit: 280°F derated) ✓\n"
-                "· Gas Volume Fraction (GVF) estimate: 42% (threshold: 60%) ✓\n"
+                "· Gas Volume Fraction (GVF) estimate: 12% (threshold: 20–25%) ✓\n"
                 "· Production rate: 847 BOPD (on target)\n"
                 "· No corrective action recommended. Continue monitoring."
             ),

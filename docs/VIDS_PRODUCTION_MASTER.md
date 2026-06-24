@@ -477,27 +477,32 @@ CONTINUITY  : (none)
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · 🟢 GDC Advisor view · h1RagRevealed=true
-              · GAS LOCK: "✔ GAS LOCK CONFIRMED" green panel; 3 docs: Shift Note + Separator
-                GOR Lab + OEM Troubleshooting Guide
+              · GAS LOCK: "✔ GAS INTERFERENCE CONFIRMED — free gas in pump stages" green
+                panel; ⛭ Autonomy Policy badge visible below action header; 3 docs: Shift
+                Note (GVF ~18%) + Separator GOR Lab + retrieved field document (rag_sections[2])
               · DRAWDOWN: "⚠ FLUID DRAWDOWN CONFIRMED" amber panel; 3 docs: Sonic Log +
-                GOR Lab + OEM Troubleshooting Guide
+                GOR Lab + retrieved field document (rag_sections[2])
 VISUAL      : Verdict card + 3 doc cascade (each doc card appears ~2s apart)
-CAMERA/MOVE : [LIVE] click 🟢 GDC Advisor; let docs + verdict render; zoom each doc card
-              briefly as it appears
+CAMERA/MOVE : [LIVE] click 🟢 GDC Advisor; let docs + verdict render; when Doc 1 (Shift Note
+              or Sonic Log) appears, click it to open the full-document modal (~3s on camera —
+              proof of L3 document fusion); close modal; let remaining docs cascade in; zoom
+              each doc card briefly as it appears
               [POST] zoom 1.15× on the verdict card; hold ~2s
-VO — GAS LOCK : "GDC retrieves the well's documents — annulus submerged, gas rising, sand
-              history clean — and returns a cited verdict: gas lock. Ease the speed;
-              keep the well online."
+VO — GAS LOCK : "GDC retrieves the well's documents — annulus submerged, gas interference in
+              the pump stages, sand history clean — and returns a cited verdict: gas
+              interference, preventing gas lock. Ease the speed; keep the well online."
 VO — DRAWDOWN : "GDC retrieves the well's documents — fluid level below the intake, a known
               sand producer — and returns a cited verdict: drawdown. Shut it in; easing the
               speed here would seize the pump."
-PANEL QUOTE : "✔ GAS LOCK CONFIRMED" / "⚠ FLUID DRAWDOWN CONFIRMED" + pgvector cosine
-              similarity score visible
+PANEL QUOTE : "✔ GAS INTERFERENCE CONFIRMED" / "⚠ FLUID DRAWDOWN CONFIRMED" + pgvector
+              cosine similarity score visible
 ASSET REF   : templates/tab_h1.html — `h1RagRevealed && h1FaultType==='gas_lock'` /
               `h1FaultType==='fluid_drawdown'` verdict panels
 CONTINUITY  : ECHOES Part A A8 (document fusion resolved the problem)
 NOTE        : Record whichever verdict fires. Both VO branches are provided. Do not re-run
               to force a specific branch — the random branch is the honest demo.
+              TASK 5 (BS+46): open Doc 1 modal on camera ~3s — the modal is proof of
+              document fusion; the full field record (shift note or sonic log) is shown live.
 ```
 
 ### B1-S5 — HITL Approve   ·  ~8s  ·  RECORD
@@ -505,16 +510,19 @@ NOTE        : Record whichever verdict fires. Both VO branches are provided. Do 
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · 🟢 GDC Advisor · h1RagRevealed=true · before approval
               · "GDC Agent · Action package ready · Awaiting RTOC approval" streaming label
-              · Action card: "✔ Approve & Execute — VFD Trim 52→44 Hz" (gas lock)
+              · ⛭ "Autonomy Policy: VFD setpoint → ALWAYS REQUIRE APPROVAL (operator-set)" badge
+              · Action card: "✔ Approve & Dispatch to SCADA — VFD Trim" (gas lock)
                 or "✔ Approve & Execute — Step-Down + Hold" (drawdown)
+              · Sub-line: "Supervisory setpoint · 52 → 44 Hz · SCADA retains regulatory control"
               · pgvector similarity score visible in evidence line
 VISUAL      : HITL panel; approve the action
-CAMERA/MOVE : [LIVE] show the HITL awaiting state; zoom the evidence/similarity line;
-              click ✔ Approve & Execute
+CAMERA/MOVE : [LIVE] show the HITL awaiting state; zoom the Autonomy Policy badge;
+              zoom the evidence/similarity line; click ✔ Approve & Dispatch to SCADA
               [POST] zoom 1.15× on "Awaiting RTOC approval" + the approve button
 VO          : "Every recommendation is cited and reviewable. The engineer approves the
-              action — GDC advises, the human decides."
-PANEL QUOTE : "Awaiting RTOC approval" label + ✔ Approve & Execute button label
+              action — GDC advises, the human decides. The autonomy policy sets the envelope;
+              this call requires human approval."
+PANEL QUOTE : "Awaiting RTOC approval" label + ✔ Approve & Dispatch to SCADA button label
 ASSET REF   : templates/tab_h1.html — `GDC Agent · Action package ready · Awaiting RTOC approval`
 CONTINUITY  : ECHOES Part A A8 (the nod + authorize moment)
 ```
@@ -523,14 +531,14 @@ CONTINUITY  : ECHOES Part A A8 (the nod + authorize moment)
 ```
 SOURCE      : Live screen capture
 APP STATE   : H1 tab · GDC Advisor · h1Resolved=true
-              · GAS LOCK: "✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response"
+              · GAS LOCK: "✅ VFD SETPOINT DISPATCHED — 52 → 44 Hz · awaiting wellbore response"
               · DRAWDOWN: Step-down outcome card
 VISUAL      : Resolved outcome card; well stays online (gas lock) or safe shut-in (drawdown)
 CAMERA/MOVE : [LIVE] hold on the resolved state
               [POST] static
 VO          : "The well stays online — an ambiguous alarm became a confident, low-cost decision."
               (gas lock branch; omit or adapt for drawdown)
-PANEL QUOTE : "✅ RECOVERING" status label
+PANEL QUOTE : "✅ VFD SETPOINT DISPATCHED" status label
 ASSET REF   : templates/tab_h1.html — `h1Resolved && !h1Seized`
 NOTE        : OPTIONAL — cut this scene if total runtime exceeds 5:55. The close narration
               already wraps H1. Remove if tight.

@@ -261,7 +261,7 @@
                 <div style="font-size:0.57rem;opacity:0.85;line-height:1.6">VFD trim applied under ambiguous alarm. Wellbore response indicated fluid-level issue. Well removed from production pending engineering assessment and controlled restart. Restart cost applies.</div>
               </div>
               <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved" style="margin:0 10px 8px">
-                <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
+                <template v-if="h1Recovering">✅ VFD SETPOINT DISPATCHED — 52 → 44 Hz · awaiting wellbore response</template>
                  <template v-else-if="h1FaultType==='fluid_drawdown'">
                    <div style="font-weight:700;margin-bottom:4px">✅ STEP-DOWN COMMAND APPLIED</div>
                    <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD stepping toward minimum flush Hz · wellbore response monitored<br><span style="color:rgba(74,222,128,0.7)">Production partially preserved · sonic survey check ordered</span></div>
@@ -295,11 +295,11 @@
               </div>
               <!-- After RAG: GDC gas_lock verdict -->
               <div v-if="h1RagRevealed && h1FaultType==='gas_lock'" style="background:rgba(16,36,22,0.55);border:1px solid rgba(74,222,128,0.28);border-radius:4px;padding:8px 12px;font-family:var(--mono);font-size:0.62rem;line-height:1.7">
-                <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS LOCK CONFIRMED
+                <div style="color:var(--green);font-weight:700;font-size:0.60rem">✔  GAS INTERFERENCE CONFIRMED
                   <span style="float:right;font-weight:400;font-size:0.48rem">hs = {{ h1ReplayData && h1ReplayData.health_score ? parseFloat(h1ReplayData.health_score[Math.min(h1CursorIdx, h1ReplayData.health_score.length-1)]).toFixed(4) : '—' }}
                     &nbsp;·&nbsp;P(gas_lock) = {{ h1ReplayData && h1ReplayData.bayes_pct ? h1ReplayData.bayes_pct.toFixed(1) : '—' }}%</span>
                 </div>
-                <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing annulus fully submerged. Gas pocket in pump stages.</div>
+                <div style="color:var(--text2);margin-top:3px;font-size:0.58rem">Docs fused: Shift Note (06:15 Tour 2) + Separator GOR Lab · Casing annulus fully submerged. Gas interference in pump stages (GVF ~18% at intake — prevents Gas Lock).</div>
                 <div style="color:var(--text2);font-size:0.58rem">VFD trim (52→44 Hz) is safe. Motor cooling intact.</div>
                 <button @click="h1ShowEvidenceTable=!h1ShowEvidenceTable"
                   style="margin-top:4px;font-size:0.42rem;background:none;border:1px solid rgba(74,222,128,0.2);color:rgba(74,222,128,0.6);border-radius:3px;padding:2px 6px;cursor:pointer">{{ h1ShowEvidenceTable ? '▲ Hide' : '▼ Evidence Table' }}</button>
@@ -382,10 +382,14 @@
                       <span class="streaming-dot" style="background:rgba(167,139,250,0.8)"></span>
                       GDC Agent · Action package ready · Awaiting RTOC approval
                     </div>
+                    <div style="font-size:0.40rem;color:rgba(100,116,139,0.55);letter-spacing:0.05em;display:flex;align-items:center;gap:4px;margin-top:-2px">
+                      <span>⛭</span>
+                      <span>Autonomy Policy: VFD setpoint → ALWAYS REQUIRE APPROVAL (operator-set)</span>
+                    </div>
                     <button @click="approveH1VFD()" class="h1-action-card h1-card-green">
-                      <div class="h1-card-header">✔ Approve &amp; Execute — VFD Trim</div>
-                      <div class="h1-card-sub">52 → 44 Hz · 3,120 → 2,640 RPM · Zero downtime</div>
-                      <div class="h1-card-desc">GVF 78% confirmed — casing annulus fully flooded. Gas void vents up submerged annulus. VFD trim safe.</div>
+                      <div class="h1-card-header">✔ Approve &amp; Dispatch to SCADA — VFD Trim</div>
+                      <div class="h1-card-sub">Supervisory setpoint · 52 → 44 Hz · SCADA retains regulatory control</div>
+                      <div class="h1-card-desc">GVF ~18% at intake — early gas interference, below the 20–25% sharp-drop threshold. Casing annulus fully submerged. VFD trim safe.</div>
                     </button>
                     <button @click="executeH1Shutdown()"
                             style="background:transparent;border:1px solid rgba(100,116,139,0.2);color:var(--muted);font-size:0.56rem;padding:7px 10px;border-radius:6px;cursor:pointer;text-align:left;width:100%">
@@ -413,7 +417,7 @@
                     <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Action taken without confirmed fault type. Wellbore response required engineering assessment. Well offline — fluid-level recovery in progress. Production deferred; restart cost applies.</div>
                   </div>
                   <div v-if="h1Resolved && !h1Seized" class="h1-outcome-resolved">
-                    <template v-if="h1Recovering">✅ RECOVERING — VFD at 44 Hz · monitoring wellbore response</template>
+                    <template v-if="h1Recovering">✅ VFD SETPOINT DISPATCHED — 52 → 44 Hz · awaiting wellbore response</template>
                     <template v-else-if="h1FaultType==='fluid_drawdown'">
                       <div style="font-weight:700;margin-bottom:4px">✅ APPROVED &amp; EXECUTING — GDC Agent</div>
                       <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">VFD stepping toward minimum flush Hz · sand-transport floor maintained · production partially preserved<br><span style="color:rgba(74,222,128,0.7)">RTOC notified · command logged · sonic survey data applied</span></div>
@@ -451,7 +455,7 @@
                   </svg>
                   <div style="flex:1;min-width:0">
                     <div style="font-weight:700;font-size:0.62rem;line-height:1.3" v-if="h1FaultType==='fluid_drawdown'">Dynamic Acoustic Sonic Log<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">06:00 Tour 2 · Fluid level 150 ft</span></div>
-                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3" v-else>Operator Shift Note<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">06:15 Tour 2 · GVF 78% at intake</span></div>
+                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3" v-else>Operator Shift Note<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">06:15 Tour 2 · GVF ~18% at intake</span></div>
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px;text-decoration:underline;cursor:pointer">View →</div>
                   </div>
                 </div>
@@ -471,7 +475,7 @@
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px;text-decoration:underline;cursor:pointer">View →</div>
                   </div>
                 </div>
-                <!-- Doc 3: OEM Troubleshooting Guide (revealed ~3.5s after RAG) -->
+                <!-- Doc 3: dynamically bound to rag_sections[2].title (revealed ~3.5s after RAG) -->
                 <div v-if="h1RagDoc3Shown" class="h1-rag-doc-card" @click="h1RagDoc3ModalOpen=true" title="Click to view retrieved document" style="cursor:pointer">
                   <!-- Open book / OEM manual icon -->
                   <svg width="26" height="26" viewBox="0 0 26 26" style="flex-shrink:0">
@@ -482,10 +486,10 @@
                     <line x1="5" y1="9" x2="10" y2="9" stroke="rgba(167,139,250,0.55)" stroke-width="0.8"/>
                     <line x1="5" y1="12" x2="10" y2="12" stroke="rgba(167,139,250,0.55)" stroke-width="0.8"/>
                     <line x1="5" y1="15" x2="10" y2="15" stroke="rgba(167,139,250,0.55)" stroke-width="0.8"/>
-                    <text x="13" y="24.5" text-anchor="middle" font-size="3.5" fill="rgba(167,139,250,0.55)" font-family="monospace">OEM</text>
+                    <text x="13" y="24.5" text-anchor="middle" font-size="3.5" fill="rgba(167,139,250,0.55)" font-family="monospace">DOC</text>
                   </svg>
                   <div style="flex:1;min-width:0">
-                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3">OEM Troubleshooting Guide<br><span style="font-weight:400;color:var(--muted);font-size:0.54rem">Gas Volume Fraction Handling · Permian ESP Operational Manual</span></div>
+                    <div style="font-weight:700;font-size:0.62rem;line-height:1.3">{{ h1ReplayData && h1ReplayData.rag_sections && h1ReplayData.rag_sections[2] ? h1ReplayData.rag_sections[2].title : 'Retrieved Field Document' }}</div>
                     <div style="font-size:0.40rem;color:rgba(74,222,128,0.65);margin-top:2px">cosine {{ h1ReplayData.rag_sections && h1ReplayData.rag_sections[2] && h1ReplayData.rag_sections[2].similarity != null ? parseFloat(h1ReplayData.rag_sections[2].similarity).toFixed(2) : '—' }} &nbsp;·&nbsp; <span style="text-decoration:underline">View →</span></div>
                   </div>
                 </div>
