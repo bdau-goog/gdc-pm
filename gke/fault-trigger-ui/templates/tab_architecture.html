@@ -11,19 +11,22 @@
             <span class="ast-num">1</span> System Overview
           </div>
           <div class="arch-sub-tab" :class="{active: archPane==='ingestion'}" @click="archPane='ingestion';archInfoOpen=false">
-            <span class="ast-num">2</span> Data Ingestion
+            <span class="ast-num">2</span> Telemetry Ingestion
+          </div>
+          <div class="arch-sub-tab" :class="{active: archPane==='docingest'}" @click="archPane='docingest';archInfoOpen=false">
+            <span class="ast-num">3</span> Unstructured Data Ingestion
           </div>
           <div class="arch-sub-tab" :class="{active: archPane==='detection'}" @click="archPane='detection';archInfoOpen=false">
-            <span class="ast-num">3</span> ML Detection
+            <span class="ast-num">4</span> ML Detection
           </div>
           <div class="arch-sub-tab" :class="{active: archPane==='context'}" @click="archPane='context';archInfoOpen=false">
-            <span class="ast-num">4</span> Context Fusion
+            <span class="ast-num">5</span> Context Fusion
           </div>
           <div class="arch-sub-tab" :class="{active: archPane==='reasoning'}" @click="archPane='reasoning';archInfoOpen=false">
-            <span class="ast-num">5</span> AI Reasoning
+            <span class="ast-num">6</span> AI Reasoning
           </div>
           <div class="arch-sub-tab" :class="{active: archPane==='operator'}" @click="archPane='operator';archInfoOpen=false">
-            <span class="ast-num">6</span> Operations
+            <span class="ast-num">7</span> Operations
           </div>
         </div>
 
@@ -253,7 +256,7 @@
         <div class="arch-pane" :class="{active: archPane==='ingestion'}">
           <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
             <div style="flex:1">
-              <h2>Data Ingestion — Regional Field Network to Edge Bus</h2>
+              <h2>Telemetry Ingestion — Regional Field Network to Edge Bus</h2>
               <p>High-frequency telemetry from 38 ESP wells across 6 pads flows over the local field-mesh network to the RabbitMQ edge broker every 5 seconds, completely bypassing the slow WAN backhaul to central SCADA.</p>
             </div>
             <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
@@ -373,7 +376,100 @@
           </div>
         </div><!-- pane ingestion -->
 
-        <!-- ── Pane 3: ML Detection ── -->
+        <!-- ── Pane 3: Unstructured Data Ingestion ── -->
+        <div class="arch-pane" :class="{active: archPane==='docingest'}">
+          <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
+            <div style="flex:1">
+              <h2>Unstructured Data Ingestion — From Field Systems to Always-Current Knowledge</h2>
+              <p>Sensor telemetry tells you the <em>state</em> of an asset. The <em>context</em> that explains why — maintenance history, lab reports, vendor logs, shift notes — lives in disconnected systems. This pane shows how GDC continuously bridges that gap, inside your perimeter.</p>
+            </div>
+            <button class="arch-info-btn" @click="archInfoOpen=!archInfoOpen" title="Technical Details">ⓘ</button>
+          </div>
+
+          <!-- ⓘ Info Panel: Pane 3 -->
+          <div v-if="archInfoOpen && archPane==='docingest'" class="arch-info-panel">
+            <div class="arch-info-close" @click="archInfoOpen=false">✕ Close</div>
+            <div class="arch-info-title">📐 How the Vector Search Works</div>
+            <ul>
+              <li>At ingest time: each document is converted to a 384-dimensional vector using <code style="font-family:var(--mono)">all-MiniLM-L6-v2</code> (SentenceTransformer, runs on CPU, no cloud call).</li>
+              <li>At decision time: the fault type ("gas lock esp") is encoded the same way. pgvector's <code style="font-family:var(--mono)">&lt;=&gt;</code> cosine distance operator finds the semantically closest documents in milliseconds — not keyword matching.</li>
+              <li>Access control: each document is tagged with <code style="font-family:var(--mono)">asset_class</code> and <code style="font-family:var(--mono)">fault_context</code>. An ESP fault query never retrieves transformer records.</li>
+              <li>HNSW index on AlloyDB Omni ensures sub-10ms retrieval as the document corpus scales to thousands of records.</li>
+            </ul>
+            <div class="arch-callout callout-purple">In production, the connector service runs inside the GDC cluster — the same network boundary as AlloyDB. No document content ever crosses the perimeter to reach the embedding model or the vector index.</div>
+          </div>
+
+          <div class="arch-pane-body" style="display:block">
+
+            <!-- Band 1: IN THIS DEMO -->
+            <div style="margin-bottom:18px;padding:14px 18px;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:8px">
+              <div style="font-size:0.64rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#fbbf24;margin-bottom:10px">In This Demo — Representative Corpus (Pre-Loaded)</div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-start">
+                <div style="flex:1;min-width:240px;display:flex;flex-direction:column;gap:7px">
+                  <div class="arch-chip chip-blue"><span>20 documents · rag_documents table</span></div>
+                  <div class="arch-chip chip-muted"><span>OEM ESP manuals · fluid PVT reports · chemical vendor service logs · acoustic surveys · prior pull records · Pad Alpha constraint docs</span></div>
+                  <div class="arch-chip chip-blue"><span>11 Bayesian evidence records · field_intel table</span></div>
+                  <div class="arch-chip chip-muted"><span>Shift notes · separator tests · GOR lab reports — one set per fault type (gas_lock / fluid_drawdown)</span></div>
+                </div>
+                <div class="arch-connector" style="align-self:center">→</div>
+                <div style="flex:0 1 200px;display:flex;flex-direction:column;gap:7px;align-self:center">
+                  <div class="arch-chip chip-purple"><span>SentenceTransformer all-MiniLM-L6-v2</span></div>
+                  <div class="arch-chip chip-muted" style="font-size:0.58rem"><span>384-dim vectors · CPU-only · no cloud call · computed once at seed time</span></div>
+                </div>
+                <div class="arch-connector" style="align-self:center">→</div>
+                <div style="flex:0 1 160px;align-self:center">
+                  <div class="arch-chip chip-blue" style="border-width:2px"><span>AlloyDB pgvector · queried live at decision time</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Band 2: IN PRODUCTION -->
+            <div style="padding:14px 18px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.18);border-radius:8px">
+              <div style="font-size:0.64rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#4ade80;margin-bottom:12px">In Production — Continuous Connector Pipeline</div>
+
+              <!-- Row: source systems -->
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+                <div style="flex:1;min-width:200px;padding:12px 14px;background:rgba(15,23,42,0.7);border:1px solid rgba(100,116,139,0.25);border-radius:6px">
+                  <div style="font-size:0.62rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">Your Systems</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div class="arch-chip chip-muted"><span>CMMS · Maximo / SAP PM — work orders, PM records</span></div>
+                    <div class="arch-chip chip-muted"><span>LIMS — fluid PVT, water analysis, separator tests</span></div>
+                    <div class="arch-chip chip-muted"><span>Shift logs · SharePoint / DMS</span></div>
+                    <div class="arch-chip chip-muted"><span>Vendor portals · ERP service tickets</span></div>
+                  </div>
+                </div>
+
+                <div class="arch-connector" style="align-self:center">↓ <span class="arch-connector-label">GDC connector service (inside your perimeter — same cluster)</span></div>
+
+                <div style="flex:0 1 240px;padding:12px 14px;background:rgba(15,23,42,0.7);border:1px solid rgba(74,222,128,0.2);border-radius:6px;align-self:flex-start">
+                  <div style="font-size:0.62rem;font-weight:700;color:#4ade80;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px">GDC Connectors</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div class="arch-chip chip-muted"><span>Scheduled pull · REST / SOAP / JDBC</span></div>
+                    <div class="arch-chip chip-muted"><span>Event subscribe · RabbitMQ / Kafka webhook</span></div>
+                    <div class="arch-chip chip-muted"><span>Watched folders · PDF / Office document parse</span></div>
+                  </div>
+                  <div style="margin-top:8px;font-size:0.58rem;color:rgba(74,222,128,0.6);font-style:italic">Nothing leaves your facility · per-source connectors · no public-cloud connector service required</div>
+                </div>
+              </div>
+
+              <div class="arch-connector">↓ <span class="arch-connector-label">Extract text → embed (SentenceTransformer, CPU) → upsert into AlloyDB with source_id idempotency guard</span></div>
+
+              <!-- Knowledge base -->
+              <div style="padding:12px 16px;background:rgba(15,23,42,0.8);border:1px solid rgba(96,165,250,0.3);border-radius:6px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+                <div style="font-size:1.2rem">🗄</div>
+                <div style="flex:1">
+                  <div style="font-size:0.72rem;font-weight:700;color:#93c5fd">AlloyDB Omni — Continuously Current Knowledge Base</div>
+                  <div style="font-size:0.60rem;color:#64748b;margin-top:4px">New documents appear within minutes of being written in the source system · queries always retrieve the latest available context</div>
+                </div>
+                <div class="arch-connector" style="flex-shrink:0">→ <span class="arch-connector-label">pgvector cosine search at decision time</span></div>
+                <div class="arch-chip chip-purple" style="flex-shrink:0"><span>Recommendation · cited in seconds</span></div>
+              </div>
+            </div>
+
+          </div>
+        </div><!-- pane docingest -->
+
+        <!-- ── Pane 4: ML Detection ── -->
         <div class="arch-pane" :class="{active: archPane==='detection'}">
           <div class="arch-pane-hdr" style="display:flex;align-items:flex-start;gap:12px">
             <div style="flex:1">
