@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
 Date: 2026-06-24 (Session BS+46 wrap) / branch: feature-trio-clean
-Git HEAD: TBD after commit / Image: sha256:8b3411d2fc1caf69efdff994bc507fe950f53e82fc7c665bc7590d12dc2ee47b
+Git HEAD: 22611e6 / Image: sha256:8b3411d2fc1caf69efdff994bc507fe950f53e82fc7c665bc7590d12dc2ee47b
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -67,7 +67,7 @@ human approval regardless of confidence).
 
 ## STEP 4: What BS+46 Shipped (already deployed, do not re-do)
 
-**Image sha256:8b3411d2 — committed [TBD after git commit]**
+**Image sha256:8b3411d2 — committed 22611e6**
 
 ### Code changes (tab_h1.html + app.py):
 - **Task 2 (terminology):** `✔ GAS LOCK CONFIRMED` → `✔ GAS INTERFERENCE CONFIRMED — free gas in pump stages`; cause-term sweep. Internal `gas_lock` enums untouched.
