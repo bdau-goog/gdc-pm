@@ -445,14 +445,12 @@ VISUAL      : GDC flags the drift; SCADA is still silent; the gap between the tw
               is the evidence for the MORE TIME value point
 CAMERA/MOVE : [LIVE] scrub replay to ~gdc_detect_idx; hold on the GDC Advisor panel
               [POST] zoom 1.15× on the GDC-detect amber state; hold ~2s
-VO          : "GDC flags the developing event here — ahead of any single SCADA hard limit
-              being crossed, then begins to assess the event by pulling in unstructured
-              content."
-              (NOTE BS+47: ~26 words / ~12s — pace briskly for the 7s slot, or trim to
-              "…then begins pulling in unstructured content." to save ~2s)
+VO          : "GDC flags the developing event — ahead of any SCADA hard limits fire —
+              and begins retrieving unstructured field context."
+              (~18 words / ~7–8s — LOCKED BS+47)
 PANEL QUOTE : GDC amber retrieving state at idx≈27; SCADA still quiet;
-              "RETRIEVING CONTEXT — ALLOYDB PGVECTOR (<2S)" banner visible = the
-              "pulling in unstructured content" claim is literally on screen
+              "RETRIEVING CONTEXT — ALLOYDB PGVECTOR (<2S)" banner = "retrieving
+              unstructured field context" echoes the screen exactly
 ASSET REF   : templates/tab_h1.html — v-if="h1FaultTypeRevealed && !h1RagRevealed"
 CONTINUITY  : ECHOES Part A Scene A7B (same detection moment — "identifying the developing
               issue" = this moment in the live app)
