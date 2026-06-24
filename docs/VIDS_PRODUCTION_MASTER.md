@@ -425,7 +425,8 @@ APP STATE   : H1 tab · click ↺ New Scenario → replay loads → ▶ transpor
 VISUAL      : Replay loads; sensors begin animating; GDC baseline monitoring panel visible
 CAMERA/MOVE : [LIVE] click ↺ New Scenario; show transport running
               [POST] static
-VO          : "Let's run it live. GDC is scoring every channel as the event unfolds — before
+VO          : "Now let's look at how GDC helps with our unloading scenario. Let's run it
+              live — and here we see GDC scoring every channel as the event unfolds, before
               any single hard limit is crossed."
 PANEL QUOTE : "BASELINE MONITORING · XGBoost routing score" in GDC Advisor panel
 ASSET REF   : templates/tab_h1.html — `↺ New Scenario` button

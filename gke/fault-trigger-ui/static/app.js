@@ -1437,6 +1437,11 @@ createApp({
       this.h1EvidenceActive = 0;
       this.h1EvidenceWall.forEach(e => { e.active = false; });
       if (this.h1RagRevealTimer) { clearTimeout(this.h1RagRevealTimer); this.h1RagRevealTimer = null; }
+      if (this.h1RagDoc2Timer)   { clearTimeout(this.h1RagDoc2Timer);   this.h1RagDoc2Timer   = null; }
+      if (this.h1RagDoc3Timer)   { clearTimeout(this.h1RagDoc3Timer);   this.h1RagDoc3Timer   = null; }
+      this.h1RagDoc2Shown = false;
+      this.h1RagDoc3Shown = false;
+      this.h1RagPending   = false;
       this.h1ReplayData = null;
       this.h1ReplayLoading = true;
       // Anchored to Well A-3 (ESP-ALPHA-3) — no random well ID. Fleet scalability
