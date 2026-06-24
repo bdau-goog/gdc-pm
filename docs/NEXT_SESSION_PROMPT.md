@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-24 (Session BS+44) / branch: feature-trio-clean
-Git HEAD: d68bd4f / Image: sha256:8b8b62c7fcc15409c6474a59e4dfbb7a2ac73841538d490fe22be3e43594343c
+Date: 2026-06-24 (Session BS+45) / branch: feature-trio-clean
+Git HEAD: a729236 / Image: sha256:26bab26d826948fb52417571c94e5de1e0017cbb5dad9617e0053596f9a16155
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -33,8 +33,9 @@ cat docs/SESSION_LOG.md | head -60   # last 2 entries for context
 
 ### B1-S1 — Start the Run · ~7s
 - **APP STATE:** Discern tab → click `↺ New Scenario` → transport begins; GDC shows "BASELINE MONITORING · XGBoost routing score"
-- **VO:** *"Let's run it live. GDC is scoring every channel as the event unfolds — before any single hard limit is crossed."*
+- **VO:** *"Now let's look at how GDC helps with our unloading scenario. Let's run it live — and here we see GDC scoring every channel as the event unfolds, before any single hard limit is crossed."*
 - **NOTE:** Verdict (Gas Lock or Drawdown) is random. Record whichever fires. VO branches only at B1-S4.
+- **FIX (BS+45):** Doc-card leak fixed — `loadH1Scenario()` now correctly resets `h1RagDoc2Shown`, `h1RagDoc3Shown`, `h1RagPending`, and clears stale timers. All 3 docs now hidden before GDC-detect line on every run.
 
 ### B1-S2 — Pre-Threshold Detect ⭐ INTEGRITY-CRITICAL · ~7s
 - **APP STATE:** GDC Advisor view · scrub to `gdc_detect_idx` (~27) · amber "RETRIEVING CONTEXT" state holds · NO SCADA alarm yet (alarm_idx ~48 not reached)
