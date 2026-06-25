@@ -535,9 +535,9 @@ CAMERA/MOVE : [LIVE] show the HITL awaiting state; zoom the Autonomy Policy badg
               zoom the evidence/similarity line; click ✔ Approve & Dispatch to SCADA
               [POST] zoom 1.15× on "Awaiting RTOC approval" + the approve button
 VO          : "Every recommendation is cited, and every step is reviewable. GDC prepares
-              the action and hands it to the engineer — GDC advises, but the human decides.
-              The autonomy policy sets the envelope, and for a setpoint change like this one,
-              it always requires a person to sign off."
+              the action and hands it to the engineer. The operator sets the autonomy
+              envelope — some routine actions GDC can execute on its own, but a setpoint
+              change like this one always requires a person to sign off."
 PANEL QUOTE : "Awaiting RTOC approval" label + ✔ Approve & Dispatch to SCADA button label
 ASSET REF   : templates/tab_h1.html — `GDC Agent · Action package ready · Awaiting RTOC approval`
 CONTINUITY  : ECHOES Part A A8 (the nod + authorize moment)
@@ -586,10 +586,10 @@ ASSET REF   : slides/h2.html #p1
 CONTINUITY  : (none — new scenario)
 ```
 
-### B2-P2 — AMBIGUOUS TELEMETRY (H2 Slide 2)   ·  ~11s  ·  RECORD
+### B2-P2 — THE SIGNAL SAYS PULL (H2 Slide 2)   ·  ~11s  ·  RECORD
 ```
 SOURCE      : Live screen capture
-APP STATE   : H2 tab · Slide 2 "Fifty-Two Days Late. Bearings or Wax?"
+APP STATE   : H2 tab · Slide 2 "The Machine Is Certain. The Machine Is Wrong."
 VISUAL      : Four sensor tiles: current rising, efficiency falling, vibration climbing
               THROUGH the printed high-alarm line, pressure holding
 CAMERA/MOVE : [LIVE] advance to Slide 2

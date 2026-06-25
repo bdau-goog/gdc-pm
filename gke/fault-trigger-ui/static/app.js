@@ -2077,6 +2077,7 @@ createApp({
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
         this.h2ReplayData = data;
+        this.h2CursorIdx = data.scada_alarm_idx || 0;
         this.h2ReplayLoading = false;
         this.$nextTick(() => { this._renderH2ReplayChart(); });
       } catch(e) {
