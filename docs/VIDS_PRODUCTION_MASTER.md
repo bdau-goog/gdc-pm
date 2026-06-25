@@ -573,7 +573,7 @@ NOTE        : OPTIONAL — cut this scene if total runtime exceeds 5:55. The clo
 ### B2-P1 — THE SCENARIO (H2 Slide 1)   ·  ~7s  ·  RECORD
 ```
 SOURCE      : Live screen capture (briefing iframe)
-APP STATE   : H2 tab · Slide 1 "Waxy Crude. Routine PM. Then Nothing."
+APP STATE   : H2 tab · Slide 1 "A Waxy Well, One Missed Treatment."
 VISUAL      : Scenario kicker + title + sub: paraffin problem / 52-day overdue treatment /
               vendor delay logged but not in SCADA
 CAMERA/MOVE : [LIVE] tab opens in briefing mode on Slide 1
@@ -589,7 +589,7 @@ CONTINUITY  : (none — new scenario)
 ### B2-P2 — THE SIGNAL SAYS PULL (H2 Slide 2)   ·  ~11s  ·  RECORD
 ```
 SOURCE      : Live screen capture
-APP STATE   : H2 tab · Slide 2 "The Machine Is Certain. The Machine Is Wrong."
+APP STATE   : H2 tab · Slide 2 "A Clear Signal Can Still Point the Wrong Way"
 VISUAL      : Four sensor tiles: current rising, efficiency falling, vibration climbing
               THROUGH the printed high-alarm line, pressure holding
 CAMERA/MOVE : [LIVE] advance to Slide 2
