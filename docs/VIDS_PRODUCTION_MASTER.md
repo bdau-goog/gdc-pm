@@ -646,10 +646,10 @@ VISUAL      : SCADA alarm banner with "CAUSE NOT DETERMINED FROM TELEMETRY" · p
 CAMERA/MOVE : [LIVE] click 🟡 SCADA View at alarm state; point to alarm banner then to
               the Request Pump Pull card
               [POST] static
-VO          : "SCADA does its job — it fires the vibration alarm the instant the tag crosses
-              its limit. But that's all it can do. It reports the breach; it offers no cause,
-              because the cause isn't in the telemetry. And the standard response to a
-              vibration alarm you can't explain is the expensive one: pull the pump and look."
+VO          : "The monitoring system did exactly what it should — tag crossed the limit,
+              alarm is active. But from sensor data alone, the cause is indeterminate.
+              Vibration could be bearings. It could be something else entirely. Without more
+              context, the only way to know is to investigate — which means a workover."
 PANEL QUOTE : "CAUSE NOT DETERMINED FROM TELEMETRY" banner · "Request Pump Pull · Investigate downhole" card
 ASSET REF   : templates/tab_h2.html — `h2CursorIdx >= h2ReplayData.scada_alarm_idx` SCADA view
 CONTINUITY  : (none)
