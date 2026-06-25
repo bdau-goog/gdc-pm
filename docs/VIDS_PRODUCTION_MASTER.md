@@ -628,8 +628,8 @@ APP STATE   : H2 tab · click ↺ New Scenario
 VISUAL      : Alarm state on screen immediately — drama is already there on load
 CAMERA/MOVE : [LIVE] click ↺ New Scenario; show the loaded alarm state
               [POST] static — the drama is already on screen
-VO          : "Let's run it. The well has been degrading for weeks — and the monitoring
-              platform already has an answer: bearing wear. Let's see what the documents say."
+VO          : "Let's run it. The alarm is already active — weeks of sensor drift have
+              crossed the threshold. Let's see what the documents say."
 PANEL QUOTE : VIB H ALARM banner · EFF declining · ISA-18.2 alarm active
 ASSET REF   : templates/tab_h2.html — `↺ New Scenario` button; loads at scada_alarm_idx
 CONTINUITY  : (none)
