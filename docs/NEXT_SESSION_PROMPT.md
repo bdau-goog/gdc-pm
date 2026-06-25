@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
-Date: 2026-06-25 (Session BS+50 wrap) / branch: feature-trio-clean
-Git HEAD: c2257a3 / Image: sha256:747ad68a622cc2cc8dcb7a3d93a7f03cbddfc425b2eaac28511c17a59e19cd39
+Date: 2026-06-25 (Session BS+51 wrap) / branch: feature-trio-clean
+Git HEAD: 3899b95 / Image: sha256:aac31c2c5fc2330e29654a91affc9cb5e2471618bb155ffad5f1df82f49dcb9f
 
-⚠ NOTE: 2 commits ahead of origin/feature-trio-clean — push before next session if needed.
+⚠ NOTE: 3 commits ahead of origin/feature-trio-clean — push before next session if needed.
 
 ## STEP 1: Run Four Startup Commands
 ```bash
@@ -21,8 +21,8 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ## STEP 2: Read DEMO_MASTER.md + DECISION_DOSSIER.md
 ```bash
-cat docs/DECISION_DOSSIER.md   # MANDATORY — §3.5 is the H3 build spec
-cat docs/SESSION_LOG.md | head -60  # last entry for context
+cat docs/DECISION_DOSSIER.md   # MANDATORY — §3 is now the curtailment scenario spec
+cat docs/SESSION_LOG.md | head -80  # last 2 entries for context
 ```
 
 ## STEP 3: Recording Progress
@@ -32,38 +32,43 @@ cat docs/SESSION_LOG.md | head -60  # last entry for context
 - B1-P1–P5 + B1-S1–S6 (H1 — FULLY RECORDED)
 - H2 panels: fully updated, deployed, record-ready (being recorded by user)
 
-### ⏳ NEXT: TASK 4 — H3 Iterative Vizier + Plan-vs-Live (1–2 hrs)
-**Read DECISION_DOSSIER.md §3.5 fully before touching app.py.**
-**File:** `app.py` — function `vizier_optimize()` at ~L6701–6770
+### ⏳ NEXT: TASK 4 BACKEND ✅ DONE — Now build TASK 4 UI + TASK 4 SLIDES
 
-**Step 4A — Make Vizier loop iterative:**
-Replace `suggest_trials(count=15)` single-batch with **3 rounds of 5 trials** → score on edge → re-suggest.
-- Round 1 establishes feasible boundary; rounds 2–3 concentrate search.
-- Makes "searches and learns" **literally true** (not just a claim).
-- Still ~15 trials; Vizier cost stays within free tier.
+**H3 backend is deployed and verified (3899b95):**
+- `/api/vizier/optimize` runs in 0.20s warm (deterministic_convergence_demo)
+- `curtailment.revenue_delta=12899592.0` live-computed ✅
+- `constraintDoc.found=True` ✅
+- `live_vizier=False` gate: no Vizier studies created by accident ✅
+- **11 active Vizier studies deleted** — billing stopped
 
-Verify first:
-```bash
-curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c "import sys,json;d=json.load(sys.stdin);print('trials:',len(d.get('trials',[])),'\nfeasible:',sum(1 for t in d.get('trials',[]) if not t.get('is_failure')))"
-```
+**⚠ VIZIER COST DISCIPLINE (PERMANENT):**
+- `/api/vizier/optimize` ALWAYS uses deterministic fallback (live_vizier=False default)
+- To invoke real Vizier: `curl ".../api/vizier/optimize?live_vizier=true"` — announce first
+- Real Vizier creates a study + 15 trials on EVERY CALL. Do NOT call it casually.
+- 100 free trials/mo; $1/trial after. 11 studies already spent the budget this month.
 
-**Step 4B — Plan-vs-live-state split (new function `reconcile_live()`):**
-- Return both `plan_hz_vec` (Vizier computed) AND `live_hz_vec` (after edge reconciles)
-- Inject: well A-5 gets live motor temp +12°F above the plan's assumption (simulates degrading seal)
-- Enforce `hz_live[i] ≤ hz_plan[i]` for ALL wells — edge ONLY trims DOWN (never up; up-reallocation would breach shared gas ceiling)
-- Return `trims[]` list showing which wells were adjusted and why
+**Step 4C — tab_h3.html: curtailment panel (new UI beat):**
+- File: `templates/tab_h3.html`
+- API data available: `d.curtailment.{event, curtailed_ceiling, trigger, smart_hz_vec, scada_hz_vec, revenue_delta, uplift_bbl_d, wells_curtailed[]}`
+- What to show:
+  - **Curtailment event card**: "📨 GatherCo Notice — Line PA-6-0047: capacity reduced 8.0 → 6.0 MMscfd (4-hr event)" with trigger label "Off-sensor — gathering-system capacity reduction"
+  - **GDC smart re-allocation panel**: per-well table (Plan Hz / Curtailed Smart Hz / Curtailed SCADA Hz / Role) — oil-rich wells stay up/hold, gassy wells trimmed
+  - **Revenue delta badge**: GDC smart vs dumb-SCADA, `+${{ curtailment_revenue_delta / 1e6 | toFixed(1) }}M vs uniform throttle` (90-day horizon)
+  - **Honesty tag**: `⏺ Architecture view — system-to-system flow`
+- Show AFTER the existing uplift card (add below it, same dashboard)
+- Small "⚠ Edge only trims intra-pad (it owns its tie-in). Inter-pad: next cloud cycle." footnote
 
-**Step 4C — Presentation (`templates/tab_h3.html`):**
-- Add cloud-plan panel (Vizier results) + edge-reconcile panel (A-5 trimmed with reason)
-- Render infeasible trials as ✗ and feasible as ✓ in trial log (data already in `is_failure`)
-- Add: `<span style="font-size:0.50rem;color:var(--muted);font-style:italic">⏺ Architecture view — system-to-system flow</span>` honesty tag
-- Label: "GDC-plan Hz" (what Vizier said) vs "GDC-live Hz" (what edge enforced after A-5 hot)
+**Step 4D — slides/h3.html + VIDS VO reframe:**
+- Slide 3 ("Cloud Searches. Edge Enforces.") needs one added sentence re curtailment:
+  "When gathering changes after the plan ships — a curtailment notice the cloud never saw — the edge re-allocates the pad in real time, protecting revenue under the cut."
+- VIDS B3-P3 + B3-S3/S5 VOs: concede VFD owns motor protection; edge beat = curtailment re-allocation vs dumb-SCADA; lead with revenue delta
+- B3-S4 (constraintDoc) is clear: `constraintDoc.found=True` confirmed ✅
 
-**Step 4D — Verify H3-S4 constraintDoc.found=True:**
+**Step 4E — Verify B3-S4 before recording:**
 ```bash
 curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c "import sys,json;d=json.load(sys.stdin);print('constraintDoc.found:',d.get('constraint_doc',{}).get('found'))"
+# Must return: True
 ```
-Must return `True` consistently before recording B3-S4.
 
 ### TASK 5 — "Why GDC" Platform Tab (~30 min)
 **Read DECISION_DOSSIER.md §4 fully before building.**
@@ -91,14 +96,16 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - BBRIDGE VO: "all AI local, no cloud required" (not "air-gap capable")
 - **Autonomy numeric knob: ❌ BLOCKED** — IEC 61511 FAILS
 - **GAS LOCK VO physics:** PIP drops / casing annulus pressure rises — do NOT change
-- **H3 MUST-NOT-SAY:** See DECISION_DOSSIER.md §3.6
+- **H3 MUST-NOT-SAY:** See DECISION_DOSSIER.md §3.7
 - **Why-GDC MUST-NOT-SAY:** See DECISION_DOSSIER.md §4.5
-- **H3 edge trims DOWN only** — no up-reallocation (breaches shared gas ceiling)
+- **H3 edge intra-pad realloc is SAFE** (edge owns its tie-in) — see §3.3 refined
+- **H3 edge does NOT protect motors** — VFD owns overtemp; do not re-use that beat
+- **live_vizier=True: announce before calling** — creates a billable Vizier study
 
 ## Recording Progress
 - ✅ B0.1–B0.4 (Intro) DONE
 - ✅ B1-P1–P5 + B1-S1–S6 (H1 scenario) DONE
 - ⏳ BBRIDGE — record after H2
 - ⏳ H2 (B2-P1 through B2-S4) — user recording; panels deployed c2257a3
-- ⏳ H3 (B3-P1 through B3-S5) — record after Task 4 + 4D verification
+- ⏳ H3 (B3-P1 through B3-S5) — record after Task 4C + 4D verification
 - ⏳ BCLOSE — record last
