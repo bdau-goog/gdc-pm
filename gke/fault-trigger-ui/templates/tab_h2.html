@@ -152,8 +152,7 @@
               <span style="color:rgba(251,191,36,0.88);position:absolute"
                     :style="{left: (h2ReplayData.gdc_detect_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">GDC&#x25B2;</span>
               <span style="color:var(--red);position:absolute"
-                    :style="{left: (h2ReplayData.scada_alarm_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-50%)'}">HI&#x25B2;</span>
-              <span style="position:absolute;right:0">T+{{ h2ReplayData.t_min[h2ReplayData.n-1] }} wks</span>
+                    :style="{left: (h2ReplayData.scada_alarm_idx/(h2ReplayData.n-1)*100)+'%',transform:'translateX(-100%)'}">HI&#x25B2;</span>
             </div>
           </div>
           <!-- 2-sensor Plotly chart fills all available height -->
@@ -170,8 +169,8 @@
         <div :style="{flex:'0 0 '+h2ColM+'%',maxWidth:h2ColM+'%'}" style="display:flex;flex-direction:column;padding:3px 6px;min-height:0;overflow:hidden">
           <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">WELLBORE &nbsp;&middot;&nbsp; ESP-ALPHA-3</div>
           <!-- SVG wax-up / sensors-down cutaway — paraffin scenario (Session BS+52) -->
-          <div style="flex:1;min-height:0;overflow:hidden">
-          <svg viewBox="0 0 120 315" preserveAspectRatio="xMidYMin meet" style="width:100%;height:100%;display:block;overflow:hidden" v-if="h2ReplayData">
+          <div style="flex:1;min-height:0;overflow:hidden;position:relative">
+          <svg viewBox="0 0 120 315" preserveAspectRatio="xMidYMin meet" style="position:absolute;top:0;left:0;width:100%;height:100%;display:block" v-if="h2ReplayData">
             <!-- Wellhead -->
             <rect x="44" y="5" width="32" height="9" rx="2" fill="rgba(100,116,139,0.45)"/>
             <text x="60" y="11.5" text-anchor="middle" fill="#64748b" font-size="5.5" font-family="Inter,sans-serif" font-weight="600">WH</text>
@@ -184,8 +183,8 @@
                   :height="Math.max(8, Math.min(100, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] && h2ReplayData.psi[h2ReplayData.n-1] ? h2ReplayData.psi[h2CursorIdx] / h2ReplayData.psi[h2ReplayData.n-1] * 100 : 8))"
                   :fill="'rgba(251,191,36,' + (0.10 + 0.55 * (h2CursorIdx / Math.max(1, h2ReplayData.n - 1))) + ')'"
                   stroke="rgba(251,191,36,0.30)" stroke-width="0.5"/>
-            <text x="60" y="50" text-anchor="middle" fill="rgba(251,191,36,0.45)"
-                  font-size="5" font-family="Inter,sans-serif" font-style="italic">WAX ZONE</text>
+            <text x="60" y="50" text-anchor="middle" fill="rgba(12,18,30,0.85)"
+                  font-size="6" font-family="Inter,sans-serif" font-style="italic">WAX ZONE</text>
             <text x="60" y="60" text-anchor="middle" fill="rgba(148,163,184,0.35)"
                   font-size="4" font-family="Inter,sans-serif">~1,500 ft</text>
             <!-- Off-sensor boundary line -->

@@ -2191,7 +2191,7 @@ createApp({
           bgcolor:'rgba(251,191,36,0.12)', borderpad:2 },
         { x:scadaT, y:0.97, xref:'x', yref:'paper',
           text:'<b>SCADA \u25B2</b><br>single-tag 4.0\u202fmm/s crossed',
-          showarrow:false, xanchor:'left', yanchor:'top',
+          showarrow:false, xanchor:'right', yanchor:'top',
           font:{color:'rgba(239,68,68,0.95)',   size:9.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(239,68,68,0.12)',   borderpad:2 },
         { x:0, y:-0.20, xref:'paper', yref:'paper',
