@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
-Date: 2026-06-25 (Session BS+54) / branch: feature-trio-clean
-Git HEAD: 42c6089 / Image: sha256:7cce4e35f0c9a5c24233b83e0bb23d11864dc7222e85c44c4f51929b344c54d1
+Date: 2026-06-25 (Session BS+55) / branch: feature-trio-clean
+Git HEAD: 42e0d5b / Image: sha256:5033abd8449c0c87581417ca1d031070777acc53b51d932f10be4538b0df0197
 
-⚠ NOTE: 7 commits ahead of origin/feature-trio-clean — push before next session if needed.
+⚠ NOTE: 9 commits ahead of origin/feature-trio-clean — push before next session if needed.
 
 ## STEP 1: Run Four Startup Commands
 ```bash
@@ -27,23 +27,35 @@ cat docs/SESSION_LOG.md | head -80
 
 ## STEP 3: Next Tasks — H2 Recording + H3 Iterative Vizier
 
-### H2 UI — FULLY DEPLOYED (sha256:7cce4e35) ✅
-All fixes shipped and verified live (BS+54 adds):
-| Fix | Status | Verified |
+### H2 UI — FULLY DEPLOYED (sha256:5033abd8) ✅
+All layout/content fixes from BS+54 and BS+55 shipped and verified:
+| Fix | Commit | Verified |
 |---|---|---|
-| Q2 🔴 | New wax-up SVG wellbore (3-col 44/22/34%) — PROT neutral grey | ✅ "schematic · wax inferred from PIP" in live HTML |
-| Q3 🔴 | "Weeks since last treatment" (was "post-workover") | ✅ grep confirmed in app.js |
-| Q4 | GDC▲ "health <0.65 · vib ~half HI limit" / SCADA▲ "single-tag 4.0 mm/s crossed" + footnote | ✅ grep confirmed |
-| Q1 | `roll_vib` returned in API + rolling-avg trace on chart | ✅ API: roll_vib present=True len=80 |
-| Q5 | Efficiency `title` tooltip "VFD-derived (IEEE 112)" | ✅ "VFD-derived" in live HTML |
-| B2-S1 | VIDS_PRODUCTION_MASTER.md card rewritten (loads at alarm state) | ✅ committed |
-| B2-S3.5 | New rewind beat inserted in VIDS_PRODUCTION_MASTER.md | ✅ committed |
+| Wellbore SVG clip | 42c6089 | ✅ viewBox 315, position:absolute |
+| Dollar figures removed | 42c6089 | ✅ "major workover" / "low-cost surface" in live HTML |
+| 3-col drag resize handles | 42c6089 | ✅ h2StartDrag + sessionStorage |
+| Annotation overlap (legend) | 42c6089 | ✅ y:0.97 inside chart |
+| SVG absolute positioning | 42e0d5b | ✅ position:absolute;top:0;left:0 |
+| SCADA annotation clip | 42e0d5b | ✅ xanchor:'right' |
+| Scrubber label overlap | 42e0d5b | ✅ translateX(-100%) + T+max label removed |
+| WAX ZONE contrast | 42e0d5b | ✅ dark text on amber |
 
-### READY TO RECORD: H2 (B2-P1 through B2-S4 + new B2-S3.5)
-- Load at alarm state: `h2CursorIdx = scada_alarm_idx` on New Scenario click ✅
-- Wellbore: wax band dynamic (cursor-bound, thins on rewind to gdc_detect_idx) ✅
-- B2-S3.5 rewind beat: scrub cursor from alarm → gdc_detect_idx after doc cascade; VO: "Act on the drift, not the alarm."
-- Verified: vib at gdc_detect_idx = 1.94 mm/s = 48% of 4.0 HI limit — claim scoped to threshold SCADA only
+### ⭐ NEXT TASK: RECORD H2 (B2-P1 through B2-S4 + B2-S3.5)
+Scene order: B2-P1 → B2-P2 → B2-P3 → B2-S1 → B2-S2 → B2-S3 → B2-S3.5 → B2-S4
+
+**Pre-recording checklist:**
+1. Open http://gdc-pm.bdau.io → Classify tab
+2. Column widths: reset sessionStorage if needed (`sessionStorage.clear()` in DevTools) → defaults 44/22/32%
+3. Click ↺ New Scenario → confirm loads at alarm state (VIB-HI banner active)
+4. Confirm wellbore: WH at top, wax band visible, PUMP/PROT/MOTOR visible below
+5. Confirm chart: GDC▲ (~week 4) and SCADA▲ (~week 7) annotations visible, no clipping
+6. Confirm 3 doc cards appear on GDC Advisor tab after ~2s, ~4s, ~5.5s
+7. Vib at gdc_detect_idx = 1.94 mm/s (drag scrubber to GDC▲ to confirm)
+
+**Key VO anchors (from VIDS_PRODUCTION_MASTER.md §SECTION 2):**
+- B2-S3.5 closing line: "Act on the drift, not the alarm." — pause after; let it land
+- B2-S4 closing line: "The pull is averted, because the documents separated the symptom from the cause."
+- B2-S5: ❌ CUT — do not record
 
 ### H3 — Iterative Vizier loop fix (blocking H3 recording)
 - **File:** `app.py` — `suggest_trials(count=15)` at L6734 is a single batch, NOT iterative
