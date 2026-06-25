@@ -1,8 +1,8 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
-Date: 2026-06-25 (Session BS+53) / branch: feature-trio-clean
-Git HEAD: 9f1482f / Image: sha256:a2970c6a0b0d8ba2643d6d3457596421b0a153f80f1ef2f51fdc63af41dcb02b
+Date: 2026-06-25 (Session BS+54) / branch: feature-trio-clean
+Git HEAD: 42c6089 / Image: sha256:7cce4e35f0c9a5c24233b83e0bb23d11864dc7222e85c44c4f51929b344c54d1
 
-⚠ NOTE: 6 commits ahead of origin/feature-trio-clean — push before next session if needed.
+⚠ NOTE: 7 commits ahead of origin/feature-trio-clean — push before next session if needed.
 
 ## STEP 1: Run Four Startup Commands
 ```bash
@@ -27,8 +27,8 @@ cat docs/SESSION_LOG.md | head -80
 
 ## STEP 3: Next Tasks — H2 Recording + H3 Iterative Vizier
 
-### H2 UI — FULLY DEPLOYED (sha256:a2970c6a) ✅
-All 6 fixes shipped and verified live:
+### H2 UI — FULLY DEPLOYED (sha256:7cce4e35) ✅
+All fixes shipped and verified live (BS+54 adds):
 | Fix | Status | Verified |
 |---|---|---|
 | Q2 🔴 | New wax-up SVG wellbore (3-col 44/22/34%) — PROT neutral grey | ✅ "schematic · wax inferred from PIP" in live HTML |
