@@ -621,15 +621,17 @@ CONTINUITY  : (none)
 ### B2-S1 — Start the Run   ·  ~5s  ·  RECORD
 ```
 SOURCE      : Live screen capture
-APP STATE   : H2 tab · click ↺ New Scenario → degradation replay begins
-              · efficiency falls; vibration climbs past missed-treatment point
-VISUAL      : Replay starts; degradation begins accumulating
-CAMERA/MOVE : [LIVE] click ↺ New Scenario; show replay animating
-              [POST] static
-VO          : "Let's run it. The degradation builds gradually — accumulating exactly the
-              way mechanical bearing wear would."
-PANEL QUOTE : Slowly rising vibration / falling efficiency curves
-ASSET REF   : templates/tab_h2.html — `↺ New Scenario` button
+APP STATE   : H2 tab · click ↺ New Scenario
+              Loads at scada_alarm_idx — 90-day history fully plotted, VIB-HI alarm ACTIVE
+              Wellbore shows full wax band (cursor at alarm = max wax); vib at alarm-state level
+              NO forward playback — this is a history-triage view, not a live event
+VISUAL      : Alarm state on screen immediately — drama is already there on load
+CAMERA/MOVE : [LIVE] click ↺ New Scenario; show the loaded alarm state
+              [POST] static — the drama is already on screen
+VO          : "Let's run it. The well has been degrading for weeks — and the monitoring
+              platform already has an answer: bearing wear. Let's see what the documents say."
+PANEL QUOTE : VIB H ALARM banner · EFF declining · ISA-18.2 alarm active
+ASSET REF   : templates/tab_h2.html — `↺ New Scenario` button; loads at scada_alarm_idx
 CONTINUITY  : (none)
 ```
 
@@ -673,6 +675,33 @@ ASSET REF   : templates/tab_h2.html — `h2VerdictRevealed` + three doc v-if blo
 CONTINUITY  : ECHOES Part A A8 (document fusion payoff)
 NOTE        : Pace the read to the doc reveals. Start the VO line a beat after clicking
               GDC Advisor so the first doc is already appearing when words begin.
+```
+
+### B2-S3.5 — Rewind to GDC Detection   ·  ~8s  ·  RECORD
+```
+SOURCE      : Live screen capture
+APP STATE   : H2 tab · 🟢 GDC Advisor · h2VerdictRevealed=true
+              SCRUB CURSOR BACK from scada_alarm_idx → gdc_detect_idx
+              Wellbore: wax band visibly THINNER (earlier in restriction build-up)
+              Chart: vib reads ~1.9–2.0 mm/s — clearly below the 4.0 HI line
+              GDC▲ marker is where cursor lands
+VISUAL      : Wax band thins on rewind; vib at ~half the alarm limit; GDC detect marker active
+CAMERA/MOVE : [LIVE] drag scrubber from alarm state back left to GDC▲ marker;
+              hold ~2s at gdc_detect_idx; show vib well below the ISA HI line
+              [POST] zoom 1.15× on vib trace + GDC▲ marker; hold on the gap between
+              the marker and the 4.0 HI dashed line
+VO          : "GDC didn't wait for the alarm. Back here — weeks earlier — vibration is
+              still well below the hard limit. But the multivariate health score already
+              saw the correlated drift across all four channels. This is the window where
+              the surface treatment still works — before the restriction starves the pump.
+              Act on the drift, not the alarm."
+PANEL QUOTE : Vibration value at gdc_detect_idx (~1.94 mm/s) vs ISA HI 4.0 line
+              GDC▲ marker caption "health <0.65 · vib still ~half HI limit"
+ASSET REF   : templates/tab_h2.html — scrubber input; gdc_detect_idx from API
+CONTINUITY  : ECHOES dossier §2.6 Bill Barna SME: "Act on the drift, not the alarm."
+INTEGRITY   : Verified live: vib at gdc_detect_idx = 1.94 mm/s = 48% of 4.0.
+              Single-tag threshold CANNOT fire there. XGBoost sees joint drift.
+              Claim scoped to threshold SCADA only (dossier §2.3).
 ```
 
 ### B2-S4 — Action Contrast (surface vs pull AVERTED)   ·  ~8s  ·  RECORD

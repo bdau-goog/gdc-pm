@@ -7915,6 +7915,7 @@ async def h2_scenario_replay():
         "n":                N,
         "efficiency":       eff_arr,
         "vib":              vib_arr,
+        "roll_vib":         roll_vib,          # rolling-avg vib — what SCADA actually trips on (Q1)
         "amps":             amps_arr,
         "psi":              psi_arr,       # PIP rises — paraffin restriction tell
         "temp":             temp_arr,      # flat — hydraulic not thermal

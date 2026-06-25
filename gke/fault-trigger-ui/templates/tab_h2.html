@@ -134,9 +134,10 @@
       <!-- MAIN BODY: 2-sensor chart (left 56%) + Decision Console + SVG (right 44%) -->
       <div v-if="h2ReplayData" style="display:flex;gap:0;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden">
 
-        <!-- LEFT: Dual-sensor chart (vib rising + temp flat) + scrubber -->
-        <div :style="{'flex': '0 0 ' + h2SplitPercent + '%', 'maxWidth': h2SplitPercent + '%'}" style="display:flex;flex-direction:column;gap:2px;min-height:0">
-          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px;flex-shrink:0">
+        <!-- LEFT: Dual-sensor chart — 44% fixed -->
+        <div style="flex:0 0 44%;max-width:44%;display:flex;flex-direction:column;gap:2px;min-height:0">
+          <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px;flex-shrink:0"
+               title="Efficiency: VFD-derived (head·flow·motor power, IEEE 112) — computed, not a direct sensor">
             &#x1F4E1; DEGRADATION SIGNATURE &#x2014; EFF declining (amber) &middot; VIB rising (purple)
           </div>
           <!-- SCRUBBER inside Left Column, padding-left:48px aligns with Plotly margin.l:48 -->
@@ -159,11 +160,70 @@
           <div id="h2-replay-chart" style="width:100%;flex:1;min-height:280px"></div>
         </div>
 
-        <!-- Drag handle — resize left/right columns; dblclick resets to 56% -->
-        <div class="h1-splitter" @mousedown="initH2SplitterDrag" @dblclick="h2SplitPercent=56" style="margin:0 2px"></div>
+        <!-- MIDDLE: Wellbore — 22% — wax-up/sensors-down cutaway, dynamic PIP-proportional wax band -->
+        <div style="flex:0 0 22%;max-width:22%;display:flex;flex-direction:column;padding:3px 6px;border-left:1px solid rgba(100,116,139,0.10);border-right:1px solid rgba(100,116,139,0.10);min-height:0;overflow:hidden">
+          <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">WELLBORE &nbsp;&middot;&nbsp; ESP-ALPHA-3</div>
+          <!-- SVG wax-up / sensors-down cutaway — paraffin scenario (Session BS+52) -->
+          <svg viewBox="0 0 120 420" style="width:100%;flex:1;overflow:visible" v-if="h2ReplayData">
+            <!-- Wellhead -->
+            <rect x="44" y="5" width="32" height="9" rx="2" fill="rgba(100,116,139,0.45)"/>
+            <text x="60" y="11.5" text-anchor="middle" fill="#64748b" font-size="5.5" font-family="Inter,sans-serif" font-weight="600">WH</text>
+            <!-- Tubing string left + right walls -->
+            <line x1="50" y1="14" x2="50" y2="265" stroke="rgba(100,116,139,0.30)" stroke-width="2"/>
+            <line x1="70" y1="14" x2="70" y2="265" stroke="rgba(100,116,139,0.30)" stroke-width="2"/>
+            <!-- WAX BAND — dynamic: height &#x221d; PIP rise (paraffin restriction build-up) -->
+            <rect x="51" y="20"
+                  width="18"
+                  :height="Math.max(8, Math.min(100, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] && h2ReplayData.psi[h2ReplayData.n-1] ? h2ReplayData.psi[h2CursorIdx] / h2ReplayData.psi[h2ReplayData.n-1] * 100 : 8))"
+                  :fill="'rgba(251,191,36,' + (0.10 + 0.55 * (h2CursorIdx / Math.max(1, h2ReplayData.n - 1))) + ')'"
+                  stroke="rgba(251,191,36,0.30)" stroke-width="0.5"/>
+            <text x="60" y="50" text-anchor="middle" fill="rgba(251,191,36,0.45)"
+                  font-size="5" font-family="Inter,sans-serif" font-style="italic">WAX ZONE</text>
+            <text x="60" y="60" text-anchor="middle" fill="rgba(148,163,184,0.35)"
+                  font-size="4" font-family="Inter,sans-serif">~1,500 ft</text>
+            <!-- Off-sensor boundary line -->
+            <line x1="36" x2="84" y1="180" y2="180" stroke="rgba(251,191,36,0.50)" stroke-width="0.8" stroke-dasharray="3 2"/>
+            <text x="86" y="183" fill="rgba(148,163,184,0.45)" font-size="4" font-family="Inter,sans-serif" font-style="italic">sensors below</text>
+            <!-- PUMP — amber after onset_idx -->
+            <rect x="46" y="255" width="28" height="9" rx="2"
+                  :fill="h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(16,185,129,0.25)' : 'rgba(251,191,36,0.20)'"
+                  :stroke="h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(74,222,128,0.45)' : 'rgba(251,191,36,0.50)'"
+                  stroke-width="1"/>
+            <text x="60" y="261.5" text-anchor="middle"
+                  :fill="h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(74,222,128,0.85)' : 'rgba(251,191,36,0.85)'"
+                  font-size="4.5" font-family="Inter,sans-serif" font-weight="600">PUMP</text>
+            <!-- VIB and AMPS sensor ticks — amber after onset -->
+            <text x="75" y="260"
+                  :fill="h2CursorIdx >= (h2ReplayData.onset_idx || 25) ? 'rgba(251,191,36,0.90)' : 'rgba(100,116,139,0.35)'"
+                  font-size="4" font-family="Inter,sans-serif">VIB&#x25B2;</text>
+            <text x="75" y="266"
+                  :fill="h2CursorIdx >= (h2ReplayData.onset_idx || 25) ? 'rgba(251,191,36,0.80)' : 'rgba(100,116,139,0.35)'"
+                  font-size="4" font-family="Inter,sans-serif">AMPS&#x25B2;</text>
+            <!-- PROTECTOR — neutral grey (paraffin is NOT a seal failure; protector intact) -->
+            <rect x="46" y="265" width="28" height="8" rx="1.5" fill="rgba(100,116,139,0.18)" stroke="rgba(100,116,139,0.32)" stroke-width="0.8"/>
+            <text x="60" y="270.5" text-anchor="middle" fill="rgba(148,163,184,0.65)" font-size="4" font-family="Inter,sans-serif" font-weight="600">PROT</text>
+            <!-- MOTOR — green (temp nominal throughout paraffin scenario) -->
+            <rect x="46" y="274" width="28" height="13" rx="1.5" fill="rgba(16,185,129,0.18)" stroke="rgba(74,222,128,0.32)" stroke-width="0.8"/>
+            <text x="60" y="279.5" text-anchor="middle" fill="rgba(74,222,128,0.78)" font-size="4.5" font-family="Inter,sans-serif" font-weight="600">MOTOR</text>
+            <text x="60" y="285" text-anchor="middle" fill="rgba(148,163,184,0.60)" font-size="4" font-family="Inter,sans-serif">{{ h2ReplayData && h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) + '&#xB0;F' : '&#x2014;' }}</text>
+            <!-- Perforations -->
+            <line x1="46" y1="292" x2="38" y2="292" stroke="rgba(100,116,139,0.32)" stroke-width="1.2"/>
+            <line x1="74" y1="292" x2="82" y2="292" stroke="rgba(100,116,139,0.32)" stroke-width="1.2"/>
+            <line x1="46" y1="297" x2="38" y2="297" stroke="rgba(100,116,139,0.32)" stroke-width="1.2"/>
+            <line x1="74" y1="297" x2="82" y2="297" stroke="rgba(100,116,139,0.32)" stroke-width="1.2"/>
+            <text x="60" y="308" text-anchor="middle" fill="rgba(100,116,139,0.38)" font-size="5" font-family="Inter,sans-serif">PERFS</text>
+            <!-- Vertical honesty tag (along left side of tubing) -->
+            <text writing-mode="vertical-rl" x="12" y="250"
+                  font-size="4" fill="rgba(100,116,139,0.32)"
+                  font-family="Inter,sans-serif" font-style="italic">schematic &middot; wax inferred from PIP</text>
+          </svg>
+          <div style="text-align:center;font-size:0.30rem;font-family:var(--mono);color:rgba(100,116,139,0.4);flex-shrink:0;padding-top:1px;line-height:1.4">
+            health={{ h2ReplayData && h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0)+'%' : '&#x2014;' }}
+          </div>
+        </div><!-- /wellbore column -->
 
-        <!-- RIGHT: Decision Console + shared SVG wellbore strip -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-height:0">
+        <!-- RIGHT: Decision Console — 34% -->
+        <div style="flex:0 0 34%;max-width:34%;min-width:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-height:0">
           <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px 3px;flex-shrink:0">
             ⚖ DECISION CONSOLE
           </div>
@@ -357,58 +417,6 @@
               </div><!-- /zones-2-3 -->
             </div><!-- /gdc-view -->
 
-            <!-- ── SHARED SVG WELLBORE STRIP (visible on BOTH tabs) ── -->
-            <div style="flex:0 0 80px;display:flex;flex-direction:column;padding:3px 3px;border-left:1px solid rgba(100,116,139,0.12);min-height:0">
-              <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">WELLBORE</div>
-              <!-- SVG wellbore — H2: downhole protector seal degradation (root cause) -->
-              <svg viewBox="0 0 50 220" style="width:100%;flex:1;overflow:visible">
-                <!-- Wellhead -->
-                <rect x="16" y="8" width="18" height="6" rx="1.5" fill="rgba(100,116,139,0.45)"/>
-                <text x="25" y="12.5" text-anchor="middle" fill="#64748b" font-size="4" font-family="Inter,sans-serif">WH</text>
-                <!-- Tubing string (vertical) -->
-                <line x1="18" y1="14" x2="18" y2="150" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
-                <line x1="32" y1="14" x2="32" y2="150" stroke="rgba(100,116,139,0.3)" stroke-width="1.5"/>
-                <!-- Fluid column — PIP stays nominally stable in this scenario -->
-                <rect x="19"
-                      :y="150 - Math.max(3, Math.min(38, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 38 : 32))"
-                      width="12"
-                      :height="Math.max(3, Math.min(38, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] ? h2ReplayData.psi[h2CursorIdx] / 1400 * 38 : 32))"
-                      fill="rgba(59,130,246,0.28)" stroke="rgba(59,130,246,0.3)" stroke-width="0.5"/>
-                <!-- PUMP — sub-alarm amber when onset reached -->
-                <rect x="15" y="150" width="20" height="7" rx="1.5"
-                      :fill="h2ReplayData && h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(16,185,129,0.3)' : 'rgba(251,191,36,0.25)'"
-                      :stroke="h2ReplayData && h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(74,222,128,0.5)' : 'rgba(251,191,36,0.5)'"
-                      stroke-width="0.8"/>
-                <text x="25" y="155" text-anchor="middle"
-                      :fill="h2ReplayData && h2CursorIdx < (h2ReplayData.onset_idx || 25) ? 'rgba(74,222,128,0.9)' : 'rgba(251,191,36,0.85)'"
-                      font-size="3.5" font-family="Inter,sans-serif" font-weight="600">PUMP</text>
-                <!-- PROTECTOR — degrading seal (ROOT CAUSE) — color rises to red with cursor -->
-                <rect x="15" y="158" width="20" height="7" rx="1.5"
-                      :fill="'rgba(239,68,68,' + Math.min(0.30, 0.02 + 0.28*(h2CursorIdx/Math.max(1,(h2ReplayData ? h2ReplayData.n-1 : 79)))) + ')'"
-                      :stroke="'rgba(239,68,68,' + Math.min(0.75, 0.10 + 0.65*(h2CursorIdx/Math.max(1,(h2ReplayData ? h2ReplayData.n-1 : 79)))) + ')'"
-                      stroke-width="0.8"/>
-                <text x="25" y="162.5" text-anchor="middle" fill="rgba(252,165,165,0.85)" font-size="3.2" font-family="Inter,sans-serif" font-weight="600">PROT</text>
-                <text x="25" y="165.5" text-anchor="middle" fill="rgba(252,165,165,0.65)" font-size="2.8" font-family="Inter,sans-serif">seal&#x26A0;</text>
-                <!-- MOTOR — temp sub-alarm (green) -->
-                <rect x="15" y="166" width="20" height="11" rx="1.5" fill="rgba(16,185,129,0.25)" stroke="rgba(74,222,128,0.4)" stroke-width="0.8"/>
-                <text x="25" y="171" text-anchor="middle" fill="rgba(74,222,128,0.8)" font-size="3.5" font-family="Inter,sans-serif" font-weight="600">MOTOR</text>
-                <text x="25" y="175" text-anchor="middle" fill="rgba(148,163,184,0.65)" font-size="3" font-family="Inter,sans-serif">
-                  {{ h2ReplayData && h2ReplayData.temp && h2ReplayData.temp[h2CursorIdx] !== undefined ? parseFloat(h2ReplayData.temp[h2CursorIdx]).toFixed(0) + '&#xB0;F' : '&#x2014;' }}
-                </text>
-                <!-- Perforation marks -->
-                <line x1="15" y1="184" x2="10" y2="184" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <line x1="35" y1="184" x2="40" y2="184" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <line x1="15" y1="188" x2="10" y2="188" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <line x1="35" y1="188" x2="40" y2="188" stroke="rgba(100,116,139,0.35)" stroke-width="1"/>
-                <text x="25" y="196" text-anchor="middle" fill="rgba(100,116,139,0.45)" font-size="3.5" font-family="Inter,sans-serif">PERFS</text>
-                <text x="25" y="204" text-anchor="middle" fill="rgba(252,165,165,0.55)" font-size="3" font-family="Inter,sans-serif">&#x25B2; seal</text>
-                <text x="25" y="208" text-anchor="middle" fill="rgba(252,165,165,0.55)" font-size="3" font-family="Inter,sans-serif">degrading</text>
-              </svg>
-              <!-- Health score display -->
-              <div style="text-align:center;font-size:0.30rem;font-family:var(--mono);color:rgba(100,116,139,0.4);flex-shrink:0;padding-top:1px;line-height:1.4">
-                health={{ h2ReplayData && h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0)+'%' : '&#x2014;' }}
-              </div>
-            </div><!-- /shared SVG wellbore strip -->
 
           </div><!-- /inner row -->
         </div><!-- /decision-col -->

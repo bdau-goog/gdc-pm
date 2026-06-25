@@ -2153,7 +2153,7 @@ createApp({
 
       // Single dual-axis chart: Efficiency % (amber, declining) + Vib mm/s (purple, rising)
       const traces = [
-        { x: d.t_min, y: d.efficiency, name: 'Efficiency (%)', type: 'scatter', mode: 'lines',
+        { x: d.t_min, y: d.efficiency, name: 'Efficiency % (VFD-derived)', type: 'scatter', mode: 'lines',
           line: {color:'#f59e0b', width:2.0}, yaxis:'y', showlegend:true },
         { x: d.t_min, y: d.vib, name: 'Vibration (mm/s)', type: 'scatter', mode: 'lines',
           line: {color:'#a78bfa', width:2.0}, yaxis:'y2', showlegend:true },
@@ -2161,6 +2161,13 @@ createApp({
           name: 'ISA HI 4.0', type: 'scatter', mode: 'lines',
           line: {color:'rgba(239,68,68,0.55)', width:1.2, dash:'dash'},
           yaxis:'y2', showlegend:true, hoverinfo:'skip' },
+        ...(d.roll_vib ? [{
+          x: d.t_min, y: d.roll_vib,
+          name: 'Rolling avg vib (SCADA trips on)',
+          type: 'scatter', mode: 'lines',
+          line: {color:'rgba(239,68,68,0.28)', width:1.0, dash:'dot'},
+          yaxis:'y2', showlegend:true, hoverinfo:'skip'
+        }] : []),
       ];
 
       const shapes = [
@@ -2174,14 +2181,20 @@ createApp({
       ];
 
       const annotations = [
-        { x:gdcT,   y:1.01, xref:'x', yref:'paper', text:'<b>GDC \u25B2</b>',
+        { x:gdcT,   y:1.01, xref:'x', yref:'paper',
+          text:'<b>GDC \u25B2</b><br>health &lt;0.65 \u00b7 vib ~half HI limit',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
-        { x:scadaT, y:1.01, xref:'x', yref:'paper', text:'<b>SCADA HI \u25B2</b>',
+        { x:scadaT, y:1.01, xref:'x', yref:'paper',
+          text:'<b>SCADA \u25B2</b><br>single-tag 4.0\u202fmm/s crossed',
           showarrow:false, xanchor:'left', yanchor:'bottom',
           font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
           bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
+        { x:0, y:-0.20, xref:'paper', yref:'paper',
+          text:'vs threshold SCADA only (~85% of wells)',
+          showarrow:false, xanchor:'left', yanchor:'top',
+          font:{color:'rgba(100,116,139,0.50)', size:6, family:'Inter,sans-serif'} },
       ];
 
       Plotly.newPlot('h2-replay-chart', traces, {
@@ -2189,7 +2202,7 @@ createApp({
         font:{color:'#e0e0e0', family:'Inter,sans-serif', size:9},
         margin:{l:50, r:52, t:18, b:36},
         xaxis:  {gridcolor:'#1e2a38', zeroline:false, range:[0, xMax],
-                 title:{text:'Weeks post-workover', font:{size:8, color:'#5a6a7a'}},
+                 title:{text:'Weeks since last treatment', font:{size:8, color:'#5a6a7a'}},
                  tickfont:{size:7}},
         yaxis:  {gridcolor:'#1e2a38', zeroline:false,
                  title:{text:'Efficiency (%)', font:{color:'#f59e0b', size:8}},
