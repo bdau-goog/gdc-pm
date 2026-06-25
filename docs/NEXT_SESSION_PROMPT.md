@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
-Date: 2026-06-25 (Session BS+52 wrap) / branch: feature-trio-clean
-Git HEAD: 5a50a3d / Image: sha256:9d4a536dbafb238d1403d98dcd6bd504beede3ecb92be330374ff22c65b63e64
+Date: 2026-06-25 (Session BS+52+) / branch: feature-trio-clean
+Git HEAD: e29c5ef / Image: sha256:e28a4c5cb2a5988f159a504287c2792880cf25310be9a637a56f85838425e57d
 
 ⚠ NOTE: 5 commits ahead of origin/feature-trio-clean — push before next session if needed.
 
@@ -21,62 +21,125 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ## STEP 2: Read DEMO_MASTER.md + DECISION_DOSSIER.md
 ```bash
-cat docs/DECISION_DOSSIER.md   # MANDATORY — §3 is curtailment scenario spec; §4 is Why GDC
-cat docs/SESSION_LOG.md | head -80  # last 2 entries for context
+cat docs/DECISION_DOSSIER.md   # §2 is H2 spec; §2.6 physics; Bill Barna SME confirmation
+cat docs/SESSION_LOG.md | head -80
 ```
 
-## STEP 3: Recording Progress
+## STEP 3: H2 UI REDESIGN — One Atomic Deploy
 
-### ✅ DONE
-- B0.1–B0.4 (Intro)
-- B1-P1–P5 + B1-S1–S6 (H1 — FULLY RECORDED)
-- H2 panels: fully updated, deployed (user recording)
+### Context (derived this session — do NOT re-derive)
+- Early detection is real XGBoost `esp_health.ubj` (`health_ok=True` every run, NOT fallback)
+- Verified live: at GDC fire, **vib = 1.94 mm/s = 48% of the 4.0 HI limit**. Single-tag threshold CANNOT fire there.
+- Lead time is **2.6–4.3 weeks** across runs (emergent from model+physics, NOT staged)
+- The "seal degrading" wellbore SVG is a **dead Session BE scenario leftover** (protector seal — killed, Gate 5 fail). Must go.
+- Claim scoped to **threshold SCADA only** (~85% of wells) — never "earlier than APM" (dossier §2.3 locked)
+- `app.py` L7808: `roll_vib` is already computed but NOT returned in the API response → add it (needed for Q1)
 
-### ✅ TASKS 4C + 4D + 5 COMPLETE (this session)
+### Decision log (all approved this session — do NOT re-open)
+- ✅ 3-column layout: chart 44% / wellbore 22% / console 34%
+- ✅ Add B2-S3.5 rewind beat: after 3-doc cascade, scrub back to GDC▲ to show thin wax / vib at 48% of limit
+- ✅ Wellbore is DYNAMIC (bound to h2CursorIdx via PIP for wax band thickness) because of rewind
+- ✅ Honesty tag: subtle vertical text along the bore "schematic · wax inferred from PIP" — small, not a star
+- ✅ Curve NOT flattened — physics stays true; claim is "limit not crossed yet," not "SCADA is slow"
+- ✅ Efficiency 'i' tooltip: "VFD-derived (head·flow·motor power, IEEE 112) — computed, not a direct sensor"
 
-**Task 4C — tab_h3.html curtailment panel (DONE + verified):**
-- Event card (amber): "Off-Sensor Curtailment Notice / Midstream gas-takeaway curtailment: 8.0 → 6.0 MMscfd"
-- 6-well re-allocation table: Plan Hz / GDC Smart Hz / SCADA Baseline Hz / Role (Trimmed/Holds)
-- Revenue delta badge: +$12.9M vs uniform throttle (live-computed from `evaluate_field()`)
-- Honesty tag: ⏺ Architecture view — system-to-system flow
-- Footnote: ⚠ Edge only trims intra-pad; inter-pad: next cloud cycle
+### Fix table (one atomic build+push+rollout)
 
-**Task 4D — slides/h3.html + VIDS VO reframe (DONE + verified):**
-- Slide 3 curtailment sentence added (amber callout)
-- B3-P3 VO: cloud does searching; edge re-allocates under curtailment; VFD owns motor protection trips
-- B3-S3 VO: leads with +$12.9M revenue delta; curtailment re-allocation vs dumb-SCADA
-- B3-S5 VO: gas-ceiling constraint at edge; motor trips stay with VFD/SCADA; off-sensor curtailment notice
+| # | Fix | File · location | Notes |
+|---|---|---|---|
+| Q2 (🔴 integrity) | Kill seal-degradation SVG; redraw as wax-up/sensors-down cutaway, enlarged to new column | `tab_h2.html` L360–410 (SVG) + L135 (main body flex → 3-col: 44/22/34%) | Dynamic: wax band height ∝ PIP via h2CursorIdx |
+| Q3 (🔴 integrity) | "Weeks post-workover" → "Weeks since last treatment" | `app.js` L2192 xaxis title | 1-line |
+| Q4 | GDC▲ caption: "health <0.65 · vib still ~half HI limit" / SCADA▲ caption: "single-tag 4.0 mm/s crossed" + chart footnote (threshold-scoped) | `app.js` L2176–2186 annotations block | Use verified 48% fact; threshold-scope only |
+| Q1 | Add faint rolling-avg vib overlay (what SCADA actually trips on) so SCADA▲ marker lands on its own crossing | `app.py` L7925+ (return `roll_vib` in response) + `app.js` _renderH2ReplayChart new trace | Backend + frontend |
+| Q5 | Efficiency 'i' tooltip (VFD-derived, IEEE 112, computed not direct sensor) | `tab_h2.html` EFF tile label + `app.js` chart legend | Additive |
+| B2-S1 card fix | Stale: "replay animating." Replace: "loads at alarm state — 90-day history already plotted, VIB-HI active, no playback forward" | `VIDS_PRODUCTION_MASTER.md` B2-S1 card | 1-line; then also update app state comment |
 
-**Task 5 — Why GDC platform tab (DONE + verified):**
-- New nav tab "Why GDC" between Optimize and ⓘ Reference
-- Three pillars: Form Factor Fit (blue) / Fleet Governance (green, NOT OT/PLC) / Sovereign AI Platform (purple)
-- RTOC deployment shape: Cloud → Regional RTOC (GDC cluster) → Basin Wells
-- "base models + local fine-tuning" (NOT "deploy identically") — §4.5 compliant
-- Product names: Gemini / Gemini Enterprise Agent Platform (user-confirmed 2026 names)
-- Scenarios connection card ties H1/H2/H3 to platform story
+### Wellbore SVG spec (new, replaces L360–410 tab_h2.html)
+```
+Viewbox: 0 0 120 420 (wider, full-height use)
+Layout (top→bottom):
+  [WH]                              y=15     — static grey rect
+  ║ TUBING ║                        y=15→250 — static grey lines both sides
+  ░░░ WAX BAND ░░░                   y=25→120 — DYNAMIC: height ∝ PIP / psi_end
+    wax fills FROM y=25 DOWN to:     height = max(8, min(100, psi[cursor] / psi_end * 100))
+    fill: rgba(251,191,36, opacity)  opacity ∝ cursor progress (thin→thick)
+    label: "WAX ZONE" vertical text, 5px, amber 0.45 opacity
+    label: "~1,500 ft" vertical text, 4px, muted — spatial reference
+  ────── off-sensor boundary ──────   y=180   dashed amber line
+    label: "sensors below" 4px muted italic RIGHT of line
+  [PUMP]   VIB▲ tick                 y=250   — amber when onset reached
+  [PROT]   (neutral grey — NOT reddening; paraffin is NOT a seal failure)
+  [MOTOR]  TEMP live readout °F      y=320   — green if nominal
+  ≡PERFS≡                            y=360   — static
 
-### ⏳ NEXT: Record H3 (B3-P1 through B3-S5)
+  Vertical honesty tag (along LEFT side of tubing):
+    <text writing-mode="vertical-rl" x="12" y="250"
+          font-size="4" fill="rgba(100,116,139,0.35)"
+          font-style="italic">schematic · wax inferred from PIP</text>
 
-**Pre-recording verification (run before starting H3 recording):**
-```bash
-# Verify constraintDoc.found=True (required for B3-S4)
-curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c "import sys,json;d=json.load(sys.stdin);print('constraintDoc.found:',d.get('constraint_doc',{}).get('found'))"
-# Must return: True
-
-# Verify curtailment panel data
-curl -s "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c "import sys,json;d=json.load(sys.stdin);c=d.get('curtailment',{});print('revenue_delta:',c.get('revenue_delta'),'wells:',len(c.get('wells_curtailed',[])))"
-# Must return: revenue_delta: 12899592.0 wells: 6
+  Sensor tick marks at pump level:
+    VIB ▲ (amber, brightens after onset_idx)
+    AMPS ▲ (amber, brightens after onset_idx)
+    both are CSS-animated with subtle pulse (keyframe opacity 0.6→0.9 2s ease-in-out)
 ```
 
-**H3 recording order (per VIDS_PRODUCTION_MASTER.md):**
-- B3-P1 → B3-P2 → B3-P3 (briefing slides — already updated this session)
-- B3-S1: Run Vizier Optimization button
-- B3-S2: Baseline Hz column (uniform throttle)
-- B3-S3: GDC Optimal + curtailment panel (lead with revenue delta +$12.9M)
-- B3-S4: Constraint provenance doc card (constraintDoc.found=True confirmed ✅)
-- B3-S5: Edge gas-ceiling constraint + VFD/SCADA own motor trips
+### Updated B2 Scene Cards (replace in VIDS_PRODUCTION_MASTER.md §SECTION 2)
 
-**After H3:** Record BBRIDGE (between H2 and H3), then BCLOSE.
+**B2-S1 — Start the Run · ~5s** (REWRITE — old card was stale re: "replay animating")
+```
+APP STATE   : H2 tab · click ↺ New Scenario
+              Loads at scada_alarm_idx — 90-day history fully plotted, VIB-HI alarm ACTIVE
+              Wellbore shows full wax band (cursor at alarm = max wax); vib at alarm-state level
+              NO forward playback — this is a history-triage view, not a live event
+
+CAMERA/MOVE : [LIVE] click ↺ New Scenario; show the loaded alarm state
+              [POST] static — the drama is already on screen
+
+VO          : "Let's run it. The well has been degrading for weeks — and the monitoring
+              platform already has an answer: bearing wear. Let's see what the documents say."
+```
+
+**B2-S3.5 — Rewind to GDC Detection · ~8s** (NEW SCENE — insert after B2-S3)
+```
+APP STATE   : H2 tab · 🟢 GDC Advisor · h2VerdictRevealed=true
+              SCRUB CURSOR BACK from scada_alarm_idx → gdc_detect_idx
+              Wellbore: wax band visibly THINNER (earlier in restriction build-up)
+              Chart: vib reads ~1.9–2.0 mm/s — clearly below the 4.0 HI line
+              GDC▲ marker is where cursor lands
+
+VISUAL      : Wax band thins on rewind; vib at ~half the alarm limit; GDC detect marker now active
+
+CAMERA/MOVE : [LIVE] drag scrubber from alarm state back left to GDC▲ marker;
+              hold ~2s at gdc_detect_idx; show vib well below the ISA HI line
+              [POST] zoom 1.15× on vib trace + GDC▲ marker; hold on the gap between
+              the marker and the 4.0 HI dashed line
+
+VO          : "GDC didn't wait for the alarm. Back here — weeks earlier — vibration is
+              still well below the hard limit. But the multivariate health score already
+              saw the correlated drift across all four channels. This is the window where
+              the surface treatment still works — before the restriction starves the pump.
+              Act on the drift, not the alarm."
+
+PANEL QUOTE : Vibration value at gdc_detect_idx (~1.94 mm/s) vs ISA HI 4.0 line
+              GDC▲ marker caption "health <0.65 · vib still ~half HI limit"
+
+INTEGRITY   : Verified live: vib at gdc_detect_idx = 1.94 mm/s = 48% of 4.0.
+              Single-tag threshold CANNOT fire there. XGBoost sees joint drift.
+              Claim scoped to threshold SCADA only (dossier §2.3).
+```
+
+**B2-S4 — Action Contrast · ~8s** (unchanged — still the right close)
+
+### Runtime delta
+- B2-S3.5 adds ~8s → H2 total ~67s (was ~59s). Still well under 6:00 total.
+
+## Recording Progress
+- ✅ B0.1–B0.4 (Intro) DONE
+- ✅ B1-P1–P5 + B1-S1–S6 (H1 scenario) DONE
+- ⏳ H2 (B2-P1 through B2-S4) — UI redesign needed first (above); record AFTER deploy + verify
+- ⏳ BBRIDGE — record after H2
+- ⏳ H3 (B3-P1 through B3-S5) — panels deployed; record after H2
+- ⏳ BCLOSE — record last
 
 ## Deploy Command (permanent reference)
 ```bash
@@ -96,15 +159,6 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - **GAS LOCK VO physics:** PIP drops / casing annulus pressure rises — do NOT change
 - **H3 MUST-NOT-SAY:** See DECISION_DOSSIER.md §3.7
 - **Why-GDC MUST-NOT-SAY:** See DECISION_DOSSIER.md §4.5
-- **H3 edge intra-pad realloc is SAFE** (edge owns its tie-in) — see §3.3 refined
-- **H3 edge does NOT protect motors** — VFD owns overtemp; do not re-use that beat
+- **H2 early-detect claim:** threshold SCADA only — never "earlier than APM" (dossier §2.3)
+- **H2 wax band:** "schematic · wax inferred from PIP" — displayed, not a measurement
 - **live_vizier=True: announce before calling** — creates a billable Vizier study
-- **Why GDC product names:** Gemini / Gemini Enterprise Agent Platform (user-confirmed 2026)
-
-## Recording Progress
-- ✅ B0.1–B0.4 (Intro) DONE
-- ✅ B1-P1–P5 + B1-S1–S6 (H1 scenario) DONE
-- ⏳ BBRIDGE — record after H2
-- ⏳ H2 (B2-P1 through B2-S4) — user recording; panels deployed c2257a3
-- ⏳ H3 (B3-P1 through B3-S5) — record now (Task 4C/4D deployed this session)
-- ⏳ BCLOSE — record last

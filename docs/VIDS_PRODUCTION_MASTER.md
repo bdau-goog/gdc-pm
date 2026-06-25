@@ -595,10 +595,10 @@ VISUAL      : Four sensor tiles: current rising, efficiency falling, vibration c
 CAMERA/MOVE : [LIVE] advance to Slide 2
               [POST] zoom 1.2× on the four sensor tiles; hold on vibration tile crossing
               the high-alarm line
-VO          : "Over several weeks, the signal drifts — current rising, efficiency falling,
-              vibration climbing right through its high alarm. To a best-in-class platform,
-              that pattern reads as one thing: bearing wear. And the standard response to
-              bearing wear is to pull the pump."
+VO          : "Over several weeks, the telemetry signals drift — current rising, efficiency
+              falling, vibration climbing right through its alarm threshold. To a best-in-class
+              platform, that pattern statistically reads as mechanical bearing wear. And the
+              standard response is to pull the pump."
 PANEL QUOTE : Vibration tile value vs printed high-alarm line (4.0 mm/s) — zoom quotes the cross
 ASSET REF   : slides/h2.html #p2
 CONTINUITY  : (none)
