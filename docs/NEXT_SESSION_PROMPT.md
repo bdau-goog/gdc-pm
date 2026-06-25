@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-24 (Session BS+47 wrap) / branch: feature-trio-clean
-Git HEAD: d3b9dc1 / Image: sha256:ff5f96d1c4c2e5d71bd76eb867336c8d388a9e8db15b8a8a207236c5fbc7ff98
+Date: 2026-06-25 (Session BS+48 wrap) / branch: feature-trio-clean
+Git HEAD: 94f99e6 / Image: sha256:ff5f96d1c4c2e5d71bd76eb867336c8d388a9e8db15b8a8a207236c5fbc7ff98
 
 ## STEP 1: Run These Four Commands First
 ```bash
@@ -19,50 +19,69 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ## STEP 2: Read These Documents
 ```bash
-cat docs/SESSION_LOG.md | head -60   # last 2 entries for context
+cat docs/H3_DECISION_DOSSIER.md      # MANDATORY before any H3 work — full reasoning, eliminations, build plan
+cat docs/SESSION_LOG.md | head -80   # last 2 entries for context
 ```
 
-## STEP 3: PRIME DIRECTIVE — Start by listing remaining H1 scenes
+## STEP 3: PRIME DIRECTIVE — What BS+48 Locked
 
-**The user's instruction:** *"Start that session by listing the remaining H1 scenes with VO and direction."*
+### H2 (Classify) — Instant-Triage + Provenance framing ✅ DESIGN LOCKED
+**Identity:** Operator tool. Provenance / avoid-unnecessary-$100k-pull.
+**UI change (build):** Load H2 at active alarm state (`h2CursorIdx = data.scada_alarm_idx` after `this.h2ReplayData = data`) instead of idx=0.
+- **File:** `static/app.js` function `loadH2Scenario()` ~L2057–2090
+- **Change:** One line: `this.h2CursorIdx = data.scada_alarm_idx;` after `this.h2ReplayData = data;`
+- **Why:** 8-week slow playback is wrong for a provenance/single-alarm story. Load at alarm = "this alarm is active NOW; here's how GDC resolves it."
+- **Verify:** `curl http://gdc-pm.bdau.io/api/h2/scenario-replay` → confirm `scada_alarm_idx` is in response.
 
-**B1-S4 is DONE ✅.** The remaining H1 scenario scenes are:
+### H3 (Optimize) — Two-Timescale Architecture ✅ DESIGN LOCKED
+**FULL DOSSIER: `docs/H3_DECISION_DOSSIER.md` — READ THIS ENTIRE FILE BEFORE ANY H3 CODE.**
 
-| Scene | Status | Note |
-|---|---|---|
-| **B1-S5** | ⏳ TO RECORD | HITL Approve — Autonomy Policy badge |
-| **B1-S6** | ⏳ RECORD-IF-BUDGET | Outcome — VFD dispatched |
+**Identity:** Real system-to-system architecture story (NOT an operator tool).
+**Thesis:** Two-timescale RTO-over-MPC hierarchy:
+- Cloud (Vizier): global/slow/economic — divides shared gas budget across field periodically
+- Edge (GDC): local/fast/continuous — reconciles cloud plan against live per-asset reality; trims DOWN only (never UP — up-reallocation breaches shared gas ceiling); data never leaves site
+- SCADA: executes; owns regulatory control and hard trips
 
-Output the full scene cards for B1-S5 and B1-S6 from VIDS_PRODUCTION_MASTER.md (the cards are already updated with smoothed VOs from BS+47). Then continue with BBRIDGE and H2.
+**MUST-NOT-SAY (RT-confirmed, permanent):**
+1. ❌ "Operators don't trust control vendors with data" (FUD, FAILS)
+2. ❌ "GDC invented hierarchical control" (it's textbook RTO/MPC)
+3. ❌ "The edge does the global optimization"
+4. ❌ "14 of 15 proposals rejected" as a hero stat (fix feasible-rate first)
+5. ❌ "Vendor-neutral" unscoped (scope to "neutral relative to equipment vendors")
+6. ❌ GitOps manages PLC/SCADA/Level-1/2 configs
 
-**After H1, recording order:**
-| Section | Scenes | Status |
-|---|---|---|
-| BBRIDGE | H2→H3 Sovereignty Bridge | ⏳ TO RECORD |
-| H2 CLASSIFY | B2-P1 through B2-S4 | ⏳ TO RECORD |
-| H3 OPTIMIZE | B3-P1 through B3-S5 | ⏳ TO RECORD |
-| BCLOSE | H3 Uplift + Reference tab | ⏳ TO RECORD |
+**5-angle moat (no anti-competitor FUD):**
+1. Greenfield reach: ~76% O&G operators run NO ML APM (cited: uptimeai.com/reliamag.com 2023)
+2. Horizontal platform vs point product (GKE/AlloyDB/Vertex runs all three horizons)
+3. Unstructured fusion APM can't do — CATEGORICAL, STRONGEST
+4. Sovereign fleet Model-Ops (GitOps config + Vertex-train→edge-deploy + governed IAM; NOT PLC/Level-1/2)
+5. Data-gravity / outage-tolerance
 
-**All VOs are locked and smoothed in VIDS_PRODUCTION_MASTER.md (commit d3b9dc1).**
+### Vizier Live Cloud Facts (Verified 2026-06-25)
+- Project: `gdc-pm-v2` / us-central1
+- 10 real studies: `gdc_pad_alpha_field_opt_*`
+- Latest study 593258648990: **14/15 INFEASIBLE, 1 feasible** (root cause: shared gas ceiling + wide independent bounds + single batch)
+- Code: `suggest_trials(count=15)` at app.py L6734 = **single batch, NOT iterative** → "learns per-trial" = silent lie
+- Cost: 100 free trials/mo, $1/trial after; dev/test safe; no GPU
 
-## STEP 4: What BS+47 Shipped
+## STEP 4: Next Implementation Tasks (in order)
 
-### Code change deployed (sha256:ff5f96d1):
-- **tab_h1.html L302+L392:** "Gas interference in pump stages" (stated-as-fact) replaced with the inference chain:
-  - Zone 1: `"Casing pressure rising · GOR elevated · annulus submerged — free gas inferred at pump intake (GVF ~18% estimated from surface evidence)"`
-  - Action card: `"Casing pressure rising + GOR elevated → GVF ~18% estimated at intake. Early interference, pre-gas-lock threshold. Annulus submerged. VFD trim safe."`
-  - Physics: PIP drops (pump intake pressure = the SCADA signal on chart). Casing annulus pressure (wellhead) RISES in gas lock (gas accumulates above pump). These are distinct tags. The app says "Casing pressure rising" (correct for engineers). VO uses "gas accumulating in the annulus" (clearer for mixed audience).
+### Task 1 (small, build first): H2 instant-triage load
+- `static/app.js` loadH2Scenario() ~L2057
+- After `this.h2ReplayData = data;` add: `this.h2CursorIdx = data.scada_alarm_idx || 0;`
+- Verify: tab opens at active alarm, 90-day static history plotted, VIB-HI alarm visible
+- Deploy → verify live
 
-### VO locks (docs only, commit d3b9dc1):
-- **B1-S2:** `"GDC flags the developing event — ahead of any SCADA hard limits fire — and begins retrieving unstructured field context."` (LOCKED)
-- **B1-S3:** `"Further into the event, the SCADA threshold fires — it sees the unloading signature, as it should. But the cause is ambiguous, and on a sandy well, the wrong choice here destroys the pump."` (LOCKED)
-- **B1-S4 GAS LOCK:** User's version — *"GDC retrieves the well's latest documents — the gas-to-oil ratio rising at the separator, gas is accumulating in the annulus — and concludes that free gas is reaching the pump stages. It's gas interference, not fluid drawdown. It's best to ease the speed and keep the well online."* (~15s real-pace, LOCKED)
-- **B1-S5 through BCLOSE:** All smoothed for natural delivery cadence (commit d3b9dc1)
+### Task 2 (CORE H3 build — see dossier §10 for exact spec):
+1. **Iterative Vizier loop** — `app.py` ~L6701–6770: replace `suggest_trials(count=15)` single-batch with 3 rounds of 5 → score → re-suggest. Raises feasible rate; makes "searches/learns" honest.
+2. **Plan-vs-live-state split** — add `reconcile_live(plan_hz_vec, live_well_params)` to vizier_optimize() return. One well (A-5) gets live motor temp +12°F injected. Enforce `hz_live[i] ≤ hz_plan[i]` (trim-DOWN-only rule).
+3. **Presentation (tab_h3.html)** — cloud plan panel + edge reconcile panel + "⏺ Architecture view — system-to-system flow" tag + render infeasible trials as ✗ and feasible as ✓.
+4. **Verify H3-S4** constraintDoc.found=True: RAG query for midstream contract must return found=True consistently before recording.
 
-### Recording progress:
-- ✅ B1-P1 through B1-P5 DONE
-- ✅ B1-S1 through B1-S4 DONE
-- ⏳ B1-S5, B1-S6, BBRIDGE, H2, H3, BCLOSE still to record
+### Task 3 (recording prep):
+- After Tasks 1–2 verified live: resume recording per VIDS_PRODUCTION_MASTER.md
+- B1-S5, B1-S6, BBRIDGE, H2, H3, BCLOSE still to record
+- H3 recording follows the 3-act: cloud plan (real Vizier) → edge reconcile (A-5 hot → trim down) → sovereign/scale
 
 ## Deploy Command (permanent reference)
 ```bash
@@ -80,5 +99,7 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - B1-P1 through B1-S4 VO locked: recorded, match bible ✅
 - B2-S5: ❌ CUT — do not record
 - BBRIDGE VO: "all AI local, no cloud required" (not "air-gap capable")
-- **Autonomy numeric knob: ❌ BLOCKED** — IEC 61511 FAILS. Deploy action-class policy badge only (done).
-- **GAS LOCK VO physics:** PIP drops (SCADA signal). Casing annulus pressure rises (gas lock evidence). These are different tags. App says "Casing pressure rising" (correct). VO says "gas accumulating in the annulus" (mechanism, clearer for mixed audience). Do NOT change either without this note.
+- **Autonomy numeric knob: ❌ BLOCKED** — IEC 61511 FAILS
+- **GAS LOCK VO physics:** PIP drops (SCADA signal). Casing annulus pressure rises (gas lock evidence). Do NOT change either.
+- **H3 MUST-NOT-SAY list:** See §3 above and `docs/H3_DECISION_DOSSIER.md` §6.
+- **DEMO_MASTER §5/§6 update deferred:** Too large for safe late-night edit. Dossier is the authoritative record. Update §5/§6 as a separate Task 0 or wrap them into the H3 build session.
