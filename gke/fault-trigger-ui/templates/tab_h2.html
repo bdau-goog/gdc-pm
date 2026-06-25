@@ -60,7 +60,7 @@
               </ul>
             </div>
             <div class="pp-section">
-              <div class="pp-section-title">&#x1F50E; Why APM Routes to a $70k&#x2013;$100k Pump Pull</div>
+              <div class="pp-section-title">&#x1F50E; Why APM Routes to a Pump Pull — When the Root Cause Is Off-Sensor</div>
               <p class="pp-text">APM correctly identifies the bearing-wear sensor pattern (efficiency declining + vibration rising). The statistically common cause is bearing degradation &#x2014; and that is the standard routing. But no sensor on a running ESP can measure wax thickness in the tubing above it. The PM overdue date is in a vendor portal, not in SCADA.</p>
               <ul class="pp-list">
                 <li>EFF declining + VIB rising: matches bearing wear signature exactly</li>
@@ -87,12 +87,12 @@
                 <tbody>
                   <tr><td>Root cause identified</td><td class="pp-danger">&#x2718; No (not in telemetry)</td><td class="pp-em">&#x2714; Yes (vendor log + PVT)</td></tr>
                   <tr><td>Recommended action</td><td class="pp-danger">Pump-pull investigation</td><td>Hot-oil truck dispatch</td></tr>
-                  <tr><td>Pull cost</td><td class="pp-danger">~$70k&#x2013;$100k</td><td class="pp-em">Averted</td></tr>
-                  <tr><td>Hot-oil cost</td><td>n/a</td><td class="pp-em">~$3k&#x2013;$6k &#x2714;</td></tr>
+                  <tr><td>Pull cost</td><td class="pp-danger">Major workover</td><td class="pp-em">Averted</td></tr>
+                  <tr><td>Hot-oil cost</td><td>n/a</td><td class="pp-em">Low-cost surface job &#x2714;</td></tr>
                   <tr><td>Root cause fixed</td><td class="pp-danger">&#x2718; Wax still in tubing</td><td class="pp-em">&#x2714; Tubing cleared</td></tr>
                 </tbody>
               </table>
-              <div style="font-size:0.44rem;color:var(--muted);margin-top:5px">Hot-oil truck cost: representative Permian Basin range; surface-only, no downhole access required. Physics: API RP 11S system curve + Permian PVT (WAT Gemini-confirmed, Session BG).</div>
+              <div style="font-size:0.44rem;color:var(--muted);margin-top:5px">Hot-oil treatment is surface-only — no workover rig, no downhole access required. Physics: API RP 11S system curve + Permian PVT (WAT Gemini-confirmed, Session BG).</div>
             </div>
           </div>
         </div>
@@ -132,10 +132,10 @@
       </div>
 
       <!-- MAIN BODY: 2-sensor chart (left 56%) + Decision Console + SVG (right 44%) -->
-      <div v-if="h2ReplayData" style="display:flex;gap:0;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden">
+      <div v-if="h2ReplayData" style="display:flex;gap:0;padding:0 12px 10px;flex:1;min-height:0;overflow:hidden" ref="h2MainRow">
 
-        <!-- LEFT: Dual-sensor chart — 44% fixed -->
-        <div style="flex:0 0 44%;max-width:44%;display:flex;flex-direction:column;gap:2px;min-height:0">
+        <!-- LEFT: Dual-sensor chart -->
+        <div :style="{flex:'0 0 '+h2ColL+'%',maxWidth:h2ColL+'%'}" style="display:flex;flex-direction:column;gap:2px;min-height:0;overflow:hidden">
           <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px;flex-shrink:0"
                title="Efficiency: VFD-derived (head·flow·motor power, IEEE 112) — computed, not a direct sensor">
             &#x1F4E1; DEGRADATION SIGNATURE &#x2014; EFF declining (amber) &middot; VIB rising (purple)
@@ -160,11 +160,18 @@
           <div id="h2-replay-chart" style="width:100%;flex:1;min-height:280px"></div>
         </div>
 
-        <!-- MIDDLE: Wellbore — 22% — wax-up/sensors-down cutaway, dynamic PIP-proportional wax band -->
-        <div style="flex:0 0 22%;max-width:22%;display:flex;flex-direction:column;padding:3px 6px;border-left:1px solid rgba(100,116,139,0.10);border-right:1px solid rgba(100,116,139,0.10);min-height:0;overflow:hidden">
+        <!-- Drag handle: chart ↔ wellbore -->
+        <div title="Drag to resize columns" @mousedown.prevent="h2StartDrag($event,'lm')"
+             style="flex-shrink:0;width:6px;cursor:col-resize;background:rgba(100,116,139,0.05);border-left:1px solid rgba(100,116,139,0.12);border-right:1px solid rgba(100,116,139,0.12);transition:background 0.15s"
+             @mouseenter="$event.target.style.background='rgba(59,130,246,0.20)'"
+             @mouseleave="$event.target.style.background='rgba(100,116,139,0.05)'"></div>
+
+        <!-- MIDDLE: Wellbore -->
+        <div :style="{flex:'0 0 '+h2ColM+'%',maxWidth:h2ColM+'%'}" style="display:flex;flex-direction:column;padding:3px 6px;min-height:0;overflow:hidden">
           <div style="font-size:0.35rem;text-transform:uppercase;letter-spacing:0.05em;color:rgba(100,116,139,0.4);text-align:center;flex-shrink:0;margin-bottom:1px">WELLBORE &nbsp;&middot;&nbsp; ESP-ALPHA-3</div>
           <!-- SVG wax-up / sensors-down cutaway — paraffin scenario (Session BS+52) -->
-          <svg viewBox="0 0 120 420" style="width:100%;flex:1;overflow:visible" v-if="h2ReplayData">
+          <div style="flex:1;min-height:0;overflow:hidden">
+          <svg viewBox="0 0 120 315" preserveAspectRatio="xMidYMin meet" style="width:100%;height:100%;display:block;overflow:hidden" v-if="h2ReplayData">
             <!-- Wellhead -->
             <rect x="44" y="5" width="32" height="9" rx="2" fill="rgba(100,116,139,0.45)"/>
             <text x="60" y="11.5" text-anchor="middle" fill="#64748b" font-size="5.5" font-family="Inter,sans-serif" font-weight="600">WH</text>
@@ -217,13 +224,20 @@
                   font-size="4" fill="rgba(100,116,139,0.32)"
                   font-family="Inter,sans-serif" font-style="italic">schematic &middot; wax inferred from PIP</text>
           </svg>
+          </div><!-- /wellbore-svg-wrapper -->
           <div style="text-align:center;font-size:0.30rem;font-family:var(--mono);color:rgba(100,116,139,0.4);flex-shrink:0;padding-top:1px;line-height:1.4">
             health={{ h2ReplayData && h2ReplayData.health_score && h2ReplayData.health_score[h2CursorIdx] !== undefined ? (parseFloat(h2ReplayData.health_score[h2CursorIdx])*100).toFixed(0)+'%' : '&#x2014;' }}
           </div>
         </div><!-- /wellbore column -->
 
-        <!-- RIGHT: Decision Console — 34% -->
-        <div style="flex:0 0 34%;max-width:34%;min-width:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-height:0">
+        <!-- Drag handle: wellbore ↔ console -->
+        <div title="Drag to resize columns" @mousedown.prevent="h2StartDrag($event,'mr')"
+             style="flex-shrink:0;width:6px;cursor:col-resize;background:rgba(100,116,139,0.05);border-left:1px solid rgba(100,116,139,0.12);border-right:1px solid rgba(100,116,139,0.12);transition:background 0.15s"
+             @mouseenter="$event.target.style.background='rgba(59,130,246,0.20)'"
+             @mouseleave="$event.target.style.background='rgba(100,116,139,0.05)'"></div>
+
+        <!-- RIGHT: Decision Console -->
+        <div :style="{flex:'0 0 '+h2ColR+'%',maxWidth:h2ColR+'%'}" style="min-width:0;display:flex;flex-direction:column;gap:0;overflow:hidden;min-height:0">
           <div style="font-size:0.50rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);padding:0 2px 3px;flex-shrink:0">
             ⚖ DECISION CONSOLE
           </div>
@@ -298,7 +312,7 @@
                 <!-- Pump-pull outcome — paraffin: wax still in tubing -->
                 <div v-if="h2PullOutcome==='pump_pull'" style="padding:10px 12px;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:6px">
                   <div style="font-size:0.65rem;font-weight:700;color:var(--red);margin-bottom:5px">&#x2718; PUMP PULL INITIATED &#x2014; ROOT CAUSE NOT ADDRESSED</div>
-                  <div style="font-size:0.58rem;color:var(--text2);line-height:1.6">Pump pulled and bearings confirmed worn &#x2014; but the cause was paraffin restriction, not bearing failure. Wax still in tubing. Pump will re-wear on restart without hot-oil treatment.<br><span style="font-size:0.50rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic</span></div>
+                  <div style="font-size:0.58rem;color:var(--text2);line-height:1.6">Pump pulled and bearings confirmed worn &#x2014; but the cause was paraffin restriction, not bearing failure. Wax still in tubing. Pump will re-wear on restart without hot-oil treatment.<br><span style="font-size:0.50rem;color:var(--muted)">major workover investment &#x2014; see &#x24D8; Physics & Logic</span></div>
                 </div>
                 <!-- Monitoring outcome — paraffin: wax restriction deepening -->
                 <div v-if="h2Resolved && !h2PullOutcome" style="padding:10px 12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:6px">
@@ -361,23 +375,23 @@
                       <button @click="h2Resolved=true" class="h1-action-card h1-card-green">
                         <div class="h1-card-header">&#x2714; GDC RECOMMENDED: Dispatch Hot-Oil Truck</div>
                         <div class="h1-card-sub">Surface hot-oil unit &middot; melt wax deposit &middot; restore tubing ID &middot; no pull needed</div>
-                        <div class="h1-card-desc">Paraffin PM {{ h2ReplayData.pm_overdue_days }}d overdue. Hot-oil flush clears restriction, pump returns to nominal. <span style="color:rgba(74,222,128,0.8)">~$3k&#x2013;$6k &middot; surface-only &middot; no downhole access.</span></div>
+                        <div class="h1-card-desc">Paraffin PM {{ h2ReplayData.pm_overdue_days }}d overdue. Hot-oil flush clears restriction, pump returns to nominal. <span style="color:rgba(74,222,128,0.8)">low-cost surface treatment &middot; surface-only &middot; no downhole access.</span></div>
                       </button>
                       <button @click="h2PullOutcome='pump_pull'" class="h1-action-card h1-card-contraindicated">
                         <div class="h1-card-header">&#x2718; GDC CONTRAINDICATED: Request Pump Pull</div>
                         <div class="h1-card-sub">Treats bearing wear symptom &#x2014; wax restriction is the actual root cause</div>
-                        <div class="h1-card-desc">Pull investigation (~$70k&#x2013;$100k). Bearings may show wear, but wax in tubing remains. Pump will re-wear on restart without hot-oil treatment.</div>
+                        <div class="h1-card-desc">Pull investigation — major workover investment. Bearings may show wear, but wax in tubing remains. Pump will re-wear on restart without hot-oil treatment.</div>
                       </button>
                     </div>
                     <!-- Hot-oil dispatched resolved -->
                     <div v-if="h2Resolved && !h2PullOutcome" class="h1-outcome-resolved">
                       <div style="font-weight:700;margin-bottom:4px">&#x2705; HOT-OIL TRUCK DISPATCHED &#x2014; PARAFFIN RESTRICTION CLEARED</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Hot-oil unit melts wax deposit &middot; tubing ID restored &middot; pump returns to BEP &middot; ~$3k&#x2013;$6k &middot; no pull &middot; root cause addressed</div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Hot-oil unit melts wax deposit &middot; tubing ID restored &middot; pump returns to BEP &middot; low-cost surface job &middot; no pull &middot; root cause addressed</div>
                     </div>
                     <!-- Pump pull despite GDC warning — paraffin -->
                     <div v-if="h2PullOutcome==='pump_pull'" class="h1-outcome-seized">
                       <div style="font-weight:700;margin-bottom:6px">&#x2718; PUMP PULL DESPITE GDC WARNING &#x2014; WAX STILL IN TUBING</div>
-                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump pulled. Bearings worn &#x2014; confirms the symptom. Paraffin restriction remains. Pump will re-wear without hot-oil treatment on restart.<br><span style="font-size:0.48rem;color:var(--muted)">~$70k&#x2013;$100k &#x2014; see &#x24D8; Physics & Logic panel</span></div>
+                      <div style="font-size:0.56rem;opacity:0.85;line-height:1.6">Pump pulled. Bearings worn &#x2014; confirms the symptom. Paraffin restriction remains. Pump will re-wear without hot-oil treatment on restart.<br><span style="font-size:0.48rem;color:var(--muted)">major workover investment &#x2014; see &#x24D8; Physics & Logic panel</span></div>
                     </div>
                   </template><!-- /h2-verdict-revealed -->
                 </div><!-- /zone-2-left -->

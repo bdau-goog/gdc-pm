@@ -201,6 +201,9 @@ createApp({
       h2ReplayData: null,          // full trajectory from /api/h2/scenario-replay
       h2ReplayLoading: false,      // API fetch in progress
       h2CursorIdx: 0,              // scrubber position (0..N-1)
+      h2ColL: (() => { try { const v=sessionStorage.getItem('gdc_h2ColL'); return v ? parseFloat(v) : 44; } catch { return 44; } })(),
+      h2ColM: (() => { try { const v=sessionStorage.getItem('gdc_h2ColM'); return v ? parseFloat(v) : 22; } catch { return 22; } })(),
+      h2ColR: (() => { try { const v=sessionStorage.getItem('gdc_h2ColR'); return v ? parseFloat(v) : 32; } catch { return 32; } })(),
       h2Playing: false,            // auto-advance timer running
       h2PlayTimer: null,           // setInterval handle
       h2VerdictRevealed: false,    // true once cursor >= gdc_detect_idx (+1.5s)
@@ -2181,16 +2184,16 @@ createApp({
       ];
 
       const annotations = [
-        { x:gdcT,   y:1.01, xref:'x', yref:'paper',
+        { x:gdcT,   y:0.97, xref:'x', yref:'paper',
           text:'<b>GDC \u25B2</b><br>health &lt;0.65 \u00b7 vib ~half HI limit',
-          showarrow:false, xanchor:'left', yanchor:'bottom',
-          font:{color:'rgba(251,191,36,0.95)', size:7.5, family:'Inter,sans-serif'},
-          bgcolor:'rgba(251,191,36,0.08)', borderpad:1 },
-        { x:scadaT, y:1.01, xref:'x', yref:'paper',
+          showarrow:false, xanchor:'left', yanchor:'top',
+          font:{color:'rgba(251,191,36,0.95)', size:9.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(251,191,36,0.12)', borderpad:2 },
+        { x:scadaT, y:0.97, xref:'x', yref:'paper',
           text:'<b>SCADA \u25B2</b><br>single-tag 4.0\u202fmm/s crossed',
-          showarrow:false, xanchor:'left', yanchor:'bottom',
-          font:{color:'rgba(239,68,68,0.95)',   size:7.5, family:'Inter,sans-serif'},
-          bgcolor:'rgba(239,68,68,0.08)',   borderpad:1 },
+          showarrow:false, xanchor:'left', yanchor:'top',
+          font:{color:'rgba(239,68,68,0.95)',   size:9.5, family:'Inter,sans-serif'},
+          bgcolor:'rgba(239,68,68,0.12)',   borderpad:2 },
         { x:0, y:-0.20, xref:'paper', yref:'paper',
           text:'vs threshold SCADA only (~85% of wells)',
           showarrow:false, xanchor:'left', yanchor:'top',
@@ -2215,6 +2218,27 @@ createApp({
         legend:{orientation:'h', x:0, y:1.07, xanchor:'left', font:{size:8},
                 bgcolor:'rgba(11,12,16,0.7)'},
       }, {displayModeBar:false, responsive:true});
+    },
+    h2StartDrag(e, which) {
+      const el = this.$refs.h2MainRow;
+      const totalW = el ? el.offsetWidth : window.innerWidth;
+      const startX = e.clientX;
+      const startL = this.h2ColL, startM = this.h2ColM, startR = this.h2ColR;
+      const move = (ev) => {
+        const dpct = (ev.clientX - startX) / totalW * 100;
+        if (which === 'lm') {
+          this.h2ColL = Math.max(28, Math.min(62, startL + dpct));
+          this.h2ColM = Math.max(12, Math.min(32, startM - dpct));
+        } else {
+          this.h2ColM = Math.max(12, Math.min(32, startM + dpct));
+          this.h2ColR = Math.max(22, Math.min(50, startR - dpct));
+        }
+        try { sessionStorage.setItem('gdc_h2ColL',this.h2ColL); sessionStorage.setItem('gdc_h2ColM',this.h2ColM); sessionStorage.setItem('gdc_h2ColR',this.h2ColR); } catch {}
+        try { Plotly.Plots.resize(document.getElementById('h2-replay-chart')); } catch {}
+      };
+      const up = () => { document.removeEventListener('mousemove',move); document.removeEventListener('mouseup',up); };
+      document.addEventListener('mousemove',move);
+      document.addEventListener('mouseup',up);
     },
     async dispatchTruckRoll() {
       if(this.h2TruckRollDispatched) return;
