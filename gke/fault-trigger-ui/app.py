@@ -6480,7 +6480,7 @@ class OptimizeRequest(BaseModel):
     horizon_days: int = 90
 
 @app.get("/api/vizier/optimize")
-def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint: str = "gas"):
+def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint: str = "gas", live_vizier: bool = False):
     """
     Vertex AI Vizier Bayesian Optimization — N-well field optimization (Sprint H3-B).
 
@@ -6704,6 +6704,12 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint
     vizier_used = False
 
     try:
+        # DEMO MODE GATE: raise immediately to use the deterministic convergence demo.
+        # Real Vizier creates a new study + 15 Bayesian trials on every call (~$0.15+/run
+        # after the free tier, plus 30-60s latency). Pass ?live_vizier=true only for an
+        # explicit "prove it's real" moment — never during regular demo recording.
+        if not live_vizier:
+            raise ValueError("demo_mode — use ?live_vizier=true to invoke real Vizier")
         client = aiplatform_v1.VizierServiceClient(
             client_options={"api_endpoint": f"{GCP_LOCATION}-aiplatform.googleapis.com"}
         )
@@ -6731,50 +6737,60 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint
             ),
         )
         log.info(f"Vertex AI Vizier field study created: {study.name}")
-        operation = client.suggest_trials(request=aiplatform_v1.SuggestTrialsRequest(
-            parent=study.name, suggestion_count=15, client_id="gdc-edge-fault-trigger",
-        ))
-        suggested = operation.result(timeout=60).trials
-        log.info(f"Vertex AI Vizier returned {len(suggested)} field trial suggestions")
-
-        for i, trial in enumerate(suggested):
-            _pmap  = {p.parameter_id: float(p.value) for p in trial.parameters}
-            hz_vec = [_pmap.get(f"vfd_hz_{well_params[j]['name'].replace('-', '')}", 50.0)
-                      for j in range(len(well_params))]
-            fr = evaluate_field(hz_vec)
-            t_result = {
-                "trial_num": i + 1,
-                "hz_vector": fr["hz_vector"],
-                "vfd_hz":    fr["avg_hz"],           # backward compat: avg Hz for pareto chart
-                "cash_flow": fr["total_cash_flow"],
-                "rul_days":  fr["min_rul_days"],
-                "flow_rate": fr["total_oil_bbl_d"],
-                "motor_temp_f": max(wr["motor_temp_f"] for wr in fr["well_results"]),
-                "total_gas_mmscfd": fr["total_gas_mmscfd"],
-                "is_failure":  fr["is_infeasible"],
-                "is_optimal":  False,
-            }
-            if not fr["is_infeasible"]:
-                client.complete_trial(request=aiplatform_v1.CompleteTrialRequest(
-                    name=trial.name,
-                    final_measurement=aiplatform_v1.Measurement(metrics=[
-                        aiplatform_v1.Measurement.Metric(
-                            metric_id="field_cash_flow", value=fr["total_cash_flow"]
-                        )
-                    ]),
-                ))
-            else:
-                client.complete_trial(request=aiplatform_v1.CompleteTrialRequest(
-                    name=trial.name, trial_infeasible=True,
-                    infeasible_reason="gas ceiling or per-well burnout/RUL constraint violated",
-                ))
-            trials_out.append(t_result)
-            if fr["total_cash_flow"] > best_cf:
-                best_cf = fr["total_cash_flow"]
+        # Iterative: 3 rounds × 5 trials → score on edge → complete → re-suggest.
+        # Round 1 establishes the feasible boundary; rounds 2-3 concentrate the search.
+        # Makes "searches and learns" literally true (vs. single suggest_trials(count=15) batch).
+        _global_trial_num = 0
+        for _round in range(3):
+            _round_op = client.suggest_trials(request=aiplatform_v1.SuggestTrialsRequest(
+                parent=study.name, suggestion_count=5, client_id="gdc-edge-fault-trigger",
+            ))
+            _round_trials = _round_op.result(timeout=60).trials
+            log.info(f"Vizier round {_round+1}/3: {len(_round_trials)} suggestions")
+            for trial in _round_trials:
+                _global_trial_num += 1
+                _pmap  = {p.parameter_id: float(p.value) for p in trial.parameters}
+                hz_vec = [_pmap.get(f"vfd_hz_{well_params[j]['name'].replace('-', '')}", 50.0)
+                          for j in range(len(well_params))]
+                fr = evaluate_field(hz_vec)
+                t_result = {
+                    "trial_num": _global_trial_num,
+                    "round":     _round + 1,
+                    "hz_vector": fr["hz_vector"],
+                    "vfd_hz":    fr["avg_hz"],           # backward compat: avg Hz for pareto chart
+                    "cash_flow": fr["total_cash_flow"],
+                    "rul_days":  fr["min_rul_days"],
+                    "flow_rate": fr["total_oil_bbl_d"],
+                    "motor_temp_f": max(wr["motor_temp_f"] for wr in fr["well_results"]),
+                    "total_gas_mmscfd": fr["total_gas_mmscfd"],
+                    "is_failure":  fr["is_infeasible"],
+                    "is_optimal":  False,
+                }
+                if not fr["is_infeasible"]:
+                    client.complete_trial(request=aiplatform_v1.CompleteTrialRequest(
+                        name=trial.name,
+                        final_measurement=aiplatform_v1.Measurement(metrics=[
+                            aiplatform_v1.Measurement.Metric(
+                                metric_id="field_cash_flow", value=fr["total_cash_flow"]
+                            )
+                        ]),
+                    ))
+                else:
+                    client.complete_trial(request=aiplatform_v1.CompleteTrialRequest(
+                        name=trial.name, trial_infeasible=True,
+                        infeasible_reason="gas ceiling or per-well burnout/RUL constraint violated",
+                    ))
+                trials_out.append(t_result)
+                if fr["total_cash_flow"] > best_cf:
+                    best_cf = fr["total_cash_flow"]
         vizier_used = True
 
     except Exception as vizier_err:
-        log.warning(f"Vertex AI Vizier field opt failed — deterministic fallback: {vizier_err}")
+        _is_demo_mode = isinstance(vizier_err, ValueError) and "demo_mode" in str(vizier_err)
+        if _is_demo_mode:
+            log.info("Vizier optimize: deterministic convergence demo (pass ?live_vizier=true for real Vizier)")
+        else:
+            log.warning(f"Vertex AI Vizier field opt failed — deterministic fallback: {vizier_err}")
         # 15 field Hz vectors (order: A-1, A-2, A-3, A-4, A-5, A-6)
         # Arc: gas-ceiling violation → uniform throttle (independent baseline) → joint LP-optimal
         _FALLBACK_VECS = [
@@ -6798,6 +6814,7 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint
             fr = evaluate_field(list(hz_tuple))
             trials_out.append({
                 "trial_num": i + 1,
+                "round":     (i // 5) + 1,   # simulate 3-round structure for UI
                 "hz_vector": fr["hz_vector"],
                 "vfd_hz":    fr["avg_hz"],
                 "cash_flow": fr["total_cash_flow"],
@@ -6819,6 +6836,42 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint
     # ── Uplift: joint vs. independent ─────────────────────────────────────────
     joint_uplift_bbl_d = round(joint_eval["total_oil_bbl_d"] - indep_eval["total_oil_bbl_d"], 1)
     joint_uplift_cash  = round(joint_eval["total_cash_flow"]  - indep_eval["total_cash_flow"],  1)
+
+    # ── Curtailment re-allocation: edge re-solves LP at reduced gas ceiling ───
+    # Models a midstream gas-takeaway curtailment (8.0 → 6.0 MMscfd, off-sensor).
+    # Trigger: gathering-system capacity reduction (pipeline / compression event).
+    # Smart re-allocation: trims gassy wells, preserves/lifts oil-rich wells → max revenue under cut.
+    # Dumb-SCADA baseline: uniform proportional throttle across all wells (blunt instrument).
+    # Revenue delta = the defended H3 number — live-computed, never hardcoded (CLAIM_LEDGER H3-OPT-3).
+    _CURTAILED_CEILING = 6.0  # MMscfd — transient curtailment event
+    # Smart edge re-allocation: LP-optimal at curtailed ceiling (same GOR-priority order)
+    _remaining_c = _CURTAILED_CEILING
+    curtailed_hz_vec = [45.0] * len(well_params)
+    for _idx in _wells_sorted:
+        _w   = well_params[_idx]
+        _mhz = well_max_hz[_idx]
+        _gas_at_max = _w["gor_scf_bbl"] * _PUMP_FLOW_COEFF * _mhz / 1_000_000.0
+        if _gas_at_max <= _remaining_c:
+            curtailed_hz_vec[_idx] = _mhz
+            _remaining_c          -= _gas_at_max
+        elif _remaining_c > 0.0:
+            _hz_m = _remaining_c * 1_000_000.0 / (_w["gor_scf_bbl"] * _PUMP_FLOW_COEFF)
+            curtailed_hz_vec[_idx] = max(45.0, round(min(_hz_m, _mhz), 2))
+            _remaining_c = 0.0
+    curtailed_eval = evaluate_field(curtailed_hz_vec)
+    # Dumb-SCADA baseline: uniform proportional throttle (no cross-well economic intelligence)
+    _cur_gas_raw = sum(
+        well_params[i]["gor_scf_bbl"] * _PUMP_FLOW_COEFF * well_max_hz[i] / 1_000_000.0
+        for i in range(len(well_params))
+    )
+    if _cur_gas_raw > _CURTAILED_CEILING:
+        _scale_c         = _CURTAILED_CEILING / _cur_gas_raw
+        scada_curtail_hz = [round(well_max_hz[i] * _scale_c, 2) for i in range(len(well_params))]
+    else:
+        scada_curtail_hz = [round(h, 2) for h in well_max_hz]
+    scada_curtail_eval        = evaluate_field(scada_curtail_hz)
+    curtailment_revenue_delta = round(curtailed_eval["total_cash_flow"] - scada_curtail_eval["total_cash_flow"], 1)
+    curtailment_uplift_bbl_d  = round(curtailed_eval["total_oil_bbl_d"] - scada_curtail_eval["total_oil_bbl_d"], 1)
 
     # ── Backward-compat baselines (existing pareto chart expects scalar vfd_hz) ──
     scada_all50 = evaluate_field([50.0] * len(well_params))
@@ -6887,7 +6940,34 @@ def vizier_optimize(oil_price: float = 112.0, horizon_days: int = 90, constraint
         "rag_constraint_source": rag_constraint_source,
         "active_constraint":    constraint,
         "constraint_doc":       constraint_doc,
-        "vizier_algorithm":     "GAUSSIAN_PROCESS_BANDIT" if vizier_used else "deterministic_fallback",
+        "vizier_algorithm":     "GAUSSIAN_PROCESS_BANDIT" if vizier_used else "deterministic_convergence_demo",
+        # ── Curtailment re-allocation (H3 edge beat — BS+51) ─────────────────
+        "curtailment": {
+            "event":             "Midstream gas-takeaway curtailment: 8.0 → 6.0 MMscfd",
+            "curtailed_ceiling": _CURTAILED_CEILING,
+            "trigger":           "Off-sensor — gathering-system capacity reduction (pipeline / compression event)",
+            "smart_hz_vec":      curtailed_hz_vec,
+            "smart_oil_bbl_d":   curtailed_eval["total_oil_bbl_d"],
+            "smart_gas_mmscfd":  curtailed_eval["total_gas_mmscfd"],
+            "smart_cash_flow":   curtailed_eval["total_cash_flow"],
+            "scada_hz_vec":      scada_curtail_hz,
+            "scada_oil_bbl_d":   scada_curtail_eval["total_oil_bbl_d"],
+            "scada_gas_mmscfd":  scada_curtail_eval["total_gas_mmscfd"],
+            "scada_cash_flow":   scada_curtail_eval["total_cash_flow"],
+            "revenue_delta":     curtailment_revenue_delta,
+            "uplift_bbl_d":      curtailment_uplift_bbl_d,
+            "wells_curtailed": [
+                {
+                    "name":               well_params[i]["name"],
+                    "gor":                well_params[i]["gor_scf_bbl"],
+                    "plan_hz":            joint_hz_vec[i],
+                    "smart_curtailed_hz": curtailed_hz_vec[i],
+                    "scada_curtailed_hz": scada_curtail_hz[i],
+                    "delta_vs_plan":      round(curtailed_hz_vec[i] - joint_hz_vec[i], 2),
+                }
+                for i in range(len(well_params))
+            ],
+        },
         # ── Backward-compat keys (existing app.js pareto chart) ──────────────
         "trials":          trials_out,
         "optimal_hz":      opt_trial["vfd_hz"],

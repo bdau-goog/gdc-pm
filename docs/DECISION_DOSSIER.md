@@ -174,48 +174,81 @@ Key findings:
 
 ---
 
-## §3 — H3 DECISION RECORD (Optimize — carried forward from BS+48)
+## §3 — H3 DECISION RECORD (Optimize — FINAL LOCKED Session BS+51)
 
-*(Content identical to the original H3_DECISION_DOSSIER.md. See full content there or in this section.)*
+**⚠ This section supersedes H3_DECISION_DOSSIER.md entirely. Do not read that file separately.**
+**Session BS+51 replaced the A-5 thermal-trim edge beat with a curtailment re-allocation edge beat after two independent hostile passes both returned FAILs on the original approach.**
 
 ### 3.1 Eliminated Options (do NOT reopen)
-- ❌ Edge does the optimization — shared gas ceiling requires global view
+- ❌ Edge does the fleet optimization — shared gas ceiling requires global view
 - ❌ Edge "corrects" gas overrun — gas ceiling is central, already IN Vizier objective; evaluate_field() IS Vizier's oracle
 - ❌ Single-batch Vizier as "learns per trial" — suggest_trials(count=15) is one batch; silent lie
 - ❌ "Operators don't trust control vendors with data" — FUD, RT FAILS
+- ❌ **Edge trims A-5 down to protect motor from overtemp** — VFD's own overtemp derate/trip already does this, locally and faster; edge layer is redundant (RT FAILS, Session BS+51 RT Pass 1, Attack 2)
+- ❌ **Two-timescale split where edge only protects single motors** — "architecture theater"; a single local controller does the same job (RT FAILS, Session BS+51 RT Pass 1, Attack 5)
+- ❌ **Slug flow as trigger** — telemetric signature (cyclic amps + PIP) is in the data; permanently eliminated by .clinerules Scenario Validation Gate
 
-### 3.2 Locked Thesis — Two-Timescale RTO-over-MPC
-- **Cloud (Vizier, slow/global/periodic):** divides shared gas budget across all wells for max revenue
-- **Edge (GDC, fast/local/continuous):** takes cloud plan as target; reconciles against LIVE per-asset reality (motor hot, slugging, tripped); trims DOWN only (never reallocates UP — that breaches the shared gas ceiling; cloud re-optimizes next cycle); data never leaves site
-- **SCADA:** executes; owns regulatory control and hard trips
+### 3.2 Locked Thesis — Two-Timescale RTO-over-MPC with Curtailment Re-Allocation (BS+51 FINAL)
 
-### 3.3 Physics Hole #3 — CLOSED
-Edge may ONLY trim DOWN (always gas-safe). Up-reallocation requires the cloud. Giving back a little production until next cloud cycle is CORRECT — "safe by construction, never breaches gas contract."
+> **Cloud (Vizier, slow/global/periodic):** divides shared gas budget across the fleet of wells for max revenue. Plans on a nominal, periodically-refreshed snapshot. Output: per-well Hz setpoints pushed down to each pad.
+>
+> **Edge (GDC, fast/local/continuous):** receives the cloud's plan as a target. When a LIVE, LOCAL constraint changes AFTER the plan was made — specifically a midstream gas-takeaway curtailment (8.0 → 6.0 MMscfd, off-sensor) — the edge re-solves the intra-pad allocation in real time, trimming gassy wells and preserving/lifting oil-rich wells to maximize revenue within the new ceiling. Does NOT round-trip to cloud. Runs offline.
+>
+> **SCADA + VFD:** execute setpoints; own hard trips and regulatory control. VFD owns per-motor thermal protection. GDC does NOT claim to protect motors (that's the VFD's job — conceded explicitly in VO/copy).
+>
+> **The defended number:** revenue delta of GDC smart re-allocation vs. dumb-SCADA baseline (uniform throttle or shut-in-gassiest-well). Must be computed live from `evaluate_field()` — never hardcoded.
 
-### 3.4 Five-Angle Moat
+### 3.3 Physics Hole #3 — REFINED (BS+51)
+
+**Original rule (BS+48):** Edge trims DOWN only; up-reallocation breaches shared gas ceiling.
+**Refined rule (BS+51):** The original rule was written assuming the binding ceiling was fleet-wide (the edge has no view of other pads). For the curtailment scenario, the binding ceiling is the **pad's own gathering tie-in**, which the pad edge node fully observes. Therefore:
+- **Intra-pad re-allocation (trimming one well DOWN + lifting another UP within the same pad's lower curtailed ceiling) is SAFE** — the edge has complete visibility and authority over its own tie-in.
+- **Inter-pad re-allocation STILL requires the cloud** — the edge cannot move gas budget between pads.
+- **The curtailed ceiling is still respected at all times** — the edge never exceeds the midstream limit, and any up-move on an oil-rich well is bounded by the new, lower ceiling.
+
+This is more physically accurate (gathering/compression limits bind at the pad/CTB, not basin-wide) and eliminates the "trim-down-only = SCADA bluntness" attack.
+
+### 3.4 Five-Angle Moat (unchanged from BS+48)
 1. Greenfield ~76% no ML APM (cited Premise 2)
 2. Horizontal platform vs point product
-3. Unstructured fusion — CATEGORICAL STRONGEST (APM can't read documents)
+3. Unstructured fusion — CATEGORICAL STRONGEST (APM can't read documents); **H3 curtailment notice is off-sensor, carrying this same moat into H3**
 4. Sovereign fleet Model-Ops
 5. Data-gravity / outage-tolerance
 
-### 3.5 H3 Build Plan (exact, app.py L6701–6770)
-1. Iterative Vizier loop — 3 rounds of 5 → score → re-suggest (fixes 14/15 infeasible root cause)
-2. reconcile_live() — A-5 motor +12°F perturbed; hz_live[i] ≤ hz_plan[i] enforced
-3. Presentation — cloud panel + edge-reconcile panel + "⏺ Architecture view" tag + ✗/✓ trial stamps
-4. Verify H3-S4 constraintDoc.found=True
+### 3.5 H3 Build Plan (FINAL, app.py L6701–6900)
+1. **Iterative Vizier loop** — 3 rounds of 5 → score → re-suggest (fixes 14/15 infeasible root cause; makes "searches and learns" literally true)
+2. **Curtailment re-allocation** — new `curtailment_path` in `vizier_optimize()`:
+   - Input: `curtailed_ceiling` (default 6.0 MMscfd, parameterizable)
+   - Re-runs existing joint-LP allocator at curtailed ceiling → `curtailed_hz_vec`
+   - Runs dumb-SCADA baseline (uniform throttle to new ceiling) → `scada_baseline_hz_vec`
+   - Returns `revenue_delta = curtailed_cf - scada_baseline_cf` (must be live-computed, not hardcoded)
+   - Returns curtailment constraint doc from AlloyDB pgvector (reuses existing `constraint_doc` machinery)
+3. **Presentation (`tab_h3.html`)** — cloud plan panel + curtailment event card + edge re-allocation panel + revenue delta vs. dumb-SCADA + "⏺ Architecture view — system-to-system flow" honesty tag + ✗/✓ iterative trial stamps
+4. **Slides/VO reframe** — cloud = fleet optimizer (revenue + conserve equipment); edge = re-allocates under live curtailment; concede VFD/SCADA own protection explicitly; lead with revenue delta
+5. **Verify H3-S4 constraintDoc.found=True** — confirm before recording B3-S4
 
-### 3.6 H3 Must-NOT-Say (RT-confirmed)
+### 3.6 H3 Role — Proof #3, Not Standalone Justification
+H3 is the third proof of the off-sensor-context-fusion spine:
+- H1: ambiguity-resolution (shift note + sonic log)
+- H2: provenance-correction (vendor PM portal + PVT report + prior pull record)
+- **H3: constraint-reallocation (midstream curtailment notice)**
+
+Three different decision modes, one fusion primitive = platform argument. H3 alone cannot justify GDC platform adoption. The buy-case is the **Why-GDC platform tab (TASK 5, 5-angle moat)**. Do NOT over-claim H3 as the standalone justification.
+
+### 3.7 H3 Must-NOT-Say (RT-confirmed, BS+51 updated)
 1. ❌ "Operators don't trust control vendors" (FUD)
 2. ❌ "GDC invented hierarchical control" (it's textbook RTO/MPC)
 3. ❌ "Edge does global optimization"
 4. ❌ "14 of 15 rejected" as hero stat
 5. ❌ "Vendor-neutral" unscoped
 6. ❌ GitOps manages PLC/SCADA/Level-1/2
+7. ❌ **"GDC saved A-5 from motor burnout / the edge trimmed A-5"** — VFD's job; edge thermal-trim beat is BLOCKED
+8. ❌ **"GDC prevents a motor trip"** — VFD and SCADA trip to protect; do not claim to displace this
+9. ❌ Revenue delta as a hardcoded number — must be live-computed from `evaluate_field()`
 
-### 3.7 Verified Cloud Facts (live, 2026-06-25)
+### 3.8 Verified Cloud Facts (live, 2026-06-25)
 - Project: gdc-pm-v2 / us-central1; 10 real studies gdc_pad_alpha_field_opt_*
-- Latest study 593258648990: 14 INFEASIBLE, 1 feasible (root cause: wide bounds + batch + shared ceiling)
+- Latest study 593258648990: 14 INFEASIBLE, 1 feasible (root cause: wide bounds + batch + shared ceiling → fixed by iterative loop)
 - suggest_trials(count=15) at app.py L6734 = single batch, NOT iterative → fix before claiming "learns"
 - Cost: 100 free trials/mo, $1/trial Bayesian; dev/test safe; no GPU
 

@@ -91,6 +91,34 @@ Status = **SURVIVES** means it passed all five PRIME DIRECTIVE gates.
 
 ---
 
+---
+
+## H3 — Optimize Tab (ESP Fleet Allocation — Pad Alpha) — ✅ ACTIVE SCENARIO (Session BS+51)
+
+> **Session BS+51.** Two independent hostile passes (Gemini 3.1 Pro + gdc-second-opinion) both converged on multi-well shared-constraint re-allocation as the single non-redundant edge job. Previous edge beat ("A-5 motor trim to protect motor") returned **2 FAILs** (VFD already does this; two-timescale is theater). Curtailment trigger adopted; slug trigger permanently eliminated (telemetric, `.clinerules`-banned). Scenario SURVIVES all 5 gates. See `docs/DECISION_DOSSIER.md §3` for full RT history.
+
+**RT Pass 1 (BS+51, gdc-second-opinion): "Real value or solution-in-search-of-a-problem?"**
+- Attack 1 (existing tools already solve it): **SURVIVES-IF-REWORDED** — problem real; don't claim operators *can't* solve it with ForeSite/Lift IQ; claim GDC does it sovereign, on your infra, fusing the constraint docs point-tools don't read.
+- Attack 2 (VFD already trims overtemp): **❌ FAILS** — VFD owns motor protection; edge thermal-trim beat is redundant. Blocked: do NOT re-use.
+- Attack 3 (fleet Hz under gas ceiling is real): **SURVIVES** — binding real constraint; Bayesian optimizer is justified over dumb heuristics.
+- Attack 4 (RUL term in objective): **SURVIVES-IF-REWORDED** — use RUL as a guardrail constraint, not a daily-Hz optimization driver.
+- Attack 5 (two-timescale = theater): **❌ FAILS** — single local controller does the same if edge only protects single motors. BLOCKED.
+
+**RT Pass 2 (BS+51, gdc-second-opinion): "Steelman the edge"**
+- Winning edge candidate: **Dynamic local constraint management + multi-well coordination** — **SURVIVES**
+- "Just write a SCADA rule (if gas > 7.5, throttle 10%)" self-red-team: **SURVIVES-IF-REWORDED** — SCADA rule is blunt (uniform cut or single-well shut-in); edge re-optimizes across all wells using actual pump curves + economic model to keep every well above downthrust limit while maximising revenue under the cut. Must quantify the revenue delta vs. dumb baseline.
+- Gemini 3.1 Pro external pass: independently converged on same winner (Multi-Well Gas-Takeaway Coordinated Reallocation, SURVIVES). Confirms convergence.
+
+| ID | Claim | Tag | Source | Challenge | Rebuttal | Status |
+|---|---|---|---|---|---|---|
+| **H3-OPT-1** | Real-time multi-well re-allocation of a shared gas-takeaway ceiling is categorically above a single VFD (which sees only its own motor) and below a slow cloud cycle (too slow to react to a transient curtailment event in minutes) | 🟢 TEXTBOOK | RTO-over-MPC two-timescale control hierarchy — textbook pattern (refinery/grid). API RP 11S §7.2 (VFD architecture — single-asset scope). Both hostile passes SURVIVES. | "A well-designed local PLC does the same thing." | A pad-level PLC can implement an interlock rule but cannot run a joint economic re-allocation using actual pump curves + revenue model across N wells simultaneously. The structural distinction is N-well visibility + economic objective, not just response speed. | **SURVIVES** |
+| **H3-OPT-2** | A midstream gas-takeaway curtailment notice (gathering system cut, 8.0 → 6.0 MMscfd for ~4 hrs) is off-sensor — no well sensor carries it; it arrives via gathering-system feed / operator notice | 🟢 TEXTBOOK | Structural: Permian gas gathering curtailment events driven by pipeline capacity, compression outages, high line pressure. No downhole or surface sensor on the ESP string carries midstream line status. Same off-sensor fusion moat as H1 (shift note) and H2 (vendor PM portal). | "The operator already has curtailment feeds into SCADA historian." | SCADA historian may log the curtailment event as a tag — but SCADA does not run a joint economic re-allocation of per-well Hz in response. Ingesting the tag ≠ re-solving the allocation. | **SURVIVES** |
+| **H3-OPT-3** | GDC edge re-allocation under curtailment produces a higher revenue outcome than dumb-SCADA baseline (uniform throttle or shut-in-gassiest-well) | 🟡 OUR-CODE | `evaluate_field()` joint LP allocator (app.py L6685) — real physics. Revenue delta = `(opt_cash_flow_under_curtailment - scada_baseline_cash_flow)`. Must be computed live from actual model; not hardcoded. | "Just run the same LP in SCADA." | SCADA PLC lacks the matrix-math for joint LP across N wells using actual pump curves + GOR. Quantified revenue delta is the demo's defended number — shown live from `evaluate_field()` output. | **SURVIVES (must be computed, not hardcoded)** |
+| **H3-OPT-4** | Cloud (Vizier) fleet optimization is physically meaningful: low-GOR wells run harder, high-GOR wells give way, revenue maximized while respecting gas / thermal / RUL constraints | 🟡 OUR-CODE | Real Vizier study in `gdc-pm-v2` (10 prior studies confirmed). `evaluate_field()` scores 6-well joint allocation vs shared ceiling. GAUSSIAN_PROCESS_BANDIT algorithm (app.py L6716). | "That's basic economic dispatch; any engineer computes it." | Correct — it's classical economic dispatch. GDC's contribution is running it sovereign, iteratively (3 rounds × 5 trials), fused with the constraint provenance document from AlloyDB pgvector, at fleet scale and on-prem. | **SURVIVES** |
+| **H3-OPT-5** | H3 scenario role: proof #3 of the off-sensor-context-fusion spine — NOT the standalone justification for GDC platform adoption | 🟡 OUR-CODE | Three-scenario logic: H1 (ambiguity-resolution) + H2 (provenance-correction) + H3 (constraint-reallocation) = three decision modes, one fusion primitive = platform argument. Platform justification (5-angle moat) lives in the Why-GDC tab (TASK 5). | "One re-allocation event can't justify a platform purchase." | Correct — and by design. H3's job is to close the three-scenario proof of the spine, not to be the buy-case. Overstatement blocked. | **SURVIVES (as proof #3, NOT as standalone buy-case)** |
+
+---
+
 ## Confidence Tag Reference
 - 🟢 TEXTBOOK — grounded in a citeable standard (API RP, SPE, IEEE, OEM manual)
 - 🟡 OUR-CODE — number comes from FAULT_PROFILES / RESOLUTION_OPTIONS / FAULT_PHYSICS; grep-verifiable
