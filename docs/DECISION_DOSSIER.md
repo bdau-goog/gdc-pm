@@ -94,7 +94,7 @@ This is the mechanism that resolves the physics risk and the "why not the engine
 
 **Why earliness is the key to honest physics:** The hot-oil/surface treatment *genuinely averts the pull* when caught BEFORE the vibration reaches the hard ISA-18.2 HI alarm (4.0 mm/s). By that point, bearing damage may already be developing (see §2.6 Physics). GDC's L2 model catches the pattern while still in the pre-alarm developing phase — the window where the cheap surface fix works and bearing damage is not yet inevitable.
 
-**The honest claim (survives the physics):** "GDC's model notices the off-nominal pattern early — before the hard alarm — and automatically researches the well's own documents to name the real cause: paraffin restriction, not mechanical wear. Caught at fleet scale and automated speed, a low-cost surface treatment averts the pump pull while the intervention is still effective."
+**The honest claim (survives the physics, SME-confirmed):** "GDC's model notices the off-nominal pattern early — before the hard alarm — and automatically researches the well's own documents to name the real cause: paraffin restriction, not mechanical wear. Caught in the first 14–21 days of sensor drift, a low-cost surface treatment averts the pump pull. **Act on the drift, not the alarm.**"
 
 **MUST-NOT-SAY (H2 — physics-grounded):**
 - ❌ "The vibration crossed the ISA-HI alarm and the pump is pristine — hot-oil was all it needed" (once vib crosses HI, bearing damage may exist; this overclaims)
@@ -145,6 +145,13 @@ Key findings:
 - **Early intervention is the key** — the longer the restriction continues, the less effective the surface treatment becomes
 
 **H2 build-in safeguard:** The scenario explicitly fires the GDC alert at `gdc_detect_idx` (pre-alarm), not at `scada_alarm_idx` (hard alarm crossed). This is the honest state: GDC flags it early, while the remediation is still fully effective. The UI must load at the alarm-triage state (instant-triage), but the story must emphasize *when* GDC acted relative to the alarm.
+
+**SME confirmation (Bill Barna, Permian production engineer — Session BS+52):**
+> *"Act on the drift, not the alarm. Treating the well during the first 14–21 days of observed sensor drift is a highly successful, standard operating practice in the Permian. It will melt the paraffin before it has a chance to starve the bearings or create the heavy mechanical forces that necessitate an expensive pulling unit."*
+
+**Operative window:** 14–21 days of observed sensor drift (efficiency softening, vib creeping, PIP rising) is the canonical intervention window. GDC flags the drift automatically — fleet-wide, at onset. SCADA waits for the hard alarm. The story is now confirmed: **act on the drift, not the alarm.**
+
+**Implication for the "52 days overdue" scenario:** The missed PM means the well passed through the 14–21 day treatment window without intervention because the vendor was unavailable. GDC catches the drift at onset regardless of whether the PM was executed — which is precisely the scenario we demo.
 
 ### 2.7 H2 UI Changes Required (build tasks)
 
@@ -362,7 +369,7 @@ The three scenarios are now more coherent with H2's sharpened framing and the sh
 | 1 | **Branding:** Verify current product name "Vertex AI / Gemini Enterprise Agent Platform" (2026) | Before Why-GDC tab text | Next session grounded search |
 | 2 | **H3 feasible-rate fix:** iterative Vizier loop — must deploy before H3 recording | Blocking H3 recording | Next session build |
 | 3 | **H1 consistency-audit:** 3 read-only checks (§5 above) | Before B1-S5/S6 recording | Next session quick check |
-| 4 | **Wax-bearing SME gut-check:** confirm "caught pre-alarm → bearing damage not yet inevitable" framing with Bill Barna or equivalent Permian engineer | Before H2 recording | SME contact — question below |
+| 4 | **Wax-bearing SME gut-check:** ✅ RESOLVED — Bill Barna (Permian production engineer): *"Act on the drift, not the alarm. Treating the well during the first 14–21 days of observed sensor drift is a highly successful, standard operating practice in the Permian. It will melt the paraffin before it has a chance to starve the bearings or create the heavy mechanical forces that necessitate an expensive pulling unit."* | CLOSED | |
 | 5 | **Wells/engineer figure:** ✅ RESOLVED — display "hundreds of artificial-lift wells per surveillance engineer" (YPF/SLB data supports 280–500+; "hundreds" is conservative and unassailable) | CLOSED | |
 
 ### Bill Barna Question (Item 4)
