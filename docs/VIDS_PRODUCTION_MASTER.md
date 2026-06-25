@@ -635,21 +635,29 @@ ASSET REF   : templates/tab_h2.html — `↺ New Scenario` button; loads at scad
 CONTINUITY  : (none)
 ```
 
-### B2-S2 — SCADA/APM View → Bearing Wear   ·  ~8s  ·  RECORD
+### B2-S2 — SCADA View: Alarm Fires, Cause Unknown   ·  ~8s  ·  RECORD
 ```
 SOURCE      : Live screen capture
 APP STATE   : H2 tab · 🟡 SCADA View · h2CursorIdx >= h2ReplayData.scada_alarm_idx
-              · Red ISA-18.2 VIB-HI banner visible
-              · SCADA action cards: "pump pull" option (bearing wear assumption)
-VISUAL      : SCADA view; VIB-HI alarm; pump-pull card showing
-CAMERA/MOVE : [LIVE] ensure SCADA View; let replay reach scada_alarm_idx; point to the
-              bearing-wear conclusion / pump pull card
+              · ISA-18.2 VIB HIGH ALARM banner: "VIB H:4.0 EXCEEDED · CAUSE NOT DETERMINED FROM TELEMETRY"
+              · Operator disposition cards: Request Pump Pull · Continue Monitoring
+              (NOTE: SCADA does NOT assert bearing wear or any cause — cause is explicitly unknown)
+VISUAL      : SCADA alarm banner with "CAUSE NOT DETERMINED FROM TELEMETRY" · pump-pull disposition card
+CAMERA/MOVE : [LIVE] click 🟡 SCADA View at alarm state; point to alarm banner then to
+              the Request Pump Pull card
               [POST] static
-VO          : "The monitoring platform reads the symptom correctly — but it routes straight
-              to the standard, expensive response: pulling the pump."
-PANEL QUOTE : VIB-HI alarm banner text + pump-pull action card
+VO          : "SCADA does its job — it fires the vibration alarm the instant the tag crosses
+              its limit. But that's all it can do. It reports the breach; it offers no cause,
+              because the cause isn't in the telemetry. And the standard response to a
+              vibration alarm you can't explain is the expensive one: pull the pump and look."
+PANEL QUOTE : "CAUSE NOT DETERMINED FROM TELEMETRY" banner · "Request Pump Pull · Investigate downhole" card
 ASSET REF   : templates/tab_h2.html — `h2CursorIdx >= h2ReplayData.scada_alarm_idx` SCADA view
 CONTINUITY  : (none)
+NOTE (BS+56): SCADA never opines on cause — it annunciates tag breaches only. Threshold
+              SCADA cannot and would not assert "bearing wear" or "mechanical degradation."
+              "Cause not determined" is the honest, defensible display. The expensive pull
+              is the standard practice under an unexplained vibration alarm — not a SCADA
+              diagnosis, but the operator's only option without document context.
 ```
 
 ### B2-S3 — GDC Advisor: 3-Doc Cascade + Verdict   ·  ~13s  ·  RECORD
