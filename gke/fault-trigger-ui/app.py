@@ -7951,6 +7951,7 @@ _TAB_TEMPLATES = [
     "tab_h1",
     "tab_h2",
     "tab_h3",
+    "tab_whygdc",
     "tab_financials",
     "tab_architecture",
 ]
