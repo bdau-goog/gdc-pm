@@ -82,6 +82,7 @@ createApp({
       optConstraintStack: {},
       h3ActiveConstraint: 'gas',
       constraintDoc: {},
+      optCurtailment: {},
       vizierDeployed: false,
       vizierDeploying: false,
       
@@ -2269,6 +2270,7 @@ createApp({
           this.optIndependentBaseline=d.independent_baseline||{};
           this.optConstraintStack=d.constraint_stack||{};
           this.constraintDoc=d.constraint_doc||{};
+          this.optCurtailment=d.curtailment||{};
           this.vizierDeployed=false;
           this.$nextTick(()=>this._renderVizierPareto());
         }

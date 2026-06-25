@@ -135,6 +135,64 @@
               </tbody>
             </table>
           </div>
+          <!-- ── CURTAILMENT RE-ALLOCATION panel ──────────────────────── -->
+          <div v-if="optCurtailment && optCurtailment.wells_curtailed && optCurtailment.wells_curtailed.length" style="margin-bottom:12px">
+            <!-- Curtailment event header card -->
+            <div style="background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.35);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
+              <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px">&#x1F4E8;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(251,146,60,0.75);margin-bottom:3px">Off-Sensor Curtailment Notice</div>
+                <div style="font-size:0.75rem;font-weight:600;color:var(--text2);margin-bottom:3px">{{ optCurtailment.event }}</div>
+                <div style="font-size:0.65rem;color:rgba(251,146,60,0.65)">{{ optCurtailment.trigger }}</div>
+              </div>
+            </div>
+            <!-- GDC edge re-allocation table -->
+            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:10px;overflow:hidden;margin-bottom:8px">
+              <div style="font-family:var(--mono);font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center">
+                <span>GDC EDGE RE-ALLOCATION — PAD ALPHA UNDER CURTAILMENT</span>
+                <span style="font-weight:400;color:rgba(100,116,139,0.55);font-size:0.60rem">&#x23FA; Architecture view &#x2014; system-to-system flow</span>
+              </div>
+              <table style="width:100%;border-collapse:collapse;font-size:0.70rem">
+                <thead>
+                  <tr style="background:rgba(15,23,42,0.5)">
+                    <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Well</th>
+                    <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">GOR (scf/bbl)</th>
+                    <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">Plan Hz</th>
+                    <th style="padding:5px 14px;text-align:right;color:rgba(74,222,128,0.8);font-weight:600">GDC Smart</th>
+                    <th style="padding:5px 14px;text-align:right;color:rgba(100,116,139,0.7);font-weight:600">SCADA Baseline</th>
+                    <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Role</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="w in optCurtailment.wells_curtailed" :key="w.name"
+                      :style="{borderTop:'1px solid rgba(100,116,139,0.12)', background: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.04)' : 'rgba(74,222,128,0.03)'}">
+                    <td style="padding:6px 14px;font-family:var(--mono)"
+                        :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ w.name }}</td>
+                    <td style="padding:6px 14px;text-align:right;color:var(--muted)">{{ (w.gor||0).toLocaleString() }}</td>
+                    <td style="padding:6px 14px;text-align:right;font-family:var(--mono);color:var(--text2)">{{ (w.plan_hz||0).toFixed(2) }} Hz</td>
+                    <td style="padding:6px 14px;text-align:right;font-family:var(--mono);font-weight:700"
+                        :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.smart_curtailed_hz||0).toFixed(2) }} Hz</td>
+                    <td style="padding:6px 14px;text-align:right;font-family:var(--mono);color:rgba(100,116,139,0.65)">{{ (w.scada_curtailed_hz||0).toFixed(2) }} Hz</td>
+                    <td style="padding:6px 14px;font-size:0.65rem"
+                        :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
+                      <span v-if="w.smart_curtailed_hz < w.plan_hz">Trimmed &#x2193; (gassy)</span>
+                      <span v-else>Holds &#x2191; (oil-rich)</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Revenue delta badge -->
+            <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
+              <div>
+                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(74,222,128,0.7);margin-bottom:2px">GDC Smart vs SCADA Uniform Throttle &#x2014; 90-Day Revenue</div>
+                <div style="font-family:var(--mono);font-size:1.4rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ ((optCurtailment.revenue_delta||0) / 1e6).toFixed(1) }}M <span style="font-size:0.75rem;font-weight:400;color:var(--muted)">&#xB7; +{{ (optCurtailment.uplift_bbl_d||0).toFixed(0) }} bbl/d oil production</span></div>
+              </div>
+              <div style="text-align:right;flex-shrink:0">
+                <div style="font-size:0.60rem;color:rgba(100,116,139,0.5);line-height:1.8">&#x26A0; Edge only trims intra-pad (it owns its tie-in).<br>Inter-pad: next cloud cycle.</div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="h3-main-body" v-if="optTrials.length > 0">
           <!-- Pareto Chart -->

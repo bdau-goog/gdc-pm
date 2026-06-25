@@ -782,9 +782,11 @@ APP STATE   : H3 tab · Slide 3 "Cloud Searches. Edge Enforces."
 VISUAL      : Division-of-labor diagram; cloud side vs edge side
 CAMERA/MOVE : [LIVE] advance to Slide 3; hold on cloud-searches / edge-enforces split
               [POST] static
-VO          : "And here's the division of labor: the cloud does the searching for the best
-              setpoints, while the edge enforces the safety limit on every candidate it
-              proposes — locally."
+VO          : "The cloud does the searching — it finds the optimal allocation across the
+              whole field. When a midstream curtailment changes the ceiling after the plan
+              ships — a notice the cloud never saw — the edge re-allocates the pad in real
+              time. VFD and SCADA own the motor protection trips; GDC's job is the revenue
+              allocation. That's the division of labor."
 PANEL QUOTE : "Cloud Searches. Edge Enforces." slide title
 ASSET REF   : slides/h3.html #p3
 CONTINUITY  : SOVEREIGNTY PAYOFF begins here (continues B3-S5)
@@ -831,9 +833,11 @@ VISUAL      : GDC Optimal column differentiation vs Baseline; uplift card
 CAMERA/MOVE : [LIVE] cursor across GDC Optimal column; then pan to uplift card
               [POST] zoom 1.15× on GDC Optimal column; hold ~2s; then zoom 1.15× on
               uplift card; hold ~2s
-VO          : "GDC's allocation does it differently — it runs the low-gas wells wide open
-              and backs off the gassiest ones. The result is more daily production, with gas
-              held just under the ceiling."
+VO          : "GDC runs the oil-rich wells wide open and trims the gassiest ones to stay
+              under the ceiling. And when a curtailment drops that ceiling mid-day — a notice
+              that arrived off-sensor, after the cloud's plan was already shipped — the edge
+              re-solves the intra-pad allocation immediately. +$12.9 million versus uniform
+              throttle, over 90 days."
 PANEL QUOTE : GDC Optimal Hz values (differentiated) + uplift card (+bbl/d · cash figure)
 ASSET REF   : templates/tab_h3.html — GDC Optimal + Δ Hz columns + uplift card
 CONTINUITY  : (none)
@@ -876,8 +880,11 @@ VISUAL      : Thermal-limit note; constraint selector (GAS TAKEAWAY active)
 CAMERA/MOVE : [LIVE] cursor the Binding Constraint selector; hold on the thermal-limit
               provenance note below the table
               [POST] zoom 1.15× on the thermal-limit note
-VO          : "And that temperature limit is enforced right at the edge — so if the network
-              link drops in the middle of a search, the safety constraint never drops with it."
+VO          : "And the gas-ceiling constraint enforced at the edge means the pad keeps
+              producing at the last optimal plan even if the network drops. The motor trips
+              stay with the VFD and SCADA where they belong — GDC doesn't replace hardware
+              protection. It handles the revenue allocation that hardware protection can't
+              see: the off-sensor curtailment notice."
 PANEL QUOTE : Thermal-limit value in provenance note (printed: 280°F)
 ASSET REF   : templates/tab_h3.html — thermal-limit provenance note + constraint selector
 CONTINUITY  : SOVEREIGNTY PAYOFF: this is the third leg of the sovereignty spine
