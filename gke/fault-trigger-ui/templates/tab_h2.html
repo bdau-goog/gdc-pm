@@ -183,10 +183,11 @@
                   :height="Math.max(8, Math.min(100, h2ReplayData.psi && h2ReplayData.psi[h2CursorIdx] && h2ReplayData.psi[h2ReplayData.n-1] ? h2ReplayData.psi[h2CursorIdx] / h2ReplayData.psi[h2ReplayData.n-1] * 100 : 8))"
                   :fill="'rgba(251,191,36,' + (0.10 + 0.55 * (h2CursorIdx / Math.max(1, h2ReplayData.n - 1))) + ')'"
                   stroke="rgba(251,191,36,0.30)" stroke-width="0.5"/>
-            <text x="60" y="50" text-anchor="middle" fill="rgba(12,18,30,0.85)"
-                  font-size="6" font-family="Inter,sans-serif" font-style="italic">WAX ZONE</text>
-            <text x="60" y="60" text-anchor="middle" fill="rgba(148,163,184,0.35)"
-                  font-size="4" font-family="Inter,sans-serif">~1,500 ft</text>
+            <text transform="translate(60,58) rotate(-90)" text-anchor="middle"
+                  fill="rgba(120,58,10,0.78)" font-size="5.5"
+                  font-family="Inter,sans-serif" font-style="italic">WAX ZONE</text>
+            <text x="70" y="27" fill="rgba(148,163,184,0.28)"
+                  font-size="3.5" font-family="Inter,sans-serif">~1,500 ft</text>
             <!-- Off-sensor boundary line -->
             <line x1="36" x2="84" y1="180" y2="180" stroke="rgba(251,191,36,0.50)" stroke-width="0.8" stroke-dasharray="3 2"/>
             <text x="86" y="183" fill="rgba(148,163,184,0.45)" font-size="4" font-family="Inter,sans-serif" font-style="italic">sensors below</text>

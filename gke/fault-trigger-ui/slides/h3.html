@@ -31,7 +31,7 @@
         <h2 class="slide-title">Maximum Production. Maximum Care.</h2>
         <p class="slide-sub">Oil price is up. Pad Alpha has 6 wells. The instinct is to run everything faster.<br><span style="color:#fbbf24">But these wells are not equal — and the gas budget forces a choice.</span></p>
       </div>
-      <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+      <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.68rem;color:var(--text2);line-height:1.7">
         Every oil well produces associated gas — gas the reservoir controls, not you. GOR (Gas-Oil Ratio) tells you how much gas per barrel. A well with GOR 1,350 produces 3× more gas per barrel than a well with GOR 450. You cannot change that. But you can choose which wells get the gas budget.
       </div>
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:var(--radius);overflow:hidden">
@@ -50,7 +50,7 @@
       </div>
     </div>
     <!-- Right: sidebar -->
-    <div style="flex:0 0 240px;display:flex;flex-direction:column;justify-content:center;gap:16px">
+    <div style="flex:0 0 240px;display:flex;flex-direction:column;justify-content:flex-start;gap:12px;padding-top:38px">
       <div style="padding:16px 20px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:7px;text-align:center">
         <div style="font-size:0.72rem;font-weight:800;color:#e2e8f0;line-height:1.55">"Not all barrels cost the same gas."</div>
         <div style="font-size:0.58rem;color:var(--muted);margin-top:8px;font-style:italic;line-height:1.6">A-3 produces 3× more oil per unit of gas budget than A-5. That asymmetry is the optimization opportunity.</div>
@@ -77,39 +77,39 @@
       <p class="slide-sub" style="margin-top:10px;font-size:0.85em;opacity:0.85">An engineer could compute a setpoint table manually — but the gas-efficient wells interact with the gassier ones. The optimal trade-off across all three ceilings and all 6 wells is a problem for a Bayesian optimizer, not a spreadsheet.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0">
-      <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">ACTIVE CONSTRAINTS — PAD ALPHA</div>
+      <div style="font-size:0.64rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)">ACTIVE CONSTRAINTS — PAD ALPHA</div>
       <!-- Gas ceiling — BINDING -->
         <div class="constraint-row" style="border:1px solid rgba(251,191,36,0.35);background:rgba(251,191,36,0.05)">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="width:8px;height:8px;border-radius:50%;background:#fbbf24;flex-shrink:0"></span>
-            <span style="font-size:0.64rem;font-weight:700;color:#fbbf24">GAS TAKEAWAY CEILING</span>
-            <span style="font-family:var(--mono);font-size:0.64rem;color:#fde68a;margin-left:auto">8.0 MMscfd</span>
-            <span style="font-size:0.54rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);color:#fbbf24">● BINDING</span>
+            <span style="font-size:0.70rem;font-weight:700;color:#fbbf24">GAS TAKEAWAY CEILING</span>
+            <span style="font-family:var(--mono);font-size:0.70rem;color:#fde68a;margin-left:auto">8.0 MMscfd</span>
+            <span style="font-size:0.60rem;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,0.2);border:1px solid rgba(251,191,36,0.4);color:#fbbf24">● BINDING</span>
           </div>
-          <div class="detail-element" style="margin-top:6px;margin-left:18px;font-size:0.60rem;color:var(--text2);line-height:1.6">Midstream gathering contract — contractual + compression limit. At current SCADA setpoints: ~6.2 MMscfd. At uncoordinated max speed: 8.0+ MMscfd → curtailment.</div>
+          <div class="detail-element" style="margin-top:6px;margin-left:18px;font-size:0.66rem;color:var(--text2);line-height:1.6">Midstream gathering contract — contractual + compression limit. At current SCADA setpoints: ~6.2 MMscfd. At uncoordinated max speed: 8.0+ MMscfd → curtailment.</div>
         </div>
         <!-- Motor winding temp — not binding -->
         <div class="constraint-row" style="border:1px solid rgba(100,116,139,0.22);opacity:0.7">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="width:8px;height:8px;border-radius:50%;background:rgba(100,116,139,0.4);flex-shrink:0"></span>
-            <span style="font-size:0.62rem;color:var(--text2)">Motor winding temp limit</span>
-            <span style="font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-left:auto">280°F</span>
-            <span style="font-size:0.54rem;color:var(--muted)">not binding</span>
+            <span style="font-size:0.68rem;color:var(--text2)">Motor winding temp limit</span>
+            <span style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);margin-left:auto">280°F</span>
+            <span style="font-size:0.60rem;color:var(--muted)">not binding</span>
           </div>
-          <div class="detail-element" style="margin-top:4px;margin-left:18px;font-size:0.58rem;color:var(--muted)">API RP 11S derated threshold · retrieved from AlloyDB RAG · checked at every Vizier trial</div>
+          <div class="detail-element" style="margin-top:4px;margin-left:18px;font-size:0.63rem;color:var(--muted)">API RP 11S derated threshold · retrieved from AlloyDB RAG · checked at every Vizier trial</div>
         </div>
         <!-- RUL horizon — not binding -->
         <div class="constraint-row" style="border:1px solid rgba(100,116,139,0.22);opacity:0.7">
           <div style="display:flex;align-items:center;gap:10px">
             <span style="width:8px;height:8px;border-radius:50%;background:rgba(100,116,139,0.4);flex-shrink:0"></span>
-            <span style="font-size:0.62rem;color:var(--text2)">RUL horizon constraint</span>
-            <span style="font-family:var(--mono);font-size:0.62rem;color:var(--muted);margin-left:auto">90 days</span>
-            <span style="font-size:0.54rem;color:var(--muted)">not binding</span>
+            <span style="font-size:0.68rem;color:var(--text2)">RUL horizon constraint</span>
+            <span style="font-family:var(--mono);font-size:0.68rem;color:var(--muted);margin-left:auto">90 days</span>
+            <span style="font-size:0.60rem;color:var(--muted)">not binding</span>
           </div>
-          <div class="detail-element" style="margin-top:4px;margin-left:18px;font-size:0.58rem;color:var(--muted)">Per-well RUL must cover the full operating horizon · all 6 wells clear today</div>
+          <div class="detail-element" style="margin-top:4px;margin-left:18px;font-size:0.63rem;color:var(--muted)">Per-well RUL must cover the full operating horizon · all 6 wells clear today</div>
         </div>
     </div>
-    <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.62rem;color:var(--text2);line-height:1.7">
+    <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.68rem;color:var(--text2);line-height:1.7">
       <strong style="color:#93c5fd">Without a cross-well optimizer,</strong> the safe default is uniform throttle — a small speed penalty on every well equally rather than a larger penalty on a few. Conservative. Safe. But it leaves oil on the table: 9,238 bbl/d when the gas-efficient wells could carry more.
     </div>
   </div>
@@ -133,7 +133,8 @@
         <p class="slide-sub" style="margin-top:10px;font-size:0.85em;opacity:0.9;border-left:2px solid rgba(251,146,60,0.5);padding-left:10px;color:rgba(251,191,36,0.85)">When gathering changes after the plan ships — a curtailment notice the cloud never saw — the edge re-allocates the pad in real time, protecting revenue under the cut.</p>
       </div>
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:var(--radius);overflow:hidden">
-        <div style="font-family:var(--mono);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8)">JOINT OPTIMAL SETPOINT ALLOCATION — PAD ALPHA</div>
+        <div style="font-family:var(--mono);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 14px 3px;border-bottom:none;background:rgba(15,23,42,0.8)">JOINT OPTIMAL SETPOINT ALLOCATION — PAD ALPHA</div>
+        <div style="font-family:var(--mono);font-size:0.52rem;color:rgba(100,116,139,0.6);padding:3px 14px 7px;background:rgba(15,23,42,0.8);border-bottom:1px solid var(--border)">GOR = gas per barrel of oil · low-GOR wells run wide open · gassiest well trims back to hold the ceiling</div>
         <table class="opt-table">
           <thead><tr><th>Well</th><th style="text-align:right">GOR</th><th style="text-align:right">SCADA</th><th style="text-align:right">Optimal</th><th style="text-align:right">Δ</th></tr></thead>
           <tbody>
@@ -142,9 +143,10 @@
             <tr><td style="font-family:var(--mono);color:var(--text2)">A-1</td><td style="text-align:right;color:var(--muted)">650</td><td style="text-align:right;font-family:var(--mono);color:var(--text2)">50 Hz</td><td style="text-align:right;font-family:var(--mono);color:rgba(74,222,128,0.85)">65.5 Hz</td><td style="text-align:right;color:rgba(74,222,128,0.8)">↑+15.5</td></tr>
             <tr><td style="font-family:var(--mono);color:var(--text2)">A-4</td><td style="text-align:right;color:var(--muted)">900</td><td style="text-align:right;font-family:var(--mono);color:var(--text2)">50 Hz</td><td style="text-align:right;font-family:var(--mono);color:rgba(74,222,128,0.85)">65.5 Hz</td><td style="text-align:right;color:rgba(74,222,128,0.8)">↑+15.5</td></tr>
             <tr><td style="font-family:var(--mono);color:var(--text2)">A-2</td><td style="text-align:right;color:var(--muted)">1,100</td><td style="text-align:right;font-family:var(--mono);color:var(--text2)">50 Hz</td><td style="text-align:right;font-family:var(--mono);color:rgba(74,222,128,0.85)">65.5 Hz</td><td style="text-align:right;color:rgba(74,222,128,0.8)">↑+15.5</td></tr>
-            <tr style="background:rgba(251,191,36,0.04)"><td style="font-family:var(--mono);color:rgba(251,191,36,0.9)">A-5</td><td style="text-align:right;color:rgba(251,191,36,0.7)">1,350</td><td style="text-align:right;font-family:var(--mono);color:var(--text2)">50 Hz</td><td style="text-align:right;font-family:var(--mono);color:rgba(251,191,36,0.9)">59.7 Hz</td><td style="text-align:right;color:rgba(251,191,36,0.8)">↑+9.7 ← gives way</td></tr>
+            <tr style="background:rgba(251,191,36,0.04)"><td style="font-family:var(--mono);color:rgba(251,191,36,0.9)">A-5</td><td style="text-align:right;color:rgba(251,191,36,0.7)">1,350</td><td style="text-align:right;font-family:var(--mono);color:var(--text2)">50 Hz</td><td style="text-align:right;font-family:var(--mono);color:rgba(251,191,36,0.9)">59.7 Hz</td><td style="text-align:right;color:rgba(251,191,36,0.8)">↑+9.7 · trims back †</td></tr>
           </tbody>
         </table>
+        <div style="font-size:0.50rem;color:rgba(100,116,139,0.52);padding:4px 14px 8px;font-style:italic">† A-5 has the highest GOR — most gas per barrel — so the optimizer limits its speed increase to hold the ceiling exactly. All other wells run near max.</div>
       </div>
     </div>
     <!-- Right: comparison track + results -->
@@ -190,7 +192,7 @@
         </div>
       </div>
       <div style="padding:12px 14px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:7px;text-align:center">
-        <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;line-height:1.55">"Maximum production from the pad. No pump destroyed."</div>
+        <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;line-height:1.55">"Gas ceiling held exactly. Every barrel the pad can give."</div>
         <div style="font-size:0.56rem;color:var(--muted);margin-top:6px;font-style:italic">Cloud searches. Edge enforces.</div>
       </div>
     </div>
