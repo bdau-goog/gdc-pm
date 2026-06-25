@@ -1,8 +1,14 @@
-# Next Session Prompt — GDC ESP Ops Video (Operational State)
-Date: 2026-06-25 (Session BS+48 wrap) / branch: feature-trio-clean
-Git HEAD: 94f99e6 / Image: sha256:ff5f96d1c4c2e5d71bd76eb867336c8d388a9e8db15b8a8a207236c5fbc7ff98
+# Next Session Prompt — GDC ESP Ops Demo (Operational State)
+Date: 2026-06-25 (Session BS+49 wrap) / branch: feature-trio-clean
+Git HEAD: (see latest commit) / Image: sha256:ff5f96d1c4c2e5d71bd76eb867336c8d388a9e8db15b8a8a207236c5fbc7ff98
 
-## STEP 1: Run These Four Commands First
+## ⚠ CRITICAL: Read These Before Anything Else
+```bash
+cat docs/DECISION_DOSSIER.md   # MANDATORY before any H1/H2/H3/platform work
+cat docs/SESSION_LOG.md | head -120  # last 2 entries for context
+```
+
+## STEP 1: Run Four Startup Commands
 ```bash
 kubectl get pods -n gdc-pm --no-headers
 # Expected: all 1/1 Running (7 pods)
@@ -17,71 +23,124 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 # Expected: field_intel = 11, rag_documents = 20
 ```
 
-## STEP 2: Read These Documents
-```bash
-cat docs/H3_DECISION_DOSSIER.md      # MANDATORY before any H3 work — full reasoning, eliminations, build plan
-cat docs/SESSION_LOG.md | head -80   # last 2 entries for context
+## STEP 2: Context — What Sessions BS+48 + BS+49 Locked
+
+Sessions BS+48/BS+49 were planning-only (no code deployed). Everything has been decided and is documented in DECISION_DOSSIER.md. The next session is 100% BUILD AND RECORD. The remaining recording list at session end:
+
+**Still to record:** B1-S5, B1-S6, BBRIDGE, H2 (all scenes), H3 (all scenes), BCLOSE
+
+---
+
+## STEP 3: Build Task List (in order, 2-day finish)
+
+### TASK 0 (10 min) — H1 Consistency Audit (read-only, before B1-S5/S6 recording)
+Check THREE things only. Fix only what fails. Do NOT re-record anything done.
+1. Confirm no H1 VO/slide claims "GDC detects faster than SmartSignal/PRiSM/Mtell" (should already be clean — DEMO_MASTER §3 rule)
+2. Confirm H1 reads as **AMBIGUOUS** (not "confident wrong answer") — the contrast with H2 must be clear
+3. Confirm H1-P4 carries fleet-scale argument (MINUTES TO HOURS framing; optionally add "across hundreds of wells per shift, automatically" — slide text only, not a re-record)
+
+If 1–3 pass: proceed. If any fail: targeted slide-text fix only. **No scene re-records.**
+
+### TASK 1 (15 min) — H2 Instant-Triage Load (one-line code change + deploy)
+**File:** `static/app.js` — function `loadH2Scenario()` at ~L2057
 ```
+After: this.h2ReplayData = data;
+Add:   this.h2CursorIdx = data.scada_alarm_idx || 0;
+```
+**Verify FIRST:** `curl http://gdc-pm.bdau.io/api/h2/scenario-replay | python3 -c "import sys,json;d=json.load(sys.stdin);print('scada_alarm_idx:',d.get('scada_alarm_idx'))"`
+**Effect:** Tab opens with 90-day static history plotted, VIB-HI alarm already active, doc cascade ready — no more 8-week slow playback
+**Deploy:** docker build → push → rollout restart → verify live
 
-## STEP 3: PRIME DIRECTIVE — What BS+48 Locked
+### TASK 2 (30–60 min) — H2 VO + Slide Framing (reframe to sharpened thesis)
+**Read DECISION_DOSSIER.md §2.2–§2.4 fully before touching any slide text.**
 
-### H2 (Classify) — Instant-Triage + Provenance framing ✅ DESIGN LOCKED
-**Identity:** Operator tool. Provenance / avoid-unnecessary-$100k-pull.
-**UI change (build):** Load H2 at active alarm state (`h2CursorIdx = data.scada_alarm_idx` after `this.h2ReplayData = data`) instead of idx=0.
-- **File:** `static/app.js` function `loadH2Scenario()` ~L2057–2090
-- **Change:** One line: `this.h2CursorIdx = data.scada_alarm_idx;` after `this.h2ReplayData = data;`
-- **Why:** 8-week slow playback is wrong for a provenance/single-alarm story. Load at alarm = "this alarm is active NOW; here's how GDC resolves it."
-- **Verify:** `curl http://gdc-pm.bdau.io/api/h2/scenario-replay` → confirm `scada_alarm_idx` is in response.
+The locked H2 thesis is: **"Clear signal. Confident APM verdict. Wrong action."** (opposite of H1's ambiguity)
+- APM is RIGHT about the symptom (bearing wear pattern)
+- APM is WRONG about the cause (paraffin restriction, off-sensor)
+- GDC's L2 model catches the anomaly **pre-alarm** → routes to L3 doc search → names paraffin → averts pull
 
-### H3 (Optimize) — Two-Timescale Architecture ✅ DESIGN LOCKED
-**FULL DOSSIER: `docs/H3_DECISION_DOSSIER.md` — READ THIS ENTIRE FILE BEFORE ANY H3 CODE.**
+**What to check in `slides/h2.html`:**
+- Slide 2 kicker must read "THE SIGNAL SAYS PULL" (should already be correct — confirm)
+- Slide 2 sub-text must NOT say "ambiguous" — should say "clear signal, wrong answer" or "THE SIGNAL SAYS PULL"
+- Confirm Slide 1 setup card mentions paraffin/wax waxy crude background (present in current slide)
+- Fleet-scale framing: one sentence in Slide 2 or 3 should carry "across hundreds of wells per surveillance shift, GDC catches it automatically and researches the provenance"
 
-**Identity:** Real system-to-system architecture story (NOT an operator tool).
-**Thesis:** Two-timescale RTO-over-MPC hierarchy:
-- Cloud (Vizier): global/slow/economic — divides shared gas budget across field periodically
-- Edge (GDC): local/fast/continuous — reconciles cloud plan against live per-asset reality; trims DOWN only (never UP — up-reallocation breaches shared gas ceiling); data never leaves site
-- SCADA: executes; owns regulatory control and hard trips
+**What to check in VIDS_PRODUCTION_MASTER.md B2 scene cards:**
+- B2-P2 VO: confirm "bearing wear / pull" framing is "clear confident diagnosis → wrong action" not "ambiguous"
+- B2-P2 VO: confirm fleet-scale ("caught early across hundreds of wells") is present or add it
+- B2-S3 VO: confirm "paraffin restriction, NOT bearing wear" is the pivot, not just "bearings are actually fine"
 
-**MUST-NOT-SAY (RT-confirmed, permanent):**
-1. ❌ "Operators don't trust control vendors with data" (FUD, FAILS)
-2. ❌ "GDC invented hierarchical control" (it's textbook RTO/MPC)
-3. ❌ "The edge does the global optimization"
-4. ❌ "14 of 15 proposals rejected" as a hero stat (fix feasible-rate first)
-5. ❌ "Vendor-neutral" unscoped (scope to "neutral relative to equipment vendors")
-6. ❌ GitOps manages PLC/SCADA/Level-1/2 configs
+If slide text needs updating: batched replace_in_file on slides/h2.html ONLY. Verify, deploy, confirm live.
 
-**5-angle moat (no anti-competitor FUD):**
-1. Greenfield reach: ~76% O&G operators run NO ML APM (cited: uptimeai.com/reliamag.com 2023)
-2. Horizontal platform vs point product (GKE/AlloyDB/Vertex runs all three horizons)
-3. Unstructured fusion APM can't do — CATEGORICAL, STRONGEST
-4. Sovereign fleet Model-Ops (GitOps config + Vertex-train→edge-deploy + governed IAM; NOT PLC/Level-1/2)
-5. Data-gravity / outage-tolerance
+**H2 Must-NOT-Say (check all VO + slides):**
+- ❌ "Vibration crossed ISA-HI and the pump is pristine" (overclaims — bearing damage may exist once HI crossed)
+- ❌ "Hot-oil guarantees full removal" → use "low-cost surface remediation" or "surface treatment"
+- ❌ "GDC detects before APM" → L3 provenance is the win, not detection speed
+- ❌ "APM missed this" → APM correctly identified the bearing-wear pattern; it missed the CAUSE (off-sensor)
 
-### Vizier Live Cloud Facts (Verified 2026-06-25)
-- Project: `gdc-pm-v2` / us-central1
-- 10 real studies: `gdc_pad_alpha_field_opt_*`
-- Latest study 593258648990: **14/15 INFEASIBLE, 1 feasible** (root cause: shared gas ceiling + wide independent bounds + single batch)
-- Code: `suggest_trials(count=15)` at app.py L6734 = **single batch, NOT iterative** → "learns per-trial" = silent lie
-- Cost: 100 free trials/mo, $1/trial after; dev/test safe; no GPU
+### TASK 3 (30 min) — Record H2 Scenes
+After Tasks 1 + 2 verified live, record B2-P1 through B2-S4 per VIDS_PRODUCTION_MASTER.md §SECTION 2 scene cards.
+- B2-S5 is ❌ CUT — do not record
+- Both action cards (hot-oil RECOMMENDED + pull AVERTED) must be visible for B2-S4
 
-## STEP 4: Next Implementation Tasks (in order)
+### TASK 4 (1–2 hrs) — H3 Iterative Vizier + Plan-vs-Live Build
+**Read DECISION_DOSSIER.md §3.5 fully before touching app.py.**
 
-### Task 1 (small, build first): H2 instant-triage load
-- `static/app.js` loadH2Scenario() ~L2057
-- After `this.h2ReplayData = data;` add: `this.h2CursorIdx = data.scada_alarm_idx || 0;`
-- Verify: tab opens at active alarm, 90-day static history plotted, VIB-HI alarm visible
-- Deploy → verify live
+**Step 4A — Make Vizier loop iterative** (`app.py` ~L6701–6770, function `vizier_optimize()`):
+- Replace `suggest_trials(count=15)` single-batch with **3 rounds of 5 trials** → score on edge → re-suggest
+- Vizier learns the gas-ceiling boundary from round-1 rejections → raises feasible rate
+- Makes "searches and learns" **literally true** (not just a claim)
+- Still ~15 trials; cost stays within free tier ($0)
 
-### Task 2 (CORE H3 build — see dossier §10 for exact spec):
-1. **Iterative Vizier loop** — `app.py` ~L6701–6770: replace `suggest_trials(count=15)` single-batch with 3 rounds of 5 → score → re-suggest. Raises feasible rate; makes "searches/learns" honest.
-2. **Plan-vs-live-state split** — add `reconcile_live(plan_hz_vec, live_well_params)` to vizier_optimize() return. One well (A-5) gets live motor temp +12°F injected. Enforce `hz_live[i] ≤ hz_plan[i]` (trim-DOWN-only rule).
-3. **Presentation (tab_h3.html)** — cloud plan panel + edge reconcile panel + "⏺ Architecture view — system-to-system flow" tag + render infeasible trials as ✗ and feasible as ✓.
-4. **Verify H3-S4** constraintDoc.found=True: RAG query for midstream contract must return found=True consistently before recording.
+**Step 4B — Plan-vs-live-state split** (new function `reconcile_live()`):
+- Return both `plan_hz_vec` (what Vizier computed) AND `live_hz_vec` (after edge reconciles)
+- Inject: well A-5 gets live motor temp +12°F above the plan's assumption (simulates degrading seal)
+- Enforce `hz_live[i] ≤ hz_plan[i]` for ALL wells — edge ONLY trims DOWN (never up; up-reallocation would breach shared gas ceiling)
+- Return `trims[]` list showing which wells were adjusted and why
 
-### Task 3 (recording prep):
-- After Tasks 1–2 verified live: resume recording per VIDS_PRODUCTION_MASTER.md
-- B1-S5, B1-S6, BBRIDGE, H2, H3, BCLOSE still to record
-- H3 recording follows the 3-act: cloud plan (real Vizier) → edge reconcile (A-5 hot → trim down) → sovereign/scale
+**Step 4C — Presentation** (`tab_h3.html`):
+- Add cloud-plan panel (Vizier results) + edge-reconcile panel (A-5 trimmed with reason)
+- Render infeasible trials as ✗ and feasible as ✓ in trial log (data already in `is_failure`)
+- Add: `<span style="font-size:0.50rem;color:var(--muted);font-style:italic">⏺ Architecture view — system-to-system flow</span>` honesty tag
+- Label: "GDC-plan Hz" (what Vizier said) vs "GDC-live Hz" (what edge enforced after A-5 hot)
+
+**Step 4D — Verify H3-S4** constraintDoc.found=True:
+- `curl "http://gdc-pm.bdau.io/api/vizier/optimize" | python3 -c "import sys,json;d=json.load(sys.stdin);print('constraintDoc.found:',d.get('constraint_doc',{}).get('found'))"`
+- Must return `True` consistently — if not, fix the RAG query at app.py ~L6540–6570 before recording B3-S4
+
+### TASK 5 (30 min) — "Why GDC" Platform Tab (new nav tab)
+**Read DECISION_DOSSIER.md §4 fully before building this tab.**
+
+**Design:** Architecture/procurement beat. No demo-runnable content. Three pillars + RTOC scale shape.
+1. **Form factor fit** — validated hardware across connected/software/air-gapped deployments
+2. **Fleet governance** — ACM/Config-Sync + Fleet Management for GDC platform + apps (explicitly NOT OT/PLC/SCADA)
+3. **Sovereign AI platform + Model-Ops depth** — same Google stack on-prem (GKE/AlloyDB Omni/Vertex/Gemini); train centrally; deploy **base models** with **local fine-tuning**; govern rollouts fleet-wide
+
+**RTOC scale shape for the tab:**
+- "A handful of regional operations centers per major, each governing thousands of wells"
+- "One GDC cluster per regional RTOC" → fleet governance across that basin's wells
+- Cite: YPF ~280 wells/engineer, SLB ALSC 847 wells — "hundreds of wells per surveillance engineer"
+
+**MUST run grounded search FIRST:** `gemini_search("What is the current 2026 product name for Vertex AI enterprise / Gemini Enterprise Agent Platform in Google Cloud?")` before writing any product-name text.
+
+**Must-NOT-Say:**
+- ❌ Any competitive names (AWS Outposts, Azure Local, DIY)
+- ❌ "Deploy models identically" → "base models + local fine-tuning"
+- ❌ "Config-Sync manages your PLCs/SCADA"
+- ❌ "Zero OT integration work"
+- ❌ "Vendor-neutral" unscoped
+
+**Tab placement:** New nav tab between "Classify" and "Optimize" **OR** after "Optimize" and before "ⓘ Reference" — your call on sequence. My lean: after "Optimize" / before "ⓘ Reference" so it reads as the procurement close after seeing all three horizons.
+
+### TASK 6 (30 min) — Resume Recording
+After Tasks 0–5 verified live:
+- Record B1-S5, B1-S6 per VIDS_PRODUCTION_MASTER.md §SECTION 1 scene cards (VOs locked from BS+47)
+- Record BBRIDGE
+- Record H2 (if not already done in Task 3)
+- Record H3 (following H3 3-act: cloud plan → edge reconcile A-5 trim → sovereign/scale)
+- Record BCLOSE
+
+---
 
 ## Deploy Command (permanent reference)
 ```bash
@@ -92,6 +151,8 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 ```
 **Registry:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/` (NOT gcr.io)
 
+---
+
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
 - GPU scale-to-zero; `gpu-start.sh` ONLY for explicit LLM test (~$0.65/hr)
@@ -101,5 +162,22 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - BBRIDGE VO: "all AI local, no cloud required" (not "air-gap capable")
 - **Autonomy numeric knob: ❌ BLOCKED** — IEC 61511 FAILS
 - **GAS LOCK VO physics:** PIP drops (SCADA signal). Casing annulus pressure rises (gas lock evidence). Do NOT change either.
-- **H3 MUST-NOT-SAY list:** See §3 above and `docs/H3_DECISION_DOSSIER.md` §6.
-- **DEMO_MASTER §5/§6 update deferred:** Too large for safe late-night edit. Dossier is the authoritative record. Update §5/§6 as a separate Task 0 or wrap them into the H3 build session.
+- **H3 MUST-NOT-SAY list:** See DECISION_DOSSIER.md §3.6
+- **H2 MUST-NOT-SAY list:** See DECISION_DOSSIER.md §2.3 + §2.7
+- **Why-GDC MUST-NOT-SAY list:** See DECISION_DOSSIER.md §4.5
+- **DEMO_MASTER §5/§6:** deferred update — dossier is the authoritative record; update §5/§6 BEFORE next major scenario review session
+
+## Open Items (confirm before pixels)
+1. Branding source-check: Vertex AI → Gemini Enterprise 2026 product name (search before Why-GDC tab text)
+2. SME gut-check: H2 "caught pre-alarm → bearing damage not yet inevitable" framing (Bill Barna or equiv.)
+3. Wells/engineer display figure: soften to "hundreds" or confirm lower bound from SME
+
+## Recording Progress (for reference)
+- ✅ B0.1–B0.4 (Intro) DONE
+- ✅ B1-P1–B1-P5 (H1 briefing) DONE
+- ✅ B1-S1–B1-S4 (H1 scenario) DONE
+- ⏳ B1-S5, B1-S6 — record after Task 0 audit
+- ⏳ BBRIDGE — record
+- ⏳ H2 (B2-P1 through B2-S4) — record after Tasks 1–2
+- ⏳ H3 (B3-P1 through B3-S5) — record after Task 4
+- ⏳ BCLOSE — record
