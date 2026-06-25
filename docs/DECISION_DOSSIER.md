@@ -362,5 +362,22 @@ The three scenarios are now more coherent with H2's sharpened framing and the sh
 | 1 | **Branding:** Verify current product name "Vertex AI / Gemini Enterprise Agent Platform" (2026) | Before Why-GDC tab text | Next session grounded search |
 | 2 | **H3 feasible-rate fix:** iterative Vizier loop — must deploy before H3 recording | Blocking H3 recording | Next session build |
 | 3 | **H1 consistency-audit:** 3 read-only checks (§5 above) | Before B1-S5/S6 recording | Next session quick check |
-| 4 | **Wax-bearing SME gut-check:** confirm "caught pre-alarm → bearing damage not yet inevitable" framing with Bill Barna or equivalent Permian engineer | Before H2 recording | SME contact |
-| 5 | **Wells/engineer figure:** confirm 150–300 range is defensible (YPF/SLB suggest 280–500+; is the lower bound credible?) | Before Premise 1 display | SME or soften to "hundreds" |
+| 4 | **Wax-bearing SME gut-check:** confirm "caught pre-alarm → bearing damage not yet inevitable" framing with Bill Barna or equivalent Permian engineer | Before H2 recording | SME contact — question below |
+| 5 | **Wells/engineer figure:** ✅ RESOLVED — display "hundreds of artificial-lift wells per surveillance engineer" (YPF/SLB data supports 280–500+; "hundreds" is conservative and unassailable) | CLOSED | |
+
+### Bill Barna Question (Item 4)
+
+**Context to give Bill:** We're building a demo where GDC flags a paraffin-restriction event on an ESP well *before* the vibration alarm crosses the ISA-18.2 HI threshold (4.0 mm/s). At that pre-alarm stage — vibration drifting up, efficiency declining, PIP rising slightly — GDC dispatches a hot-oil truck. The claim we're making on screen is: *"Caught early, before the hard alarm, a surface hot-oil treatment can avert the pull — bearing damage is not yet inevitable at this stage."*
+
+**The specific question:**
+
+> "On a waxy Permian well running on a 90-day hot-oil cycle, when you see the early warning signs of paraffin restriction — efficiency softening, vibration creeping up, but the VIB-HI alarm (4.0 mm/s) not yet crossed — and you send a hot-oil truck promptly: in your experience, does the well typically come back to nominal? Or by the time you're seeing those early sensor drifts, has bearing damage already started accumulating? Is there a practical window — say, caught in the first few weeks of the drift — where hot-oil is still fully effective and you'd expect a clean recovery without a pull?"
+
+**What we need from Bill:**
+- Confirmation (or correction) that pre-alarm intervention typically works
+- Rough sense of the window: "if you catch it in the first X weeks of the drift, hot-oil works; beyond that, it's a pull"
+- Any qualifier we should add to our claim (e.g., "depends on sand cut" / "depends on bearing age")
+
+**If Bill says the window is real:** our claim ships as written.  
+**If Bill says bearing damage starts earlier:** we soften to "surface treatment is most effective caught early" (removes "not yet inevitable").  
+**If Bill is uncertain:** we already use "caught early enough that the surface fix is still effective" — that wording survives without a hard confirmation.
