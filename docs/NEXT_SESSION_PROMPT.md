@@ -1,8 +1,7 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
-Date: 2026-06-25 (Session BS+55) / branch: feature-trio-clean
-Git HEAD: 42e0d5b / Image: sha256:5033abd8449c0c87581417ca1d031070777acc53b51d932f10be4538b0df0197
-
-⚠ NOTE: 9 commits ahead of origin/feature-trio-clean — push before next session if needed.
+Date: 2026-06-26 (Session BS+56) / branch: feature-trio-clean
+Git HEAD: 58a0634 / Image: sha256:ab2e90d4449f936c370d75c3c8162df3e91c08b15653f05be413ec13ff65f
+⚠ NOTE: 23 commits ahead of origin/feature-trio-clean — push before or after next session.
 
 ## STEP 1: Run Four Startup Commands
 ```bash
@@ -21,56 +20,35 @@ kubectl exec -n gdc-pm deployment/alloydb-omni -- psql -U postgres -d grid_relia
 
 ## STEP 2: Read DEMO_MASTER.md + DECISION_DOSSIER.md
 ```bash
-cat docs/DECISION_DOSSIER.md   # §2 is H2 spec; §2.6 physics; Bill Barna SME confirmation
-cat docs/SESSION_LOG.md | head -80
+cat docs/DECISION_DOSSIER.md   # §2 H2 spec; §3 H3 spec; §3.7 Must-NOT-SAY
+cat docs/SESSION_LOG.md | head -60
 ```
 
-## STEP 3: Next Tasks — H2 Recording + H3 Iterative Vizier
+## STEP 3: Next Tasks — H3 Code Fix + BBRIDGE + H3 Recording + BCLOSE
 
-### H2 UI — FULLY DEPLOYED (sha256:5033abd8) ✅
-All layout/content fixes from BS+54 and BS+55 shipped and verified:
-| Fix | Commit | Verified |
-|---|---|---|
-| Wellbore SVG clip | 42c6089 | ✅ viewBox 315, position:absolute |
-| Dollar figures removed | 42c6089 | ✅ "major workover" / "low-cost surface" in live HTML |
-| 3-col drag resize handles | 42c6089 | ✅ h2StartDrag + sessionStorage |
-| Annotation overlap (legend) | 42c6089 | ✅ y:0.97 inside chart |
-| SVG absolute positioning | 42e0d5b | ✅ position:absolute;top:0;left:0 |
-| SCADA annotation clip | 42e0d5b | ✅ xanchor:'right' |
-| Scrubber label overlap | 42e0d5b | ✅ translateX(-100%) + T+max label removed |
-| WAX ZONE contrast | 42e0d5b | ✅ dark text on amber |
-
-### ⭐ NEXT TASK: RECORD H2 (B2-P1 through B2-S4 + B2-S3.5)
-Scene order: B2-P1 → B2-P2 → B2-P3 → B2-S1 → B2-S2 → B2-S3 → B2-S3.5 → B2-S4
-
-**Pre-recording checklist:**
-1. Open http://gdc-pm.bdau.io → Classify tab
-2. Column widths: reset sessionStorage if needed (`sessionStorage.clear()` in DevTools) → defaults 44/22/32%
-3. Click ↺ New Scenario → confirm loads at alarm state (VIB-HI banner active)
-4. Confirm wellbore: WH at top, wax band visible, PUMP/PROT/MOTOR visible below
-5. Confirm chart: GDC▲ (~week 4) and SCADA▲ (~week 7) annotations visible, no clipping
-6. Confirm 3 doc cards appear on GDC Advisor tab after ~2s, ~4s, ~5.5s
-7. Vib at gdc_detect_idx = 1.94 mm/s (drag scrubber to GDC▲ to confirm)
-
-**Key VO anchors (from VIDS_PRODUCTION_MASTER.md §SECTION 2):**
-- B2-S3.5 closing line: "Act on the drift, not the alarm." — pause after; let it land
-- B2-S4 closing line: "The pull is averted, because the documents separated the symptom from the cause."
-- B2-S5: ❌ CUT — do not record
-
-### H3 — Iterative Vizier loop fix (blocking H3 recording)
-- **File:** `app.py` — `suggest_trials(count=15)` at L6734 is a single batch, NOT iterative
-- **Fix needed:** Wrap in 3-round loop (3×5 trials → score → re-suggest) so "searches and learns" is literally true
-- **Pattern** already in app.py: look for the 3-round fallback loop in `_FALLBACK_VECS` — the LIVE Vizier path needs the same structure
-- After fix: deploy + verify `vizier_algorithm` returns `GAUSSIAN_PROCESS_BANDIT` (not `deterministic_convergence_demo`)
-- Then record B3-P1 → B3-S5
-
-## Recording Progress
+### Recording Progress
 - ✅ B0.1–B0.4 (Intro) DONE
-- ✅ B1-P1–P5 + B1-S1–S6 (H1 scenario) DONE
-- ⏳ H2 (B2-P1 through B2-S4 + B2-S3.5) — UI deployed, **record now**
-- ⏳ BBRIDGE — record after H2
-- ⏳ H3 (B3-P1 through B3-S5) — panels deployed; iterative Vizier fix needed first
+- ✅ B1-P1–P5 + B1-S1–S6 (H1) DONE
+- ✅ B2-P1–P3 + B2-S1 + B2-S3 + B2-S3.5 + B2-S4 (H2) DONE — B2-S2 merged into S1; B2-S5 CUT
+- ⏳ BBRIDGE — record next (no code change needed; 8s sovereignty callback)
+- ⏳ H3 (B3-P1 through B3-S5) — blocked on iterative Vizier fix (see below)
 - ⏳ BCLOSE — record last
+
+### ⭐ BLOCKER: Iterative Vizier Loop Fix (before H3 B3-S1 recording)
+- **File:** `app.py` — `suggest_trials(count=15)` at L6734 is a single batch, NOT iterative
+- **Fix:** Wrap in 3-round loop (3×5 trials → score → re-suggest) so "searches and learns" is literally true
+- **Pattern:** look for `_FALLBACK_VECS` 3-round fallback loop in app.py — LIVE Vizier path needs same structure
+- **After fix:** deploy + verify `vizier_algorithm` returns `GAUSSIAN_PROCESS_BANDIT` (not `deterministic_convergence_demo`)
+- **Then:** record B3-P1 → B3-S5
+
+### BBRIDGE Recording (no code fix needed)
+Navigate to Intro tab → Slide 3 (GDC Deployment Models). Cursor Air-Gapped card (H1/H2), then Connected card (H3).
+VO: "The first two cases ran entirely on-prem, all AI local, no cloud required. The third is the connected model: it reaches the cloud for Bayesian search, but only the setpoints and their scores ever leave the site, your data never follows, and the safety decision always stays local."
+⚠ No em dashes — Vids Avatar TTS rule (em dash causes avatar to tap out; use commas/colons)
+
+### H3 Scene Order: B3-P1 → B3-P2 → B3-P3 → B3-S1 → B3-S2 → B3-S3 → B3-S4 (conditional) → B3-S5 → BCLOSE
+All H3 UI and slides are deployed and record-ready (sha256:ab2e90d4).
+Pre-recording: verify constraintDoc.found=True before recording B3-S4 (curl /api/vizier/optimize).
 
 ## Deploy Command (permanent reference)
 ```bash
@@ -80,6 +58,12 @@ docker push us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:lat
 kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 ```
 **Registry:** `us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/` (NOT gcr.io)
+
+## VO Style Rule (established BS+56)
+- **Connected/flowing sentences** — not staccato fragments. One thought leads to the next naturally.
+- **Attribution explicit** — "To the operator, that pattern reads as..." not implied.
+- **No em dashes** in VO — Vids Avatar TTS taps out. Use commas or colons instead.
+- **No numbers in VO** — panels carry every figure.
 
 ## Constraints (Permanent)
 - `terraform/gke.tf` must NOT be applied
@@ -93,3 +77,4 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - **H2 early-detect claim:** threshold SCADA only — never "earlier than APM" (dossier §2.3)
 - **H2 wax band:** "schematic · wax inferred from PIP" — displayed, not a measurement
 - **live_vizier=True: announce before calling** — creates a billable Vizier study
+- **SCADA domain rule (BS+56):** SCADA reports tag values and alarm states ONLY. It does not opine on cause. The operator interprets telemetry patterns based on experience. Never have SCADA assert a diagnosis.
