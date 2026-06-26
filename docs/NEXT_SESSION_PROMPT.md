@@ -1,7 +1,7 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
-Date: 2026-06-26 (Session BS+56) / branch: feature-trio-clean
-Git HEAD: 58a0634 / Image: sha256:ab2e90d4449f936c370d75c3c8162df3e91c08b15653f05be413ec13ff65f
-⚠ NOTE: 23 commits ahead of origin/feature-trio-clean — push before or after next session.
+Date: 2026-06-26 (Session BS+57) / branch: feature-trio-clean
+Git HEAD: (run git log --oneline -1) / Image: sha256:13e44d7e8b1d8c641b91ccf73b8eb72c7895ef00795b4dbc9a24d0c3e0bd5f78
+⚠ NOTE: Push origin/feature-trio-clean before or after next session.
 
 ## STEP 1: Run Four Startup Commands
 ```bash
@@ -31,8 +31,9 @@ cat docs/SESSION_LOG.md | head -60
 - ✅ B1-P1–P5 + B1-S1–S6 (H1) DONE
 - ✅ B2-P1–P3 + B2-S1 + B2-S3 + B2-S3.5 + B2-S4 (H2) DONE — B2-S2 merged into S1; B2-S5 CUT
 - ⏳ BBRIDGE — record next (no code change needed; 8s sovereignty callback)
-- ⏳ H3 (B3-P1 through B3-S5) — blocked on iterative Vizier fix (see below)
-- ⏳ BCLOSE — record last
+- ⏳ H3 (B3-P1 through B3-S5) — B3-P1/P2/P3 slides updated (de-staccato, Session BS+57); B3-S1 blocked on iterative Vizier fix (see below)
+- ⏳ BCLOSE — record after H3
+- ⏳ BWHY (Why GDC tab) — NEW: tab validated + deployed Session BS+57; ~18s closing beat; scene card in VIDS_PRODUCTION_MASTER.md §BWHY
 
 ### ⭐ BLOCKER: Iterative Vizier Loop Fix (before H3 B3-S1 recording)
 - **File:** `app.py` — `suggest_trials(count=15)` at L6734 is a single batch, NOT iterative
@@ -73,8 +74,9 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 - **Autonomy numeric knob: ❌ BLOCKED** — IEC 61511 FAILS
 - **GAS LOCK VO physics:** PIP drops / casing annulus pressure rises — do NOT change
 - **H3 MUST-NOT-SAY:** See DECISION_DOSSIER.md §3.7
-- **Why-GDC MUST-NOT-SAY:** See DECISION_DOSSIER.md §4.5
+- **Why-GDC MUST-NOT-SAY:** See DECISION_DOSSIER.md §4.5 (includes "local fine-tuning" HARD-NO, "Anthos" retired)
 - **H2 early-detect claim:** threshold SCADA only — never "earlier than APM" (dossier §2.3)
 - **H2 wax band:** "schematic · wax inferred from PIP" — displayed, not a measurement
 - **live_vizier=True: announce before calling** — creates a billable Vizier study
-- **SCADA domain rule (BS+56):** SCADA reports tag values and alarm states ONLY. It does not opine on cause. The operator interprets telemetry patterns based on experience. Never have SCADA assert a diagnosis.
+- **SCADA domain rule (BS+56):** SCADA reports tag values and alarm states ONLY. It does not opine on cause. Never have SCADA assert a diagnosis.
+- **Why-GDC tab (BS+57):** GKE Enterprise / Config Sync (not Anthos); "on-prem LLM" for synthesis (Gemma/Ollama — not "Gemini Enterprise Agent Platform"); Vizier is cloud, not edge. Tab validated + deployed sha256:13e44d7e.

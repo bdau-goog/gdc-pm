@@ -28,8 +28,8 @@
     <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-start;gap:14px;overflow-y:auto">
       <div>
         <div class="slide-kicker">THE SCENARIO</div>
-        <h2 class="slide-title">Maximum Production. Maximum Care.</h2>
-        <p class="slide-sub">Oil price is up. Pad Alpha has 6 wells. The instinct is to run everything faster.<br><span style="color:#fbbf24">But these wells are not equal — and the gas budget forces a choice.</span></p>
+        <h2 class="slide-title">Maximum production without compromising the care each well needs.</h2>
+        <p class="slide-sub">With oil up, the instinct is to run all six of Pad Alpha's wells faster, but the wells are not equal, and a single gas budget forces a choice about which ones get it.<br><span style="color:#fbbf24">Not all barrels cost the same gas.</span></p>
       </div>
       <div style="padding:10px 14px;border-left:3px solid rgba(59,130,246,0.35);background:rgba(59,130,246,0.05);border-radius:0 5px 5px 0;font-size:0.68rem;color:var(--text2);line-height:1.7">
         Every oil well produces associated gas — gas the reservoir controls, not you. GOR (Gas-Oil Ratio) tells you how much gas per barrel. A well with GOR 1,350 produces 3× more gas per barrel than a well with GOR 450. You cannot change that. But you can choose which wells get the gas budget.
@@ -72,7 +72,7 @@
   <div style="flex:1;display:flex;flex-direction:column;min-height:0;padding:16px 48px 12px;gap:14px;overflow-y:auto">
     <div style="flex-shrink:0">
       <div class="slide-kicker">DECISION SUPPORT</div>
-      <h2 class="slide-title">Three Ceilings You Cannot Ignore.</h2>
+      <h2 class="slide-title">The optimum has to hold three ceilings at once.</h2>
       <p class="slide-sub">Push all 6 wells harder and you hit the midstream gas contract.<br><span style="color:#fbbf24">Push the wrong ones too hard and you burn out the motors.</span></p>
       <p class="slide-sub" style="margin-top:10px;font-size:0.85em;opacity:0.85">An engineer could compute a setpoint table manually — but the gas-efficient wells interact with the gassier ones. The optimal trade-off across all three ceilings and all 6 wells is a problem for a Bayesian optimizer, not a spreadsheet.</p>
     </div>
@@ -127,9 +127,9 @@
     <div style="flex:1;display:flex;flex-direction:column;gap:14px;overflow:hidden;justify-content:center">
       <div>
         <div class="slide-kicker">PAD OPTIMIZATION</div>
-        <h2 class="slide-title">Cloud Searches. Edge Enforces.</h2>
-        <p class="slide-sub">Vertex AI Vizier explores the 6-well setpoint space.<br><span style="color:#fbbf24">The on-prem thermal model holds the safety constraint — even if the satellite link drops.</span></p>
-        <p class="slide-sub" style="margin-top:10px;font-size:0.85em;opacity:0.85">Vertex AI Vizier is Google's Bayesian optimizer. Rather than brute-forcing the setpoint space, it learns from each trial — focusing the search on promising regions and converging on the near-optimal allocation in ~15 trials.</p>
+        <h2 class="slide-title">The cloud searches the space; the edge holds the line.</h2>
+        <p class="slide-sub">Vertex AI Vizier searches the six-well setpoint space for the most oil under the gas ceiling, while the on-prem thermal model holds the safety constraint even if the satellite link drops.</p>
+        <p class="slide-sub" style="margin-top:10px;font-size:0.85em;opacity:0.85">Rather than brute-forcing the setpoint space, Vizier learns from each trial — focusing the search on promising regions and converging on the near-optimal allocation in ~15 trials.</p>
         <p class="slide-sub" style="margin-top:10px;font-size:0.85em;opacity:0.9;border-left:2px solid rgba(251,146,60,0.5);padding-left:10px;color:rgba(251,191,36,0.85)">When gathering changes after the plan ships — a curtailment notice the cloud never saw — the edge re-allocates the pad in real time, protecting revenue under the cut.</p>
       </div>
       <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:var(--radius);overflow:hidden">
@@ -192,8 +192,8 @@
         </div>
       </div>
       <div style="padding:12px 14px;background:rgba(15,23,42,0.8);border:1px solid rgba(255,255,255,0.07);border-radius:7px;text-align:center">
-        <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;line-height:1.55">"Gas ceiling held exactly. Every barrel the pad can give."</div>
-        <div style="font-size:0.56rem;color:var(--muted);margin-top:6px;font-style:italic">Cloud searches. Edge enforces.</div>
+        <div style="font-size:0.68rem;font-weight:800;color:#e2e8f0;line-height:1.55">"The gas ceiling holds exactly, and the pad gives every barrel it safely can."</div>
+        <div style="font-size:0.56rem;color:var(--muted);margin-top:6px;font-style:italic">The cloud searches; the edge holds.</div>
       </div>
     </div>
   </div>

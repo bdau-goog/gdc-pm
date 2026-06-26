@@ -6,7 +6,7 @@
         <div style="margin-bottom:20px">
           <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:4px">PLATFORM</div>
           <h2 style="margin:0;font-size:1.15rem;font-weight:800;color:var(--text2)">Why Google Distributed Cloud?</h2>
-          <p style="margin:8px 0 0;font-size:0.74rem;color:var(--muted);line-height:1.65;max-width:720px">You've decided edge AI is the answer for upstream operations. The scenarios above showed what it can do. Here's why GDC specifically — form factor fit, fleet governance, and AI platform depth.</p>
+          <p style="margin:8px 0 0;font-size:0.74rem;color:var(--muted);line-height:1.65;max-width:720px">You've decided edge AI is the answer for upstream operations. The scenarios above showed what it can do. Here's why GDC specifically — form factor fit, fleet governance, and AI platform depth. GDC is deployed at the RTOC, not at the unmanned wellpad.</p>
         </div>
 
         <!-- Three-pillar cards -->
@@ -16,8 +16,8 @@
           <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(59,130,246,0.28);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
             <div>
               <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(59,130,246,0.75);margin-bottom:6px">01 — FORM FACTOR FIT</div>
-              <div style="font-size:0.86rem;font-weight:700;color:var(--text2);margin-bottom:8px;line-height:1.4">Validated hardware for your topology</div>
-              <p style="font-size:0.68rem;color:var(--muted);line-height:1.7;margin:0">GDC runs on validated hardware across three deployment shapes — connected rack, software on your own hardware, and fully air-gapped appliance. Match the footprint to your field topology without changing the application stack above it.</p>
+              <div style="font-size:0.86rem;font-weight:700;color:var(--text2);margin-bottom:8px;line-height:1.4">Certified hardware for your RTOC topology</div>
+              <p style="font-size:0.68rem;color:var(--muted);line-height:1.7;margin:0">GDC runs on Google-certified hardware at the RTOC — datacenter-class, not field-ruggedized. Three deployment shapes: connected rack, software on your own hardware, and fully air-gapped appliance. The application stack stays identical across all three.</p>
             </div>
             <div style="display:flex;flex-direction:column;gap:5px;margin-top:auto">
               <div style="font-size:0.60rem;font-family:var(--mono);color:rgba(59,130,246,0.78);padding:5px 9px;background:rgba(59,130,246,0.07);border-radius:5px;border:1px solid rgba(59,130,246,0.18)">&#x1F517; Connected &#x2014; RTOC with network</div>
@@ -31,7 +31,7 @@
             <div>
               <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(74,222,128,0.68);margin-bottom:6px">02 — FLEET GOVERNANCE</div>
               <div style="font-size:0.86rem;font-weight:700;color:var(--text2);margin-bottom:8px;line-height:1.4">One control plane. N sovereign edge nodes.</div>
-              <p style="font-size:0.68rem;color:var(--muted);line-height:1.7;margin:0">Anthos Config Management and Fleet Management give you one declarative policy for security, configuration, and version consistency across every GDC site — the platform and the applications running on it. Company-wide consistency from the same control plane you use for your cloud GKE fleet.</p>
+              <p style="font-size:0.68rem;color:var(--muted);line-height:1.7;margin:0">GKE Enterprise — Fleet Management and Config Sync give you one declarative policy for security, configuration, and version consistency across every GDC site — the platform and the applications running on it. Company-wide consistency from the same control plane you use for your cloud GKE fleet.</p>
             </div>
             <div style="margin-top:auto">
               <div style="font-size:0.62rem;color:rgba(100,116,139,0.70);padding:7px 10px;background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.18);border-radius:6px;font-style:italic;line-height:1.6">&#x26A0; Scope: IT platform + applications &#x2014; <strong style="color:rgba(239,68,68,0.75)">not OT/PLC/SCADA L1&#x2013;L2</strong>. OT integration still required above this layer.</div>
@@ -42,11 +42,11 @@
           <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(139,92,246,0.24);border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px">
             <div>
               <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(139,92,246,0.75);margin-bottom:6px">03 — SOVEREIGN AI PLATFORM</div>
-              <div style="font-size:0.86rem;font-weight:700;color:var(--text2);margin-bottom:8px;line-height:1.4">Google's full AI stack &#x2014; on your terms</div>
-              <p style="font-size:0.68rem;color:var(--muted);line-height:1.7;margin:0">The same Google stack on-prem: GKE, AlloyDB Omni, <strong style="color:var(--text2)">Gemini Enterprise Agent Platform</strong>. Train centrally on your fleet data, deploy <strong style="color:var(--text2)">base models</strong> to each edge node with <strong style="color:var(--text2)">local fine-tuning for site-specific conditions</strong>, govern rollouts and rollbacks centrally, propagate findings fleet-wide.</p>
+              <div style="font-size:0.86rem;font-weight:700;color:var(--text2);margin-bottom:8px;line-height:1.4">Google's AI stack &#x2014; on your terms</div>
+              <p style="font-size:0.68rem;color:var(--muted);line-height:1.7;margin:0">The same Google AI stack runs on-prem: GKE Enterprise, AlloyDB Omni, and Vertex AI on GDC. Train centrally on your fleet data, deploy <strong style="color:var(--text2)">models to each edge node</strong>, govern rollouts and rollbacks centrally — all from one control plane.</p>
             </div>
             <div style="margin-top:auto">
-              <div style="font-size:0.60rem;color:rgba(139,92,246,0.80);font-family:var(--mono);padding:6px 9px;background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.18);border-radius:5px;line-height:1.7">Gemini Enterprise Agent Platform<br>Vertex AI &middot; AlloyDB Omni &middot; GKE</div>
+              <div style="font-size:0.60rem;color:rgba(139,92,246,0.80);font-family:var(--mono);padding:6px 9px;background:rgba(139,92,246,0.07);border:1px solid rgba(139,92,246,0.18);border-radius:5px;line-height:1.7">Vertex AI on GDC &middot; AlloyDB Omni &middot; GKE Enterprise</div>
             </div>
           </div>
         </div>
@@ -59,14 +59,14 @@
             <div style="text-align:center;padding:10px 8px">
               <div style="font-size:1.3rem;margin-bottom:5px">&#x2601;</div>
               <div style="font-size:0.62rem;font-weight:700;color:var(--text2)">Google Cloud</div>
-              <div style="font-size:0.58rem;color:var(--muted);margin-top:3px;line-height:1.65">Central training<br>Vertex AI Vizier<br>Gemini Enterprise</div>
+              <div style="font-size:0.58rem;color:var(--muted);margin-top:3px;line-height:1.65">Central training<br>Vertex AI Vizier<br>Fleet governance</div>
             </div>
             <div style="font-size:1.0rem;color:rgba(100,116,139,0.35);text-align:center;padding:0 6px">&#x2192;</div>
             <!-- GDC per RTOC -->
             <div style="text-align:center;padding:10px 8px;background:rgba(59,130,246,0.05);border:1px solid rgba(59,130,246,0.15);border-radius:8px">
               <div style="font-size:1.3rem;margin-bottom:5px">&#x1F3E2;</div>
               <div style="font-size:0.62rem;font-weight:700;color:rgba(59,130,246,0.88)">Regional RTOC</div>
-              <div style="font-size:0.58rem;color:var(--muted);margin-top:3px;line-height:1.65">GDC cluster<br>AlloyDB Omni<br>XGBoost + Bayesian</div>
+              <div style="font-size:0.58rem;color:var(--muted);margin-top:3px;line-height:1.65">GDC cluster<br>AlloyDB Omni<br>XGBoost inference</div>
               <div style="font-size:0.54rem;color:rgba(100,116,139,0.55);margin-top:5px;font-style:italic;line-height:1.6">handful per major operator<br>(Permian, Bakken, GoM&#x2026;)</div>
             </div>
             <div style="font-size:1.0rem;color:rgba(100,116,139,0.35);text-align:center;padding:0 6px">&#x2192;</div>
@@ -79,7 +79,7 @@
             </div>
           </div>
           <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);font-size:0.62rem;color:rgba(100,116,139,0.65);line-height:1.7">
-            Scale revenue driver: <span style="color:var(--text2)">data gravity &#xD7; AlloyDB continuous inference &#xD7; per-basin model tuning &#xD7; training loop across thousands of wells per instance.</span> One GDC cluster per regional RTOC; each node retunes its models to its basin&#x27;s fluid, temperature, and equipment conditions.
+            Scale revenue driver: <span style="color:var(--text2)">data gravity &times; AlloyDB continuous inference &times; training loop across thousands of wells per instance.</span> One GDC cluster per regional RTOC; one control plane governing every node.
           </div>
         </div>
 
@@ -87,7 +87,7 @@
         <div style="background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.18);border-radius:8px;padding:14px 18px">
           <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:8px">WHAT YOU JUST SAW &#x2014; ON THIS PLATFORM</div>
           <div style="font-size:0.68rem;color:var(--muted);line-height:1.8">
-            The three scenarios above &#x2014; Discern (ambiguous signal), Classify (clear signal, wrong action), Optimize (curtailment re-allocation) &#x2014; all ran on a single GDC cluster: AlloyDB Omni for pgvector document retrieval, XGBoost models for pre-threshold health scoring, Vertex AI Vizier for Bayesian setpoint search, and Gemini Enterprise Agent Platform for the evidence synthesis chain. The same platform stack would manage your entire basin&#x27;s RTOC fleet &#x2014; <em style="color:var(--text2)">except each GDC node retunes its models to its basin&#x27;s wells.</em>
+            The three scenarios above &#x2014; Discern (ambiguous signal), Classify (clear signal, wrong action), Optimize (curtailment re-allocation) &#x2014; all ran on a single GDC cluster: <strong style="color:var(--text2)">AlloyDB Omni</strong> for pgvector document retrieval, <strong style="color:var(--text2)">XGBoost</strong> models for pre-threshold health scoring, and an <strong style="color:var(--text2)">on-prem LLM</strong> for evidence synthesis. The Bayesian setpoint search in Optimize ran in the cloud (<strong style="color:var(--text2)">Vertex AI Vizier</strong>) &#x2014; only setpoints and scores crossed the boundary, never your data. The same platform stack would govern your entire basin&#x27;s RTOC fleet from one control plane.
           </div>
           <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
             <span style="font-size:0.58rem;font-family:var(--mono);padding:3px 9px;border-radius:4px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.22);color:rgba(251,191,36,0.80)">Discern &#x2014; H1 ambiguity resolution</span>

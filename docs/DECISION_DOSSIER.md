@@ -274,7 +274,7 @@ The three scenarios prove "why edge AI" and "why context fusion." They do NOT pr
 ### 4.2 Platform RT Results (gdc-second-opinion, 2026-06-25)
 - **Claim 1 (form factor):** SURVIVES-IF-REWORDED — say "validated/certified hardware"; name what's lighter (central patching, remote infra management)
 - **Claim 2 (fleet governance):** SURVIVES-IF-REWORDED — must explicitly scope ACM/Config-Sync to "the GDC platform and applications on it, NOT the underlying OT/PLC/SCADA"
-- **Claim 3 (Model-Ops "deploy identically"):** ❌ FAILS — "deploy identically" contradicts ESP analytics reality (site-specific conditions, sensor drift → models need local adaptation). Fix: **"deploy BASE models centrally; enable local fine-tuning for site-specific conditions; govern centrally"**
+- **Claim 3 (Model-Ops "deploy identically"):** ❌ FAILS — "deploy identically" contradicts ESP analytics reality. Fix: **"train centrally on your fleet data, deploy models to each edge node, govern rollouts and rollbacks centrally."** ⚠ NOTE (Session BS+56, operator override): "local fine-tuning" is a **hard-no** — the demo system deploys static `.ubj` models with no on-node retraining. "Local fine-tuning" is a real GDC platform capability but we do NOT claim it in this demo. Remove from all on-screen copy and VO.
 - **Claim 4 ("tens of thousands of locations"):** SURVIVES-IF-REWORDED — needs context; qualify as "proven fleet control-plane lineage" or cite analogous industrial deployments; do not lead with raw number
 
 ### 4.3 Locked Three-Reason "Why GDC" Thesis (no competitive mentions)
@@ -282,9 +282,9 @@ The three scenarios prove "why edge AI" and "why context fusion." They do NOT pr
 >
 > **1. Form factor fit** — GDC runs on validated hardware across connected, software-on-your-hardware, and air-gapped deployments; the right footprint for whatever edge topology your operations require.
 >
-> **2. Fleet governance** — Anthos Config Management + Fleet Management give you one declarative policy for security, configuration, and version consistency across every GDC site — the platform and the applications on it. Company-wide consistency from one control plane, extending the same tooling you use to govern your cloud GKE fleet.
+> **2. Fleet governance** — GKE Enterprise — Fleet Management and Config Sync give you one declarative policy for security, configuration, and version consistency across every GDC site — the platform and the applications on it. Company-wide consistency from one control plane, extending the same tooling you use to govern your cloud GKE fleet.
 >
-> **3. Sovereign AI platform + Model-Ops depth** — the same Google stack on-prem (GKE, AlloyDB Omni, Vertex AI / Gemini Enterprise): train centrally on your fleet data, deploy **base models** to each edge node with **local fine-tuning for site-specific conditions**, govern rollouts and rollbacks centrally, propagate findings fleet-wide. Backed by Google's enterprise AI + data-services depth.
+> **3. Sovereign AI platform + Model-Ops depth** — the same Google AI stack on-prem (GKE Enterprise, AlloyDB Omni, Vertex AI on GDC): train centrally on your fleet data, deploy **models to each edge node**, govern rollouts and rollbacks centrally — all from one control plane.
 
 ### 4.4 RTOC Scale Shape for the Tab
 Do NOT claim GDC lands at every pad (unmanned; too many). The honest, cited deployment shape:
@@ -295,8 +295,9 @@ Do NOT claim GDC lands at every pad (unmanned; too many). The honest, cited depl
 
 ### 4.5 Why-GDC Tab Must-NOT-Say (RT-confirmed + principle)
 1. ❌ Any competitive mentions (AWS Outposts, Azure Local, DIY) — 100% GDC value-props only
-2. ❌ "Deploy models identically" — FAILS, per RT; use "base models + local fine-tuning"
-3. ❌ "Config-Sync manages your PLCs/SCADA" — apps+infra only
+2. ❌ "Deploy models identically" — FAILS, per RT
+3. ❌ "Local fine-tuning for site-specific conditions" — **HARD-NO** (operator override Session BS+56): demo runs static models; claiming fine-tuning is a silent lie
+4. ❌ "Config-Sync manages your PLCs/SCADA" — apps+infra only (original #3)
 4. ❌ "Zero OT integration work" — OT integration still required; GDC simplifies the IT/app layer above it
 5. ❌ Raw "tens of thousands of locations" as hero number — qualify or demote
 6. ❌ "Vendor-neutral" without scoping — scope to "neutral relative to equipment/OEM vendors"
@@ -304,13 +305,14 @@ Do NOT claim GDC lands at every pad (unmanned; too many). The honest, cited depl
 ### 4.6 Tab Build Scope
 - **New nav tab** (not strengthening existing ⓘ Reference)
 - **Content:** three-pillar layout (form factor / fleet governance / sovereign AI platform); RTOC scale shape; "one control plane, N sovereign edge nodes" diagram
-- **Architecture reference:** RTOC → GDC cluster → many wells in basin → AlloyDB + models + ACM/FM
-- **Connections to scenarios:** "The same platform stack that ran H1/H2/H3 manages your entire fleet identically — except each GDC node retunes its models to its basin's wells."
+- **Architecture reference:** RTOC → GDC cluster → many wells in basin → AlloyDB + models + GKE Enterprise Fleet/Config Sync
+- **Connections to scenarios:** "The same platform stack that ran H1/H2/H3 would govern your entire basin's RTOC fleet from one control plane."
 - **No demo-runnable content** — this is an architecture/procurement beat, not a live interactive scenario
 
-### 4.7 Open Items Before Pixels
-- **Branding source-check:** confirm current naming of "Vertex AI / Gemini Enterprise Agent Platform" — what is the correct 2026 product name? Do a grounded search before the tab text is finalized.
-- **Analogous industrial deployments citation:** if we cite GDC scale, we need at least one public reference to an industrial/edge deployment (manufacturing, grid, mining) analogous to O&G remote sites.
+### 4.7 Open Items — RESOLVED (Session BS+56)
+- ✅ **Branding source-check RESOLVED (Session BS+56):** "Anthos" retired Sept 2025 → now **GKE Enterprise** with **Config Sync** for declarative policy. "Gemini Enterprise Agent Platform" is a real 2026 product (GDC GA air-gapped Aug 2025) but our demo runs **Gemma via Ollama** for synthesis — so it is kept off-screen to avoid "did your demo use it?" challenge. Tab now reads: "Vertex AI on GDC · AlloyDB Omni · GKE Enterprise." GDC deployment: RTOC-class (datacenter hardware), not wellpad.
+- ✅ **"Local fine-tuning" REMOVED (Session BS+56, operator hard-no):** Replaced with "train centrally, deploy models to each edge node, govern centrally." No fine-tuning verbs anywhere on tab.
+- ⬜ **Analogous industrial deployments citation:** still open if tab is extended in a future session.
 
 ---
 
@@ -366,7 +368,7 @@ The three scenarios are now more coherent with H2's sharpened framing and the sh
 
 | # | Item | Priority | Owner |
 |---|---|---|---|
-| 1 | **Branding:** Verify current product name "Vertex AI / Gemini Enterprise Agent Platform" (2026) | Before Why-GDC tab text | Next session grounded search |
+| 1 | **Branding:** ✅ RESOLVED (Session BS+56) — GKE Enterprise / Config Sync / Vertex AI on GDC confirmed via grounded MCP search. "Local fine-tuning" removed (hard-no, operator override). Tab copy updated. | CLOSED | |
 | 2 | **H3 feasible-rate fix:** iterative Vizier loop — must deploy before H3 recording | Blocking H3 recording | Next session build |
 | 3 | **H1 consistency-audit:** 3 read-only checks (§5 above) | Before B1-S5/S6 recording | Next session quick check |
 | 4 | **Wax-bearing SME gut-check:** ✅ RESOLVED — Bill Barna (Permian production engineer): *"Act on the drift, not the alarm. Treating the well during the first 14–21 days of observed sensor drift is a highly successful, standard operating practice in the Permian. It will melt the paraffin before it has a chance to starve the bearings or create the heavy mechanical forces that necessitate an expensive pulling unit."* | CLOSED | |

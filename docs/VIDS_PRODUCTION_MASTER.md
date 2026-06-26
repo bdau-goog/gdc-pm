@@ -939,6 +939,29 @@ ASSET REF   : templates/tab_h3.html uplift card; tab_operations orphan note abov
 CONTINUITY  : Final sovereign-data-center framing resolves the sovereignty spine cleanly.
 ```
 
+### BWHY — Why Google Distributed Cloud   ·  ~18s  ·  RECORD
+```
+SOURCE      : Live screen capture
+APP STATE   : Why GDC tab · three-pillar layout visible
+              · Cursor left-to-right across: 01 FORM FACTOR FIT, 02 FLEET GOVERNANCE,
+                03 SOVEREIGN AI PLATFORM; then settle on deployment-shape diagram
+VISUAL      : Three pillar cards; deployment-shape diagram (Google Cloud → Regional RTOC → Basin Wells)
+CAMERA/MOVE : [LIVE] navigate to Why GDC tab; cursor each pillar card left-to-right (~2s each);
+              then cursor the deployment-shape diagram
+              [POST] static on deployment-shape diagram at close
+VO          : "You decided sovereign edge AI was the answer. Here is why Google. One certified
+              platform that fits any RTOC topology, governed from a single control plane, running
+              Google's full AI stack inside your perimeter. The same stack you just watched
+              diagnose, classify, and optimize, now governing your whole fleet from one
+              control plane, every node."
+PANEL QUOTE : Three pillar titles; deployment-shape diagram node labels
+ASSET REF   : templates/tab_whygdc.html — three pillar cards + deployment-shape diagram
+CONTINUITY  : Closes the sovereignty spine. Final beat of the recording.
+NOTES       : No em dashes in VO (Vids Avatar TTS rule). No numbers spoken — panels carry them.
+              MUST-NOT-SAY: no "deploy identically," no "retunes models," no "local fine-tuning,"
+              no OT/PLC/SCADA governance claim. (See DECISION_DOSSIER §4.5)
+```
+
 ---
 
 ## RUNTIME LEDGER
@@ -951,10 +974,11 @@ CONTINUITY  : Final sovereign-data-center framing resolves the sovereignty spine
 | Part B — Sovereignty Bridge | BBRIDGE | ~8s |
 | Part B — H3 Optimize (3 slides + 5 scenario) | B3-P1 to B3-S5 | ~34s+7s cond |
 | Part B — Close | BCLOSE | ~12s |
-| **TOTAL (core, excl. optionals)** | | **~5:45** |
-| **With optionals B1-S6 + B2-S5** | | **~6:00** ← trim lever |
+| Part B — Why GDC | BWHY | ~18s |
+| **TOTAL (core, excl. optionals)** | | **~6:03** |
+| **With optionals B1-S6 + B2-S5** | | **~6:18** ← trim lever |
 
-> **Trim lever:** drop B1-S6 and B2-S5 (both marked OPTIONAL) for ~5:45. Drop B3-S4 (CONDITIONAL) if constraintDoc.found unreliable. Stay under 6:00.
+> **Trim lever:** drop B1-S6 and B2-S5 (both marked OPTIONAL) for ~6:03. Drop B3-S4 (CONDITIONAL) if constraintDoc.found unreliable. Stay under 6:30.
 
 ---
 
