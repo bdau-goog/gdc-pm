@@ -58,7 +58,7 @@ kubectl rollout restart deployment/fault-trigger-ui -n gdc-pm
 ## Restore Cluster (when needed)
 ```bash
 kubectl scale deployment -n gdc-pm --all --replicas=1
-kubectl scale statefulset -n gdc-pm --all --replicas=1
+kubectl patch rabbitmqcluster gdc-pm-rabbitmq -n gdc-pm --type merge -p '{"spec":{"replicas":1}}'
 kubectl get pods -n gdc-pm -w   # wait for all Running
 ```
 
