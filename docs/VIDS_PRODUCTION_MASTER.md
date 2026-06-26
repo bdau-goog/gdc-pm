@@ -618,46 +618,33 @@ ASSET REF   : slides/h2.html #p3
 CONTINUITY  : (none)
 ```
 
-### B2-S1 — Start the Run   ·  ~5s  ·  RECORD
+### B2-S1 — Start the Run + SCADA View   ·  ~10s  ·  RECORD
 ```
 SOURCE      : Live screen capture
-APP STATE   : H2 tab · click ↺ New Scenario
-              Loads at scada_alarm_idx — 90-day history fully plotted, VIB-HI alarm ACTIVE
-              Wellbore shows full wax band (cursor at alarm = max wax); vib at alarm-state level
-              NO forward playback — this is a history-triage view, not a live event
-VISUAL      : Alarm state on screen immediately — drama is already there on load
-CAMERA/MOVE : [LIVE] click ↺ New Scenario; show the loaded alarm state
-              [POST] static — the drama is already on screen
-VO          : "Let's run it. The alarm is already active — weeks of sensor drift have
-              crossed the threshold. Let's see what the documents say."
-PANEL QUOTE : VIB H ALARM banner · EFF declining · ISA-18.2 alarm active
-ASSET REF   : templates/tab_h2.html — `↺ New Scenario` button; loads at scada_alarm_idx
+APP STATE   : H2 tab · click ↺ New Scenario → loads at scada_alarm_idx → click 🟡 SCADA View
+              · ISA-18.2 VIB HIGH ALARM banner: "VIB H:4.0 EXCEEDED · CAUSE NOT DETERMINED FROM TELEMETRY"
+              · Label: "OPERATOR DISPOSITION · STANDARD PRACTICE"
+              · Operator disposition cards: Request Pump Pull · Continue Monitoring
+              (NOTE: S1 and S2 merged — one continuous shot; do not cut between load and SCADA view)
+VISUAL      : Click New Scenario → alarm loads → click SCADA View → point to banner + pull card
+CAMERA/MOVE : [LIVE] click ↺ New Scenario; when alarm state loads, immediately click 🟡 SCADA View;
+              point to alarm banner then to Request Pump Pull card
+              [POST] static
+VO          : "Let's run it. The alarm is already active — weeks of sensor drift, threshold
+              crossed. And from here, the monitoring system has one option: investigate.
+              Which means pull."
+PANEL QUOTE : "CAUSE NOT DETERMINED FROM TELEMETRY" banner · "Request Pump Pull · Investigate downhole" card
+ASSET REF   : templates/tab_h2.html — `↺ New Scenario` → `h2CursorIdx >= h2ReplayData.scada_alarm_idx` SCADA view
 CONTINUITY  : (none)
+NOTE (BS+56): B2-S1 and B2-S2 merged into one continuous shot. SCADA correctly shows
+              "CAUSE NOT DETERMINED" — no bearing-wear assertion. The pull card is
+              standard operator practice, not a SCADA diagnosis.
 ```
 
-### B2-S2 — SCADA View: Alarm Fires, Cause Unknown   ·  ~8s  ·  RECORD
+### B2-S2 — ❌ MERGED INTO B2-S1
 ```
-SOURCE      : Live screen capture
-APP STATE   : H2 tab · 🟡 SCADA View · h2CursorIdx >= h2ReplayData.scada_alarm_idx
-              · ISA-18.2 VIB HIGH ALARM banner: "VIB H:4.0 EXCEEDED · CAUSE NOT DETERMINED FROM TELEMETRY"
-              · Operator disposition cards: Request Pump Pull · Continue Monitoring
-              (NOTE: SCADA does NOT assert bearing wear or any cause — cause is explicitly unknown)
-VISUAL      : SCADA alarm banner with "CAUSE NOT DETERMINED FROM TELEMETRY" · pump-pull disposition card
-CAMERA/MOVE : [LIVE] click 🟡 SCADA View at alarm state; point to alarm banner then to
-              the Request Pump Pull card
-              [POST] static
-VO          : "The monitoring system did exactly what it should — tag crossed the limit,
-              alarm is active. But from sensor data alone, the cause is indeterminate.
-              Vibration could be bearings. It could be something else entirely. Without more
-              context, the only way to know is to investigate — which means a workover."
-PANEL QUOTE : "CAUSE NOT DETERMINED FROM TELEMETRY" banner · "Request Pump Pull · Investigate downhole" card
-ASSET REF   : templates/tab_h2.html — `h2CursorIdx >= h2ReplayData.scada_alarm_idx` SCADA view
-CONTINUITY  : (none)
-NOTE (BS+56): SCADA never opines on cause — it annunciates tag breaches only. Threshold
-              SCADA cannot and would not assert "bearing wear" or "mechanical degradation."
-              "Cause not determined" is the honest, defensible display. The expensive pull
-              is the standard practice under an unexplained vibration alarm — not a SCADA
-              diagnosis, but the operator's only option without document context.
+NOTE        : B2-S2 collapsed into B2-S1 (BS+56). One continuous shot handles both
+              the scenario launch and the SCADA view. Do not record separately.
 ```
 
 ### B2-S3 — GDC Advisor: 3-Doc Cascade + Verdict   ·  ~13s  ·  RECORD
