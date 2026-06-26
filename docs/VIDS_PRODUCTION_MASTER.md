@@ -630,9 +630,9 @@ VISUAL      : Click New Scenario → alarm loads → click SCADA View → point 
 CAMERA/MOVE : [LIVE] click ↺ New Scenario; when alarm state loads, immediately click 🟡 SCADA View;
               point to alarm banner then to Request Pump Pull card
               [POST] static
-VO          : "Let's run it. The alarm is already active — weeks of sensor drift, threshold
-              crossed. And from here, the monitoring system has one option: investigate.
-              Which means pull."
+VO          : "Let's run it. The alarm is active — VIB up, efficiency down, current elevated.
+              To the operator, that pattern reads as bearing wear. Standard response: pull
+              the pump and investigate."
 PANEL QUOTE : "CAUSE NOT DETERMINED FROM TELEMETRY" banner · "Request Pump Pull · Investigate downhole" card
 ASSET REF   : templates/tab_h2.html — `↺ New Scenario` → `h2CursorIdx >= h2ReplayData.scada_alarm_idx` SCADA view
 CONTINUITY  : (none)
