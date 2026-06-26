@@ -1,6 +1,6 @@
 # Next Session Prompt — GDC ESP Ops Demo (Operational State)
 Date: 2026-06-26 (Session BS+57) / branch: feature-trio-clean
-Git HEAD: (run git log --oneline -1) / Image: sha256:13e44d7e8b1d8c641b91ccf73b8eb72c7895ef00795b4dbc9a24d0c3e0bd5f78
+Git HEAD: c9e57bc / Image: sha256:13e44d7e8b1d8c641b91ccf73b8eb72c7895ef00795b4dbc9a24d0c3e0bd5f78
 ⚠ NOTE: Push origin/feature-trio-clean before or after next session.
 
 ## STEP 1: Run Four Startup Commands
