@@ -630,7 +630,7 @@ VISUAL      : Click New Scenario → alarm loads → click SCADA View → point 
 CAMERA/MOVE : [LIVE] click ↺ New Scenario; when alarm state loads, immediately click 🟡 SCADA View;
               point to alarm banner then to Request Pump Pull card
               [POST] static
-VO          : "Let's run the scenario. The alarm is already active — vibration is up,
+VO          : "Let's run the scenario. The alarm is already active, vibration is up,
               efficiency is down, and current is elevated. To the operator, that pattern
               reads as bearing wear. The standard response is to pull the pump and
               investigate for a workover."
@@ -686,10 +686,10 @@ CAMERA/MOVE : [LIVE] drag scrubber from alarm state back left to GDC▲ marker;
               hold ~2s at gdc_detect_idx; show vib well below the ISA HI line
               [POST] zoom 1.15× on vib trace + GDC▲ marker; hold on the gap between
               the marker and the 4.0 HI dashed line
-VO          : "GDC didn't wait for the alarm. Back here — weeks earlier — vibration is
-              still well below the hard limit. But the multivariate health score already
-              saw the correlated drift across all four channels. This is the window where
-              the surface treatment still works — before the restriction starves the pump.
+VO          : "GDC didn't wait for the alarm. Back here, weeks earlier, vibration is still
+              well below the hard limit. But the multivariate health score already saw the
+              correlated drift across all four channels. This is the window where the surface
+              treatment still works, before the restriction starves the pump.
               Act on the drift, not the alarm."
 PANEL QUOTE : Vibration value at gdc_detect_idx (~1.94 mm/s) vs ISA HI 4.0 line
               GDC▲ marker caption "health <0.65 · vib still ~half HI limit"
@@ -708,7 +708,7 @@ APP STATE   : H2 tab · 🟢 GDC Advisor · h2VerdictRevealed=true · before act
 VISUAL      : Hot-oil dispatch action card (green) vs pump pull AVERTED card
 CAMERA/MOVE : [LIVE] show both action cards
               [POST] zoom 1.15× on the AVERTED label on the pull card; hold ~2s
-VO          : "So the fix is a surface treatment — a hot-oil truck, not a workover rig.
+VO          : "The fix is a surface treatment: a hot-oil truck, not a workover rig.
               The pull is averted, because the documents separated the symptom from the cause."
 PANEL QUOTE : "✅ HOT-OIL TRUCK DISPATCHED" / AVERTED label on pull card
 ASSET REF   : templates/tab_h2.html — two-card layout before h2Resolved / h2PullOutcome
