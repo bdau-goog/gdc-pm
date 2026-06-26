@@ -83,6 +83,9 @@ createApp({
       h3ActiveConstraint: 'gas',
       constraintDoc: {},
       optCurtailment: {},
+      h3SubTab: 'cloud',
+      h3LiveVizier: false,
+      vizierAlgorithm: '',
       vizierDeployed: false,
       vizierDeploying: false,
       
@@ -2294,7 +2297,7 @@ createApp({
     // ── Horizon 3: Bayesian Optimization ──
       async runVizierOptimize() {
       try {
-        const r=await fetch(`/api/vizier/optimize?oil_price=${this.oilPriceSlider}&horizon_days=${this.horizonSlider}&constraint=${this.h3ActiveConstraint}`);
+        const r=await fetch(`/api/vizier/optimize?oil_price=${this.oilPriceSlider}&horizon_days=${this.horizonSlider}&constraint=${this.h3ActiveConstraint}&live_vizier=${this.h3LiveVizier}`);
         if(r.ok){
           const d=await r.json();
           this.optTrials=d.trials||[];
@@ -2308,6 +2311,8 @@ createApp({
           this.optConstraintStack=d.constraint_stack||{};
           this.constraintDoc=d.constraint_doc||{};
           this.optCurtailment=d.curtailment||{};
+          this.vizierAlgorithm=d.vizier_algorithm||'';
+          this.h3SubTab='cloud';
           this.vizierDeployed=false;
           this.$nextTick(()=>this._renderVizierPareto());
         }

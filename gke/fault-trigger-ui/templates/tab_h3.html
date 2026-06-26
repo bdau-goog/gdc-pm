@@ -1,231 +1,261 @@
-    <!-- ══ TAB: HORIZON 3 — Bayesian Optimization Game ══ -->
+    <!-- ══ TAB: HORIZON 3 — Bayesian Optimization ══ -->
     <div class="main-tab-content" :class="{active: mainTab==='horizon3'}">
-      <!-- ══ H3 BRIEFING — 3 panels ══ -->
-      <!-- ══ H3 BRIEFING MODE ══ Standalone deck via iframe -->
+
+      <!-- BRIEFING MODE -->
       <div v-if="h3BriefingMode" style="flex:1;min-height:0;overflow:hidden">
         <iframe src="/slides/h3.html" style="width:100%;height:100%;border:none"></iframe>
-      </div><!-- /h3BriefingMode -->
+      </div>
 
-      <!-- DASHBOARD HEADER: shown when briefing is dismissed -->
-      <div v-if="!h3BriefingMode" class="horizon-banner" style="padding:8px 20px;gap:10px">
-        <div style="display:flex;align-items:center;gap:8px;flex:1">
+      <!-- DASHBOARD HEADER -->
+      <div v-if="!h3BriefingMode" class="horizon-banner" style="padding:6px 16px;gap:8px;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
           <button @click="h3BriefingMode=true;h3BriefingPanel=1" title="Return to Background Briefing" style="padding:3px 10px;border-radius:4px;border:1px solid var(--border);background:var(--surf);color:var(--muted);font-size:0.56rem;cursor:pointer;flex-shrink:0">&#x2190; Briefing</button>
-          <h2 class="hb-title" style="margin:0;font-size:0.88rem">Optimize &#x2014; Pad Alpha &#x00B7; 6-Well Field Optimization</h2>
+          <h2 class="hb-title" style="margin:0;font-size:0.88rem;flex-shrink:0">Optimize &#x2014; Pad Alpha &#x00B7; 6-Well Field Optimization</h2>
+          <!-- Sub-tab buttons -->
+          <div style="display:flex;gap:4px;margin-left:14px">
+            <button @click="h3SubTab='cloud'"
+              :style="{background: h3SubTab==='cloud' ? 'rgba(59,130,246,0.15)' : 'rgba(15,23,42,0.5)',
+                       border: h3SubTab==='cloud' ? '1px solid rgba(59,130,246,0.5)' : '1px solid var(--border)',
+                       color: h3SubTab==='cloud' ? 'rgba(147,197,253,0.9)' : 'var(--muted)'}"
+              style="font-size:0.63rem;font-weight:700;padding:3px 12px;border-radius:4px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em">
+              CLOUD SEARCH
+            </button>
+            <button @click="h3SubTab='edge'"
+              :style="{background: h3SubTab==='edge' ? 'rgba(251,146,60,0.12)' : 'rgba(15,23,42,0.5)',
+                       border: h3SubTab==='edge' ? '1px solid rgba(251,146,60,0.45)' : '1px solid var(--border)',
+                       color: h3SubTab==='edge' ? 'rgba(251,191,36,0.9)' : 'var(--muted)'}"
+              style="font-size:0.63rem;font-weight:700;padding:3px 12px;border-radius:4px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em">
+              EDGE &#xB7; CURTAILMENT
+            </button>
+          </div>
         </div>
-        <div class="hb-actions">
+        <div class="hb-actions" style="flex-shrink:0">
+          <!-- Live Vizier toggle -->
+          <button @click="h3LiveVizier=!h3LiveVizier"
+            :style="{background: h3LiveVizier ? 'rgba(239,68,68,0.15)' : 'rgba(15,23,42,0.5)',
+                     border: h3LiveVizier ? '1px solid rgba(239,68,68,0.5)' : '1px solid var(--border)',
+                     color: h3LiveVizier ? '#ef4444' : 'var(--muted)'}"
+            style="font-size:0.60rem;font-weight:700;padding:3px 10px;border-radius:4px;cursor:pointer;font-family:var(--mono)"
+            :title="h3LiveVizier ? 'LIVE Vizier enabled — creates billable Vertex AI study. Click to disable.' : 'Enable real Vertex AI Vizier (billable — announce before each call)'"
+          >{{ h3LiveVizier ? '&#x1F534; LIVE' : '&#x25A1; LIVE' }}</button>
           <button class="hb-btn btn-inject" @click="runVizierOptimize">&#x26A1; Run Vizier Optimization</button>
-          <button class="hb-btn btn-reset" v-if="optTrials.length > 0" @click="deployVizierOptimal" :disabled="vizierDeploying" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.4);color:var(--green)">{{ vizierDeployed ? '✅ Deployed' : (vizierDeploying ? 'Deploying…' : '✔ Deploy Recommendation') }}</button>
+          <button class="hb-btn btn-reset" v-if="optTrials.length > 0" @click="deployVizierOptimal" :disabled="vizierDeploying" style="background:rgba(0,230,118,0.08);border-color:rgba(0,230,118,0.4);color:var(--green)">{{ vizierDeployed ? '&#x2705; Deployed' : (vizierDeploying ? 'Deploying&#x2026;' : '&#x2714; Deploy Recommendation') }}</button>
         </div>
       </div>
-      <div v-if="!h3BriefingMode" class="h3-dashboard">
-        <!-- Sliders -->
-        <div class="h3-slider-row">
-          <div class="h3-slider-container">
+
+      <!-- ═══════════════════════════════════════════════════════════
+           CLOUD SEARCH TAB
+      ═══════════════════════════════════════════════════════════ -->
+      <div v-if="!h3BriefingMode && h3SubTab==='cloud'" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:10px 20px 12px;gap:8px">
+
+        <!-- Sliders row (live, compact) -->
+        <div style="display:flex;gap:20px;align-items:center;flex-shrink:0">
+          <div class="h3-slider-container" style="flex:1">
             <div class="h3-slider-label"><span>Oil Price ($/bbl)</span><span style="font-family:var(--mono);color:var(--blue)">${{ oilPriceSlider }}</span></div>
             <input type="range" v-model.number="oilPriceSlider" min="60" max="160" step="5">
           </div>
-          <div class="h3-slider-container">
+          <div class="h3-slider-container" style="flex:1">
             <div class="h3-slider-label"><span>Operating Horizon (Days)</span><span style="font-family:var(--mono);color:var(--blue)">{{ horizonSlider }}d</span></div>
             <input type="range" v-model.number="horizonSlider" min="30" max="365" step="15">
           </div>
-          <div class="h3-slider-container">
-            <div class="h3-slider-label"><span>Net Cash Flow Model</span><span style="font-family:var(--mono);color:var(--green)">Live</span></div>
-            <div style="font-size:0.68rem;color:var(--text2);padding-top:6px;line-height:1.6">Revenue − Power Costs − ESP Failure CAPEX ($150k if RUL &lt; horizon)</div>
+          <div style="flex:0 0 220px;font-size:0.60rem;color:var(--muted);line-height:1.55">
+            <span style="font-family:var(--mono);color:var(--green);font-weight:700">Net Cash Flow Model &#x2014; Live</span><br>
+            Revenue &#x2212; Power Costs &#x2212; ESP Failure CAPEX ($150k if RUL &lt; horizon)
           </div>
         </div>
-        <!-- Value Cards -->
-        <div v-if="optTrials.length > 0">
-          <!-- ── BINDING CONSTRAINT SELECTOR ──────────────────────────── -->
-          <div style="margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-            <span style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);flex-shrink:0">Binding Constraint</span>
-            <div style="display:flex;gap:6px">
-              <button @click="h3ActiveConstraint='gas';runVizierOptimize()"
-                :style="{background: h3ActiveConstraint==='gas' ? 'rgba(251,191,36,0.15)' : 'rgba(15,23,42,0.5)',
-                         border: h3ActiveConstraint==='gas' ? '1px solid rgba(251,191,36,0.6)' : '1px solid var(--border)',
-                         color: h3ActiveConstraint==='gas' ? '#fbbf24' : 'var(--muted)'}"
-                style="font-size:0.67rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
-                GAS TAKEAWAY
-              </button>
-              <button @click="h3ActiveConstraint='thermal';runVizierOptimize()"
-                :style="{background: h3ActiveConstraint==='thermal' ? 'rgba(239,68,68,0.12)' : 'rgba(15,23,42,0.5)',
-                         border: h3ActiveConstraint==='thermal' ? '1px solid rgba(239,68,68,0.5)' : '1px solid var(--border)',
-                         color: h3ActiveConstraint==='thermal' ? '#ef4444' : 'var(--muted)'}"
-                style="font-size:0.67rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
-                THERMAL LIMIT
-              </button>
-              <button @click="h3ActiveConstraint='rul';runVizierOptimize()"
-                :style="{background: h3ActiveConstraint==='rul' ? 'rgba(139,92,246,0.12)' : 'rgba(15,23,42,0.5)',
-                         border: h3ActiveConstraint==='rul' ? '1px solid rgba(139,92,246,0.5)' : '1px solid var(--border)',
-                         color: h3ActiveConstraint==='rul' ? '#8b5cf6' : 'var(--muted)'}"
-                style="font-size:0.67rem;font-weight:700;padding:4px 14px;border-radius:5px;cursor:pointer;font-family:var(--mono);letter-spacing:0.04em;transition:all 0.15s">
-                RUL HORIZON
-              </button>
+
+        <!-- Empty state -->
+        <div v-if="optTrials.length===0" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted)">
+          <span style="font-size:44px;opacity:0.3">&#x1F4C8;</span>
+          <div style="font-size:0.9rem;font-weight:700;color:var(--text2)">Bayesian Optimization Ready</div>
+          <div style="font-size:0.72rem;max-width:480px;text-align:center;line-height:1.6;color:var(--muted)">Set oil price and horizon above, then click <strong>&#x26A1; Run Vizier Optimization</strong>.<br>Enable <strong>&#x1F534; LIVE</strong> for a real Vertex AI Vizier run (billable &#x2014; announce before each call).</div>
+        </div>
+
+        <!-- Main content (Pareto left + Allocation right) -->
+        <div v-if="optTrials.length>0" style="flex:1;min-height:0;display:flex;gap:14px">
+
+          <!-- LEFT: Pareto chart + algorithm badge -->
+          <div style="flex:0 0 54%;display:flex;flex-direction:column;gap:6px;min-height:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+              <div style="font-size:0.66rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--orange)">&#x26A1; Pareto Frontier &#x2014; VFD Hz vs Net Cash Flow ({{ optTrials.length }} trials)</div>
+              <div style="font-family:var(--mono);font-size:0.54rem;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0"
+                   :style="{background: vizierAlgorithm==='GAUSSIAN_PROCESS_BANDIT' ? 'rgba(59,130,246,0.15)' : 'rgba(100,116,139,0.1)',
+                            border: vizierAlgorithm==='GAUSSIAN_PROCESS_BANDIT' ? '1px solid rgba(59,130,246,0.4)' : '1px solid rgba(100,116,139,0.2)',
+                            color: vizierAlgorithm==='GAUSSIAN_PROCESS_BANDIT' ? 'rgba(147,197,253,0.9)' : 'var(--muted)'}">
+                {{ vizierAlgorithm==='GAUSSIAN_PROCESS_BANDIT' ? 'GAUSSIAN_PROCESS_BANDIT' : 'deterministic_demo' }}
+              </div>
             </div>
-            <span style="font-size:0.60rem;color:rgba(100,116,139,0.5);font-style:italic">Re-runs Vizier with selected binding constraint</span>
+            <div id="vizier-pareto-chart" style="flex:1;min-height:0"></div>
           </div>
-          <!-- ── PAD ALPHA · JOINT FIELD UPLIFT card ─────────────────── -->
-          <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:14px 20px;margin-bottom:12px">
-            <div style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:rgba(74,222,128,0.8);margin-bottom:10px">⚡ PAD ALPHA · JOINT FIELD UPLIFT — vs per-pump independent baseline (no cross-well coordination)</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-              <div style="text-align:center">
-                <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:rgba(74,222,128,0.9)">+{{ (optJointOptimal.uplift_bbl_d||0).toFixed(1) }}<span style="font-size:0.8rem;font-weight:400"> bbl/d</span></div>
-                <div style="font-size:0.66rem;color:var(--muted);margin-top:3px">Oil production uplift</div>
-                <div style="font-size:0.60rem;color:rgba(100,116,139,0.6);margin-top:1px">joint optimal vs uniform throttle</div>
-              </div>
-              <div style="text-align:center;border-left:1px solid rgba(100,116,139,0.2);border-right:1px solid rgba(100,116,139,0.2);padding:0 10px">
-                <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ Math.round(optJointOptimal.uplift_cash_90d||0).toLocaleString() }}</div>
-                <div style="font-size:0.66rem;color:var(--muted);margin-top:3px">Cash uplift / {{ horizonSlider }}d horizon</div>
-                <div style="font-size:0.60rem;color:rgba(100,116,139,0.6);margin-top:1px">at ${{ oilPriceSlider }}/bbl · scales with sliders</div>
-              </div>
-              <div style="text-align:center">
-                <div style="font-family:var(--mono);font-size:1.6rem;font-weight:800;color:var(--blue)">{{ (optConstraintStack.gas_ceiling||{}).joint_mmscfd||'—' }} <span style="font-size:0.8rem;font-weight:400;color:var(--muted)">/ {{ (optConstraintStack.gas_ceiling||{}).value_mmscfd||8.0 }} MMscfd</span></div>
-                <div style="font-size:0.66rem;color:var(--muted);margin-top:3px">Gas ceiling ✔ respected</div>
-                <div style="font-size:0.52rem;font-weight:700;margin-top:1px"
-                     :style="{color: h3ActiveConstraint==='thermal' ? 'rgba(239,68,68,0.85)' : h3ActiveConstraint==='rul' ? 'rgba(139,92,246,0.85)' : 'rgba(251,191,36,0.8)'}">
-                  BINDING: {{ h3ActiveConstraint==='thermal' ? 'THERMAL LIMIT' : h3ActiveConstraint==='rul' ? 'RUL HORIZON' : 'GAS TAKEAWAY' }}
+
+          <!-- RIGHT: Uplift card + Allocation table + Constraint doc -->
+          <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-height:0;overflow-y:auto">
+
+            <!-- Joint field uplift card -->
+            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px 16px;flex-shrink:0">
+              <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(74,222,128,0.8);margin-bottom:8px">&#x26A1; PAD ALPHA &#xB7; JOINT FIELD UPLIFT &#x2014; vs per-pump independent baseline</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <div style="text-align:center">
+                  <div style="font-family:var(--mono);font-size:1.3rem;font-weight:800;color:rgba(74,222,128,0.9)">+{{ (optJointOptimal.uplift_bbl_d||0).toFixed(1) }}<span style="font-size:0.7rem;font-weight:400"> bbl/d</span></div>
+                  <div style="font-size:0.57rem;color:var(--muted);margin-top:2px">Oil production uplift</div>
+                </div>
+                <div style="text-align:center;border-left:1px solid rgba(100,116,139,0.2);border-right:1px solid rgba(100,116,139,0.2);padding:0 8px">
+                  <div style="font-family:var(--mono);font-size:1.3rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ Math.round(optJointOptimal.uplift_cash_90d||0).toLocaleString() }}</div>
+                  <div style="font-size:0.57rem;color:var(--muted);margin-top:2px">Cash / {{ horizonSlider }}d &#xB7; ${{ oilPriceSlider }}/bbl</div>
+                </div>
+                <div style="text-align:center">
+                  <div style="font-family:var(--mono);font-size:1.3rem;font-weight:800;color:var(--blue)">{{ (optConstraintStack.gas_ceiling||{}).joint_mmscfd||'&#x2014;' }}<span style="font-size:0.7rem;font-weight:400;color:var(--muted)"> / {{ (optConstraintStack.gas_ceiling||{}).value_mmscfd||8.0 }} MMscfd</span></div>
+                  <div style="font-size:0.54rem;color:rgba(251,191,36,0.8);margin-top:2px;font-weight:700">BINDING: GAS TAKEAWAY</div>
                 </div>
               </div>
             </div>
-          </div>
-          <!-- ── CONSTRAINT PROVENANCE card ─────────────────────────── -->
-          <div v-if="constraintDoc && constraintDoc.found" style="background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.22);border-radius:8px;padding:10px 16px;margin-bottom:12px;display:flex;gap:12px;align-items:flex-start">
-            <div style="font-size:1.0rem;flex-shrink:0;margin-top:2px;opacity:0.8">&#x1F4C4;</div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(100,116,139,0.65);margin-bottom:4px">&#x1F50D; Constraint Source &#x2014; Retrieved from AlloyDB pgvector</div>
-              <div style="font-size:0.73rem;font-weight:600;color:var(--text2);margin-bottom:5px">{{ constraintDoc.title }}</div>
-              <div style="font-size:0.68rem;color:var(--muted);line-height:1.65;word-break:break-word;max-height:72px;overflow:hidden">{{ constraintDoc.excerpt }}</div>
-              <div style="font-size:0.58rem;color:rgba(100,116,139,0.45);margin-top:5px">Source: {{ constraintDoc.source }} &middot; asset_class: esp &middot; semantic similarity search</div>
-            </div>
-          </div>
-          <!-- ── PAD ALPHA · 6-WELL OPTIMAL ALLOCATION table ─────────── -->
-          <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:10px;overflow:hidden;margin-bottom:12px">
-            <div style="font-family:var(--mono);font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center">
-              <span>PAD ALPHA · 6-WELL OPTIMAL ALLOCATION</span>
-              <span style="font-weight:400;color:rgba(100,116,139,0.55);font-size:0.60rem">Baseline = per-pump independent max (no cross-well coordination)</span>
-            </div>
-            <table style="width:100%;border-collapse:collapse;font-size:0.70rem">
-              <thead>
-                <tr style="background:rgba(15,23,42,0.5)">
-                  <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Well</th>
-                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">GOR (scf/bbl)</th>
-                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">Baseline Hz</th>
-                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">GDC Optimal</th>
-                  <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">&#x0394; Hz</th>
-                  <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Role</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="w in wellsSortedByGor" :key="w.id"
-                    :style="{borderTop:'1px solid rgba(100,116,139,0.12)', background: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.04)' : 'rgba(74,222,128,0.03)'}">
-                  <td style="padding:6px 14px;font-family:var(--mono)"
-                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ w.name }}</td>
-                  <td style="padding:6px 14px;text-align:right"
-                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.7)' : 'var(--muted)'}">{{ (w.gor_scf_bbl||0).toLocaleString() }}</td>
-                  <td style="padding:6px 14px;text-align:right;font-family:var(--mono);color:var(--text2)">{{ (w.independent_hz||0).toFixed(2) }} Hz</td>
-                  <td style="padding:6px 14px;text-align:right;font-family:var(--mono)"
-                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.joint_hz||0).toFixed(2) }} Hz</td>
-                  <td style="padding:6px 14px;text-align:right;font-family:var(--mono);font-weight:700"
-                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.8)'}">{{ (w.joint_hz - w.independent_hz) >= 0 ? '+' : '' }}{{ (w.joint_hz - w.independent_hz).toFixed(2) }}</td>
-                  <td style="padding:6px 14px;font-size:0.65rem"
-                      :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
-                    <span v-if="w.joint_hz >= w.independent_hz">Priority · runs max &#x2191;</span>
-                    <span v-else>Marginal · gives way &#x2193;</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-          <!-- ── CURTAILMENT RE-ALLOCATION panel ──────────────────────── -->
-          <div v-if="optCurtailment && optCurtailment.wells_curtailed && optCurtailment.wells_curtailed.length" style="margin-bottom:12px">
-            <!-- Curtailment event header card -->
-            <div style="background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.35);border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start">
-              <div style="font-size:1.1rem;flex-shrink:0;margin-top:1px">&#x1F4E8;</div>
-              <div style="flex:1;min-width:0">
-                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(251,146,60,0.75);margin-bottom:3px">Off-Sensor Curtailment Notice</div>
-                <div style="font-size:0.75rem;font-weight:600;color:var(--text2);margin-bottom:3px">{{ optCurtailment.event }}</div>
-                <div style="font-size:0.65rem;color:rgba(251,146,60,0.65)">{{ optCurtailment.trigger }}</div>
-              </div>
-            </div>
-            <!-- GDC edge re-allocation table -->
-            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:10px;overflow:hidden;margin-bottom:8px">
-              <div style="font-family:var(--mono);font-size:0.68rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:7px 16px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center">
-                <span>GDC EDGE RE-ALLOCATION — PAD ALPHA UNDER CURTAILMENT</span>
-                <span style="font-weight:400;color:rgba(100,116,139,0.55);font-size:0.60rem">&#x23FA; Architecture view &#x2014; system-to-system flow</span>
-              </div>
-              <table style="width:100%;border-collapse:collapse;font-size:0.70rem">
+
+            <!-- 6-well optimal allocation table -->
+            <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:8px;overflow:hidden;flex-shrink:0">
+              <div style="font-family:var(--mono);font-size:0.58rem;font-weight:700;letter-spacing:0.06em;color:var(--muted);padding:6px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8)">PAD ALPHA &#xB7; OPTIMAL ALLOCATION &#x2014; GOR-priority LP</div>
+              <table style="width:100%;border-collapse:collapse;font-size:0.67rem">
                 <thead>
                   <tr style="background:rgba(15,23,42,0.5)">
-                    <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Well</th>
-                    <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">GOR (scf/bbl)</th>
-                    <th style="padding:5px 14px;text-align:right;color:var(--muted);font-weight:600">Plan Hz</th>
-                    <th style="padding:5px 14px;text-align:right;color:rgba(74,222,128,0.8);font-weight:600">GDC Smart</th>
-                    <th style="padding:5px 14px;text-align:right;color:rgba(100,116,139,0.7);font-weight:600">SCADA Baseline</th>
-                    <th style="padding:5px 14px;text-align:left;color:var(--muted);font-weight:600">Role</th>
+                    <th style="padding:4px 12px;text-align:left;color:var(--muted);font-weight:600">Well</th>
+                    <th style="padding:4px 12px;text-align:right;color:var(--muted);font-weight:600">GOR</th>
+                    <th style="padding:4px 12px;text-align:right;color:var(--muted);font-weight:600">Baseline Hz</th>
+                    <th style="padding:4px 12px;text-align:right;color:var(--muted);font-weight:600">GDC Optimal</th>
+                    <th style="padding:4px 12px;text-align:right;color:var(--muted);font-weight:600">&#x0394;</th>
+                    <th style="padding:4px 12px;text-align:left;color:var(--muted);font-weight:600">Role</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="w in optCurtailment.wells_curtailed" :key="w.name"
-                      :style="{borderTop:'1px solid rgba(100,116,139,0.12)', background: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.04)' : 'rgba(74,222,128,0.03)'}">
-                    <td style="padding:6px 14px;font-family:var(--mono)"
-                        :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ w.name }}</td>
-                    <td style="padding:6px 14px;text-align:right;color:var(--muted)">{{ (w.gor||0).toLocaleString() }}</td>
-                    <td style="padding:6px 14px;text-align:right;font-family:var(--mono);color:var(--text2)">{{ (w.plan_hz||0).toFixed(2) }} Hz</td>
-                    <td style="padding:6px 14px;text-align:right;font-family:var(--mono);font-weight:700"
-                        :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.smart_curtailed_hz||0).toFixed(2) }} Hz</td>
-                    <td style="padding:6px 14px;text-align:right;font-family:var(--mono);color:rgba(100,116,139,0.65)">{{ (w.scada_curtailed_hz||0).toFixed(2) }} Hz</td>
-                    <td style="padding:6px 14px;font-size:0.65rem"
-                        :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
-                      <span v-if="w.smart_curtailed_hz < w.plan_hz">Trimmed &#x2193; (gassy)</span>
-                      <span v-else>Holds &#x2191; (oil-rich)</span>
+                  <tr v-for="w in wellsSortedByGor" :key="w.id"
+                      :style="{borderTop:'1px solid rgba(100,116,139,0.12)', background: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.04)' : 'rgba(74,222,128,0.03)'}">
+                    <td style="padding:5px 12px;font-family:var(--mono)"
+                        :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ w.name }}</td>
+                    <td style="padding:5px 12px;text-align:right"
+                        :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.6)' : 'var(--muted)'}">{{ (w.gor_scf_bbl||0).toLocaleString() }}</td>
+                    <td style="padding:5px 12px;text-align:right;font-family:var(--mono);color:var(--text2)">{{ (w.independent_hz||0).toFixed(1) }}</td>
+                    <td style="padding:5px 12px;text-align:right;font-family:var(--mono);font-weight:700"
+                        :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.joint_hz||0).toFixed(1) }}</td>
+                    <td style="padding:5px 12px;text-align:right;font-family:var(--mono)"
+                        :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.8)'}">{{ (w.joint_hz - w.independent_hz) >= 0 ? '+' : '' }}{{ (w.joint_hz - w.independent_hz).toFixed(1) }}</td>
+                    <td style="padding:5px 12px;font-size:0.60rem"
+                        :style="{color: w.joint_hz < w.independent_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
+                      <span v-if="w.joint_hz >= w.independent_hz">Priority &#x2191;</span>
+                      <span v-else>Marginal &#x2193;</span>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <!-- Revenue delta badge -->
-            <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px">
-              <div>
-                <div style="font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(74,222,128,0.7);margin-bottom:2px">GDC Smart vs SCADA Uniform Throttle &#x2014; 90-Day Revenue</div>
-                <div style="font-family:var(--mono);font-size:1.4rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ ((optCurtailment.revenue_delta||0) / 1e6).toFixed(1) }}M <span style="font-size:0.75rem;font-weight:400;color:var(--muted)">&#xB7; +{{ (optCurtailment.uplift_bbl_d||0).toFixed(0) }} bbl/d oil production</span></div>
-              </div>
-              <div style="text-align:right;flex-shrink:0">
-                <div style="font-size:0.60rem;color:rgba(100,116,139,0.5);line-height:1.8">&#x26A0; Edge only trims intra-pad (it owns its tie-in).<br>Inter-pad: next cloud cycle.</div>
+
+            <!-- Constraint provenance doc (compact) -->
+            <div v-if="constraintDoc && constraintDoc.found" style="background:rgba(15,23,42,0.5);border:1px solid rgba(100,116,139,0.22);border-radius:6px;padding:8px 14px;display:flex;gap:10px;align-items:flex-start;flex-shrink:0">
+              <div style="font-size:0.9rem;flex-shrink:0;opacity:0.7">&#x1F4C4;</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:rgba(100,116,139,0.6);margin-bottom:2px">&#x1F50D; Constraint Source &#x2014; AlloyDB pgvector semantic search</div>
+                <div style="font-size:0.67rem;font-weight:600;color:var(--text2)">{{ constraintDoc.title }}</div>
+                <div style="font-size:0.58rem;color:rgba(100,116,139,0.45);margin-top:2px">{{ constraintDoc.source }}</div>
               </div>
             </div>
-          </div>
+
+          </div><!-- /right column -->
+        </div><!-- /main content -->
+      </div><!-- /CLOUD tab -->
+
+      <!-- ═══════════════════════════════════════════════════════════
+           EDGE · CURTAILMENT TAB
+      ═══════════════════════════════════════════════════════════ -->
+      <div v-if="!h3BriefingMode && h3SubTab==='edge'" style="flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;padding:10px 20px 12px;gap:8px">
+
+        <!-- Not yet run -->
+        <div v-if="!(optCurtailment && optCurtailment.wells_curtailed && optCurtailment.wells_curtailed.length)" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;color:var(--muted)">
+          <span style="font-size:36px;opacity:0.3">&#x1F4E8;</span>
+          <div style="font-size:0.8rem;color:var(--text2)">Run the Vizier Optimization first, then view the curtailment re-allocation.</div>
         </div>
-        <div class="h3-main-body" v-if="optTrials.length > 0">
-          <!-- Pareto Chart -->
-          <div class="h3-chart-pane">
-            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--orange);margin-bottom:10px">⚡ Pareto Frontier — VFD Hz vs Net Cash Flow ({{ optTrials.length }} Bayesian Trials)</div>
-            <div id="vizier-pareto-chart" style="height:350px"></div>
-          </div>
-          <!-- Trials Log -->
-          <div class="h3-trials-pane">
-            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">📊 Bayesian Optimization Trial Log</div>
-            <div style="overflow-y:auto;flex:1">
-              <table class="h3-trials-table">
-                <thead><tr><th>#</th><th>Hz</th><th>Flow (bbl/d)</th><th>Temp (°F)</th><th>RUL (d)</th><th>Net Cash Flow</th></tr></thead>
-                <tbody>
-                  <tr v-for="t in optTrials" :key="t.trial_num" :class="{'optimal-row': t.is_optimal}">
-                    <td>{{ t.trial_num }}{{ t.is_optimal ? ' ★' : '' }}</td>
-                    <td>{{ t.vfd_hz }}</td>
-                    <td>{{ t.flow_rate.toLocaleString() }}</td>
-                    <td :style="{color: t.motor_temp_f > 270 ? 'var(--red)' : 'inherit'}">{{ t.motor_temp_f }}</td>
-                    <td :style="{color: t.is_failure ? 'var(--red)' : 'var(--green)'}">{{ t.rul_days }}{{ t.is_failure ? ' ⚠' : '' }}</td>
-                    <td :style="{color: t.is_optimal ? 'var(--orange)' : (t.is_failure ? 'var(--red)' : 'inherit')}">
-                      ${{ t.cash_flow.toLocaleString() }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+
+        <!-- Main edge content -->
+        <div v-if="optCurtailment && optCurtailment.wells_curtailed && optCurtailment.wells_curtailed.length" style="flex:1;min-height:0;display:flex;flex-direction:column;gap:8px">
+
+          <!-- Off-sensor curtailment event card -->
+          <div style="background:rgba(251,146,60,0.07);border:1px solid rgba(251,146,60,0.35);border-radius:8px;padding:10px 14px;display:flex;gap:12px;align-items:flex-start;flex-shrink:0">
+            <div style="font-size:1.1rem;flex-shrink:0">&#x1F4E8;</div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(251,146,60,0.75);margin-bottom:2px">Off-Sensor Curtailment Notice &#x2014; GatherCo</div>
+              <div style="font-size:0.72rem;font-weight:600;color:var(--text2)">{{ optCurtailment.event }}</div>
+              <div style="font-size:0.62rem;color:rgba(251,146,60,0.65);margin-top:1px">{{ optCurtailment.trigger }}</div>
+            </div>
+            <!-- AlloyDB source badge -->
+            <div v-if="constraintDoc && constraintDoc.found" style="flex-shrink:0;text-align:right">
+              <div style="font-size:0.54rem;color:rgba(100,116,139,0.5);font-family:var(--mono)">&#x1F50D; AlloyDB pgvector</div>
+              <div style="font-size:0.60rem;font-weight:600;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ constraintDoc.title }}</div>
             </div>
           </div>
-        </div>
-        <div v-if="optTrials.length === 0" style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:var(--muted)">
-          <span style="font-size:44px;opacity:0.3">📈</span>
-          <div style="font-size:0.9rem;font-weight:700;color:var(--text2)">Bayesian Optimization Ready</div>
-          <div style="font-size:0.75rem;max-width:500px;text-align:center;line-height:1.6">Adjust the Oil Price and Horizon sliders above, then click "Run Vizier Optimization" to see 15 Bayesian trial runs converging on the optimal VFD frequency for maximum net cash flow.</div>
-        </div>
-      </div>
-    </div><!-- tab-horizon3 -->
+
+          <!-- Two columns: re-allocation table | revenue delta + notes -->
+          <div style="flex:1;min-height:0;display:flex;gap:14px">
+
+            <!-- LEFT: GDC edge re-allocation table -->
+            <div style="flex:1;display:flex;flex-direction:column;min-height:0">
+              <div style="background:rgba(15,23,42,0.65);border:1px solid rgba(100,116,139,0.22);border-radius:8px;overflow:hidden;display:flex;flex-direction:column">
+                <div style="font-family:var(--mono);font-size:0.58rem;font-weight:700;letter-spacing:0.05em;color:var(--muted);padding:6px 14px;border-bottom:1px solid var(--border);background:rgba(15,23,42,0.8);display:flex;justify-content:space-between;align-items:center;flex-shrink:0">
+                  <span>GDC EDGE RE-ALLOCATION &#x2014; CURTAILED CEILING 6.0 MMscfd</span>
+                  <span style="font-weight:400;color:rgba(100,116,139,0.5);font-size:0.54rem">&#x23FA; no cloud round trip</span>
+                </div>
+                <table style="width:100%;border-collapse:collapse;font-size:0.67rem">
+                  <thead>
+                    <tr style="background:rgba(15,23,42,0.5)">
+                      <th style="padding:4px 12px;text-align:left;color:var(--muted);font-weight:600">Well</th>
+                      <th style="padding:4px 12px;text-align:right;color:var(--muted);font-weight:600">GOR</th>
+                      <th style="padding:4px 12px;text-align:right;color:var(--muted);font-weight:600">Plan Hz</th>
+                      <th style="padding:4px 12px;text-align:right;color:rgba(74,222,128,0.8);font-weight:600">GDC Smart</th>
+                      <th style="padding:4px 12px;text-align:right;color:rgba(100,116,139,0.6);font-weight:600">SCADA Uniform</th>
+                      <th style="padding:4px 12px;text-align:left;color:var(--muted);font-weight:600">Role</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="w in optCurtailment.wells_curtailed" :key="w.name"
+                        :style="{borderTop:'1px solid rgba(100,116,139,0.12)', background: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.04)' : 'rgba(74,222,128,0.03)'}">
+                      <td style="padding:5px 12px;font-family:var(--mono)"
+                          :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ w.name }}</td>
+                      <td style="padding:5px 12px;text-align:right;color:var(--muted)">{{ (w.gor||0).toLocaleString() }}</td>
+                      <td style="padding:5px 12px;text-align:right;font-family:var(--mono);color:var(--text2)">{{ (w.plan_hz||0).toFixed(1) }}</td>
+                      <td style="padding:5px 12px;text-align:right;font-family:var(--mono);font-weight:700"
+                          :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.9)' : 'rgba(74,222,128,0.85)'}">{{ (w.smart_curtailed_hz||0).toFixed(1) }}</td>
+                      <td style="padding:5px 12px;text-align:right;font-family:var(--mono);color:rgba(100,116,139,0.6)">{{ (w.scada_curtailed_hz||0).toFixed(1) }}</td>
+                      <td style="padding:5px 12px;font-size:0.60rem"
+                          :style="{color: w.smart_curtailed_hz < w.plan_hz ? 'rgba(251,191,36,0.8)' : 'rgba(74,222,128,0.7)'}">
+                        <span v-if="w.smart_curtailed_hz < w.plan_hz">Trimmed &#x2193; (gassy)</span>
+                        <span v-else>Holds &#x2191; (oil-rich)</span>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- RIGHT: Revenue delta + edge framing -->
+            <div style="flex:0 0 270px;display:flex;flex-direction:column;gap:10px">
+
+              <!-- Revenue delta -->
+              <div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.25);border-radius:8px;padding:18px 20px">
+                <div style="font-size:0.58rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:rgba(74,222,128,0.7);margin-bottom:8px">GDC Smart vs SCADA Uniform &#x2014; 90-Day Revenue</div>
+                <div style="font-family:var(--mono);font-size:2.0rem;font-weight:800;color:rgba(74,222,128,0.9)">+${{ ((optCurtailment.revenue_delta||0) / 1e6).toFixed(1) }}M</div>
+                <div style="font-family:var(--mono);font-size:0.82rem;color:var(--muted);margin-top:6px">+{{ (optCurtailment.uplift_bbl_d||0).toFixed(0) }} bbl/d oil</div>
+              </div>
+
+              <!-- Edge framing -->
+              <div style="background:rgba(15,23,42,0.7);border:1px solid rgba(255,255,255,0.07);border-radius:8px;padding:14px 16px">
+                <div style="font-size:0.60rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--muted);margin-bottom:8px">Edge Enforcement</div>
+                <div style="font-size:0.64rem;color:var(--text2);line-height:1.75">
+                  &#x2705; Re-allocates intra-pad without a cloud round trip<br>
+                  &#x2705; Pad keeps producing if the cloud link drops<br>
+                  &#x26A0;&#xFE0F; VFD &#xB7; SCADA own the motor protection trips<br>
+                  &#x26A0;&#xFE0F; Inter-pad re-allocation: next cloud refresh cycle
+                </div>
+              </div>
+
+            </div><!-- /right -->
+          </div><!-- /two-col -->
+        </div><!-- /main edge content -->
+
+      </div><!-- /EDGE tab -->
+
+    </div><!-- /tab-horizon3 -->
