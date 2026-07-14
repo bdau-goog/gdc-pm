@@ -290,8 +290,6 @@ createApp({
       ledger: [],
       totalSaved: 0,
       fleetUptime: 100.0,
-      // Telemetry
-      grafanaLoaded: false,
       // Copilot Resize
       copilotHeight: 360,
       // Timers
@@ -922,18 +920,6 @@ createApp({
 
     async clearDispatch() {
       try { await fetch('/api/clear-dispatch',{method:'POST'});await this.fetchLedger();this.totalSaved=0;this.showToast('♻ Demo data reset','var(--blue)'); } catch{}
-    },
-
-    loadGrafana() {
-      const metaTag=document.querySelector('meta[name="grafana-url"]');
-      const grafUrl=metaTag?metaTag.content:'http://35.190.137.145';
-      const iframe=document.getElementById('grafana-iframe');
-      if(iframe){
-        this.grafanaLoaded=false;
-        iframe.src=grafUrl+'/d/gdc-pm-main?kiosk=tv&refresh=10s';
-        iframe.onload=()=>{this.grafanaLoaded=true;};
-        iframe.onerror=()=>{this.grafanaLoaded=false;};
-      }
     },
 
     initCopilotResize() {
@@ -2418,7 +2404,6 @@ createApp({
     };
     document.addEventListener('keydown', this._appZoomHandler);
 
-    this.loadGrafana();
     this.fetchKpis();this.fetchHorizonAlerts();this.fetchMlopsStatus();
     this.fetchInjectionLog();
     this._pollKpis=setInterval(()=>{this.fetchKpis();this.lastRefresh=new Date().toLocaleTimeString();},10000);

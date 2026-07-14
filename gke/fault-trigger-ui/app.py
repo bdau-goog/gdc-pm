@@ -7939,7 +7939,6 @@ async def h2_scenario_replay():
 
 
 # ── Serve Frontend HTML ────────────────────────────────────────────────────────
-GRAFANA_EXTERNAL_IP = os.environ.get("GRAFANA_URL", "http://136.115.220.48")
 
 
 # Tab template names — assembled in order into the shell index.html at request time.
@@ -7965,9 +7964,4 @@ def index():
     for name in _TAB_TEMPLATES:
         with open(f"/app/templates/{name}.html") as tf:
             html = html.replace(f"<!-- @@INCLUDE:{name}@@ -->", tf.read())
-    # Inject Grafana URL as a meta tag so the frontend doesn't have to guess
-    html = html.replace(
-        '<meta charset="UTF-8" />',
-        f'<meta charset="UTF-8" />\n  <meta name="grafana-url" content="{GRAFANA_EXTERNAL_IP}">',
-    )
     return html

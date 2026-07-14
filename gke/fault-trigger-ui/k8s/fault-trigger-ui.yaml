@@ -68,8 +68,6 @@ spec:
             # Autopilot/T4 cluster: gemma4:latest (~$0.35/hr GPU, scale-to-zero).
             - name: OLLAMA_MODEL
               value: "gemma4:latest"
-            - name: GRAFANA_URL
-              value: "http://34.45.194.92"
           resources:
             requests:
               cpu: "250m"
