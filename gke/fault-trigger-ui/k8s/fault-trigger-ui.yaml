@@ -91,8 +91,11 @@ metadata:
   labels:
     app: fault-trigger-ui
 spec:
-  # LoadBalancer exposes the UI externally for demo access
+  # LoadBalancer exposes the UI externally for demo access (locked to permitted IPs)
   type: LoadBalancer
+  loadBalancerSourceRanges:
+    - 24.144.199.150/32
+    - 72.23.47.114/32
   ports:
     - port: 80
       targetPort: 8080
