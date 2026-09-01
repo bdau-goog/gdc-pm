@@ -94,6 +94,7 @@ spec:
   # LoadBalancer exposes the UI externally for demo access (locked to permitted IPs)
   type: LoadBalancer
   loadBalancerSourceRanges:
+    - 104.135.176.44/32
     - 24.144.199.150/32
     - 72.23.47.114/32
   ports:
