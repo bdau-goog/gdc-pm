@@ -843,7 +843,7 @@ createApp({
       this.fetchRemediationTiers();
       const hs=this.degStatus?.health_score??0.7;
       const url=`/api/agent/recommend-stream?fault_type=${this.ddFaultType}&asset_id=${this.ddAssetId}&slider_health_score=${hs}&chat_history=${encodeURIComponent(JSON.stringify(this.chatHistory))}`;
-      const es=new EventSource(url);
+      const es=new EventSource(url, { withCredentials: true });
       let ruleMsg=null,llmText='';
       es.onmessage=(e)=>{
         try {
@@ -895,7 +895,7 @@ createApp({
       this.agentTyping=true;this.agentTypingText='Thinking…';
       const hs=this.degStatus?.health_score??0.7;
       const url=`/api/agent/recommend-stream?fault_type=${this.ddFaultType}&asset_id=${this.ddAssetId}&slider_health_score=${hs}&chat_history=${encodeURIComponent(JSON.stringify(this.chatHistory))}`;
-      const es=new EventSource(url);let llmText='';
+      const es=new EventSource(url, { withCredentials: true });let llmText='';
       es.onmessage=(e)=>{
         try {
           const d=JSON.parse(e.data);

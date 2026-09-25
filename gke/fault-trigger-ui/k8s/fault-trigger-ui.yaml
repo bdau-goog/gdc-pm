@@ -68,6 +68,17 @@ spec:
             # Autopilot/T4 cluster: gemma4:latest (~$0.35/hr GPU, scale-to-zero).
             - name: OLLAMA_MODEL
               value: "gemma4:latest"
+            # Basic Auth gate credentials (from ui-basic-auth secret)
+            - name: UI_BASIC_AUTH_USER
+              valueFrom:
+                secretKeyRef:
+                  name: ui-basic-auth
+                  key: username
+            - name: UI_BASIC_AUTH_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: ui-basic-auth
+                  key: password
           resources:
             requests:
               cpu: "250m"
@@ -77,7 +88,7 @@ spec:
               memory: "1Gi"
           readinessProbe:
             httpGet:
-              path: /api/assets
+              path: /health
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -91,14 +102,11 @@ metadata:
   labels:
     app: fault-trigger-ui
 spec:
-  # LoadBalancer exposes the UI externally for demo access (locked to permitted IPs)
+  # LoadBalancer exposes the UI externally for demo access (protected by Basic Auth)
   type: LoadBalancer
-  loadBalancerSourceRanges:
-    - 104.135.176.44/32
-    - 24.144.199.150/32
-    - 72.23.47.114/32
   ports:
     - port: 80
       targetPort: 8080
   selector:
     app: fault-trigger-ui
+

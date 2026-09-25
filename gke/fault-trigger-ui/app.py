@@ -27,7 +27,9 @@ from typing import Optional
 import pika
 import psycopg2
 import psycopg2.extras
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+import base64
+import hmac
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request, Response
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -2510,6 +2512,44 @@ def publish_to_rabbitmq(reading: dict) -> None:
 app = FastAPI(title="GDC-PM Fault Trigger UI", version="3.0.0")
 app.mount("/static", StaticFiles(directory="/app/static"), name="static")
 app.mount("/slides", StaticFiles(directory="/app/slides"), name="slides")
+
+# ── Basic Authentication Middleware ──────────────────────────────────────────
+UI_BASIC_AUTH_USER = os.environ.get("UI_BASIC_AUTH_USER", "")
+UI_BASIC_AUTH_PASS = os.environ.get("UI_BASIC_AUTH_PASS", "")
+_AUTH_ENABLED = bool(UI_BASIC_AUTH_USER and UI_BASIC_AUTH_PASS)
+_AUTH_EXEMPT_PATHS = {"/health", "/api/agent/recommend-stream"}
+
+if not _AUTH_ENABLED:
+    log.warning("UI_BASIC_AUTH_USER/UI_BASIC_AUTH_PASS not set — basic auth is DISABLED.")
+
+
+@app.middleware("http")
+async def _basic_auth_gate(request: Request, call_next):
+    if not _AUTH_ENABLED or request.url.path in _AUTH_EXEMPT_PATHS:
+        return await call_next(request)
+
+    header = request.headers.get("authorization", "")
+    ok = False
+    if header.startswith("Basic "):
+        try:
+            decoded = base64.b64decode(header[6:].encode()).decode("utf-8")
+            user, _, pw = decoded.partition(":")
+            ok = hmac.compare_digest(user, UI_BASIC_AUTH_USER) and hmac.compare_digest(pw, UI_BASIC_AUTH_PASS)
+        except Exception:
+            ok = False
+
+    if not ok:
+        return Response(
+            status_code=401,
+            headers={"WWW-Authenticate": 'Basic realm="GDC-PM Operator Console"'},
+        )
+    return await call_next(request)
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 
 
 # ── Pydantic Models ────────────────────────────────────────────────────────────
