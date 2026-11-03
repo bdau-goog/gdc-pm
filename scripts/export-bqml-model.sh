@@ -9,7 +9,7 @@
 # Prerequisites:
 #   - Model must be trained first: bash scripts/train-model.sh
 #   - GCS bucket must exist: gs://${PROJECT_ID}-models/
-#   - ml-pipeline-sa must have storage.objectAdmin on the bucket
+#   - ml-pipeline-sa and BQ service agent use bucket-scoped storage.objectViewer + storage.objectCreator
 #
 # Usage:
 #   bash scripts/export-bqml-model.sh

@@ -81,19 +81,20 @@ WHERE is_failure IS NOT NULL;
 echo -e "${GREEN}  ✅ Model training complete.${RESET}"
 echo ""
 
-# ── Grant BQ service agent access to GCS ─────────────────────────────────────
+# ── Grant BQ service agent bucket-scoped access to GCS ───────────────────────
 # The BigQuery service agent is auto-created on the first BQ job.
-# It needs storage.objectAdmin on the model bucket for EXPORT MODEL to work.
-echo -e "${BOLD}🔒 Granting BQ service agent access to GCS model bucket...${RESET}"
-PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
+# Grant least-privilege bucket-scoped objectViewer + objectCreator for EXPORT MODEL.
+echo -e "${BOLD}🔒 Granting BQ service agent least-privilege access to GCS model bucket...${RESET}"
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --project="${PROJECT_ID}" --format="value(projectNumber)")
 BQ_SA="bq-${PROJECT_NUMBER}@bigquery-encryption.iam.gserviceaccount.com"
-gcloud storage buckets add-iam-policy-binding "gs://${PROJECT_ID}-models" \
-  --member="serviceAccount:${BQ_SA}" \
-  --role="roles/storage.objectAdmin" \
-  --project="${PROJECT_ID}" \
-  --quiet 2>/dev/null && \
-  echo -e "${GREEN}  ✅ BQ service agent granted GCS access.${RESET}" || \
-  echo -e "${DIM}  (BQ service agent grant skipped — may already exist)${RESET}"
+for BQ_GCS_ROLE in "roles/storage.objectViewer" "roles/storage.objectCreator"; do
+  gcloud storage buckets add-iam-policy-binding "gs://${PROJECT_ID}-models" \
+    --member="serviceAccount:${BQ_SA}" \
+    --role="${BQ_GCS_ROLE}" \
+    --project="${PROJECT_ID}" \
+    --quiet 2>/dev/null || true
+done
+echo -e "${GREEN}  ✅ BQ service agent granted bucket-scoped objectViewer + objectCreator.${RESET}"
 echo ""
 
 # ── Step 2: Print Evaluation Metrics ─────────────────────────────────────────

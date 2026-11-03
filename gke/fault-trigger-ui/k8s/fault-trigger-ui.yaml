@@ -16,10 +16,9 @@ spec:
       labels:
         app: fault-trigger-ui
     spec:
-      serviceAccountName: ml-inference-ksa  # Workload Identity → ml-pipeline-sa (aiplatform.user for Vertex AI Vizier)
       containers:
         - name: fault-trigger-ui
-          image: us-central1-docker.pkg.dev/gdc-pm-v2/gdc-models/fault-trigger-ui:latest
+          image: GCR_IMAGE_PLACEHOLDER
           ports:
             - containerPort: 8080
           env:
@@ -64,31 +63,16 @@ spec:
                 secretKeyRef:
                   name: alloydb-secret
                   key: password
-            # LLM model name — must match what is loaded in the ollama pod.
-            # Autopilot/T4 cluster: gemma4:latest (~$0.35/hr GPU, scale-to-zero).
-            - name: OLLAMA_MODEL
-              value: "gemma4:latest"
-            # Basic Auth gate credentials (from ui-basic-auth secret)
-            - name: UI_BASIC_AUTH_USER
-              valueFrom:
-                secretKeyRef:
-                  name: ui-basic-auth
-                  key: username
-            - name: UI_BASIC_AUTH_PASS
-              valueFrom:
-                secretKeyRef:
-                  name: ui-basic-auth
-                  key: password
           resources:
             requests:
-              cpu: "250m"
-              memory: "512Mi"
+              cpu: "100m"
+              memory: "128Mi"
             limits:
-              cpu: "1000m"
-              memory: "1Gi"
+              cpu: "500m"
+              memory: "256Mi"
           readinessProbe:
             httpGet:
-              path: /health
+              path: /api/assets
               port: 8080
             initialDelaySeconds: 10
             periodSeconds: 10
@@ -102,11 +86,10 @@ metadata:
   labels:
     app: fault-trigger-ui
 spec:
-  # LoadBalancer exposes the UI externally for demo access (protected by Basic Auth)
-  type: LoadBalancer
+  # ClusterIP keeps Fault Trigger UI internal; access via kubectl port-forward
+  type: ClusterIP
   ports:
     - port: 80
       targetPort: 8080
   selector:
     app: fault-trigger-ui
-

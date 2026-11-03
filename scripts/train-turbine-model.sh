@@ -95,17 +95,18 @@ LIMIT 5;
 
 echo ""
 
-# ── Step 3: Grant BQ service agent access to GCS ────────────────────────────
-echo -e "${BOLD}🔒 Granting BQ service agent GCS access...${RESET}"
-PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
+# ── Step 3: Grant BQ service agent bucket-scoped access to GCS ───────────────
+echo -e "${BOLD}🔒 Granting BQ service agent least-privilege GCS access...${RESET}"
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --project="${PROJECT_ID}" --format="value(projectNumber)")
 BQ_SA="bq-${PROJECT_NUMBER}@bigquery-encryption.iam.gserviceaccount.com"
-gcloud storage buckets add-iam-policy-binding "gs://${GCS_BUCKET}" \
-  --member="serviceAccount:${BQ_SA}" \
-  --role="roles/storage.objectAdmin" \
-  --project="${PROJECT_ID}" \
-  --quiet 2>/dev/null && \
-  echo -e "${GREEN}  ✅ BQ service agent granted GCS access.${RESET}" || \
-  echo -e "${DIM}  (Grant skipped — may already exist)${RESET}"
+for BQ_GCS_ROLE in "roles/storage.objectViewer" "roles/storage.objectCreator"; do
+  gcloud storage buckets add-iam-policy-binding "gs://${GCS_BUCKET}" \
+    --member="serviceAccount:${BQ_SA}" \
+    --role="${BQ_GCS_ROLE}" \
+    --project="${PROJECT_ID}" \
+    --quiet 2>/dev/null || true
+done
+echo -e "${GREEN}  ✅ BQ service agent granted bucket-scoped objectViewer + objectCreator.${RESET}"
 echo ""
 
 # ── Step 4: Export Model ──────────────────────────────────────────────────────

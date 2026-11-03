@@ -38,18 +38,8 @@ sed "s|GCR_IMAGE_PLACEHOLDER|${IMAGE_NAME}|g" \
 
 kubectl rollout status deployment/fault-trigger-ui -n "${NAMESPACE}" --timeout=120s
 
-echo -e "\n${BOLD}⏳ Waiting for LoadBalancer IP...${RESET}"
-for i in $(seq 1 12); do
-    EXTERNAL_IP=$(kubectl get svc fault-trigger-ui -n "${NAMESPACE}" \
-        -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
-    if [ -n "${EXTERNAL_IP}" ]; then break; fi
-    echo -e "${DIM}  Waiting... (${i}/12)${RESET}"
-    sleep 10
-done
-
 echo -e "\n${BOLD}════════════════════════════════════════════════════════════════${RESET}"
-echo -e "${GREEN}${BOLD}  ✅ Fault Trigger UI deployed.${RESET}"
-if [ -n "${EXTERNAL_IP:-}" ]; then
-    echo -e "${BOLD}  URL: ${CYAN}http://${EXTERNAL_IP}${RESET}"
-fi
+echo -e "${GREEN}${BOLD}  ✅ Fault Trigger UI deployed privately (ClusterIP — zero public LB).${RESET}"
+echo -e "${BOLD}  Port-Forward: ${CYAN}kubectl port-forward svc/fault-trigger-ui -n ${NAMESPACE} 8080:80${RESET}"
+echo -e "${BOLD}  Local URL:    ${CYAN}http://localhost:8080${RESET}"
 echo -e "${BOLD}════════════════════════════════════════════════════════════════${RESET}\n"

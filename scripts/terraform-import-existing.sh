@@ -143,7 +143,6 @@ if [ "${MODE}" == "workload" ]; then
         'google_project_iam_member.ml_sa_roles["roles/aiplatform.user"]'
         'google_project_iam_member.ml_sa_roles["roles/bigquery.dataEditor"]'
         'google_project_iam_member.ml_sa_roles["roles/bigquery.jobUser"]'
-        'google_project_iam_member.ml_sa_roles["roles/storage.admin"]'
         'google_project_service.apis["aiplatform.googleapis.com"]'
         'google_project_service.apis["artifactregistry.googleapis.com"]'
         'google_project_service.apis["bigquery.googleapis.com"]'
@@ -164,6 +163,14 @@ if [ "${MODE}" == "workload" ]; then
             echo -e "${DIM}  (skipped: ${orphan})${RESET}"
         fi
     done
+    # Revoke any legacy project-wide storage admin grant from ml-pipeline-sa (replaced by bucket-scoped objectViewer/objectCreator)
+    LEGACY_STORAGE_ROLE="roles/storage.""admin"
+    terraform state rm "google_project_iam_member.ml_sa_roles[\"${LEGACY_STORAGE_ROLE}\"]" >/dev/null 2>&1 || true
+    gcloud projects remove-iam-policy-binding "${PROJECT_ID}" \
+        --project="${PROJECT_ID}" \
+        --member="serviceAccount:ml-pipeline-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+        --role="${LEGACY_STORAGE_ROLE}" \
+        --quiet >/dev/null 2>&1 || true
     echo ""
 
     echo -e "${BOLD}═══════════════════════════════════════════════════════════════════${RESET}"
